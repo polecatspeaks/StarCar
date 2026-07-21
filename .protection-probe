@@ -1,2 +1,0 @@
-This file exists only to prove branch protection refuses a direct push to main.
-If you are reading this on main, the guard failed.
