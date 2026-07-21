@@ -1,0 +1,5 @@
+Hello buddy, welcome to the StarCar Repo. It's a fresh repo for us to work out of. Two initial taskings: Read all the documentation and once you've ingested that and executed any tasking required by it, proceed to the github project StarCar (id=6) and review the first issue (starcar#1) and proceed from there.
+
+---
+
+Ok so on thing we totally forgot to do: before we commit anything else, we need a dev branch to work off of. Standing Orders: Never commit to main, code ends on main via PR only. and for us, the amount of documentation will be generating is as critical as the code.
