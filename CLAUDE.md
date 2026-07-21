@@ -90,6 +90,31 @@ hop outside every review's scope silently dropped all nine. Every test passed be
 read one page of a three-page sentence. The first end-to-end reader was production. Paid
 twice (a max-laps field died the same way earlier) before becoming law.*
 
+## Branch topology and landing (STANDING ORDER)
+
+**Never commit to `main`.** Nothing reaches `main` except by pull request. `main` is the
+published face of a repo whose whole thesis is that the process is visible and real, so
+its history is a claim about how the work was done, and a direct commit is that claim
+being made falsely.
+
+**Documentation lands the same way code does, through the same gates.** In this project
+the documents ARE the product as much as the code is: designs, specs, plans, review
+verdicts, ledgers, and the operating rules themselves. A doc that skips review because
+"it is only prose" is the highest-leverage unreviewed artifact in the pipeline - plans,
+cars, and reviewers all consume it as ground truth. Prose gets no discount.
+
+- Work integrates on `dev`. Car branches cut from `dev`, merge back to `dev`.
+- `dev` reaches `main` by PR, reviewed, never by fast-forward push.
+- The rule is enforced by branch protection on the remote, not by memory. A prose rule
+  binds whoever reads it; a protected branch binds every actor, including a future agent
+  that never read this file.
+
+*Scar: on founding day the repo's first five commits went straight to `main` because no
+one had said not to yet, and the session was one approval away from committing the
+founding design document the same way - the document every later contract would have
+inherited as ground truth. Caught by the owner, not by a gate. The order was issued
+before the design landed, which is the only reason it cost nothing.*
+
 ## Dispatch rules (multi-agent hygiene)
 
 - **Name the model explicitly on every dispatch.** Never let a subagent default. *Scar: an
