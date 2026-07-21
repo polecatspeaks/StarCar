@@ -15,6 +15,12 @@ repo demonstrates is the *discipline* the dashboard visualizes: every feature he
 designed, adversarially reviewed, test-driven, and gated by the same process the visualizer
 renders — with the review verdicts and REJECT records committed in-repo as they happen.
 
+Documentation ranks equal to code here, as a north star rather than a nicety: designs,
+specs, plans, and ledgers pass the same gates that code does, and the commit that
+invalidates a document updates it in that same commit. Nothing reaches `main` except by
+pull request — a rule enforced on the remote and fault-injected to prove it fires, not
+merely asserted.
+
 ## The idea
 
 An agentic dev shop starts to look like a freight operation:

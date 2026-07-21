@@ -22,6 +22,10 @@ later cars; do not touch their files.
 plan text, warnings from earlier cars' reviewers - verbatim, with file:line.>
 
 STANDING RULES binding every commit:
+- DOCUMENTATION RANKS EQUAL TO CODE: every document your change invalidates - <name the
+  ones this task plausibly touches: spec, ledger, gating matrix, setup doc, README,
+  comments> - is updated in the SAME commit. A stale doc left behind is a Major finding
+  at review, not a follow-up. Meat first, polish later.
 - <state ledger / contracts rule with current baseline numbers and the STOP-if-different
   instruction>
 - <lifecycle-test rule for new mutable state>
@@ -51,6 +55,12 @@ THE SENTENCE CHECK: <any cross-boundary value in this diff> - trace producer to 
 consumer, every hop file:line, every hand-maintained mirror checked.
 ADJUDICATIONS: <each disclosed deviation, to be ruled on against real code>.
 RUN YOURSELF: <suites + expected counts>. Report observed.
+DOC CHECK: <the documents this diff plausibly invalidates> - is each updated in the same
+commit? Open every file:line the diff's docs cite and confirm the citation is true. A
+stale document or a dead citation is a MAJOR finding; documents rank equal to code here.
+GUARD CHECK: <any gate, guard, or protection this diff installs> - has anyone WATCHED it
+fire? A config read-back or a passing-on-arrival test is an assertion, not an
+observation; demand the fault-injection evidence or raise its absence as a finding.
 CONSTITUTION CHECK: name each law the diff implicates, one line of evidence each.
 
 VERDICT: APPROVE or REJECT up top; findings by severity with file:line.

@@ -21,6 +21,35 @@ one adversarial reviewer; only structural work (new subsystems, rewrites, cross-
 contracts) pays the full design → spec → plan ladder. Porting maximum ceremony onto every
 change is itself a process failure (the autoimmune mode - see the Healing Loop's edges).
 
+## NORTH STAR: documentation ranks equal to code
+
+Not "documented code." Documentation and code are two halves of one deliverable, held to
+one standard. Designs, specs, plans, review verdicts, ledgers, briefs, agent definitions,
+and these rules themselves ARE the product - in a shop where the workforce evaporates
+nightly, the written system is the only system that survives, so a defect in the writing
+is a defect in the product, not a cosmetic issue. Every rule below that binds code binds
+documents: review, gates, PRs, honest stops, REJECT authority.
+
+**Documents are living, never static.** A document is true only at the moment of its
+commit. The instant the code diverges from it, that document has become a lying canary -
+a reader trusting a described mechanism the code no longer implements - and this project
+holds that a confident falsehood on an information surface is worse than a blank one.
+Therefore: **the commit that invalidates a document updates that document, in the same
+commit.** Not a follow-up ticket, not a cleanup pass, not "we will true it up before the
+release." The state-ledger rule below is this principle applied to one file; it
+generalizes to every file.
+
+**Meat and bones first; pretty later.** Correctness, completeness, and citation truth are
+the expensive parts and come first. Formatting, prose polish, and structure-tidying are
+cheap and can happen any time afterward. Never let a polish pass be mistaken for
+documentation work, and never let unpolished prose delay a document that is correct.
+
+*Scar: this order was issued on founding day after the session had committed five times
+to main and stood one approval away from committing the founding design document - the
+document every later contract would have inherited as ground truth - with no gate over
+any of it, on the theory that prose is cheaper than code. In a project whose deliverables
+are mostly documents, exempting prose from review exempts most of the product.*
+
 ## Test-Driven Development (non-negotiable)
 
 Every behavior change is developed red-first: write the failing test, RUN it, confirm it
@@ -114,6 +143,24 @@ one had said not to yet, and the session was one approval away from committing t
 founding design document the same way - the document every later contract would have
 inherited as ground truth. Caught by the owner, not by a gate. The order was issued
 before the design landed, which is the only reason it cost nothing.*
+
+**Corollary - an exemption keyed to identity binds nobody when every actor shares that
+identity.** Protection is configured with `enforce_admins: true`. It is not optional, and
+it is not a distrust of the owner: agents in this repo authenticate with the OWNER's
+credential, so any admin exemption is an exemption for every agent too. The owner's
+override is the settings page, which no configuration takes away. Authority and
+credential are different things, and a guard that confuses them protects nothing.
+
+*Scar: paid the same hour the order was issued. Protection was applied with
+`enforce_admins: false` so the owner could always override, and the live config read back
+perfect - `require_pr: true`, force-push and deletion blocked. The mandated fault
+injection then pushed straight to `main` and GitHub answered `Bypassed rule violations`
+with exit code 0. The guard had been decorative from the moment it was applied, and the
+setup doc and its issue both already claimed `main` was protected. Re-injected against
+`enforce_admins: true`: `GH006: Protected branch update failed`, exit 1. Cost: one junk
+commit on a public `main`, reverted through the repo's first PR (#5), roughly ninety
+seconds. Had the API read-back been trusted, the discovery would instead have been a car
+pushing to `main` mid-train.*
 
 ## Dispatch rules (multi-agent hygiene)
 
