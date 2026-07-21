@@ -54,14 +54,27 @@ README that says "no adapters ship yet" is honest and correct. Writing the deplo
 guide before the deployment exists is fiction that will be stale before it is ever true.
 Completeness arrives with the capability; truth is required from the first commit.
 
-**A documentation claim is tested, or it is a lying canary.** Code has a suite; the
-user-facing equivalent of a passing test is *a stranger followed this and succeeded*.
-When CI lands it runs the quickstart on a clean runner, so a documented path that no
-longer works turns the build red - the claim becomes an assertion instead of a hope.
-Until then this rule is unenforced, and saying so is part of honoring it. Two surfaces
-stay unguarded even after CI: comprehensibility (CI proves commands run, never that a
-human could follow them) and screenshot drift (a stale image on a status-board project is
-both the likeliest and the most embarrassing rot this repo can ship).
+**User-facing documentation is gated at the PR, by SENTENCE CHECK.** The sentence check
+generalizes from wire fields to doc claims, because a user-facing claim crosses
+boundaries too: prose → the command it names → the code that command runs → what a
+stranger actually observes. Each hop is a place the claim can be silently false, and "the
+README reads fine" is a spelling check. So the reviewer on any PR touching user-facing
+docs - or touching code that user-facing docs describe - traces each claim to the code
+that honors it, every hop with file:line, and states the trace in the verdict. A claim
+whose path cannot be traced is a finding. The review is not complete until someone has
+read the whole sentence.
+
+*This is attention-tier, and the Healing Loop ranks attention below mechanism (a test
+beats a review rule). Deliberate: CI running the quickstart on a clean runner is the
+eventual mechanical form (#6), backed up behind CI itself. While the project moves fast
+and breaks things there is no stable quickstart to assert, and an instrument re-asserting
+yesterday's README would cry wolf - which our own severity philosophy calls worse than no
+instrument. The tier downgrade is the price and is written down rather than glossed.*
+
+Two surfaces stay unguarded even after CI lands, named so nobody assumes otherwise:
+comprehensibility (a machine proves commands run, never that a human could follow them)
+and screenshot drift (a stale image on a status-board project is both the likeliest and
+the most embarrassing rot this repo can ship).
 
 **The showcase never edits the record.** This repo is deliberately a demonstration of how
 the process works, which creates standing pressure to make the process LOOK good - and

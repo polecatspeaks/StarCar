@@ -58,6 +58,10 @@ RUN YOURSELF: <suites + expected counts>. Report observed.
 DOC CHECK: <the documents this diff plausibly invalidates> - is each updated in the same
 commit? Open every file:line the diff's docs cite and confirm the citation is true. A
 stale document or a dead citation is a MAJOR finding; documents rank equal to code here.
+DOC SENTENCE CHECK (if user-facing docs, or code they describe, are touched): <the claims
+at issue> - trace each from prose to the command it names to the code that runs to what a
+stranger observes, file:line at every hop, and state the trace. This is the PR-stage gate
+for user-facing documentation; an untraceable claim is a finding.
 GUARD CHECK: <any gate, guard, or protection this diff installs> - has anyone WATCHED it
 fire? A config read-back or a passing-on-arrival test is an assertion, not an
 observation; demand the fault-injection evidence or raise its absence as a finding.

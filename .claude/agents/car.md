@@ -38,6 +38,12 @@ Reviewers hold documents to the code standard, because here they rank equal to i
 - Open every file:line a document cites and confirm it says what the citation claims.
   Uncheckable claims and dead citations are findings; a document's accuracy is testable,
   so test it rather than reading for tone.
+- USER-FACING DOCS GET THE SENTENCE CHECK. If the diff touches user-facing documentation
+  (README, quickstart, deploy/config/adapter guides, demo data, screenshots) OR touches
+  code that such documentation describes, trace each claim across every hop - prose, the
+  command it names, the code that command runs, the behavior a stranger would observe -
+  with file:line at each hop, and state the trace in your verdict. "The README reads
+  fine" is a spelling check. A claim whose path you cannot trace is a finding.
 - When the diff IS a document (design, spec, plan, ledger), review it as an artifact with
   consequences: ambiguity is a finding because a requirement readable two ways will be
   read both ways by different cars. Judge the meat, not the polish - unpolished prose
