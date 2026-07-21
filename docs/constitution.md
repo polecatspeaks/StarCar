@@ -1,10 +1,12 @@
 # The StarCar Constitution
 
-Status: **DRAFT - pending owner ratification.** Derived from the meta-principles of a
-sibling project's constitution (eight ordered laws governing a race-strategy system);
-the SHAPE ports, the content is re-derived for what StarCar is: a visualizer that renders
-the truth of a multi-agent process to the human running it. Ordered - earlier laws
-outrank later ones when they conflict.
+Status: **RATIFIED by the owner, 2026-07-21** - the founding day, before any code.
+Derived from the meta-principles of a sibling project's constitution (eight ordered laws
+governing a race-strategy system); the SHAPE ports, the content is re-derived for what
+StarCar is: a visualizer that renders the truth of a multi-agent process to the human
+running it. Ordered - earlier laws outrank later ones when they conflict. Amendments go
+through the owner; every capability, fix, and review in this repo is judged against
+these laws by name.
 
 ## 1. Truth
 
