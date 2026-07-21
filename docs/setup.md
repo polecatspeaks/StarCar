@@ -1,0 +1,49 @@
+# Tooling setup - what is installed, what installs later, and what triggers it
+
+Status: Current
+
+An agent opening this repo on the founding box starts with everything below in the
+"ready now" state. Items in "installs later" have explicit triggers - install them WHEN
+the trigger fires, not before (right-sizing: tooling earns its place like everything
+else).
+
+## Ready now (committed in-repo)
+
+| Thing | Where | Notes |
+|---|---|---|
+| Process seed | `CLAUDE.md` | The operating rules, scars attached |
+| Constitution | `docs/constitution.md` | RATIFIED 2026-07-21, before any code |
+| Healing Loop | `docs/the-healing-loop.md` | The process metabolism |
+| `car` agent type | `.claude/agents/car.md` | No-delegation implementer/reviewer (toolset-enforced) |
+| `/goodnight` skill | `.claude/skills/goodnight/` | Session-end ritual + resume packets |
+| Resume-packet hook | `.claude/hooks/goodnight-resume-check.sh` | SessionStart announce, wired in `.claude/settings.json` |
+| Board tooling | `scripts/board.ps1` + `Board.psm1` (+ Pester tests) | Defaults: user project 6, repo polecatspeaks/StarCar; pure logic Pester-tested |
+| Templates | `docs/templates/` | Car brief, state ledger, gating matrix |
+| MCP: context7 | `.mcp.json` | Library docs lookup, stack-agnostic |
+| MCP: gitnexus | `.mcp.json` | Server registered; serves nothing until first index (below) |
+| pr-review-toolkit plugin | `.claude/settings.json` | Enabled |
+
+Also available from the box/user level (nothing to install per-repo): the superpowers
+plugin (brainstorming, writing-plans, TDD skills), the Claude-in-Chrome browser tools.
+
+## Installs later - trigger-gated
+
+| Thing | Trigger | How |
+|---|---|---|
+| GitNexus index | FIRST CODE lands (nothing to index before that) | `npx gitnexus analyze` (or `npm i -g gitnexus` then `gitnexus analyze`); rerun with `--pdg` once the codebase is worth statement-level analysis. The MCP server in `.mcp.json` starts serving as soon as the index exists. |
+| CI + repo policy | First workflow need (likely: first code PR) | Port the docs `Status:` line checker + a build/test workflow; keep the "verified means CI went green" rule from CLAUDE.md in force from day one |
+| Session-start env hook | The repo is opened in a web/container environment | Port the ancestor's `session-start.sh` PATTERN (idempotent installs, strictly non-fatal guards, wrapper-on-PATH) with THIS stack's tools - the ancestor's dotnet/pwsh specifics do not apply |
+| Suite runner / CI watcher scripts | First test suite / first CI | Generalize from the ancestor shop's `run-suites` / `watch-ci` patterns when there is something to run |
+
+## Owner decision pending: Entire.io session mirroring
+
+The ancestor shop mirrors every agent-session transcript to the repo origin
+(`entire/checkpoints/v1`) for disaster recovery and decision archaeology. **This repo is
+PUBLIC: enabling `entire init` here publishes every dev-session transcript to the
+world.** That is either the most on-brand feature this showcase could have (the process
+IS the product - radically transparent, verifiably real) or an exposure risk (anything
+typed in a StarCar session becomes world-readable, including mistakes and half-thoughts).
+
+Recommendation on file: ENABLE it, with a hard rule added to CLAUDE.md at the same time -
+StarCar sessions are StarCar-only; no other project's content is ever pasted or discussed
+in a session here. Not enabled until the owner rules.
