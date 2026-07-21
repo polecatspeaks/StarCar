@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "fa7194a124fe",
+  "strategy": "manual-commit",
+  "branch": "dev",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "CLAUDE.md",
+    "docs/setup.md",
+    "docs/templates/car-brief.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/fa/7194a124fe/0/metadata.json",
+      "transcript": "/fa/7194a124fe/0/full.jsonl",
+      "compact_transcript": "/fa/7194a124fe/0/transcript.jsonl",
+      "content_hash": "/fa/7194a124fe/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 16,
+    "cache_creation_tokens": 12233,
+    "cache_read_tokens": 1394914,
+    "output_tokens": 10438,
+    "api_call_count": 8
+  }
+}
