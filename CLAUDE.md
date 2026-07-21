@@ -1,5 +1,14 @@
 # The StarCar Process Seed
 
+## HARD INVARIANT: this repo is public, and so are its session transcripts
+
+Entire.io session mirroring is ENABLED (owner decision, 2026-07-21: "the full monty").
+Every agent-session transcript in this repo publishes to the public checkpoint branch.
+Therefore: **StarCar sessions are StarCar-only.** Never paste, quote, or discuss any
+other project's content, credentials, private paths, or unreleased material in a session
+here - everything typed becomes world-readable. Cross-project work happens in the other
+project's own session, never this one. This invariant outranks convenience, always.
+
 This file is the institution. In agentic development every worker is a new hire on day
 one: agents accumulate no experience across dispatches, and only what is WRITTEN persists.
 These rules were not designed in the abstract — each was paid for, some several times, in

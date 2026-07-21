@@ -35,15 +35,12 @@ plugin (brainstorming, writing-plans, TDD skills), the Claude-in-Chrome browser 
 | Session-start env hook | The repo is opened in a web/container environment | Port the ancestor's `session-start.sh` PATTERN (idempotent installs, strictly non-fatal guards, wrapper-on-PATH) with THIS stack's tools - the ancestor's dotnet/pwsh specifics do not apply |
 | Suite runner / CI watcher scripts | First test suite / first CI | Generalize from the ancestor shop's `run-suites` / `watch-ci` patterns when there is something to run |
 
-## Owner decision pending: Entire.io session mirroring
+## Entire.io session mirroring: ENABLED (owner decision, 2026-07-21)
 
-The ancestor shop mirrors every agent-session transcript to the repo origin
-(`entire/checkpoints/v1`) for disaster recovery and decision archaeology. **This repo is
-PUBLIC: enabling `entire init` here publishes every dev-session transcript to the
-world.** That is either the most on-brand feature this showcase could have (the process
-IS the product - radically transparent, verifiably real) or an exposure risk (anything
-typed in a StarCar session becomes world-readable, including mistakes and half-thoughts).
-
-Recommendation on file: ENABLE it, with a hard rule added to CLAUDE.md at the same time -
-StarCar sessions are StarCar-only; no other project's content is ever pasted or discussed
-in a session here. Not enabled until the owner rules.
+Every agent-session transcript in this repo publishes to the public checkpoint branch -
+by design ("the full monty"): the development process is the showcase, radically
+transparent and verifiably real, half-thoughts included. The price of that is the HARD
+INVARIANT at the top of CLAUDE.md: StarCar sessions are StarCar-only; nothing from any
+other project is ever typed here. `entire enable` + `entire agent add claude-code` are
+done (hooks in `.claude/settings.json`, config in `.entire/`); `entire search` is the
+entry point for decision archaeology.
