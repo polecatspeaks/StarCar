@@ -24,11 +24,52 @@ change is itself a process failure (the autoimmune mode - see the Healing Loop's
 ## NORTH STAR: documentation ranks equal to code
 
 Not "documented code." Documentation and code are two halves of one deliverable, held to
-one standard. Designs, specs, plans, review verdicts, ledgers, briefs, agent definitions,
-and these rules themselves ARE the product - in a shop where the workforce evaporates
-nightly, the written system is the only system that survives, so a defect in the writing
-is a defect in the product, not a cosmetic issue. Every rule below that binds code binds
-documents: review, gates, PRs, honest stops, REJECT authority.
+one standard. Two families, both in scope, neither senior to the other:
+
+- **Process documentation** - designs, specs, plans, review verdicts, ledgers, briefs,
+  agent definitions, and these rules themselves. In a shop where the workforce evaporates
+  nightly, the written system is the only system that survives, so a defect in the
+  writing is a defect in the product.
+- **User-facing documentation** - README, quickstart, deployment and configuration
+  guides, adapter-authoring guides, demo data, and screenshots. Law 7 (The Stranger)
+  already ratified this: *documentation a stranger can deploy from*. It is not an
+  afterthought to the process docs; it is the half of the product an outsider ever
+  touches.
+
+Every rule below that binds code binds both families: review, gates, PRs, honest stops,
+REJECT authority.
+
+**The stranger is the audience, when audiences conflict.** Three readers want different
+documents - the owner deploying it, a stranger deploying it cold, and someone reading to
+learn the process and never running anything. Averaging them produces mush, so the
+stranger wins by Law 7. This is also the strictest master: documents a stranger can
+deploy from are automatically sufficient for the owner, while documents written for the
+owner are never sufficient for a stranger, and the shortfall is invisible to the author
+because assumed context cannot be seen from the inside.
+
+**True always; complete only when the thing exists.** User-facing docs must never
+describe behavior the software does not have - a quickstart for a server that cannot
+start is a lie with good intentions, and Law 1 does not grant exemptions for optimism. A
+README that says "no adapters ship yet" is honest and correct. Writing the deployment
+guide before the deployment exists is fiction that will be stale before it is ever true.
+Completeness arrives with the capability; truth is required from the first commit.
+
+**A documentation claim is tested, or it is a lying canary.** Code has a suite; the
+user-facing equivalent of a passing test is *a stranger followed this and succeeded*.
+When CI lands it runs the quickstart on a clean runner, so a documented path that no
+longer works turns the build red - the claim becomes an assertion instead of a hope.
+Until then this rule is unenforced, and saying so is part of honoring it. Two surfaces
+stay unguarded even after CI: comprehensibility (CI proves commands run, never that a
+human could follow them) and screenshot drift (a stale image on a status-board project is
+both the likeliest and the most embarrassing rot this repo can ship).
+
+**The showcase never edits the record.** This repo is deliberately a demonstration of how
+the process works, which creates standing pressure to make the process LOOK good - and
+honest-failure framing is the load-bearing wall the whole Healing Loop stands on. So:
+REJECTs stay visible, stalls stay visible, wrong calls stay attributed, and embarrassing
+commits get reverted in the open rather than force-pushed into nonexistence. Curating the
+record to flatter the process destroys the only thing the showcase was demonstrating. The
+pressure grows as the audience does, which is why it is written down before there is one.
 
 **Documents are living, never static.** A document is true only at the moment of its
 commit. The instant the code diverges from it, that document has become a lying canary -
