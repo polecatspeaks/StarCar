@@ -22,7 +22,7 @@ else).
 | MCP: context7 | `.mcp.json` | Library docs lookup, stack-agnostic |
 | MCP: gitnexus | `.mcp.json` | Server registered; serves nothing until first index (below) |
 | pr-review-toolkit plugin | `.claude/settings.json` | Enabled |
-| Branch protection on `main` | GitHub repo settings (remote) | Require PR, 0 approvals, no force-push, no deletion, admins exempt. The mechanical half of the STANDING ORDER in `CLAUDE.md`; admins stay exempt so the owner can always override (Law 2). |
+| Branch protection on `main` | GitHub repo settings (remote) | Require PR, 0 approvals, no force-push, no deletion, **`enforce_admins: true`**. The mechanical half of the STANDING ORDER in `CLAUDE.md`. Admins are NOT exempt, deliberately: agents authenticate with the owner's credential, so an admin exemption exempts every agent - proven by fault injection on founding day (see the STANDING ORDER corollary in `CLAUDE.md` and PR #5). The owner's override is the settings page, which no configuration takes away; Law 2 protects the owner's authority, not the token's privileges. |
 | `dev` integration branch | remote + local | Work integrates here; car branches cut from and merge back to `dev`; `dev` reaches `main` by PR only |
 
 Also available from the box/user level (nothing to install per-repo): the superpowers
