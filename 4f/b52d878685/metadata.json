@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "4fb52d878685",
+  "strategy": "manual-commit",
+  "branch": "dev",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/plans/2026-07-22-pr18-correctness-fixes-plan.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/4f/b52d878685/0/metadata.json",
+      "transcript": "/4f/b52d878685/0/full.jsonl",
+      "compact_transcript": "/4f/b52d878685/0/transcript.jsonl",
+      "content_hash": "/4f/b52d878685/0/content_hash.txt",
+      "prompt": "/4f/b52d878685/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1570,
+    "cache_creation_tokens": 8922082,
+    "cache_read_tokens": 363708394,
+    "output_tokens": 1083898,
+    "api_call_count": 785
+  }
+}
