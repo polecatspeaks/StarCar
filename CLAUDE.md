@@ -306,6 +306,30 @@ Every piece of work gets an issue - no untracked work. One area label per issue;
 is composed from ONE label's tickets (single coherent manifest). Check for duplicates
 before filing.
 
+## Session starts: the tooling retro (STANDING ITEM)
+
+Every new session opens with a retro on tooling and harness friction, before other work:
+
+1. **Read `docs/friction-log.md`** - the entries logged during previous sessions.
+2. **Classify to the CLASS**, not the instance. "PowerShell mangled an encoding" is an
+   instance; "the shell's defaults are unsafe for text fidelity" is the class.
+3. **Recommend**, and **prefer free off-the-shelf tools over anything we build.** A tool
+   someone else maintains, tests, and documents is cheaper than one we own forever - and
+   this shop's binding constraint is review attention, so every line we write is a line
+   someone must review, secure, and keep true. Build only what does not exist.
+4. **Right-size the recommendation.** A retro that installs something every session goes
+   autoimmune. Some friction is worth living with, and saying so is a valid outcome.
+
+**Log friction as it happens, not at the retro.** A retro that runs on memory is a memory
+test, and in this shop the workforce evaporates nightly. Anything that cost time, produced
+a wrong diagnosis, or made a defect possible gets a line in the log when it happens.
+
+*Scar: the founding session produced fourteen distinct friction points - three of them
+encoding defects from one shell's defaults, one of them a guard that was decorative, one a
+wrong diagnosis from assuming a file existed without opening it. Every one would have been
+forgotten by morning, because the only place they lived was a context window. The log
+exists because the retro was ordered before there was anything to retro FROM.*
+
 ## Session ends
 
 Ending a session is a decision point, not an event: background agents die with the
