@@ -26,7 +26,12 @@ commit). Car branch: `car/pr18-correctness-fixes`. Baselines under pwsh 7: tests
 probes **12/12**, Verify-Verdict **exit 0, 26 verified** (count floats).
 
 > # BINDING AMENDMENT BLOCK (conductor-applied)
-> *Empty at rev 1.*
+> 1. **Round-2 rebase list applied (APPROVE-WITH-REBASE-LIST, plan review round 2):**
+>    RL-1 folded into F5's red-first (assert the producer-fault record stays schema-valid,
+>    `abstract` required on returned - modify the `:166` branch, don't rewrite it away);
+>    RL-2 folded into F5's rationale (the disambiguation is clean vs `absent`, content-level
+>    vs a legit agent `outcome:error`; `envelope:unreadable` deferred to an issue). Both
+>    verified by the car's own reviewer at merge; no new plan round. The gate is CLOSED.
 
 ## Global constraints
 
@@ -159,17 +164,27 @@ fault, so:
   `absent`), set `outcome: error`, and put the read error in `findings`;
 - **RAISE the error to `_faults.log`** (Law 4 - fixes the drop);
 - A brief-absence (transcript read OK, no fence) keeps `envelope: absent` as today.
-A consumer distinguishes them cleanly: `envelope=absent` = brief failure; `envelope` field
-missing + `outcome=error` + a `_faults.log` line = producer read failure. No closed-contract
-widening, no spec §2.3/§9 edit, stays coverage-class. *(A dedicated `envelope: unreadable`
-value is a possible future schema enhancement - DEFERRED to an issue with the executable-spec
-track, NOT done here.)*
+This is cleanly distinct from the pair the brief asked about: `envelope=absent` = brief
+failure vs `envelope` field missing + `outcome=error` + `_faults.log` = producer read
+failure. **[RL-2, round-2 rebase - honest residual]:** it is NOT distinct from a
+*legitimate* agent `outcome: error` (which is a valid vocabulary value): that shares the
+`envelope`-missing + `outcome:error` + findings + abstract structured signature, differing
+only by findings CONTENT and the presence of a (subject-less) `_faults.log` line. So the
+disambiguation is structured-field-clean vs `absent`, and content-level vs a legit
+agent-error. The dedicated `envelope: unreadable` value is the eventual clean structured
+form - DEFERRED to an issue (executable-spec track), NOT done here. No closed-contract
+widening, no spec §2.3/§9 edit, stays coverage-class.
 
 - [ ] **Red-first:** a returned payload pointing at a NONEXISTENT transcript today lands
   `envelope: absent` (brief blamed) AND silently drops the read error; after the fix it
   lands `outcome: error`, NO `envelope` field, the read error in `findings`, and a
-  `_faults.log` line. Assert both the classification AND that the error is no longer
-  dropped. Commit `fix(harness): producer read-failure is not an absent envelope; stop dropping the error (#7)`.
+  `_faults.log` line. Assert: the classification, that the error is no longer dropped, **and
+  [RL-1, round-2 rebase] that the record stays SCHEMA-VALID via `Test-StarcarArtifact` -
+  `abstract` is REQUIRED on returned records (proven: a producer-fault record MISSING
+  abstract validates False), and the producer does not self-validate before writing, so the
+  fault branch MUST still set abstract** (the existing branch at `Produce-Artifact.ps1:166`
+  does - modify it, do not rewrite it away). Commit
+  `fix(harness): producer read-failure is not an absent envelope; stop dropping the error (#7)`.
 
 ## F6 - README status truth [Copilot: README.md:8]
 
