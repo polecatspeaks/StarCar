@@ -164,6 +164,63 @@ class at the cheapest point that class is catchable.
   one-dispatch cost instead of as a car's compile wall. The gate paid for itself the
   first day it ran.*
 
+## Match the instrument to the artifact (choose the rung by KIND, not by stakes)
+
+The right-sizing rule above scales ceremony to stakes. This one is orthogonal and just as
+binding: **scale the INSTRUMENT to what is being built.**
+
+- **Behavioural or architectural work** - what should happen, which component owns what,
+  how failures surface. Prose design plus adversarial reading works, because a reviewer
+  can verify a claim like "the rendered register is the most severe of three axes" by
+  reading it.
+- **A format, protocol, algorithm, or wire contract** - canonicalisation, identity,
+  ordering, dedup, hashing, schema. **Prose cannot hold this and reviewing it is
+  reviewing a photograph of a machine.** These go straight to an EXECUTABLE spec: a
+  schema file, a conformance test vector, a red-first test that fails for the stated
+  reason. The artifact IS the precision.
+
+The Healing Loop already ruled on this - *"validated facts must land as tests or gates,
+never only prose"* - and this section exists because that rule was not applied to a
+design document, only to code.
+
+**The tell that the instrument is wrong:** successive revisions close every named finding
+and open new ones in the SAME section, with the Major count flat or climbing. Converging
+work sees findings shrink and move. When they hold station, stop revising and change the
+instrument - a gate that cannot resolve at the defect's scale will find different defects
+forever, and each round will feel like progress.
+
+**Adversarial review is blind to unquestioned premises.** A reviewer can only reject what
+is on the page; it cannot reject the assumption that put it there. So when the tell fires,
+the question is never "what did the review miss" - it is "what did every round inherit
+without asking." That question has no gate and belongs to the owner, which is why the
+escalation path exists.
+
+*Scar: the dispatch harness design took four adversarial rounds and twelve Majors, count
+climbing 3 to 4 to 5, with every round's findings clustered in one section. The instrument
+was the problem twice over. First, a distributed-identity protocol was being specified in
+prose. Second, when round 3 correctly ordered a DEMONSTRATION, the author produced a
+script that illustrated rather than tested - `sweep = dict(hook)`, so the printed proof
+was sha256(x) == sha256(x) - because a prose habit produces prose-shaped evidence even
+when told to produce a test. Four rounds never asked why two producers wrote artifacts at
+all; removing that one unexamined premise dissolved roughly eight of the twelve findings.
+The owner named it: using a hammer to fix a watch.*
+
+## Consult the institution before designing (and SHOW that you did)
+
+Every design document states which existing laws, templates, contracts and prior verdicts
+it checked itself against, and what each one required. Not a ritual citation list - a
+short section naming the constraints that were looked up and what they ruled.
+
+*Scar: three times in one founding session, a ratified rule already covered the mistake
+being made. Law 7 forbids hardcoded label taxonomies - a design hardcoded one and spent
+three rounds tuning it. The gating-matrix template's only worked example says the
+staleness banner is suppressed "never (truth surface), DELIBERATE, no override" - a design
+added a demo-mode suppression and a reviewer quoted the template back. The Healing Loop
+requires validated facts to land as tests, not prose - a protocol was specified in prose
+for four rounds. Every one was findable by looking. Reviewers caught all three, which
+means the institution worked and the author did not consult it; a lookup that only happens
+at review has already cost a dispatch by the time it fires.*
+
 ## Review calibration (binding, uniform)
 
 - Every adversarial reviewer holds REJECT authority over its gate. **Any Major = REJECT.**
