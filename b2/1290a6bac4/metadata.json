@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "b21290a6bac4",
+  "strategy": "manual-commit",
+  "branch": "dev",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "docs/reviews/2026-07-22-harness-design-round5-REJECT.md",
+    "docs/templates/design-doc.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/b2/1290a6bac4/0/metadata.json",
+      "transcript": "/b2/1290a6bac4/0/full.jsonl",
+      "compact_transcript": "/b2/1290a6bac4/0/transcript.jsonl",
+      "content_hash": "/b2/1290a6bac4/0/content_hash.txt",
+      "prompt": "/b2/1290a6bac4/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 544,
+    "cache_creation_tokens": 2043861,
+    "cache_read_tokens": 98274320,
+    "output_tokens": 453053,
+    "api_call_count": 272
+  }
+}
