@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "67bfe8d1299a",
+  "strategy": "manual-commit",
+  "branch": "dev",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/design/2026-07-22-dispatch-harness-design.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/67/bfe8d1299a/0/metadata.json",
+      "transcript": "/67/bfe8d1299a/0/full.jsonl",
+      "compact_transcript": "/67/bfe8d1299a/0/transcript.jsonl",
+      "content_hash": "/67/bfe8d1299a/0/content_hash.txt",
+      "prompt": "/67/bfe8d1299a/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 496,
+    "cache_creation_tokens": 1967877,
+    "cache_read_tokens": 82025359,
+    "output_tokens": 418861,
+    "api_call_count": 248
+  }
+}
