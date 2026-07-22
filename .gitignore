@@ -1,3 +1,4 @@
 .claude/probe-logs/
 testResults.xml
 __pycache__/
+artifacts/ci-checks/

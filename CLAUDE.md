@@ -672,6 +672,17 @@ cannot be audited later; with them, any party can reconcile any claim at any tim
 messages restate counts; ticket closes cite counts and SHAs; a claim of "unchanged" states
 the baseline it equals.
 
+**CI state is WATCHED to a terminal conclusion and RECORDED, never sampled or assumed
+(owner scar, ported from the sibling and paid AGAIN 2026-07-22).** After any push to a
+watched branch, `scripts/Watch-CI.ps1` runs it to completion: it filters to OUR workflow
+(a PR-review bot posts its own green `dynamic` run at the same SHA - watching that instead
+reports GREEN over a red CI, observed on this script's first live test), watches the most
+recent run for the exact FULL sha, records the per-leg conclusion under `artifacts/ci-checks/`,
+and exits with a code that keeps RED distinct from could-not-observe: 0 green, 10 red (a
+CAUGHT PROBLEM, a success outcome - act on it, never merge on top), 1 failed-to-observe
+(no run appeared, push-parity mismatch, or timeout - THIS is the real failure the scar was).
+No merge to `main`, and no "CI green" claim, without a recorded terminal green for the sha.
+
 **Claims are never terminal until a second party re-derives them.** Every reviewer brief
 carries "RUN YOURSELF at HEAD, expect <counts>, report observed" - so a false or stale claim
 survives at most one gate. Re-observation is the default, not a suspicion.
