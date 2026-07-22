@@ -500,6 +500,65 @@ pushing to `main` mid-train.*
 
 ## Verification honesty
 
+**No verification claim is ever bare.** Every one carries four coordinates: the SUITE, the
+OBSERVED COUNT, the SHA it was observed at, and who observed it.
+
+> `Pester`: **21/21 passed** at `8824a8d` (CI run 29915647100). Verdicts: **8/8** hashes match.
+
+Never "green" - a suite that silently ran zero tests is green. A claim without coordinates
+cannot be audited later; with them, any party can reconcile any claim at any time. Merge
+messages restate counts; ticket closes cite counts and SHAs; a claim of "unchanged" states
+the baseline it equals.
+
+**Claims are never terminal until a second party re-derives them.** Every reviewer brief
+carries "RUN YOURSELF at HEAD, expect <counts>, report observed" - so a false or stale claim
+survives at most one gate. Re-observation is the default, not a suspicion.
+
+**Sampling an async process is not a conclusion.** Push, then WAIT for the terminal state -
+"no run appeared for this ref" is its own honest outcome, never success. The
+session-start CI baseline hook bounds the blindness: an unexamined red surfaces at the next
+session at the latest, and **the session does not start editing on top of an unexamined
+red.** Flake calibration is part of the rule: a one-off that passes on a re-run of identical
+code is a flake - note it and move on, because treating flakes as blockers teaches everyone
+to ignore the check.
+
+*Scar: CI run 29913822738 failed - a gallery flake killed the Pester install and every test
+was SKIPPED - and sat unseen for an hour while the conductor said "CI green" a dozen times.
+The conductor had been sampling with `--limit 1`, catching an `in_progress`, reporting THAT,
+and never returning. The meta-class beneath it is ABSENCE-BLINDNESS: a red never looked at
+is indistinguishable from no red, and an absence is invisible unless something asserts
+completeness. Found only because the owner asked about a test count that could not be
+reproduced.*
+
+## Obligations cross rungs by CARRIER, never by memory
+
+Anything not written into the next rung's input document does not exist there.
+
+- **Findings get IDs at birth** - `DR-1..n` at design review, `M1..n` at spec review - minted
+  in the verdict, never reused.
+- **The next document folds each one INLINE, marked with its ID.** Not "review feedback was
+  incorporated" - the exact spot, tagged `[DR-2, folded]`.
+- **The document's review-record section carries the roll-up**, and stays in the document
+  forever.
+- **The next rung's adversary walks the IDs as a table**: `Present / Absent / DRIFTED`.
+  Drifted means the words are there but the substance moved - **the fold that LOOKS folded**
+  is the subtle failure this chain exists to catch.
+- **Contract obligations are restated at every rung in that rung's native form**: spec
+  lifecycle table → plan task file-list plus inline arithmetic → car same-commit diff →
+  reviewer replay → whole-branch gate replay. Four restatements of one fact, and the
+  redundancy IS the point: any rung that drops it is caught by the neighbour that did not.
+
+**The receiving side is built to refuse delivery without it.** Template plus adversary, at
+every rung - never "remember harder".
+
+*Scar: the design rung had a disposition table (§9b) and a contracts-touched section; the
+spec template had neither, so nine documentation obligations and five adopted design
+requirements evaporated at one handoff - the fifth silent drop of the founding session, and
+the first caused by a hole in a ported artifact rather than by the author.*
+
+### Original verification-honesty rules
+
+
 - "Verified" means the pipeline that ships it went green - not that your local run passed.
   Push before triggering any build that consumes the remote; wait for CI before declaring
   victory on cross-environment work. *Scar: a release channel once built from the remote
