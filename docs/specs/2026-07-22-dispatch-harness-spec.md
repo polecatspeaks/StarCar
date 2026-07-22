@@ -298,4 +298,25 @@ citation named the design's Cost section - *the fold that LOOKS folded*, which
 `worked-rung-carriers.md:48` names and `:57` predicted by warning that a central ledger needs
 CI to walk it. Folded as §3.6.
 
-Spec review round 3: *pending - fix-and-confirm scope only, per the round-2 disposition.*
+Spec review round 3 (fix-and-confirm): **REJECT, 1 Major, 1 Minor, both mechanical** -
+`docs/reviews/2026-07-22-harness-spec-round3-CONFIRM-REJECT.md`. N1 confirmed CLOSED **on
+substance**, all thirteen fidelity rows re-walked and resolving, and the spec's substance
+ruled **plan-ready**. The Major was self-inflicted and mechanical: the repo-policy commit
+split this design's `Status:` line in two, shifting every line from 3 onward by +1, and six
+of eight numeric `design:NNN` citations silently stopped resolving - including the anchor
+under a verbatim quote. *The commit that installed a documentation-policy gate invalidated
+six citations in the document under review, and the gate it installed checks only that a
+Status line exists.*
+
+Spec review round 4 (final confirm): **APPROVE** -
+`docs/reviews/2026-07-22-harness-spec-round4-APPROVE.md`. Every citation converted to a
+**section anchor** rather than the six line numbers the reviewer listed - a deviation stated
+openly and ruled *"the better call… correcting six numbers would have left the failure mode
+armed."* Every anchor opened and confirmed to resolve to the passage carrying its claim, not
+merely to a real heading. Suites re-derived by the reviewer rather than read from the report.
+
+**THE SPEC IS APPROVED AND PROCEEDS TO THE PLAN RUNG.** Three rounds, sixteen findings, six
+rulings, all closed by mechanism. Nothing carried forward. Two items parked as issue #9: the
+`worked-spec.md` template amendment, and the citation-resolution CI check - whose assertion
+the round-4 reviewer specified: **the annotation must be a substring of the target**, which
+is what makes a citation mechanically checkable.
