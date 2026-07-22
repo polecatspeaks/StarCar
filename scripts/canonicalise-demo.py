@@ -1,3 +1,22 @@
+# PRESERVED FAKE DEMONSTRATION - dispatch-harness design round 3 (2026-07-22).
+#
+# This script does NOT demonstrate what its own comments below claim. Line 27,
+# `sweep = dict(hook)`, makes "sweep" a shallow copy of "hook" itself, not an
+# independent observation of the same event from a transcript. The printed
+# "EQUAL" line is therefore always eid(hook) == eid(hook) - true by
+# construction, proving nothing about canonicalisation, event identity, or
+# two independent producers agreeing on anything.
+#
+# It is kept, unrepaired, as the wreckage exhibit for the CLAUDE.md scar under
+# "Match the instrument to the artifact": a prose-review habit produces
+# prose-shaped evidence even when told to produce a test - round 3 correctly
+# ordered a DEMONSTRATION, and this script is what the author produced
+# instead of one. Four review rounds never questioned why two producers wrote
+# artifacts at all; removing that unexamined premise dissolved roughly eight
+# of that design's twelve findings.
+#
+# This is NOT live tooling. Do not import it, run it as a check, or "fix" the
+# forgery - repairing it would destroy the fossil the scar depends on.
 import hashlib, json
 
 def canon(obj):

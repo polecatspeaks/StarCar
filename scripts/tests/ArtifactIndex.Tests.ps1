@@ -54,17 +54,17 @@ Describe 'New-ArtifactIndex - the at column, year-spanning (M-A4-1)' {
         $yearJan2026 = @{
             schema = 'starcar-artifact/1'; kind = 'dispatched'; subject = 'year-jan-2026'
             session_id = 's'; at = '2026-01-15T00:00:00Z'
-            normalisation = @(); integrity = 'sha256:0000000000000000000000000000000000000000000000000000000000000'
+            normalisation = @(); integrity = 'sha256:0000000000000000000000000000000000000000000000000000000000000000'
         } | ConvertTo-Json
         $yearJul2026 = @{
             schema = 'starcar-artifact/1'; kind = 'dispatched'; subject = 'year-jul-2026'
             session_id = 's'; at = '2026-07-22T10:00:00Z'
-            normalisation = @(); integrity = 'sha256:1111111111111111111111111111111111111111111111111111111111111'
+            normalisation = @(); integrity = 'sha256:0000000000000000000000000000000000000000000000000000000000000000'
         } | ConvertTo-Json
         $year2099 = @{
             schema = 'starcar-artifact/1'; kind = 'dispatched'; subject = 'year-2099'
             session_id = 's'; at = '2099-01-01T00:00:00Z'
-            normalisation = @(); integrity = 'sha256:2222222222222222222222222222222222222222222222222222222222222'
+            normalisation = @(); integrity = 'sha256:0000000000000000000000000000000000000000000000000000000000000000'
         } | ConvertTo-Json
 
         [System.IO.File]::WriteAllText((Join-Path $script:Store 'year-jan-2026.json'), $yearJan2026)

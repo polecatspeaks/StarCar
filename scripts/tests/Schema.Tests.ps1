@@ -16,11 +16,17 @@ Describe 'Artifact schema and conformance vectors' {
         $s = Get-Content $script:Schema -Raw -Encoding UTF8 | ConvertFrom-Json
         $s.properties.kind.type | Should -Be 'string'
         $s.properties.kind.PSObject.Properties.Name | Should -Not -Contain 'enum'
+        $s.properties.outcome.type | Should -Be 'string'
+        $s.properties.outcome.PSObject.Properties.Name | Should -Not -Contain 'enum'
     }
 
     It 'both vocabulary files exist and parse' {
-        Test-Path (Join-Path $script:Vocab 'kinds.json') | Should -BeTrue
-        Test-Path (Join-Path $script:Vocab 'outcomes.json') | Should -BeTrue
+        $kindsPath = Join-Path $script:Vocab 'kinds.json'
+        $outcomesPath = Join-Path $script:Vocab 'outcomes.json'
+        Test-Path $kindsPath | Should -BeTrue
+        Test-Path $outcomesPath | Should -BeTrue
+        { Get-Content $kindsPath -Raw -Encoding UTF8 | ConvertFrom-Json } | Should -Not -Throw
+        { Get-Content $outcomesPath -Raw -Encoding UTF8 | ConvertFrom-Json } | Should -Not -Throw
     }
 
     It 'ships at least nine vectors, each with an .expect sibling' {

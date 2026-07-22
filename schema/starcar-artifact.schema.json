@@ -79,7 +79,7 @@
     },
     "integrity": {
       "type": "string",
-      "pattern": "^sha256:[0-9a-f]+$",
+      "pattern": "^sha256:[0-9a-f]{64}$",
       "description": "sha256:<hex> over the canonical body."
     }
   },
