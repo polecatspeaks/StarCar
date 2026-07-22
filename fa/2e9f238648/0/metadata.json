@@ -1,0 +1,93 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "fa2e9f238648",
+  "session_id": "64c15364-0933-4d6d-9b2e-d1ddbc918f9f",
+  "strategy": "manual-commit",
+  "created_at": "2026-07-22T14:52:12.6679902Z",
+  "branch": "dev",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "AGENTS.md",
+    "docs/probes/2026-07-22-spec7-probe-results.md",
+    "docs/setup.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-4-8[1m]",
+  "turn_id": "7f930c6f796e",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 1088,
+    "cache_creation_tokens": 4956234,
+    "cache_read_tokens": 229400192,
+    "output_tokens": 816827,
+    "api_call_count": 544
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01SA8kMnb5keujPU6SUsz8mF",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:brainstorming"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "7f930c6f796e",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 77,
+        "end": 78,
+        "entry_ids": [
+          "ca5b3d06-a20a-4a2d-9194-8f0e613bcf4b"
+        ],
+        "tool_use_id": "toolu_01SA8kMnb5keujPU6SUsz8mF"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01SA8kMnb5keujPU6SUsz8mF"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:brainstorming",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 67
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-07-22T14:52:11.9754121Z",
+    "agent_lines": 35,
+    "agent_removed": 0,
+    "human_added": 968,
+    "human_modified": 9,
+    "human_removed": 0,
+    "total_committed": 1012,
+    "total_lines_changed": 1012,
+    "agent_percentage": 3.458498023715415,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 647,
+      "user_lines_removed": 0,
+      "agent_lines_added": 44,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".claude/settings.local.json": 26,
+        ".claude/skills/gitnexus/gitnexus-cli/SKILL.md": 86,
+        ".claude/skills/gitnexus/gitnexus-debugging/SKILL.md": 101,
+        ".claude/skills/gitnexus/gitnexus-exploring/SKILL.md": 78,
+        ".claude/skills/gitnexus/gitnexus-guide/SKILL.md": 138,
+        ".claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md": 97,
+        ".claude/skills/gitnexus/gitnexus-refactoring/SKILL.md": 121
+      }
+    }
+  ]
+}
