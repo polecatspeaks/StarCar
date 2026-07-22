@@ -1698,3 +1698,7 @@ ok so heres my thinking 1. Yes. We're using the verified wreckage to make an imp
 ---
 
 yeah that looks much better and saner, and lays the right philosphy ground work for us to refer back to in times of questioning
+
+---
+
+ok PRing what we have is useless since our design is faulty. Do the redesign, we will PR when we have a good known working state. That's our merge north star. We don't PR/merge unless we have a good known working state.
