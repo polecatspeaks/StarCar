@@ -75,6 +75,22 @@ and will be the thing that was actually wrong.
 For each: **what would change if it were false?** If the answer is "most of this document,"
 that premise deserves its own scrutiny before anything else is written.
 
+## §2c - Probe list (what the desk CANNOT prove)
+
+> Everything this design assumes but **cannot verify from here**. Not premises you chose -
+> facts you could not check. Each with what would settle it.
+
+| Claim | Why unverifiable from the desk | What would settle it |
+|---|---|---|
+
+Borrowed from the ancestor shop's spec shape, where it is a mandatory section. The rule
+that makes it work: **an unverifiable claim goes HERE explicitly - never assumed into the
+mechanism.** A probe item is honest; the same claim stated as fact in §5 is a defect
+waiting for a car to hit it.
+
+If a probe item is load-bearing, it also becomes a BLOCKING TEST in §7 - named, with the
+branch its negative result takes.
+
 ## §3 - The problem
 
 One or two paragraphs. What is broken or missing, and what does the owner actually want -
