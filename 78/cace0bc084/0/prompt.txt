@@ -3250,3 +3250,7 @@ abstract: APPROVE. The same Sonnet car fixed its own M-A4-1 defect from a precis
 <result>ok</result>
 <usage><subagent_tokens>26118</subagent_tokens><tool_uses>0</tool_uses><duration_ms>1648</duration_ms></usage>
 </task-notification>
+
+---
+
+ok before we go, let's hold a quick post mortem. What have we learned over this session? what is caputured correctly according to our constitioun and laws? What can we improve upon?
