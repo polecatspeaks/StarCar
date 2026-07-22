@@ -288,7 +288,9 @@ Round 1's right-sizing ruling adopted: **three cars, not four.**
 
 Three cars, three reviewers, plus design, spec and plan with reviews: **roughly 11
 dispatches**, model mix Opus throughout, size class **medium**. Down from rev 1's 14.
-**Owner approval of this figure is not yet recorded** and is required before dispatch.
+**Approved by the owner on 2026-07-22, before dispatch** - the cost discipline rule is
+that exceeding a window is a decision made beforehand, never a discovery on the bill.
+REJECT rounds add to this figure and are expected outcomes, not overruns.
 
 Car 3 wires this repo's first CI and is **not done when CI is green - done when someone has
 WATCHED it go red** (fault-inject, observe, revert, put the run URL in the report). A green
