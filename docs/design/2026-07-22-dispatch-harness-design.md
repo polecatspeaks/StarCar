@@ -6,9 +6,13 @@ Date: 2026-07-22
 Written through `docs/templates/design-doc.md` - the first document to use it.
 History: revs 1-4 REJECT (7, 3, 4, 5 Majors), escalated to the owner. See §11.
 
-> **This document is roughly a third the size of rev 4, and that is the result, not a
-> summary.** §0 amputated the protocol half into executable work; §2 killed a premise that
-> was worth eight of twelve findings. Both happened before a line of mechanism was written.
+> **This document is 232 lines against rev 4's 454 - about half - and that is the result,
+> not a summary.** §0 amputated the protocol half into executable work; §2 killed a premise
+> worth eight of twelve findings. Both happened before a line of mechanism was written.
+>
+> *(The first draft of this line claimed "a third". Measured: 232/454 = 51%. Corrected
+> before review rather than after, which is the point of measuring a claim you are about to
+> publish.)*
 
 ## §0 - Instrument check
 
