@@ -1,162 +1,267 @@
 Status: Current
 
-# The Dispatch Harness: One Artifact Per Dispatch (#7)
+# The Dispatch Harness: One Artifact Per Dispatch EVENT (#7)
 
 Cargo: #7. Successor tickets: #1 (the yard board consumes this store), #6 (quickstart
-runner), #8 (board columns). Laws served: **First** (never render a dispatch state the
-artifacts cannot back), **Fourth** (a dispatch the store never heard of is not silently
-lost), **Fifth** (the board says which detection tier is in force), **Sixth** (one writer,
-so there is no second copy to reconcile), **Seventh** (the schema is the product; producers
-are adapters).
+runner), #8 (board columns). Laws served, each naming the section that delivers it:
+**First** §6 + §7 · **Second** §3 (intent supersession) · **Third** §5.1 · **Fourth** §2.4 +
+§6 · **Fifth** §2.5 · **Sixth** §5.2 · **Seventh** §3.2 (vocabularies as data).
 
 Source of truth: `docs/design/2026-07-22-dispatch-harness-design.md` rev 6 **plus BINDING
-AMENDMENT A1**, which supersedes contradicting design text. Design review: 5 rounds, REJECT
-each, closed by recorded conductor ruling rather than a sixth round (design §9b).
+AMENDMENT A1**. Design review: 5 rounds, closed by recorded conductor ruling (design §9b).
 
-Owner decisions locked in: the harness is **core product, not tooling** - the artifacts are
-the board's data source, not merely a record; **path normalisation is portability, not
-curation**; nothing reaches `main` except from a good known working state.
+Owner decisions locked: the harness is **core product, not tooling**; **path normalisation is
+portability, not curation**; nothing reaches `main` except from a good known working state.
+
+**[M8, folded] Retitled to "per dispatch EVENT".** Design P2 fixes the grain as a
+behavioural premise - *"a dispatch is the unit of record"* - and `design:137` says *"one record
+per dispatch event"*. Rev 1 dropped "event" from the title while §6 required two records for
+one dispatch, and simultaneously handed grain to the schema artifact. **Grain is behavioural
+and is fixed here** (ruling 1); the schema owns field names, types, ordering and identity.
 
 ## 1. The problem
 
-A dispatch's output is ephemeral. Today the conductor runs `scripts/Land-Verdict.ps1` by
-hand with seven mandatory parameters (`Land-Verdict.ps1:39-51`), which is **vigilance** -
-the weakest tier in the Healing Loop's hierarchy. Entire.io gives durability but not
-addressability. `README.md:20-21` promises review verdicts "committed in-repo as they
-happen"; that promise is currently kept by someone remembering.
+A dispatch's output is ephemeral. `scripts/Land-Verdict.ps1:39-51` requires seven mandatory
+parameters typed by hand - **vigilance**, the weakest tier. Entire.io gives durability but not
+addressability. `README.md:20-21` promises verdicts *"committed in-repo as they happen"*; that
+promise is currently kept by someone remembering.
 
-Seven verdicts have landed this way. Zero dispatch *starts*, honest stops, or costs have
-been recorded at all, so the board has no source for anything except completed reviews.
+Eight verdicts have landed this way. Zero dispatch *starts*, honest stops, or costs have been
+recorded at all.
 
 ## 2. Architecture
 
 **One writer, one read-only detector** (design P1). The producer hook writes; reconciliation
 only ever *raises*. A human backfilling is that same single writer acting deliberately.
 
-**The producer** binds two hooks:
+### 2.1 The producer
 
 | Record | Hook | Verified |
 |---|---|---|
-| `dispatched` | `PostToolUse` matcher `Task` | Fires at launch with `status: async_launched`, no body - `docs/reviews/2026-07-22-harness-design-round1-REJECT.md:66` |
-| `returned` | `SubagentStop` | Fires **exactly once per subagent** - 74 firings across 74 distinct `agent_id`s, 4 of 4 dispatches completing after the probe existed (design amendment A1) |
+| `dispatched` | `PostToolUse` matcher `Task` | Fires at launch, `status: async_launched`, no body - `docs/reviews/2026-07-22-harness-design-round1-REJECT.md:66` |
+| `returned` | `SubagentStop` | Fires **exactly once per subagent** - 74 firings / 74 distinct `agent_id`s (amendment A1) |
 
-**Two independent filters, and the second is free.** The `SubagentStop` payload carries
-`agent_type`; only dispatched cars carry a real type (4 of 74 observed). Independently,
-**only real dispatches leave a persistent transcript**: the subagents directory holds
-exactly 7 `.jsonl` files against 74 firings, one per car dispatch, 347KB-676KB each. A
-producer that filters on either is correct; filtering on both is belt-and-braces and costs
-one `Test-Path`.
+### 2.2 Filtering — `agent_type` ONLY [M5, folded; ruling 2]
 
-**The payload hands over `agent_transcript_path` directly**, so the producer never scrapes
-the parent session transcript. This is the whole of the vendor coupling: one documented
-field, not a format. `Land-Verdict.ps1:78-115`'s parent-transcript scraping is retired
-(§4).
+**The producer filters on `agent_type`, unconditionally and alone.** Rev 1 offered
+transcript-existence as an equal alternative and called the pair "belt-and-braces". That was
+wrong three ways:
 
-**The detector** reads the store and raises findings. It never writes. Tier 1 (every
-`dispatched` has a successor or renders unaccounted-for) needs only the artifacts, so any
-conforming shop gets it. Tier 2 (an enumerable second source finds dispatches the store
-never heard of) is producer-dependent; ours is the Entire checkpoint branch.
+- It depended on **this spec's own open probe** (§7.4): if `agent_transcript_path` is only
+  populated *after* the runner finishes writing, a `Test-Path` filter rejects **every** real
+  dispatch and the store stays empty. The 7-files observation was a post-hoc directory
+  listing taken at a different moment than the one the producer runs in.
+- "Either is correct" is a **menu, not a requirement**, and an implementer seeing only its own
+  task picks one.
+- Under the endorsed pair the `agent_type` fault-injection could not fail (§6).
+
+The transcript-existence test may be **added** once §7.4 returns positive, and **never as the
+sole filter**.
+
+### 2.3 Obtaining the outcome [M6, folded]
+
+The `SubagentStop` payload carries `agent_transcript_path`, so the producer never scrapes the
+parent session transcript.
+
+**The agent ends its report with an envelope** - a fenced block, info string
+`starcar-artifact`, carrying `outcome`, `findings` and `abstract`. **Angle brackets are
+forbidden inside it** (measured: a sentinel form was neutralised by a safety filter; a later
+form landed with `>` HTML-escaped; the angle-bracket-free form landed byte-clean).
+
+That is **how a `returned` record obtains its outcome**, which rev 1 never stated - the
+feature's central mechanism, unspecified. `docs/templates/car-brief.md` does not mandate an
+envelope today, so that work is real and outstanding (§9).
+
+**Absent and malformed are different faults:** no envelope is `outcome: error`,
+`envelope: absent` - **a brief failure**; present-but-unparseable is `envelope: malformed` -
+**a producer failure**. Both land with the body intact.
+
+### 2.4 Concurrent writes [M6, folded; ruling 5]
+
+Carried from `design:230`, not reopened as an unknown: **the producer writes its own path
+only and never `git commit -a`; a contended commit retries; a failed write is RAISED, never
+dropped silently** (Law 4).
+
+### 2.5 The detector
+
+Tier 1 (every `dispatched` has a successor or renders unaccounted-for) needs only the
+artifacts, so any conforming shop gets it. Tier 2 (an enumerable second source) is
+producer-dependent; ours is the Entire checkpoint branch. **The board renders which tier is in
+force.**
+
+**[m5, folded] Tier 2 is not CI-reachable as configured:** `.github/workflows/ci.yml:32` is a
+bare `actions/checkout@v4` with no ref fetch. Car 3 owns the fetch.
 
 ## 3. Contracts
 
-**Owned by the schema artifact, NOT by this spec** (design §0 - the format half is
-executable or it does not exist): field names and types, the record grain, the index
-format, and the path-normalisation substitution rule.
+**Owned by the schema artifact** (design §0 - the format half is executable or it does not
+exist): field names, types, ordering, identity, the index format, and the path-normalisation
+substitution rule.
 
-**Owned here, because they are behavioural:**
+**Owned here, because behavioural:**
 
-- Kind vocabulary: `dispatched`, `returned`, `presumed-lost`, `intent`, `ruling`.
-- Kind precedence for one dispatch: `returned` > `presumed-lost` > `dispatched`.
-- Within a kind: **latest-`at` wins, and the board renders that a supersession occurred**
-  (design §5.8.1, adopting round 4's ruling grounded in `Land-Verdict.ps1:112-115`).
-- `unaccounted-for` is **derived**; `presumed-lost` is the record that closes it.
-- A later `intent` for a subject supersedes the earlier one - that is how a hold is
-  withdrawn without mutation.
-- **Spend renders only from `cost`; the lane is dark when absent, never back-filled from
-  context.** The two never share a scale, an axis, or a summary row.
+### 3.1 Kinds, precedence, supersession
+
+Kinds: `dispatched`, `returned`, `presumed-lost`, `intent`, `ruling`.
+Precedence for one dispatch: `returned` > `presumed-lost` > `dispatched`.
+Within a kind: **latest-`at` wins, and the fold exposes a supersession marker**
+(`Land-Verdict.ps1:112-115` already implements this rule for repeat notifications).
+`unaccounted-for` is **derived**; `presumed-lost` is the record that closes it.
+A later `intent` for a subject supersedes the earlier one - how a hold is withdrawn (Law 2).
+
+**[M4, folded; ruling 3] These are FOLD requirements, not rendering requirements.** The fold
+*exposes* a supersession marker and *reports* spend as absent; what the board draws is #1's
+job, and §8 keeps rendering out of scope. Rev 1's wording ("the board renders…") put board
+code inside this train's scope, against its own non-goals.
+
+### 3.2 Vocabularies are DATA [M6, folded]
+
+Kind and outcome vocabularies **ship as data, not as prose in this document**. An unrecognised
+value is rendered loudly by name and treated as **a discovery, not a bug**. An unreadable
+vocabulary file is **one board-level fault, never N per-lane faults**. Carried from
+`design:147-150` and `design:228`; rev 1 claimed Law 7 in its header while dropping Law 7's
+mechanism.
+
+### 3.3 Liveness gradient [M6, folded]
+
+Each dispatch carries a **budget**; a **shop-level default applies when omitted, so absent
+never means infinite**. Past budget the fold reports **overdue with elapsed and budget**
+*before* it reports unaccounted-for - **a gradient, not a cliff, so a mis-set budget degrades
+visibly**. A `presumed-lost` record carries its own basis: what was observed, by whom, against
+which budget.
+
+### 3.4 Cost and context [M6, folded — P6]
+
+Two fields, differently named. **Spend renders only from `cost`**; where absent the lane is
+dark and is **never** back-filled from context. **Context is producer-optional exactly as
+spend is** (design P6) - a stranger's runner may report no high-water mark.
+
+### 3.5 An un-backfilled gap is a first-class state [M6, folded — ruling Q2]
+
+A detected gap that is never filled is **visible debt, permanently, until filled**. A gap
+living only in a CI log is an unknown that fails to render as unknown.
 
 ## 4. Retirement list
 
-Deleted in this train, callers enumerated, "zero remaining callers" grep-proven by the car
-and re-proven by its reviewer.
+Callers and mirrors enumerated **at spec time**; the implementer *re*-proves "zero remaining
+callers", never first-proves.
 
-| Retired | Where | Replaced by |
-|---|---|---|
-| Hardcoded project path | `Land-Verdict.ps1:59` | git-root derivation (Law 7 - a stranger cannot run it today) |
-| Parent-transcript scraping | `Land-Verdict.ps1:78-115` | `agent_transcript_path` from the hook payload |
-| Seven-parameter manual invocation | `Land-Verdict.ps1:39-51` | hook-driven; the CLI survives only for backfill |
-| Vacuous-pass exits | `Verify-Verdict.ps1:87-96` - exits 0 when the directory is absent **or holds no files**, invoked bare at `ci.yml:47` | fail when the expected store is empty; the same workflow already refuses this shape for tests at `ci.yml:62` |
-| `docs/reviews/` as a location | 7 landed verdicts | migrated into the artifact store, history preserved, **in the same commit** that creates the index so `README.md:20-21` is never momentarily false |
-| Both scripts' self-description as "the harness" | `Land-Verdict.ps1:1`, `Verify-Verdict.ps1:1-8` | "the Claude Code producer" - one adapter among possible others (#7) |
+| Retired | Where | Callers / mirrors found at spec time | Replaced by |
+|---|---|---|---|
+| Hardcoded project path | `Land-Verdict.ps1:59` | sole caller `Get-LiveTranscriptPath` | derivation from the git root. **[m2] The target directory name is a MANGLING of the repo path and the rule is undeclared; it also differs in a detached worktree.** The mangling rule is the implementer's first task, not an assumption |
+| Parent-transcript scraping | `Land-Verdict.ps1:78-115` | called once at `:187` | `agent_transcript_path` from the hook payload |
+| Seven-parameter manual invocation | `Land-Verdict.ps1:39-51` | conductor, by hand | hook-driven. **[m3] The CLI survives for backfill and backfill happens precisely when no hook fired, so there is no payload path: the CLI takes an EXPLICIT transcript path argument** |
+| Vacuous-pass exits | `Verify-Verdict.ps1:87-90` (dir absent) and `:94-96` (zero files); invoked bare at `ci.yml:47` against the `:24` default `docs/reviews` | `ci.yml:47` | fail when the expected store is empty. **[M3, folded; ruling 4] The verifier is repointed at the new store and `ci.yml:47` is updated IN THE MIGRATION COMMIT.** Rev 1's two rows contradicted: one emptied `docs/reviews`, the other made an empty store fatal, and the literal reading turned CI red permanently |
+| `docs/reviews/` as a location | 8 landed verdicts | **[M2] `docs/setup.md:23-24`**, **`ci.yml:47`**, `README.md:20-21`, **`docs/friction-log.md:46`** | migrated into the store, history preserved, index created **in the same commit** |
+| ~~Both scripts' self-description as "the harness"~~ | **[M1, WITHDRAWN]** | — | **The string does not exist.** `grep -c -i harness` returns **0 and 0**; `Land-Verdict.ps1:1` says *"extract a dispatched agent's verdict VERBATIM"* and `Verify-Verdict.ps1:6` says *"the checker"*. Rev 1 inherited the claim from `design:257` without opening either file. The framing that DOES need fixing is at `docs/setup.md:24`, and it is row 5's job |
 
-## 5. Lifecycle events (mandatory section)
+## 5. Lifecycle
 
-**This feature introduces NO mutable service state, and that is a consequence of the design
-rather than an accident.** Stating it explicitly because a spec that introduces state
-without this section was the ancestor's most expensive documentation failure.
+### 5.1 Process state: none, and that is a consequence of the design
 
 | Component | State | Why none |
 |---|---|---|
-| Producer hook | none | Fires, writes one file, exits. No process outlives the write. |
-| Detector | none | Reads the store, emits findings, exits. |
-| Index generator | none | Reads artifacts, writes `INDEX.md`, exits. |
+| Producer hook | none | Fires, writes one file, exits |
+| Detector | none | Reads, emits findings, exits |
+| Index generator | none | Reads artifacts, writes the index, exits |
 
-The one-writer premise is what buys this: two producers would have required remembered
-identity, dedup and clock state, which is exactly the machinery the design deleted. **If any
-car finds itself adding a field that outlives a process, that is a plan-vs-design
-contradiction and an honest stop**, not a ledger row to be filled in quietly.
+The one-writer premise buys this: two producers would have needed remembered identity, dedup
+and clock state - the machinery the design deleted. **If any implementer finds itself adding a
+field that outlives a process, that is a plan-vs-design contradiction and an honest stop.**
 
-The store itself is durable state, but it is append-only files under git - its lifecycle is
-git's, and `docs/contracts/state-ledger.md` is instantiated by car 1 to say exactly that.
+### 5.2 Derived and committed artifacts [M7, folded; ruling 6]
+
+Rev 1's table considered only *process* state and therefore could not fail. The **index** is a
+generated file **committed to git** - a second copy of the store that can drift from it, which
+Law 6 forbids by name.
+
+**Ruling adopted: the index is regenerated-and-diffed by CI.** A stale index fails the build.
+The generator is stateless; the *artifact* is derived state, and its freshness now has an
+owner. The append-only records themselves remain git's lifecycle, which is honest.
 
 ## 6. Testing
 
-Cells: a `dispatched` written at launch and its `returned` at stop produce two records for
-one subject; kind precedence resolves to `returned`; two `returned` records resolve to
-latest-`at` **with the supersession rendered**; a `dispatched` past budget with no successor
-derives unaccounted-for; a later `intent` supersedes an earlier hold; an internal subagent
-(no `agent_type`, no persistent transcript) produces **no artifact at all**; spend absent
-renders a dark lane and never borrows the context figure.
+Cells: a `dispatched` at launch and a `returned` at stop produce two records for one subject;
+precedence resolves to `returned`; two `returned` records resolve to latest-`at` **and the
+fold exposes a supersession marker**; a `dispatched` past budget reports **overdue with
+elapsed and budget** before unaccounted-for; a later `intent` supersedes an earlier hold; an
+internal subagent (no `agent_type`) produces **no artifact**; spend absent is **reported
+absent** and never borrowed from context; an unrecognised vocabulary value is reported by
+name; an unreadable vocabulary file is **one** fault.
 
-**Non-vacuity, mandatory:** fault-inject each guard once, watch it fail, revert, document.
-Specifically - remove the `agent_type` filter and confirm the store floods (74 artifacts, not
-7); empty the store and confirm the extended verifier **fails** where today it exits 0.
+**Non-vacuity, mandatory** - fault-inject each guard once, watch it fail, revert, document:
+
+- **[M5, folded] Remove the `agent_type` filter and confirm the store floods: 74 artifacts
+  against 4**, both counts taken over the same probe window. Rev 1 stated "74, not 7", mixing
+  a windowed firing count with a lifetime transcript count - and under its own endorsed
+  belt-and-braces producer the store would not have flooded at all, so the guard could not
+  fail.
+- Empty the store and confirm the extended verifier **fails** where today it exits 0.
+- Stale the index and confirm CI **fails** (§5.2).
 
 ## 7. Probe list (what the desk cannot prove)
 
-1. **Does the hook fire when a session is killed mid-dispatch?** Every one of the 74
-   observations was a clean completion. Settled by: kill a session with a dispatch in
-   flight and inspect the store. **This is the case tier 1 exists for**, so it is
-   load-bearing and gets a blocking test before car 2 ships.
-2. **Does a slow or failing hook command block or delay the dispatch?** Unknown; the probe
-   hook was trivial. Settled by: a deliberately slow hook, timed.
-3. **Do two hooks firing simultaneously contend on the git index?** Three cars are planned.
-   Settled by: two concurrent dispatches, observed.
-4. **Are the four cost counters present for every model tier?** Verified only on Opus
-   dispatches. Settled by: one dispatch on another tier, counters inspected.
-5. **Does `agent_transcript_path` exist at the moment the hook fires**, or only after the
-   runner finishes writing it? Settled by: stat the path inside the hook.
+1. **Does the hook fire when a session is killed mid-dispatch?** All 74 observations were
+   clean completions. **Load-bearing - blocking test before car 2.**
+2. Does a slow or failing hook command block or delay the dispatch?
+3. Are the four cost counters present for every model tier? Verified only on one tier.
+4. **Does `agent_transcript_path` exist at the moment the hook fires**, or only after the
+   runner finishes writing it? **Load-bearing** - §2.2 depends on it.
+5. **[m1, added] Is every dispatch in this shop asynchronous?** §2.1's launch-time claim rests
+   on an `isAsync: true` payload. Under a synchronous `Task`, `dispatched` and `returned` would
+   land in the same breath and tier 1 goes vacuous.
 
-Items 1 and 5 are load-bearing and become blocking tests. Items 2-4 may be answered during
-car 2 provided the answers are recorded.
+*[M6/ruling 5: rev 1's probe on git-index contention is DELETED. `design:230` already ruled
+it; it is carried in §2.4. A probe may not restate a settled ruling.*
 
 ## 8. Non-goals
 
-Signing beyond the integrity hash. Retention and pruning. Producers for other runners
-(the format must not prevent them; building them is not this train). Rendering - that is
-the yard design's job (#1). Migrating dispatches from before this train, except the seven
-landed verdicts. A `background_tasks`-based liveness source: the payload carries one, but in
-4 of 74 payloads the stopping agent still listed **itself** as running, so it is
-corroboration at best and is deferred.
+Signing beyond the integrity hash. Retention and pruning. Producers for other runners.
+**Rendering - #1's job** (§3.1 states fold requirements only). Migrating pre-train dispatches
+except the eight landed verdicts. A `background_tasks` liveness source: in 4 of 74 payloads the
+stopping agent listed *itself* as running, so it is corroboration at best.
+
+## 9. Contracts touched [M2, folded — the section rev 1 had no carrier for]
+
+| Document | What changes | Owner |
+|---|---|---|
+| `docs/contracts/state-ledger.md` | Instantiated - records that the store is append-only under git and process state is nil | Car 1 |
+| `docs/contracts/gating-matrix.md` | Instantiated - tier 1, tier 2, the index-staleness gate | Car 1 |
+| `CLAUDE.md` | Every brief must mandate the envelope (§2.3) | Car 2 |
+| `docs/templates/car-brief.md`, `.claude/agents/car.md`, `/goodnight` skill | Envelope and sweep duties | Car 2 |
+| `docs/setup.md:23-24` | Both rows describe the retired scripts and `docs/reviews/` | Car 3 |
+| `README.md:46-47` | Adapter list still says "a conductor-maintained state file" | Car 3 |
+| `docs/friction-log.md:46` | Cites `Verify-Verdict` running only on memory | Car 3 |
+| `.github/workflows/ci.yml` | Verifier repoint (§4 row 4), index-staleness gate (§5.2), checkpoint-branch fetch (§2.5) | Car 3 |
+
+## 10. Fidelity to the design
+
+| Design item | Where it lands here |
+|---|---|
+| P1 one writer / read-only detector | §2 |
+| P2 dispatch-event grain | title, §3 (ruling 1) |
+| P4 hook fires on stop | §2.1, closed by A1 |
+| P6 context producer-optional | §3.4 |
+| Kind precedence + three supersession cases | §3.1 |
+| Liveness gradient + budget + shop default | §3.3 |
+| Envelope, absent vs malformed | §2.3 |
+| Concurrency write rule | §2.4 |
+| Vocabularies as data | §3.2 |
+| Two-tier detection, tier rendered | §2.5 |
+| Cost/context split, dark lane | §3.4 |
+| Ruling Q2 un-backfilled gap rendered | §3.5 |
+| Normalisation before hashing | §8 (unchanged from design §9) |
 
 ## 12. Review record
 
-Design review, 5 rounds, all REJECT, all landed verbatim and hash-verified in
-`docs/reviews/`: 7, 3, 4, 5, 2 Majors. Round 4 escalated to the owner under a
-reviewer-set cap; round 5 recorded that **the failure class moved** - rounds 1-4 found only
-protocol defects, round 5 found none - which was the falsifiable evidence that the design
-workflow artifact did work. Closed by recorded conductor ruling (design §9b), not by a
-sixth round.
+Design review: 5 rounds, 7/3/4/5/2 Majors, all landed verbatim in `docs/reviews/`. Round 5
+recorded that **the failure class moved** - rounds 1-4 found only protocol defects, round 5
+found none. Closed by recorded conductor ruling.
 
-Spec review: *pending - this section is filled by the reviewer's verdict and stays in this
-document forever.*
+Spec review round 1: **REJECT, 8 Major, 7 Minor, 6 rulings** -
+`docs/reviews/2026-07-22-harness-spec-round1-REJECT.md`. All eight Majors folded above and
+marked `[M#, folded]`; all six rulings adopted; minors m1, m2, m3, m5 folded, m4 resolved by
+§3's split, m6 and m7 resolved by §10 and this section. The reviewer ruled the defects
+**omissions, not structure** - a coverage defect, extended with a rider rather than rewritten.
+
+Spec review round 2: *pending.*
