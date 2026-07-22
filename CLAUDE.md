@@ -21,6 +21,33 @@ one adversarial reviewer; only structural work (new subsystems, rewrites, cross-
 contracts) pays the full design → spec → plan ladder. Porting maximum ceremony onto every
 change is itself a process failure (the autoimmune mode - see the Healing Loop's edges).
 
+## The statute index (navigate; the rules and their scars live in full below)
+
+| Section | The rule, compressed |
+|---|---|
+| HARD INVARIANT | Public transcripts: StarCar sessions are StarCar-only |
+| NORTH STAR | Documentation ranks equal to code; the stranger is the audience; the showcase never edits the record |
+| TDD | Red-first, always; state pass counts before every commit |
+| The ladder | Design → spec → plan → cars, each gate adversarial, for structural work |
+| Match the instrument | Behavioural work gets prose; formats/protocols get an EXECUTABLE spec |
+| NO HEADERS HERE | Truth is constructed by probes; probes must LAND as durable artifacts |
+| LAW-FIRST design | Constraints and premises on the page BEFORE the mechanism |
+| ASK FOR THE PRIOR ART | It probably exists and was not ported; the question costs one sentence |
+| Build from wreckage | Only when no prior art exists; never for a rung never run |
+| GUIDE STAR | Blameless is not vague and not polite; REJECT and reversal are SUCCESS outcomes with a durable artifact |
+| Review calibration | Any Major = REJECT; reviewers run suites themselves; swirl triggers escalate; reviewer rotation is carrier-backed |
+| The sentence check | Cross-boundary values: trace every hop, file:line |
+| Branch topology | Never commit to main; merge only from a known good state; protection binds admins |
+| Dispatch rules | Name the model; no nested delegation (by toolset); verify the worktree base; cars never push |
+| Verification honesty | Every claim carries suite, count, SHA, observer; second party re-derives; wait for CI's terminal state |
+| CARRIER rule | Obligations cross rungs in documents with IDs, never by memory; receivers refuse delivery without them |
+| Living contracts | State changes update the ledger in the same commit |
+| Rewrite vs extend | Optimize for least NEW code reviewed; rewrites lose encoded incident knowledge |
+| Cost discipline | Spend approved before dispatch; a car and its review are one unit |
+| Tracking | Every piece of work gets an issue; one area label |
+| Session starts | The tooling retro; log friction as it happens; never drop a tooling request; doctrine dedup check |
+| Session ends | A decision point: triage in-flight work, checkpoint in writing, three closing sentences |
+
 ## NORTH STAR: documentation ranks equal to code
 
 Not "documented code." Documentation and code are two halves of one deliverable, held to
@@ -440,6 +467,20 @@ CI proven in both directions, and six public verdicts. Not consolation - account
   round's own fixes created. The third is the sharpest - it means the defect is being
   RELOCATED, not resolved. The reviewer that detects it sets a cap; the conductor honours
   the cap.
+- **Reviewer rotation (2026-07-22): same-agent delta reuse is an OPTIMIZATION, never a
+  dependency.** The landed verdicts are the authoritative round-history carrier -
+  "obligations cross rungs by carrier, never by memory" applies to reviewers' memories
+  too. Delta briefs stay self-sufficient (base SHA, finding IDs, round history), so a
+  fresh reviewer given the landed verdicts can pick up any round cold. Mechanical
+  rotation trigger, no judgment call: rotate to a fresh reviewer when round count
+  reaches 4 OR the reviewer's transcript (path in the SubagentStop probe log) exceeds
+  a size that risks compaction. **The first rotation is run as a DRILL** - deliberately,
+  when not forced - and the fresh reviewer's ruling is compared to what continuation
+  would plausibly have found: agreement proves the verdicts carry everything; divergence
+  is a finding about the VERDICT TEMPLATE, caught at drill cost. Scope note: this
+  binds REVIEWERS, whose durable artifact is the verdict. Cars mid-fix-cycle keep
+  same-agent reuse - their unwritten context (the code they just wrote) is real value
+  and the cycle ends within a round or two.
 
 *Scar: a design ran four rounds at 7, 3, 4, 5 Majors, clustered in one section, with round
 4 observing that two of its five were defects round 3's fixes had introduced. The author
@@ -670,6 +711,12 @@ Every new session opens with a retro on tooling and harness friction, before oth
    A capability we deliberately deferred will look exactly like a missing one, and a tool
    nagging about a state we chose is working as designed. The retro is itself an
    instrument, and an instrument that cries wolf is worse than none.
+6. **The doctrine dedup check (2026-07-22).** Ask: do any two sections of this file now
+   say the same thing? Doctrine can violate Law 6 too - sections drift into overlap as
+   they accumulate. Merge on yes; "no overlap" is the usual and valid outcome. This
+   bounded question at retro time is the growth guard for this file; restructuring is
+   trigger-gated (see `docs/setup.md`), never preemptive - solve the problems in front
+   of us, and accept that the shape of what comes later cannot be predicted from here.
 
 *Scar: the first retro ever run classified GitNexus's stale-index warning as a
 "cross-project tooling leak" and recommended suppressing it. `docs/setup.md` already
@@ -707,3 +754,48 @@ session. Triage in-flight work first (wait for the car-and-review unit, or write
 packet that is a re-dispatch spec, not a bookmark), sweep pushes, checkpoint state in
 writing, sync the board, state CI's disposition, and close with three sentences: what
 landed, what is parked, what happens first tomorrow.
+
+<!-- gitnexus:start -->
+# GitNexus — Code Intelligence
+
+This project is indexed by GitNexus as **StarCar** (593 symbols, 599 relationships, 0 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+
+> Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
+
+## Always Do
+
+- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
+- **MUST run `detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows. For regression review, compare against the default branch: `detect_changes({scope: "compare", base_ref: "main"})`.
+- **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
+- When exploring unfamiliar code, use `query({search_query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
+- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `context({name: "symbolName"})`.
+- For security review, `explain({target: "fileOrSymbol"})` lists taint findings (source→sink flows; needs `analyze --pdg`).
+
+## Never Do
+
+- NEVER edit a function, class, or method without first running `impact` on it.
+- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
+- NEVER rename symbols with find-and-replace — use `rename` which understands the call graph.
+- NEVER commit changes without running `detect_changes()` to check affected scope.
+
+## Resources
+
+| Resource | Use for |
+|----------|---------|
+| `gitnexus://repo/StarCar/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/StarCar/clusters` | All functional areas |
+| `gitnexus://repo/StarCar/processes` | All execution flows |
+| `gitnexus://repo/StarCar/process/{name}` | Step-by-step execution trace |
+
+## CLI
+
+| Task | Read this skill file |
+|------|---------------------|
+| Understand architecture / "How does X work?" | `.claude/skills/gitnexus/gitnexus-exploring/SKILL.md` |
+| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md` |
+| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus/gitnexus-debugging/SKILL.md` |
+| Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
+| Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
+| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
+
+<!-- gitnexus:end -->

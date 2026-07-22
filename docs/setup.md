@@ -44,6 +44,8 @@ plugin (brainstorming, writing-plans, TDD skills), the Claude-in-Chrome browser 
 | CI watcher / publish | First release channel, or the first time CI is triggered rather than pushed | **Pattern now ported** - `ops-script-patterns.md` §3: REFUSE to trigger unless local HEAD equals origin, wait for the dispatched run to appear rather than assuming, watch to completion, and confirm the BUILT sha equals the intended sha. Directly relevant already: CI has been checked by hand all session. |
 | Probe suite in CI | Car 3's `ci.yml` touch (the migration commit) | Wire `Invoke-Pester -Path ./scripts/probes` as a substrate-floor step BEFORE the test suite, with the zero-test refusal pattern. Tracked as #10; suite already landed and proven both directions. |
 | Spec §7 probe 2 (slow/failing hook) | Car 2's plan, before its producer hook lands | Timed probe: hook with a deliberate sleep, measure whether dispatch launch/stop latency moves. Probes 1, 3, 4 already answered - see `docs/probes/2026-07-22-spec7-probe-results.md`. |
+| CLAUDE.md restructure | A worker misses a rule AND the miss traces to LENGTH (not any miss, not preemptively) | The statute index and the retro's doctrine-dedup check are the growth guards until then. Scars stay attached to their rules (founding principle) - any restructure preserves that. |
+| Reviewer-rotation drill | Next multi-round review gate (cars 2-3 train) | Deliberately rotate to a FRESH reviewer mid-series with only the landed verdicts as carriers; agreement proves the verdict template carries everything, divergence is a template finding. See Review calibration in CLAUDE.md. |
 
 ## Entire.io session mirroring: ENABLED (owner decision, 2026-07-21)
 
