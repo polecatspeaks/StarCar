@@ -121,4 +121,23 @@ function Get-AtInstant {
     }
 }
 
-Export-ModuleMember -Function Test-StarcarArtifact, Get-AtInstant
+function Get-Sha256Hex {
+    <#
+      sha256 hex digest of a UTF-8 string. THE ONE OWNER for this contract (Law 6,
+      docs/plans/2026-07-22-pr18-correctness-fixes-plan.md F4): previously script-local in
+      Produce-Artifact.ps1 (F4's named target); extracted here so the producer and the
+      store-integrity test (StoreIntegrity.Tests.ps1) consume ONE function, never a copy
+      that can drift from what actually computed a landed record's `integrity`.
+      Migrate-Verdicts.ps1 carries its own script-local copy of the same idiom and is
+      OUT OF SCOPE for this fix (F4 names only Produce-Artifact.ps1); a future consolidation
+      is a separate, disclosed decision, not folded in here.
+    #>
+    param([Parameter(Mandatory)] [string]$Text)
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($Text)
+    $hash = $sha.ComputeHash($bytes)
+    $sha.Dispose()
+    ([System.BitConverter]::ToString($hash) -replace '-', '').ToLower()
+}
+
+Export-ModuleMember -Function Test-StarcarArtifact, Get-AtInstant, Get-Sha256Hex

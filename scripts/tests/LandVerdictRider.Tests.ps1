@@ -223,6 +223,10 @@ Describe 'Producer agent_type filter NON-VACUITY (spec S6 M5 flood)' {
         $patchDir = Join-Path ([System.IO.Path]::GetTempPath()) ("floodpatch-" + [guid]::NewGuid().ToString('N'))
         New-Item -ItemType Directory -Path $patchDir -Force | Out-Null
         Copy-Item (Join-Path $script:RepoRoot 'scripts/Envelope.psm1') (Join-Path $patchDir 'Envelope.psm1')
+        # F4 (docs/plans/2026-07-22-pr18-correctness-fixes-plan.md) gave Produce-Artifact.ps1
+        # a second module dependency (Get-Sha256Hex, extracted to Artifact.psm1) -- the
+        # patched copy needs it alongside it too, same as Envelope.psm1 above.
+        Copy-Item (Join-Path $script:RepoRoot 'scripts/Artifact.psm1') (Join-Path $patchDir 'Artifact.psm1')
         $src = Get-Content $script:Producer -Raw
         $patched = $src -replace [regex]::Escape("if ([string]::IsNullOrWhiteSpace(`$agentType)) { exit 0 }   # internal subagent: no record"), '# FLOOD INJECTION: agent_type filter removed'
         $patched | Set-Content -Path (Join-Path $patchDir 'Produce-Artifact.ps1') -Encoding utf8

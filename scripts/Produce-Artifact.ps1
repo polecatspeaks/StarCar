@@ -48,6 +48,7 @@ if ($Kind -ne 'dispatched' -and $Kind -ne 'returned') {
 }
 
 Import-Module (Join-Path $PSScriptRoot 'Envelope.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'Artifact.psm1') -Force
 
 # --- helpers ------------------------------------------------------------------
 
@@ -61,14 +62,10 @@ function Get-Prop {
     return $p.Value
 }
 
-function Get-Sha256Hex {
-    param([string]$Text)
-    $sha = [System.Security.Cryptography.SHA256]::Create()
-    $bytes = [System.Text.Encoding]::UTF8.GetBytes($Text)
-    $hash = $sha.ComputeHash($bytes)
-    $sha.Dispose()
-    ([System.BitConverter]::ToString($hash) -replace '-', '').ToLower()
-}
+# Get-Sha256Hex is imported from Artifact.psm1 (F4, Law 6 - the one owner; was
+# script-local here, duplicated in scripts/tests/Producer.Tests.ps1 and
+# scripts/tests/Migration.Tests.ps1 as test-local copies of the same idiom, and now also
+# consumed by scripts/tests/StoreIntegrity.Tests.ps1 from the shared module).
 
 function Convert-PortablePath {
     # Rewrite operator-environment roots to portable placeholders BEFORE hashing, exactly
