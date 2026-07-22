@@ -3962,3 +3962,53 @@ did my question get dropped?
 ---
 
 sounds good. I have remote control enabled, ping me when you're ready to spin the PR, not after you've spun it
+
+---
+
+<task-notification>
+<task-id>a6940e01dae1edf78</task-id>
+<tool-use-id>toolu_01Uc688f24xjPa8ufkMT2E2T</tool-use-id>
+<output-file>C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\64c15364-0933-4d6d-9b2e-d1ddbc918f9f\tasks\a6940e01dae1edf78.output</output-file>
+<status>completed</status>
+<summary>Agent "Car 2 adversarial review" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result># VERDICT: CONFIRM
+
+Base `4c60434` verified (hotfix, above merge `8c983a1`), worktree clean, read-only. The red was real and pinned red-first, the fix is minimal and non-regressing, CI is green both directions, and the two rulings resolve in the conductor's favor with one non-blocking recommendation. No findings block.
+
+## The four verification points
+
+**1. The red was real and pinned — CONFIRMED.**
+- I reproduced it: extracted the pre-fix `Land-Verdict.ps1` (from `4c60434^`), confirmed it calls `entire` unguarded at line 222 (no `Get-Command`), ran it in a scratch repo with every entire-bearing dir stripped from a child PATH, and got the exact CI error: **"The term 'entire' is not recognized as a name of a cmdlet, function, script file, or executable program."** Under `ErrorActionPreference = 'Stop'` that terminated the run — **no landed file was produced** (verified `out.md` absent), so pre-fix this was a hard landing failure, not a cosmetic warning.
+- The new pin (`LandVerdictRider.Tests.ps1`, "lands WITHOUT the entire CLI on PATH") is **non-vacuous by construction**: it strips entire from a child PATH and asserts entire is genuinely unresolvable (`exit 9` if it still resolves) *before* asserting the landing — so a machine that happens to lack entire for another reason cannot produce a false pass. Rider suite 5/5.
+- CI both directions, re-derived via `gh`: merge `8c983a1` check "verify" = **failure**; hotfix `4c60434` check "verify" = **success**. The fix genuinely turned the red green at CI, not just locally.
+- The guard structure is minimal and non-regressing: exactly one `entire checkpoint explain` line was removed and re-added inside the `if (Get-Command entire...)` branch, so the **entire-present path is byte-identical to pre-hotfix**; only the `else` note branch is new. Existing landed verdicts still verify (21/21), confirming no integrity regression.
+
+**2. Ruling on the guard degradation — ACCEPTABLE; one non-blocking recommendation.** Omitting the checkpoint provenance row on entire-less machines is the correct degradation and does **not** block CONFIRM:
+- It is **Law-1-compliant**: the row is rendered **blank (absent), never false** — the file asserts no checkpoint it cannot back. Blank over false is the mandated direction.
+- The **citation stays followable**: the landed file still carries the base commit explicitly labeled "the lookup key," and the unconditional "Follow the citation" block still prints `entire checkpoint explain $Base`. The checkpoint id is a pre-resolved convenience cache, not the lookup key; a reader on an equipped machine resolves it from the base commit regardless. The trust chain (base commit to checkpoint to independent copy, spec §3.6) is intact in the file.
+- **Law 5** is satisfied for the actor who can act: the operator running the tool sees the loud console note and can install entire or re-land from an equipped machine.
+
+Non-blocking recommendation (a NOTE for a tracked follow-up, not a Major): the console note is ephemeral, but the **durable landed file carries no in-file marker** of the omission, so a future reader cannot distinguish "landed on an entire-less machine" from "checkpoint resolution failed" or "never populated." Since the public showcase's trust model leans on the checkpoint pointer being visibly present-or-explained, a one-line in-file note in the provenance section ("checkpoint row omitted: landed without the entire CLI; resolve via the base-commit command below") would apply Law 5's loud-degradation to the durable surface, not just the console. This is an improvement worth a rider, not a defect that blocks the hotfix — the file is true and the citation is followable without it.
+
+**3. Suites at `4c60434` — CONFIRMED, re-derived under pwsh 7.6.3.** `scripts/tests` **74/74** (73 + the new pin), `scripts/probes` **8/8**, `Verify-Verdict` **exit 0, 21 files verified** (the +2 over round 2 are my own round-1 and round-2 review verdicts, landed to `docs/reviews/` and hash-clean). CI run **29939404919** = SUCCESS, `headSha` matches `4c60434` exactly, status completed — a terminal state re-derived, not a mid-flight sample.
+
+**4. Ruling on the process deviation — ACCEPTABLE for this narrow class; recommend codifying the boundary, not tightening to forbid.** A conductor-authored code fix with post-hoc review is defensible here because every load-bearing guardrail held:
+- **Red-first was preserved** — the invariant that must never be skipped. The conductor wrote the failing pin, reproduced the exact CI error locally, then the guard. I independently verified the red is real and the pin non-vacuous.
+- **Small, mechanical, coverage-class** — an 11-line environment-coupling guard, no design or structural change (rewrite-vs-extend: this is a rider, correctly).
+- **CI-blocking on the working branch** — leaving dev red blocks all downstream work and violates "the session does not start editing on top of an unexamined red." The fastest correct path is legitimate.
+- **Disclosed, not slipped** — the commit message names it a deviation, names this review as the compensating control, and states the rework-forward path on OBJECT. That is the "disagree loudly / record the mess" norm honored.
+- **Landed on dev, never main** — topology intact; it faces the whole-branch gate when dev PRs to main.
+- **The compensating control is real and binding** — this adversarial review ran the suites, reproduced the red, and checked CI both directions; it is not a rubber stamp.
+
+I would **not** tighten the rule to forbid conductor hotfixes. I recommend the shop **codify the exception's boundary** (durable artifact, per the anti-gaming guard) so it does not erode into "the conductor writes whatever is convenient": conductor-authored fixes are permissible only when (a) CI-blocking or equivalently urgent, (b) mechanical/coverage-class, never structural, (c) red-first with a non-vacuous pin, (d) disclosed in-commit with the compensating review named, (e) on a working branch with mandatory binding post-hoc adversarial review. This train exhibited all five; writing them down converts a sound one-off judgment into a rule.
+
+Bonus verification (Handback #3, now landed): the live-fire producer commits in this push (`3350974`, `d786ab8`, `f183508`, `cef82b9`) each contain **exactly one file** — their own `artifacts/&lt;subject&gt;/&lt;kind&gt;-&lt;compact-at&gt;.json` — with pathspec-scoped `harness:` commit messages. The entanglement guard held in the real repo, closing the round-1 Handback observation where it matters.
+
+```starcar-artifact
+outcome: CONFIRM
+findings: Post-merge conductor hotfix confirmed, zero blocking findings. The red was real: I reproduced the pre-fix failure (the term entire is not recognized) by running the unguarded pre-fix Land-Verdict with entire stripped from a child PATH, and it aborted the landing entirely under ErrorActionPreference Stop (no landed file). The new pin is non-vacuous - it asserts entire is genuinely unresolvable (exit 9 if not) before asserting the landing. CI re-derived both directions: merge 8c983a1 verify concluded failure, hotfix 4c60434 verify concluded success (run 29939404919, headSha matches). The guard is minimal and non-regressing: the entire-present path is byte-identical to pre-hotfix (only the else note branch is new), and existing verdicts still verify 21 of 21. Suites at HEAD: tests 74/74, probes 8/8, Verify-Verdict exit 0 with 21 files. Ruling on the degradation: acceptable - the checkpoint row renders blank not false (Law 1), the base commit remains the labeled lookup key with the resolve command in-file so the citation stays followable, and the console note satisfies Law 5 for the operator; non-blocking recommendation to add an in-file marker so the durable artifact distinguishes landed-without-entire from resolution-failed. Ruling on the process deviation: acceptable for this narrow class because red-first was preserved and the fix is small, mechanical, CI-blocking, disclosed, landed on a working branch, and gated by this binding review; recommend codifying the five-part exception boundary rather than forbidding conductor hotfixes. Bonus: the live-fire producer commits are each scoped to exactly one record path, closing the round-1 entanglement Handback item in the real repo.
+abstract: CONFIRM the conductor-authored entire-CLI guard. The CI red on the merge commit was genuine and I reproduced it locally; the fix is a three-line Get-Command guard plus a non-vacuous red-first pin that reproduces the exact CI error, and CI on the hotfix SHA concluded success while the merge SHA concluded failure. The entire-present path is unchanged, no integrity regressed, and suites read 74 tests, 8 probes, 21 verdicts green. Omitting the checkpoint row on entire-less machines is acceptable degradation - blank not false, still followable via the base commit - with a non-blocking recommendation to add a durable in-file marker. The conductor-hotfix-with-post-hoc-review deviation is acceptable for this CI-blocking mechanical class because red-first held and the review is binding; I recommend writing the exception boundary into the rules rather than tightening to forbid it. Worktree stayed read-only and clean throughout; all reproduction ran in isolated scratch directories.
+```</result>
+<usage><subagent_tokens>213917</subagent_tokens><tool_uses>9</tool_uses><duration_ms>301637</duration_ms></usage>
+</task-notification>
