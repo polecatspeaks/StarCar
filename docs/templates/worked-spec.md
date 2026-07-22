@@ -101,3 +101,35 @@ pick the wrong reading. Round 2: **APPROVED**.
 
 [The review records stay IN the spec forever. They are how the next reader knows what
 was already attacked, what was ruled, and what the document's claims have survived.]
+
+---
+
+## KNOWN GAP - disclosed, not yet fixed (2026-07-22)
+
+**This exemplar has two holes, and they are not hypothetical.** On its first real use, an
+adversarial spec review attributed two of its eight Major findings to the template rather
+than to the author:
+
+1. **No contracts-touched section.** The design-rung template has one; this does not. So a
+   design's documentation obligations - which documents this work invalidates, and which car
+   owns updating each - **evaporate at the design-to-spec handoff**. In that first use, nine
+   obligations were lost, and a zero-context plan-writer working from the spec alone would
+   have written no documentation tasks at all.
+2. **No fidelity ledger.** The design rung's one-row-per-finding-and-ruling disposition table
+   demonstrably worked - it is why that revision could prove nothing had been dropped. With
+   no equivalent here, **five adopted design requirements were silently dropped**, including
+   the feature's central mechanism.
+
+Both are instances of one class: *obligations cross rungs by carrier, never by memory* - see
+`worked-rung-carriers.md`.
+
+**A candidate fix exists and is UNDER ADVERSARIAL REVIEW at the time of writing**, as §9 and
+§10 of the spec that discovered the gap. It is deliberately not folded into this template yet,
+for the reason this repo keeps repeating: **amending an exemplar with an unreviewed invention
+is inventing prior art**, which is the exact failure exemplars exist to prevent. The candidate
+may turn out to be a table that lists obligations without binding anything, in which case the
+correct amendment is none.
+
+**Until that verdict lands, an adopter should add both sections by hand** and treat this note
+as the reason. Disclosed while incomplete beats confidently wrong - a template is allowed to
+be TRUE before it is COMPLETE, and this one is not yet complete.
