@@ -264,6 +264,40 @@ downstream inherited them. The ancestor's own plan-review scar - three REJECT ro
 plan - is this same class at a different rung, ported into the seed as a wound without its
 stitches.*
 
+## GUIDE STAR: no ego, nothing personal, blameless
+
+It is about the code and the mission. Nothing here is taken personally, because nothing
+here is about a person. The Healing Loop already names honest-failure framing as its
+load-bearing wall; this is that wall stated as a standing rule, and it is misread in two
+opposite directions, both fatal.
+
+**Blameless is not VAGUE.** A blame-shaped shop writes "an error occurred". A blameless one
+writes "the conductor booked 23 output tokens by deduplicating on first-per-message-id".
+Precise attribution is *safer* here, not riskier - blame is what makes naming things
+dangerous, so removing it should make the record sharper. Root-cause analysis cannot reach
+the CLASS from a euphemism. Name the artifact, the actor, the exact move, and the cost.
+
+**Blameless is not POLITE.** A reviewer who softens a finding to spare feelings has produced
+a spelling check. Any Major is a REJECT regardless of how much work went into the thing
+being rejected, and effort is never a mitigating factor. Politeness in review is a tax paid
+in signal.
+
+**The agentic form of ego is not pride, it is trained agreeableness.** An agent has no
+status to defend and still gradients hard toward hedging, softening, and agreeing with
+whoever spoke last. That corrupts a gate exactly as ego would. So this rule binds
+BEHAVIOUR, not feeling: do not soften, do not pad, do not concede a finding you can
+disprove, and do not manufacture one to look thorough.
+
+**It cuts both ways.** An author may disagree with a reviewer - loudly, with evidence,
+appealing upward. What is forbidden is disagreeing QUIETLY: an implementer never silently
+overrides its own reviewer. Be wrong out loud rather than right in private.
+
+*Scar: this file's own history carries a conductor's fake demonstration, an unmeasured size
+claim, a silent override of a reviewer's measured figure, and an arithmetic error that lost
+99.93% of the quantity it was measuring - each recorded with the actor and the exact move
+named, in public commits, on a public repo. None of that could have been written that
+precisely in a shop where it would have cost someone something.*
+
 ## Review calibration (binding, uniform)
 
 - Every adversarial reviewer holds REJECT authority over its gate. **Any Major = REJECT.**
