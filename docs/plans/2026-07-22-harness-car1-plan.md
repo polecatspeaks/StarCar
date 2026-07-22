@@ -32,6 +32,15 @@ carry **zero signal about the car model**. The probe is unfired and still valid.
 >    PR3-m1/m2/m3 - three stale "rev 2" version labels corrected in place (base section,
 >    this block's own note, disposition-table header). No task text, snippet, count, or
 >    interface changed. The gate is CLOSED; this revision is the dispatch text.
+> 2. **Verdict-store baseline SUPERSEDED: read every `13/13` as `14/14` (2026-07-22).**
+>    Landing the round-3 verdict itself moved `docs/reviews/` from 13 to 14 files - the
+>    store grows by the very verdicts that approve the plan, so any hard-pinned count is
+>    stale the moment the approving verdict lands (a self-referential baseline; the class
+>    is named so the next plan pins "all files verified, exit 0" and lets the count
+>    float). At Car 1's base: **14 verdict files verified, exit 0** - re-derive that.
+>    A.3's regression pin (step 2/step 4) asserts the live full count, 14/14. This entry
+>    supersedes the `13/13` mentions at the baseline section, A.3, and the trajectory
+>    line. Everything else stands.
 >
 > *No other amendments. Round-1 and round-2 rework landed as plan edits (revisions 2 and
 > 3), per `worked-plan.md:134` - this block is for invalidations found after approval,
