@@ -144,6 +144,37 @@ Describe 'Produce-Artifact' {
         (Test-StarcarArtifact -InputObject $rec -SchemaPath $script:SchemaPath).Valid | Should -BeTrue
     }
 
+    It 'F5: a returned payload pointing at a NONEXISTENT transcript is a producer read failure, not an absent envelope' {
+        <#
+          docs/plans/2026-07-22-pr18-correctness-fixes-plan.md F5: Get-LastAssistantText
+          reports missing/unreadable/unparseable transcripts via Errors, but a bare read
+          failure was classified identically to "no fence" (envelope: absent, a BRIEF
+          failure) and the actual error text was dropped (Law 4). A transcript READ
+          FAILURE must land outcome:error, NO envelope field, the read error IN findings,
+          a _faults.log line, AND the record must stay schema-valid (abstract required).
+        #>
+        $repo = New-FixtureRepo
+        $store = Join-Path $repo 'artifacts'
+        $payload = (Get-Payload 'stop-car.json' | ConvertFrom-Json)
+        $missingPath = (Join-Path $repo 'no-such-transcript.jsonl') -replace '\\', '/'
+        $payload.agent_transcript_path = $missingPath
+        $json = $payload | ConvertTo-Json -Depth 20
+        $r = Invoke-Producer -Payload $json -Kind 'returned' -StoreRoot $store -Now '2026-07-22T13:00:00Z'
+        $r.ExitCode | Should -Be 0
+        $rec = Get-Content (Join-Path $store 'a88e7dadda60940ac/returned-20260722T130000Z.json') -Raw | ConvertFrom-Json
+
+        $rec.outcome | Should -Be 'error'
+        $rec.PSObject.Properties['envelope'] | Should -Be $null -Because 'a producer read failure is not the brief-failure value absent'
+        $rec.findings | Should -Match 'transcript not found' -Because 'Law 4: the read error must not be dropped'
+        $rec.PSObject.Properties['abstract'] | Should -Not -Be $null -Because 'abstract is REQUIRED on returned records; the fault branch must still set it'
+
+        $faultsLog = Join-Path $store '_faults.log'
+        Test-Path $faultsLog | Should -BeTrue -Because 'Law 4: the read error is raised, never dropped'
+        (Get-Content $faultsLog -Raw) | Should -Match 'transcript' -Because 'the fault names the transcript read failure'
+
+        (Test-StarcarArtifact -InputObject $rec -SchemaPath $script:SchemaPath).Valid | Should -BeTrue -Because 'the record must stay schema-valid'
+    }
+
     It 'declares normalisation and substitutes a repo-root path in an agent-authored field' {
         $repo = New-FixtureRepo
         $store = Join-Path $repo 'artifacts'

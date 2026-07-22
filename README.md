@@ -5,10 +5,16 @@ watch an agentic development pipeline the way a dispatcher watches a rail yard.
 
 ## Status
 
-**First design under adversarial review. Nothing runs yet** — there is no code, no
-server, and no quickstart, and this README will not describe one until there is. That
-sentence is the north star working: user-facing documentation must be true from the first
-commit, and complete only once the thing it documents exists.
+**The dispatch-harness substrate runs; the yard board does not exist yet.** The producer
+hook (`scripts/Produce-Artifact.ps1`) writes one artifact record per dispatch event, the
+read-only detector (`scripts/Detect-Dispatches.ps1`) folds the store into dispatch and
+intent state, the schema validator (`scripts/Artifact.psm1`'s `Test-StarcarArtifact`)
+checks every record, and the deterministic index generator
+(`scripts/New-ArtifactIndex.ps1`) writes `artifacts/index.md` — all exercised by a Pester
+suite under CI. None of that is the *visualizer*: there is still no server, no board that
+renders a fold on screen, and no quickstart, and this README will not describe one until
+there is. That sentence is the north star working: user-facing documentation must be true
+from the first commit, and complete only once the thing it documents exists.
 
 This repository opens **process-first**: before any code lands, it carries the
 governing documents that will build it — a constitution, a self-healing process loop, and a

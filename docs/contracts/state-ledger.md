@@ -63,9 +63,15 @@ order).
 
 | Derived artifact (owner class) | Generator | Committed? | Staleness owner | Verdict | Evidence (test name) |
 |---|---|---|---|---|---|
-| Artifact index (`scripts/New-ArtifactIndex.ps1`) | `New-ArtifactIndex.ps1` | **YES - instance committed at `artifacts/index.md` (Car 3, task C.1, the migration commit)** | not yet - CI regenerate-and-diff gate lands as Car 3's next task (C.2) | DELIBERATE no-gate through C.1 (posture recorded, not a gap); flips in C.2's commit | `ArtifactIndex.Tests.ps1` (determinism, the enabler for C.2's diff gate) |
+| Artifact index (`scripts/New-ArtifactIndex.ps1`) | `New-ArtifactIndex.ps1` | **YES - instance committed at `artifacts/index.md` (Car 3, task C.1, the migration commit)** | **ARMED** - `.github/workflows/ci.yml`'s "Verify the artifact index is not stale" step (Car 3, task C.2) regenerates `artifacts/index.md` and runs `git diff --exit-code` against the committed copy; any drift fails the build | **GATED** - the deliberate no-gate posture through C.1 flipped in C.2's commit | `ArtifactIndex.Tests.ps1` (determinism, the enabler) + the CI step itself |
 
 A deliberate no-gate posture is still a row (`docs/templates/worked-ledger-and-gating.md`):
 the absence of a gate before Car 3's C.2 lands is a decision worth auditing, not a silent
-hole. This row's verdict flips only in the commit that lands Car 3's CI diff step (task
-C.2), same-commit with that gate's own test - see `docs/contracts/gating-matrix.md`.
+hole. This row's verdict flipped in the commit that landed Car 3's CI diff step (task
+C.2) - see `docs/contracts/gating-matrix.md`'s own already-ARMED row for that step.
+
+**[F7, docs/plans/2026-07-22-pr18-correctness-fixes-plan.md]:** this row still read
+"not yet ... lands as Car 3's next task (C.2)" after C.2 had already landed the gate -
+C.2's own commit invalidated this row and did not true it, a living-contracts miss its
+own reviewer also missed (the same class the plan folds as F7). Trued here, in the
+commit that caught it.

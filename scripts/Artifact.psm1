@@ -84,4 +84,60 @@ function Test-StarcarArtifact {
     }
 }
 
-Export-ModuleMember -Function Test-StarcarArtifact
+function Get-AtInstant {
+    <#
+      Parses an artifact record's `at` timestamp to the UTC instant it represents,
+      honoring the offset (docs/plans/2026-07-22-pr18-correctness-fixes-plan.md F1). The
+      store carries mixed offsets -- migrated verdicts' `at` came from git authorship in
+      local time (e.g. -04:00) alongside Z-normalized producer output -- so a
+      chronological sort must compare the parsed INSTANT, never the lexical string:
+      '2026-07-22T14:18:03-04:00' (== 18:18:03Z) sorts BEFORE '2026-07-22T16:39:57Z'
+      lexically, but is LATER in time.
+
+      FAILS LOUD: `Test-Json` does not assert the `date-time` format (a malformed or
+      zoneless string is schema-VALID), so this helper throws a NAMED error on a parse
+      failure, and explicitly REJECTS a zoneless `at` (no `Z`/offset) rather than parsing
+      it TZ-dependently, which would silently break New-ArtifactIndex.ps1's determinism
+      guarantee. Callers (New-ArtifactIndex.ps1, Detect-Dispatches.ps1) catch, name the
+      offending record's file, and rethrow -- never a silent mis-sort, never a whole-batch
+      crash with no attribution.
+    #>
+    param(
+        [Parameter(Mandatory)] [string]$At
+    )
+
+    if ($At -notmatch '(?:Z|[+-]\d{2}:?\d{2})$') {
+        throw "Get-AtInstant: 'at' value '$At' has no timezone offset (no Z/offset suffix) -- refusing to parse it TZ-dependently"
+    }
+
+    try {
+        return [System.DateTimeOffset]::Parse(
+            $At,
+            [System.Globalization.CultureInfo]::InvariantCulture,
+            [System.Globalization.DateTimeStyles]::RoundtripKind
+        ).UtcDateTime
+    } catch {
+        throw "Get-AtInstant: could not parse 'at' value '$At' as a date-time instant: $($_.Exception.Message)"
+    }
+}
+
+function Get-Sha256Hex {
+    <#
+      sha256 hex digest of a UTF-8 string. THE ONE OWNER for this contract (Law 6,
+      docs/plans/2026-07-22-pr18-correctness-fixes-plan.md F4): previously script-local in
+      Produce-Artifact.ps1 (F4's named target); extracted here so the producer and the
+      store-integrity test (StoreIntegrity.Tests.ps1) consume ONE function, never a copy
+      that can drift from what actually computed a landed record's `integrity`.
+      Migrate-Verdicts.ps1 carries its own script-local copy of the same idiom and is
+      OUT OF SCOPE for this fix (F4 names only Produce-Artifact.ps1); a future consolidation
+      is a separate, disclosed decision, not folded in here.
+    #>
+    param([Parameter(Mandatory)] [string]$Text)
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($Text)
+    $hash = $sha.ComputeHash($bytes)
+    $sha.Dispose()
+    ([System.BitConverter]::ToString($hash) -replace '-', '').ToLower()
+}
+
+Export-ModuleMember -Function Test-StarcarArtifact, Get-AtInstant, Get-Sha256Hex

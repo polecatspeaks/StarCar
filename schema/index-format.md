@@ -43,10 +43,15 @@ The committed index is one row per artifact. Columns, in order:
 | subject | kind | at | outcome | file |
 ```
 
-Rows are sorted by `at`, then `subject`, then `file` - a total order, so there are never
-ties to break arbitrarily (determinism requires no ties). `outcome` is blank for kinds
-where it does not apply (only `returned` carries one). `file` is the artifact's path
-relative to the store root.
+Rows are sorted by `at` **normalized to a UTC instant** (offsets honored), then
+`subject`, then `file` - a total order, so there are never ties to break arbitrarily
+(determinism requires no ties). The store carries mixed offsets (migrated verdicts' `at`
+came from git authorship in local time, alongside Z-normalized producer output), so
+sorting the lexical `at` STRING is chronological only when every record shares the same
+offset; the sort key is the parsed instant (`Get-AtInstant`, `scripts/Artifact.psm1`),
+not the string (F1, `docs/plans/2026-07-22-pr18-correctness-fixes-plan.md`). `outcome` is
+blank for kinds where it does not apply (only `returned` carries one). `file` is the
+artifact's path relative to the store root.
 
 ### Worked example
 

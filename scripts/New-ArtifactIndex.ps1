@@ -23,6 +23,8 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+Import-Module (Join-Path $PSScriptRoot 'Artifact.psm1') -Force
+
 $files = @(Get-ChildItem -Path $StoreRoot -Filter *.json -Recurse -File)
 
 $rows = foreach ($f in $files) {
@@ -34,7 +36,8 @@ $rows = foreach ($f in $files) {
     # MM/dd/yyyy HH:mm:ss form whose lexical sort is non-chronological across years
     # (schema/index-format.md:55-57's worked example, which this generator implements,
     # is otherwise a claim the code cannot produce - Law 1 - with the UTC marker
-    # silently dropped - Law 4). -DateKind String keeps 'at' a plain string end to end.
+    # silently dropped - Law 4). -DateKind String keeps 'at' a plain string end to end;
+    # the column renders the artifact's verbatim string regardless of how it sorts.
     $obj = Get-Content $f.FullName -Raw -Encoding UTF8 | ConvertFrom-Json -DateKind String
     $relative = [System.IO.Path]::GetRelativePath($StoreRoot, $f.FullName).Replace('\', '/')
 
@@ -42,27 +45,58 @@ $rows = foreach ($f in $files) {
     $outcomeProp = $obj.PSObject.Properties['outcome']
     if ($outcomeProp) { $outcome = [string]$outcomeProp.Value }
 
+    # F1 (docs/plans/2026-07-22-pr18-correctness-fixes-plan.md): parsed here, once per
+    # record, so a bad 'at' is attributed to ITS file before the throw propagates -
+    # never a silent mis-sort, never a whole-batch crash with no attribution.
+    $instant = $null
+    try {
+        $instant = Get-AtInstant -At ([string]$obj.at)
+    } catch {
+        throw "New-ArtifactIndex: $($f.FullName): $($_.Exception.Message)"
+    }
+
     [pscustomobject]@{
-        Subject = [string]$obj.subject
-        Kind    = [string]$obj.kind
-        At      = [string]$obj.at
-        Outcome = $outcome
-        File    = $relative
+        Subject  = [string]$obj.subject
+        Kind     = [string]$obj.kind
+        At       = [string]$obj.at
+        AtInstant = $instant
+        Outcome  = $outcome
+        File     = $relative
     }
 }
 
-# Total order per schema/index-format.md: at, then subject, then file - there are never
-# ties left to break arbitrarily. Sorting the plain ISO-8601 UTC string (fixed-width,
-# zero-padded, most-significant field first) is a lexical sort that IS a chronological
-# sort - that equivalence is why the contract chose this format (schema/index-format.md).
-# It only holds because 'at' was never coerced to a culture-formatted string above.
-$sorted = @($rows | Sort-Object -Property At, Subject, File)
+# Total order per schema/index-format.md: at (normalized to a UTC INSTANT, offsets
+# honored), then subject, then file - there are never ties left to break arbitrarily.
+# The store carries mixed offsets (migrated verdicts' 'at' came from git authorship in
+# local time, alongside Z-normalized producer output), so a LEXICAL sort of the 'at'
+# string is chronological only when every record shares the same offset - which this
+# store does not (F1, docs/plans/2026-07-22-pr18-correctness-fixes-plan.md). Sorting the
+# parsed instant (Get-AtInstant, Artifact.psm1) is correct regardless of offset; the
+# rendered 'At' column stays the artifact's verbatim string (above), only the SORT KEY
+# changes.
+$sorted = @($rows | Sort-Object -Property AtInstant, Subject, File)
+
+# `subject`/`outcome` are open-vocabulary schema strings (no `enum`, no character
+# restriction - schema/starcar-artifact.schema.json), so a schema-VALID value can carry a
+# `|` (forges extra columns) or a raw newline (splits the row across physical lines) when
+# interpolated raw into the table (F3, docs/plans/2026-07-22-pr18-correctness-fixes-plan.md).
+# Escape BEFORE interpolation: `|` -> `\|`, and any newline (LF or CRLF) -> a single space.
+function Format-IndexCell {
+    param([string]$Value)
+    if ([string]::IsNullOrEmpty($Value)) { return $Value }
+    ($Value -replace '\|', '\|') -replace '\r?\n', ' '
+}
 
 $lines = New-Object System.Collections.Generic.List[string]
 $lines.Add('| subject | kind | at | outcome | file |')
 $lines.Add('|---|---|---|---|---|')
 foreach ($r in $sorted) {
-    $lines.Add("| $($r.Subject) | $($r.Kind) | $($r.At) | $($r.Outcome) | $($r.File) |")
+    $subject = Format-IndexCell $r.Subject
+    $kind    = Format-IndexCell $r.Kind
+    $at      = Format-IndexCell $r.At
+    $outcome = Format-IndexCell $r.Outcome
+    $file    = Format-IndexCell $r.File
+    $lines.Add("| $subject | $kind | $at | $outcome | $file |")
 }
 
 $content = ($lines -join "`n") + "`n"
