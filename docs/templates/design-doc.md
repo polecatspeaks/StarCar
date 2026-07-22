@@ -1,6 +1,7 @@
 # Design document template
 
-Status: Current. Copy to `docs/design/YYYY-MM-DD-<topic>-design.md`.
+Status: Current
+Use: copy to `docs/design/YYYY-MM-DD-<topic>-design.md`.
 
 **Why this exists.** The ladder named design as rung 1 and gave it no artifact. Every other
 rung had one - car brief, reviewer addendum, state ledger, gating matrix - and every other

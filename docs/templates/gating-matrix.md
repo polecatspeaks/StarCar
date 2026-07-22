@@ -1,7 +1,7 @@
 # Gating matrix (template)
 
-Status: template - copy to `docs/contracts/gating-matrix.md` when the first gated
-surface lands.
+Status: Current
+Use: template - copy to `docs/contracts/gating-matrix.md` when the first gated surface lands.
 
 The living inventory of every surface that DECIDES something (fires an alert, suppresses
 an output, flips a status, blocks an action): what gates it, what resets the gate, and

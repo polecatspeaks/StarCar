@@ -1,5 +1,7 @@
 # The Healing Loop
 
+Status: Current
+
 Companion to [the constitution](constitution.md). The constitution is what this project
 must be; the Healing Loop is the metabolism - how the process that builds it repairs and
 hardens itself. Ported from the shop that derived it, where it ran unassisted several

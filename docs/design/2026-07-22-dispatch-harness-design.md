@@ -1,6 +1,7 @@
 # Design: the dispatch harness
 
-Status: **rev 6 - round 5's findings closed by bounded fix + RECORDED CONDUCTOR RULING (no round 6)**
+Status: Current
+State: rev 6 - round 5's findings closed by bounded fix + RECORDED CONDUCTOR RULING (no round 6)
 Issue: #7 (`area:adapters`)
 Date: 2026-07-22
 Written through `docs/templates/design-doc.md` - the first document to use it.

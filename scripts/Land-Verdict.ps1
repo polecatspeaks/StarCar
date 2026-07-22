@@ -260,7 +260,8 @@ if ($normalised) {
 $header = @"
 # $Title
 
-Status: Verdict of record
+Status: Done
+Record: verdict of record - historical by nature, never edited after landing
 Gate: $Gate
 $roundLine
 Target: ``$Target``

@@ -1,7 +1,8 @@
-<!-- starcar-integrity: sha256=2295466ee5bacc8251d34540099c06a7d56977471036fc62c5c8e26c8127bb10 covers every byte below this line; recompute with scripts/Verify-Verdict.ps1 -->
+<!-- starcar-integrity: sha256=6bf5e2e66bd84c4f17c0b2902d4146d1282f8323caa0741d53c540521ebeb8a4 covers every byte below this line; recompute with scripts/Verify-Verdict.ps1 -->
 # Adversarial design review - v0 yard skeleton, round 1
 
-Status: Verdict of record
+Status: Done
+Record: verdict of record - historical by nature, never edited after landing
 Gate: design review (ladder rung 1)
 Round: 1
 Target: `docs/design/2026-07-21-v0-yard-skeleton-design.md (rev 1)`

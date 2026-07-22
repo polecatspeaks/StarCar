@@ -1,7 +1,7 @@
 # State ledger (template)
 
-Status: template - copy to `docs/contracts/state-ledger.md` when the first mutable
-service state lands.
+Status: Current
+Use: template - copy to `docs/contracts/state-ledger.md` when the first mutable service state lands.
 
 The living inventory of every mutable field in long-lived services, with a verdict per
 lifecycle event. Any commit adding or changing such state updates this file IN THE SAME

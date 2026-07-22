@@ -1,7 +1,8 @@
-<!-- starcar-integrity: sha256=48564c242d48853e601da9de31a112b857e204d229c170285a60e957af36db9b covers every byte below this line; recompute with scripts/Verify-Verdict.ps1 -->
+<!-- starcar-integrity: sha256=880a14cbdfff53147fdef6302380e079963a26c004bf5b068067e6662d9c6a95 covers every byte below this line; recompute with scripts/Verify-Verdict.ps1 -->
 # Adversarial design review - dispatch harness, round 3
 
-Status: Verdict of record
+Status: Done
+Record: verdict of record - historical by nature, never edited after landing
 Gate: design review (ladder rung 1)
 Round: 3
 Target: `docs/design/2026-07-22-dispatch-harness-design.md (rev 3)`

@@ -1,5 +1,7 @@
 # Car brief template
 
+Status: Current
+
 Every dispatch uses this shape. The framing rules are load-bearing: agents gradient
 toward success shapes, so truth-telling must BE a success shape.
 

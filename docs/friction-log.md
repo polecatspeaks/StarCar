@@ -1,6 +1,7 @@
 # Friction log
 
-Status: Current, append-only within a session
+Status: Current
+Convention: append-only within a session
 
 Raw material for the session-start tooling retro (see the STANDING ITEM in `CLAUDE.md`).
 Friction is logged **as it happens**, not reconstructed later - a retro that runs on memory

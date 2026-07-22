@@ -1,6 +1,7 @@
 # Design: v0 yard skeleton
 
-Status: **PARKED at rev 3, DELIBERATELY UNREVIEWED - superseded in part, awaiting rev 4**
+Status: Open
+State: PARKED at rev 3, DELIBERATELY UNREVIEWED - superseded in part, awaiting rev 4
 
 > **Why this was never reviewed, stated so nobody assumes it passed a gate.** Rev 3 was
 > committed and round 3 was about to be dispatched when the owner ruled that the dispatch
