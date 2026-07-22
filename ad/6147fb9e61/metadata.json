@@ -1,0 +1,34 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "ad6147fb9e61",
+  "strategy": "manual-commit",
+  "branch": "dev",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/design/2026-07-21-v0-yard-skeleton-design.md",
+    "docs/design/2026-07-22-dispatch-harness-design.md",
+    "docs/friction-log.md",
+    "docs/reviews/2026-07-21-design-v0-round1-REJECT.md",
+    "docs/templates/car-brief.md",
+    "docs/templates/design-doc.md",
+    "docs/templates/repo-policy-check-patterns.md",
+    "docs/templates/worked-resume-packet.md",
+    "scripts/Land-Verdict.ps1"
+  ],
+  "sessions": [
+    {
+      "metadata": "/ad/6147fb9e61/0/metadata.json",
+      "transcript": "/ad/6147fb9e61/0/full.jsonl",
+      "compact_transcript": "/ad/6147fb9e61/0/transcript.jsonl",
+      "content_hash": "/ad/6147fb9e61/0/content_hash.txt",
+      "prompt": "/ad/6147fb9e61/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 626,
+    "cache_creation_tokens": 2893554,
+    "cache_read_tokens": 128864004,
+    "output_tokens": 513693,
+    "api_call_count": 313
+  }
+}
