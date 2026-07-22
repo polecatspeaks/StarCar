@@ -682,6 +682,18 @@ cannot be calibrated.*
 test, and in this shop the workforce evaporates nightly. Anything that cost time, produced
 a wrong diagnosis, or made a defect possible gets a line in the log when it happens.
 
+**NEVER DROP A TOOLING REQUEST (owner standing order, 2026-07-22).** A request for better
+tooling, an idea for new tooling, or a recognised need to brainstorm one is never allowed
+to die in conversation - it gets a durable landing at birth: an issue (preferred, with its
+trigger stated) or a friction-log line, same as any other obligation crossing a rung.
+Tooling built or adopted under this rule carries one caveat as a hard requirement: **it
+must be REUSABLE, never fire-and-forget** - a one-shot script that answers today's
+question and rots is the vigilance tier wearing a toolbelt. The reusability test: is it
+versioned, invocable by one command, and does its failure tell you something true went
+stale? (The probe suite pattern - substrate facts pinned as Pester tests under
+`scripts/probes/` - is the exemplar: probes red by NAME when the substrate moves, naming
+the landed document that just became suspect.)
+
 *Scar: the founding session produced fourteen distinct friction points - three of them
 encoding defects from one shell's defaults, one of them a guard that was decorative, one a
 wrong diagnosis from assuming a file existed without opening it. Every one would have been
