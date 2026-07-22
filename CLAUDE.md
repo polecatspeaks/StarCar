@@ -443,7 +443,7 @@ Being wrong is not on that list. **Being wrong quietly is. Being right by accide
 
 **THE ANTI-GAMING GUARD, and it is load-bearing:** a success outcome must leave a DURABLE
 ARTIFACT - a landed tool, a written rule, a red test, a corrected number, a filed issue, a
-verdict in `docs/reviews/`. Otherwise "we don't fail, we learn" becomes the agreeable
+verdict in `artifacts/reviews/`. Otherwise "we don't fail, we learn" becomes the agreeable
 reading of a rule written to defeat agreeableness, and any mess can be relabelled a
 lesson. The check is not "did we learn something", it is **"what landed?"** Nothing landed
 means it was not learning; it was cost.
@@ -639,7 +639,8 @@ may author a code fix directly ONLY when ALL FIVE hold:
 Any leg missing = dispatch a car. The exception exists so a sound one-off judgment
 does not erode into "the conductor writes whatever is convenient" - the boundary IS
 the rule. *First use: the entire-CLI guard (CI run 8c983a1's red), all five legs
-exhibited, CONFIRMED at `docs/reviews/2026-07-22-hotfix-confirm.md`.*
+exhibited, CONFIRMED at `artifacts/reviews/2026-07-22-hotfix-confirm.md` (moved from
+`docs/reviews/` by harness #7's migration commit, `git mv` - history preserved).*
 - **Every brief mandates the report envelope.** A dispatch's final report ENDS with a
   fenced block, info string `starcar-artifact`, carrying `outcome`, `findings`, and
   `abstract` - and NO angle brackets inside it (measured: a sentinel form was neutralised

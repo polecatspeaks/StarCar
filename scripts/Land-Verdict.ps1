@@ -1,5 +1,6 @@
 # Land-Verdict.ps1 -- extract a dispatched agent's verdict VERBATIM from the session
-# transcript and land it in docs/reviews/.
+# transcript and land it in artifacts/reviews/ (R10's landing convention, harness #7's
+# migration commit - the directory used to be docs/reviews/, retired).
 #
 # WHY THIS EXISTS (the class, not the instance):
 #
@@ -15,7 +16,10 @@
 # reader cannot navigate to. Persisted-but-unfindable is not kept.
 #
 # And the obvious manual fix is worse than the gap. On 2026-07-22 the conductor
-# began hand-transcribing a review verdict about its OWN design into docs/reviews/.
+# began hand-transcribing a review verdict about its OWN design into what was then
+# docs/reviews/ (that directory is retired; verdicts land in artifacts/reviews/ as of
+# harness #7's migration commit - this sentence is historical narrative, describing
+# where that specific incident actually went, not today's landing target).
 # That is a hand-maintained mirror at a process boundary -- the exact scar class in
 # CLAUDE.md -- with the aggravating factor that the author being reviewed was doing
 # the copying. A softened phrase or a dropped finding would be undetectable.
@@ -38,7 +42,7 @@
 # The EXTRACTION (Get-ResultBlockForTask) is retained unchanged.
 #
 # Usage:
-#   scripts/Land-Verdict.ps1 -TaskId <id> -Out docs/reviews/<file>.md -TranscriptPath <path> `
+#   scripts/Land-Verdict.ps1 -TaskId <id> -Out artifacts/reviews/<file>.md -TranscriptPath <path> `
 #       -Title '...' -Gate '...' -Target '...' -Base <sha> -Verdict 'REJECT' [-Round 2]
 #
 # Windows PowerShell 5.1 compatible: no ternary, no &&/||, ASCII only.
@@ -59,6 +63,27 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+# --- refuse to land into the retired docs/reviews/ (M-B guard, fix-cycle round 1) ----
+#
+# R10's whole claim (docs/setup.md's Verdict-landing row) is that nothing can land
+# silently unverified in a resurrected docs/reviews/, because the landing convention,
+# Verify-Verdict.ps1's default, and the docs all point at artifacts/reviews/ (Law 6 -
+# one location, one owner). Verify-Verdict.ps1's default moving is necessary but not
+# sufficient: an operator who still types the old path (muscle memory, a stale
+# reference, a copy-pasted command from before the migration) would land a file that
+# Verify-Verdict.ps1 never looks at by default - silent, unverified, exactly what R10
+# was written to prevent. This check closes that gap at the write path itself, not
+# only at the read path.
+#
+# Narrow by design: it matches "docs/reviews" (or "docs\reviews") as a PATH SEGMENT
+# (anchored on / \ or the string boundary), never a bare substring match - a target
+# like "mydocs/reviews-archive/x.md" is unrelated and must not be refused.
+$outForGuard = $Out -replace '\\', '/'
+if ($outForGuard -match '(^|/)docs/reviews(/|$)') {
+    Write-Error "-Out ('$Out') targets docs/reviews/, which is RETIRED (harness #7's migration commit, R10 - docs/setup.md's Verdict-landing row). Verify-Verdict.ps1's default no longer covers that directory, so a file landed there would go SILENTLY UNVERIFIED. Point -Out at artifacts/reviews/<file>.md instead."
+    exit 1
+}
 
 function Get-TranscriptLines {
     param([string]$Path)

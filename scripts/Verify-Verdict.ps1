@@ -4,8 +4,8 @@
 # WHY: Land-Verdict.ps1 stamps a SHA-256 of the verbatim body into the header. A hash
 # nobody can check is decoration, and this repo's rule is that a guard is unproven
 # until someone has watched it fire. This is the checker, and it exists so the
-# "extracted verbatim, not retyped" claim on every file in docs/reviews/ is testable
-# rather than asserted.
+# "extracted verbatim, not retyped" claim on every file in artifacts/reviews/ is
+# testable rather than asserted.
 #
 # It answers exactly one question: has the body been edited since it was landed?
 # Editing a verdict of record is not a formatting choice -- a review verdict is the

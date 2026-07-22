@@ -105,6 +105,89 @@ Describe 'Land-Verdict retains the extractor (Get-ResultBlockForTask)' {
     }
 }
 
+Describe 'Land-Verdict refuses to land into the retired docs/reviews/ (M-B guard, fix-cycle round 1)' {
+    BeforeAll {
+        $script:RepoRoot = (git rev-parse --show-toplevel)
+        $script:LandVerdict = Join-Path $script:RepoRoot 'scripts/Land-Verdict.ps1'
+
+        function New-TempRepo3 {
+            $repo = Join-Path ([System.IO.Path]::GetTempPath()) ("lvguard-" + [guid]::NewGuid().ToString('N'))
+            New-Item -ItemType Directory -Path $repo -Force | Out-Null
+            git -C $repo init -q | Out-Null
+            git -C $repo config user.email 'test@starcar.local' | Out-Null
+            git -C $repo config user.name 'LV Guard Test' | Out-Null
+            $repo
+        }
+
+        function New-Transcript3 {
+            param([string]$Repo, [string]$TaskId, [string]$Body)
+            $text = "Notification. <task-id>$TaskId</task-id> here is the <result>$Body</result> end."
+            $line = @{ content = @(@{ type = 'text'; text = $text }) } | ConvertTo-Json -Depth 10 -Compress
+            $tp = Join-Path $Repo 'transcript.jsonl'
+            Set-Content -Path $tp -Value $line -Encoding utf8
+            $tp
+        }
+    }
+
+    It 'REFUSES -Out docs/reviews/<file>.md - R10: nothing lands silently unverified in the retired store' {
+        # Child process (pwsh -File), matching the "-TranscriptPath missing" test above:
+        # Land-Verdict.ps1 sets $ErrorActionPreference = 'Stop', so Write-Error is a
+        # TERMINATING error - invoked in-process via a bare `&`, that exception would
+        # propagate into this test's own scriptblock rather than cleanly setting
+        # $LASTEXITCODE. A child process isolates it into a real process exit code.
+        $repo = New-TempRepo3
+        $tp = New-Transcript3 -Repo $repo -TaskId 'TASKG1' -Body 'a verdict aimed at the retired directory'
+        Push-Location $repo
+        try {
+            $out = & pwsh -NoProfile -NonInteractive -File $script:LandVerdict -TaskId 'TASKG1' -Out 'docs/reviews/should-not-land.md' `
+                -Title 'T' -Gate 'G' -Target 'X' -Base 'abc123' -Verdict 'REJECT' `
+                -TranscriptPath $tp -Force 2>&1
+            $exitCode = $LASTEXITCODE
+        } finally { Pop-Location }
+        $exitCode | Should -Not -Be 0
+        ($out -join "`n") | Should -Match 'retired'
+        Test-Path (Join-Path $repo 'docs/reviews/should-not-land.md') | Should -BeFalse
+    }
+
+    It 'REFUSES a backslash-separated docs\reviews\<file>.md target too' {
+        $repo = New-TempRepo3
+        $tp = New-Transcript3 -Repo $repo -TaskId 'TASKG2' -Body 'a verdict aimed at the retired directory, backslash form'
+        Push-Location $repo
+        try {
+            $out = & pwsh -NoProfile -NonInteractive -File $script:LandVerdict -TaskId 'TASKG2' -Out 'docs\reviews\should-not-land.md' `
+                -Title 'T' -Gate 'G' -Target 'X' -Base 'abc123' -Verdict 'REJECT' `
+                -TranscriptPath $tp -Force 2>&1
+            $exitCode = $LASTEXITCODE
+        } finally { Pop-Location }
+        $exitCode | Should -Not -Be 0
+        ($out -join "`n") | Should -Match 'retired'
+    }
+
+    It 'ALLOWS -Out artifacts/reviews/<file>.md (the current R10 convention) - the guard is narrow, not a general refusal' {
+        $repo = New-TempRepo3
+        $tp = New-Transcript3 -Repo $repo -TaskId 'TASKG3' -Body 'a verdict aimed at the correct directory'
+        Push-Location $repo
+        try {
+            & $script:LandVerdict -TaskId 'TASKG3' -Out 'artifacts/reviews/should-land.md' `
+                -Title 'T' -Gate 'G' -Target 'X' -Base 'abc123' -Verdict 'REJECT' `
+                -TranscriptPath $tp -Force | Out-Null
+        } finally { Pop-Location }
+        Test-Path (Join-Path $repo 'artifacts/reviews/should-land.md') | Should -BeTrue
+    }
+
+    It 'does NOT false-positive on an unrelated path that merely contains the substrings docs and reviews' {
+        $repo = New-TempRepo3
+        $tp = New-Transcript3 -Repo $repo -TaskId 'TASKG4' -Body 'a verdict aimed at a look-alike path'
+        Push-Location $repo
+        try {
+            & $script:LandVerdict -TaskId 'TASKG4' -Out 'mydocs/reviews-archive/x.md' `
+                -Title 'T' -Gate 'G' -Target 'X' -Base 'abc123' -Verdict 'REJECT' `
+                -TranscriptPath $tp -Force | Out-Null
+        } finally { Pop-Location }
+        Test-Path (Join-Path $repo 'mydocs/reviews-archive/x.md') | Should -BeTrue
+    }
+}
+
 Describe 'Producer agent_type filter NON-VACUITY (spec S6 M5 flood)' {
     BeforeAll {
         $script:RepoRoot = (git rev-parse --show-toplevel)

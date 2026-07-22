@@ -56,9 +56,19 @@ jobs:
           # gating-matrix's tier-2 row cites as the suppression cause. A fork has no
           # Entire checkpoint branch (Law 7 - a stranger publishes nothing here), so
           # absence is a LOUD note, never a build failure.
+          #
+          # M-A FIX (reviewer catch, fix-cycle round 1): GitHub's `shell: pwsh` wrapper
+          # appends `if ((Test-Path -LiteralPath variable:\LASTEXITCODE)) { exit
+          # $LASTEXITCODE }` after this run block. `git fetch` on an absent ref sets
+          # $LASTEXITCODE to 128 and NOTHING below reset it, so the wrapper's own
+          # appended line failed the step even though the script's own logic never
+          # called exit - "non-fatal" was false by construction. Fixed by explicitly
+          # resetting $LASTEXITCODE to 0 on the absence branch, so the wrapper's
+          # appended check sees a clean exit regardless of git's own code.
           git fetch origin entire/checkpoints/v1 2>&1 | Out-String | Write-Host
           if ($LASTEXITCODE -ne 0) {
             Write-Host "::notice::entire/checkpoints/v1 not fetchable on this remote (expected on a fork or a clone with no Entire mirror) - tier 2 stays CI-unreachable this run."
+            $LASTEXITCODE = 0
           } else {
             Write-Host "Fetched entire/checkpoints/v1 - tier 2 is CI-reachable this run."
           }

@@ -21,5 +21,9 @@
 *.yaml  text eol=lf
 
 # Landed verdicts are hashed byte-for-byte. Never let a filter touch them.
-docs/reviews/**  -text
+# REPOINTED (fix-cycle round 1 minor): docs/reviews/ is retired (harness #7's migration
+# commit) and this pattern went functionally inert the moment that directory emptied -
+# the need it protects (hashed bytes surviving a fresh checkout unchanged) is still
+# live, just at the new path.
+artifacts/reviews/** -text
 docs/artifacts/** -text
