@@ -1710,3 +1710,11 @@ ok PRing what we have is useless since our design is faulty. Do the redesign, we
 ---
 
 I want to highlight what you said about agents having a bias towards agreement. Because that is one thing we try to gaurd against. The highlight being a rejection IS a positive outcome. SO any outcome that leads to new tooling, process, data, correction, metrics or a complete reversal IS positive. We don't fail in this shop. We just learn a better way of doing everything. I want that codified for you, since it will help bound and govern your bias to be agreeable.
+
+---
+
+exactly and we've been paying that cost this whole session
+
+---
+
+exactly, and the fact that we decided to kick the adjutication up to me is the right move. It gave you a fair shot at solving the problem, but when it became obvious you were in the swirl and churn, that was the right time to kick it up a level
