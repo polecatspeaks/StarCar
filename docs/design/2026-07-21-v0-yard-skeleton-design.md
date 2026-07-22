@@ -1,6 +1,20 @@
 # Design: v0 yard skeleton
 
-Status: **DRAFT rev 3 - awaiting adversarial design review (round 3)**
+Status: **PARKED at rev 3, DELIBERATELY UNREVIEWED - superseded in part, awaiting rev 4**
+
+> **Why this was never reviewed, stated so nobody assumes it passed a gate.** Rev 3 was
+> committed and round 3 was about to be dispatched when the owner ruled that the dispatch
+> harness is core product: every dispatch emits a structured artifact, and the yard
+> adapter reads those artifacts rather than a hand-maintained state file. That rewrites
+> D3, D5, §5.4 and the StateWriter car, so reviewing rev 3 would have spent an adversarial
+> dispatch on a moving target and produced findings against contracts already changing.
+>
+> Parked on purpose, not forgotten. The harness design goes through the ladder first
+> (issue #7); this document returns as rev 4 written against the harness contract, and is
+> reviewed once, properly. Rev 3's unreviewed defects are a known, accepted risk: some
+> will be inherited into rev 4 and must be caught there.
+>
+> Rounds 1 and 2 verdicts are landed verbatim in `docs/reviews/`.
 Issue: #1 (`area:view`)
 Date: 2026-07-21 (rev 3: 2026-07-22)
 Ladder rung: design (rung 1 of: design → spec → plan → cars)
