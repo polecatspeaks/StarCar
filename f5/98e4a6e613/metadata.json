@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "f598e4a6e613",
+  "strategy": "manual-commit",
+  "branch": "dev",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "scripts/Land-Verdict.ps1"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f5/98e4a6e613/0/metadata.json",
+      "transcript": "/f5/98e4a6e613/0/full.jsonl",
+      "compact_transcript": "/f5/98e4a6e613/0/transcript.jsonl",
+      "content_hash": "/f5/98e4a6e613/0/content_hash.txt",
+      "prompt": "/f5/98e4a6e613/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1258,
+    "cache_creation_tokens": 6033439,
+    "cache_read_tokens": 266421221,
+    "output_tokens": 913371,
+    "api_call_count": 629
+  }
+}
