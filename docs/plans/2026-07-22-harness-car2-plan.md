@@ -1,6 +1,6 @@
 Status: Current
 
-# Dispatch harness - Car 2 implementation plan, rev 2 (envelope, producer, detector, retirements)
+# Dispatch harness - Car 2 implementation plan, rev 3 (envelope, producer, detector, retirements)
 
 REQUIRED SUB-SKILL: one car per task group, adversarial reviewer per car.
 
@@ -10,11 +10,15 @@ two NEW probes this revision forced (launch-payload shape; transcript extraction
 below, both landed in the probe log AND quoted here with conditions).
 
 Review record: **round 1 REJECT - 7 Major, 4 Minor**
-(`docs/reviews/2026-07-22-car2-plan-review-round1.md`). Every finding folded inline,
-tagged `[C2R1-Mn]`/`[C2R1-mn]`; disposition table at the end is the carrier. Round 1
-also ruled R4 SOUND (unchanged below), R5 REJECTED (superseded by R5v2), R6 enumeration
-unresolved (superseded by R6v2). **The delta re-review of this revision is the
-ROTATION DRILL** (CLAUDE.md Review calibration): a FRESH reviewer, carriers only.
+(`docs/reviews/2026-07-22-car2-plan-review-round1.md`); **round 2 (ROTATION DRILL,
+fresh reviewer, carriers only) REJECT - 1 Major, 1 Minor**
+(`docs/reviews/2026-07-22-car2-plan-review-round2-drill.md`) - 10 of 11 round-1 folds
+ruled PRESENT and re-verified (the `--only` fix PROVEN in a scratch repo), one DRIFTED
+(M4's landing), convergence ruled healthy (7 to 1, shrank and moved, no swirl), and
+**the drill SUCCEEDED**: the fresh reviewer re-derived the round-1 findings from
+carriers alone, surfacing two verdict-template gaps as success findings (tracked in
+the template-gaps issue). All round-2 findings folded in this rev 3; disposition table
+below is the carrier. R4 SOUND; R5v2, R6v2 both ruled sound at round 2.
 
 **Scope: Car 2 only, on OPUS.** Car 3 after this car lands.
 
@@ -84,8 +88,11 @@ violate the severity philosophy the spec itself cites.
 
 ## The measured payload contracts (NEW - the probes round 1 forced)
 
-**Launch (`PostToolUse`, matcher `Task`) [C2R1-M4 folded - ANSWERED by probe, 2026-07-22,
-live session, logged in `.claude/probe-logs/post-task.jsonl`]:** top-level keys observed:
+**Launch (`PostToolUse`, matcher `Task`) [C2R1-M4 folded; C2R2-M1 folded - the
+measurement now lands DURABLY as Probe 5 in
+`docs/probes/2026-07-22-spec7-probe-results.md`, alongside probes 1-4; the gitignored
+log is the raw capture, the probe doc is the citable record, and the committed hook
+regenerates the evidence in one dispatch]:** top-level keys observed:
 `cwd, duration_ms, effort, hook_event_name, permission_mode, prompt_id, session_id,
 tool_input, tool_name, tool_response, tool_use_id, transcript_path`. `tool_input` carries
 `description, model, prompt, subagent_type`; **`tool_response` carries `agentId`** (plus
@@ -261,6 +268,13 @@ mapped to code that can satisfy both.
 
 1. `-TranscriptPath` becomes mandatory; `Get-LiveTranscriptPath` and the `:59`
    hardcoded path are DELETED; `Get-ResultBlockForTask` retained.
+   **[C2R2-m1 folded - MARKED deviation from spec §4 row 1:** the row prescribes
+   "derivation from the git root" as the replacement; this plan DELETES the deriver
+   instead, because the live path now arrives via the producer's hook payload and an
+   auto-deriver would be dead code the moment B.2 lands. The retirement target (the
+   hardcoded path) is retired either way; the replacement mechanism supersedes the
+   row's rev-1-era prescription, named here the same way B.6 marks the setup.md:23
+   deviation.]
    Red-first: CLI without `-TranscriptPath` fails with the named mandatory-parameter
    error; with a fixture transcript, output byte-identical to current behaviour
    (achievable now - the extractor exists); `Verify-Verdict.ps1` bare stays exit 0
@@ -377,6 +391,8 @@ car reports observed). Probes 8/8. Verify-Verdict: exit 0, all verified, count f
 | C2R1-m2 | setup.md:23 taken from Car 3 silently | Folded: explicit MARKED deviation in B.6 with the same-commit rule as the reason |
 | C2R1-m3 | Fixtures depend on a gitignored log | Folded: sanitized fixtures inline in this plan; car builds files from them |
 | C2R1-m4 | Combined two-hook latency unmodelled | Folded: stated in Global constraints; baselines already include the probe hook; Handback measures combined reality |
+| C2R2-M1 | Load-bearing launch measurement gitignored-log-only | Folded: Probe 5 landed in the probe-results doc (keys, the identity equality, conditions, the spec-cell revision named); the committed hook regenerates the evidence in one dispatch |
+| C2R2-m1 | Spec §4 row 1 superseded silently | Folded: MARKED deviation in B.4 with the reason (deriver is dead code once the payload path exists) |
 
 ## The plan-review record (rule 5)
 

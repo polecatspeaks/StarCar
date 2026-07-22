@@ -79,6 +79,44 @@ and the design's refusal to use transcript-existence as a filter (rev-1's withdr
 "belt-and-braces") is again validated: existence correlates with the thing the filter
 already knows.
 
+## Probe 5 - the LAUNCH payload, and the identity correlation the producer turns on
+**[Added post-drill, C2R2-M1: this measurement was gitignored-log-only; it lands here
+because the Car 2 plan revises an approved spec cell on its strength.]**
+
+Method: a `PostToolUse` (matcher `Task`) observation hook
+(`.claude/hooks/post-task-probe.sh`, committed) appending each launch payload to the
+gitignored log; one trivial dispatch; conditions: live session, 2026-07-22, same box
+and shells as probes 1-4.
+
+**Observed launch payload, top-level keys:** `cwd, duration_ms, effort,
+hook_event_name, permission_mode, prompt_id, session_id, tool_input, tool_name,
+tool_response, tool_use_id, transcript_path`.
+**`tool_input` keys:** `description, model, prompt, subagent_type`.
+**`tool_response` keys:** `agentId, canReadOutputFile, description, isAsync,
+outputFile, prompt, resolvedModel, status`.
+
+**THE HINGE FACT, measured:** `tool_response.agentId` at launch **equals** `agent_id`
+in the same dispatch's `SubagentStop` payload (observed: one probe agent, both logs,
+values identical). Subject identity therefore holds end to end across the two hooks.
+
+**This REVISES a spec cell, and says so:** spec §2.1's "Verified" column records the
+launch hook as *"fires at launch, `status: async_launched`, no body"* (from design
+round 1). That observation was about the RESULT body - `status` is indeed
+`async_launched` with no outcome - but the IDENTITY is present in `tool_response`,
+which was never probed until now. The producer's `dispatched` records stand on this
+measurement; a re-run of the probe (hook is committed; any dispatch regenerates the
+evidence) re-derives it in one dispatch.
+
+Also measured on the same payload: `resolvedModel` is present at launch (the
+`dispatched` record's optional `model` field consumes it), and `session_id` is
+present in BOTH payloads (the schema's required `session_id` sources from it).
+
+**Companion measurement (transcript extraction, corroborating the spec-blessed §2.3
+mechanism):** the last assistant message's text parsed from a real
+`agent_transcript_path` JSONL (last `message.role=='assistant'`, joined
+`content[].type=='text'` parts) equals the payload's `last_assistant_message` field
+verbatim. The transcript is authoritative; the payload field is unused by the design.
+
 ## What this unblocks
 
 All four §7 probes are now ANSWERED (probe 2's trigger fired at cars 2-3 planning; its
