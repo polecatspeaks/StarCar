@@ -1,0 +1,293 @@
+Exactly right, you're in the groove now. as we go on the discussion will be less nuts and bolts to more high level design by philosophy and planning by contracts and laws. That's where it gets really fun.
+
+---
+
+exactly, and what's better yet, is it will be not just you, but your sibling agent as well eating our own dog food. So we will feel all that pain right away and very acutely. Why I'm doing it this way, while working on your sibling is beyond me. But if I'm gonna show my ass to the world might as well give them the full monty.
+
+---
+
+<task-notification>
+<task-id>a9fa2727d341bde1b</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\64c15364-0933-4d6d-9b2e-d1ddbc918f9f\tasks\a9fa2727d341bde1b.output</output-file>
+<status>completed</status>
+<summary>Agent "Adversarial design review v0" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>Base verified at `d7b8463a218980800f48bb8076ebe511226ec12d`, clean worktree, detached. I read the design, the constitution, CLAUDE.md, the Healing Loop, both templates, `scripts/board.ps1`, the README, `docs/setup.md`, the commit that landed the design, live branch protection, and GitHub issue #1.
+
+---
+
+# VERDICT: REJECT
+
+Nine Major findings, the load-bearing one being that the design's central structural claim (D2 plus §4: "the sentence check reduces to confirming the shared type is genuinely shared") rests on a guard TypeScript does not provide, over a boundary the design leaves entirely unvalidated.
+
+---
+
+## CITATION AUDIT (every citation opened)
+
+| Design cite | Verdict |
+|---|---|
+| `scripts/board.ps1:29-39` "already set it as this repo's policy for command-line wrappers" (design:126) | **WRONG RANGE.** The policy statement is at `board.ps1:9-14` ("Pure parsing/lookup logic lives in Board.psm1 (Pester-tested...). This file is the thin gh wrapper: per the repo's TDD policy for CLI wrappers it is smoke-tested + documented rather than unit-tested"). Lines 29-36 of the cited range are about GraphQL batching efficiency and per-item failure handling; only 36-39 restate the policy, and the sentence completes on line 39. The underlying claim is TRUE; the pointer is off by twenty lines. Minor-1. |
+| Law 4 "Nothing Silently Lost" incl. "a missing lane reading as 'no trains' is a lie of omission" (design:16-17) | HOLDS verbatim, `docs/constitution.md:32-36`. |
+| Law 6 "the view never derives a verdict the source did not issue" (design:31) | HOLDS, `constitution.md:47-48`. |
+| Law 6 "where sources disagree, show the disagreement" (design:35) | HOLDS, `constitution.md:49-50`. |
+| Law 7 "synthetic demo data in-repo" (design:31, :59) | HOLDS, `constitution.md:54-55`. |
+| Law 5 "adapter health is a first-class surface" (design:55) | HOLDS, `constitution.md:40-41`. |
+| Law 5 "freshness is always visible" (design:116-117) | HOLDS, `constitution.md:40`. |
+| Law 1 "the worst defect this project can ship" (design:137) | HOLDS, `constitution.md:15-16`. |
+| Issue #1's stated route "v0 static mock first to validate the layout" (design:19) | HOLDS. Issue #1 body: "ROUTE: v0 static mock first to validate the layout, then the adapter/generator built through the full ladder". Label confirmed `area:view`. |
+
+**Every law number is cited correctly.** That is a genuine strength and I say so plainly: I attacked this expecting a wrong law and found none.
+
+---
+
+## MAJOR FINDINGS (any one = REJECT)
+
+### MAJOR-1. The `LaneState` union has no inhabitant for "not yet known", and Law 1 requires one
+
+**Location:** design:73-77 (the union), design:100-108 (`Server`), design:172-179 (error table).
+
+The union is `ok | stale | failed | no-adapter`. Now consider the window the design never names: the server has started, the poll loop has not completed its first pass, and a browser hits `GET /api/snapshot` (design:103). What is returned?
+
+- `ok` requires `data` and is a positive claim of freshness. Unbacked.
+- `stale` requires `data`. Unbacked.
+- `no-adapter` is a **lie**: there is an adapter, it just has not run.
+- `failed` requires a `reason`, and there has been no failure.
+
+There is no fifth option, and `YardSnapshot.asOf` (design:80) also has no defined value before the first poll. `constitution.md:17` is explicit: **"Unknown states render AS unknown, honestly."** The design's proudest structural move (design:89-93, "Law 4 becomes a type error rather than a review rule") builds a closed union that cannot express the one state the first law names by hand.
+
+**Why it matters:** four cars will each invent a different answer. Car C returns *something* from `/api/snapshot`; Car A's assembler must construct it; Car D must render it. Whatever Car C picks, the board's first paint is a confident falsehood on a status surface. That is the exact defect `constitution.md:15-16` names as the worst this project can ship.
+
+**Fix:** add `| { kind: 'unknown' }` (or `'pending'`) to `LaneState`, make `YardSnapshot.asOf` nullable or add a `firstPollCompleted` discriminant at snapshot level, define the initial snapshot explicitly in §3.4, and add "the pre-first-poll window" to the §7 lifecycle enumeration. Also add a §6 test: "before the first poll completes, `/api/snapshot` returns every lane as `unknown` and the view renders 'not yet read', never an empty lane and never `no-adapter`."
+
+---
+
+### MAJOR-2. The sentence-check reduction is unsound, and §6's shared-type test cannot fail
+
+**Location:** design:30 (D2), design:164-168, design:195-196.
+
+design:167-168 claims the sentence check "reduces to confirming the shared type is genuinely shared (one definition, imported both sides) rather than tracing nine fields through sixteen files." design:195-196 claims the guard is mechanical: "A duplicate definition is a build failure, not a review finding."
+
+Three independent legs, each fatal.
+
+**(a) A duplicate definition is not a build failure. TypeScript is structurally typed.** A second `type YardSnapshot = {...}` in the view module compiles cleanly, interoperates cleanly with the server's, and produces no diagnostic of any kind. Even a *divergent* duplicate compiles, as long as no value is assigned across the two definitions, which is exactly the situation here because the value arrives from `JSON.parse` and is cast. `tsc` has no "this type is defined twice in the repo" check, no lint rule enables one by default, and no bundler reports it. **The mechanical guard that D2's entire rationale rests on does not exist.** The test as written at design:195-196 would pass the moment it is written, against a codebase with two divergent definitions, which `CLAUDE.md:99` names outright: "A test that passes the moment you write it proves nothing."
+
+**(b) `JSON.parse` on the client is an unchecked cast, and the schema module's validators are not applied at the boundary.** design:147 says the schema module defines "`Yard`, `Train`, `Car`, `Gate`, and their validators." design:63-64 applies validation on adapter read. design:139-141 applies validation on write. **No validation is applied to the wire payload.** The client does `JSON.parse(e.data) as YardSnapshot` and TypeScript believes it. A shared compile-time type constrains what the server's *source code claims* to send and what the client's *source code claims* to receive. It constrains nothing about what crosses the wire. Concretely, in this design:
+- `ageMs: number` (design:75). If a clock skew or a division produces `Infinity` or `NaN`, `JSON.stringify` emits `null`. TypeScript still says `number`. The view renders `null ms` or `NaN`.
+- `lastGood?: T` (design:76). `JSON.stringify` silently drops keys whose value is `undefined`, so an explicitly-cleared `lastGood` and an absent one are indistinguishable on the wire. If any car ever reaches for `Date`, `Map`, `Set`, `bigint`, or a class instance inside `Train`/`Gate`/`Fuel`, the type says one thing and the wire says another, with no diagnostic.
+
+This is precisely the class `CLAUDE.md:150-161` was paid twice for. The design does not delete the class; it renames it and declares the renamed thing safe.
+
+**(c) The SSE layer is a hand-written string protocol that no type covers.** design:104 says `/api/stream` "emits a snapshot event when the snapshot changes." An SSE *event name* is a hand-maintained string on both sides (server writes `event: snapshot\ndata: ...\n\n`; client writes `addEventListener('snapshot', ...)`). If they disagree by one character, the client's listener never fires, the connection stays **open**, and per design:178 the client therefore reports itself **connected** while displaying the first-paint snapshot forever. A silent, permanent lying canary produced entirely inside a fully type-checked pipeline. Additionally, `data:` framing and the `\n\n` terminator are hand-written and unguarded, and there are **two** producers of `YardSnapshot` over this boundary (design:103 and design:104), which is a hand-maintained mirror by another name.
+
+**Fix:** (i) delete the claim at design:167-168 and replace it with an explicit hop list that the per-car reviewers must trace; (ii) apply the schema module's runtime validator to the parsed wire payload in the view, so a divergence is a red test rather than a silent pass; (iii) replace the §6 shared-type test with a guard that can actually fail, e.g. a source scan asserting the `YardSnapshot`/`LaneState` declarations resolve to exactly one file, plus an ESLint `no-restricted-syntax` rule banning those declarations outside `src/schema.ts`; (iv) define the SSE event name as an exported constant in the shared module and assert both sides import it; (v) mandate that `/api/snapshot` and `/api/stream` serialize through one function, and test that both produce byte-identical output for a fixed snapshot.
+
+---
+
+### MAJOR-3. Internal contradiction: §1 says the signals lane has no adapter; §3.6's CLI writes gate data into the state file
+
+**Location:** design:14-17 vs design:124.
+
+design:14-17: "The signals, freight, and fuel lanes have no adapter yet and render as loud 'no adapter connected' panels."
+
+design:124: the StateWriter CLI is `starcar gate set plan-review reject`.
+
+design:147: the schema defines `Gate`.
+
+design:82-83: `signals: LaneState&lt;Gate[]&gt;`.
+
+So the writer writes gates into the state file, the schema models gates, the `StateFileAdapter` (design:62-64) reads that file, and the signals lane is nevertheless declared to have no adapter and to render `no-adapter`. Those cannot both be true. Rendering `no-adapter` over gate data the system demonstrably holds is itself a Law 4 violation ("never silently dropped", `constitution.md:34`) and a Law 1 violation, committed by the very section that invokes Law 4 as its justification.
+
+Two readings, both live, and different cars will pick differently: (i) `Yard` carries only trains and `Gate` exists in the schema for future use, so the gate CLI subcommand should not ship in this train; (ii) `Yard` carries trains and gates, so signals is a live lane and §1's headline claim ("one live lane, three honest-empty", D4) is wrong.
+
+**Fix:** state the exact contents of `Yard` as a type block, the way `Adapter&lt;T&gt;` and `LaneState&lt;T&gt;` are given. Then reconcile §1, D4, §3.6's CLI surface, and the four `no-adapter` claims to it.
+
+---
+
+### MAJOR-4. The SSE contract is underspecified in three ways, each of which produces a silent lie
+
+**Location:** design:104-105, design:178, D7 at design:35.
+
+**(a) "Emits only on change" is undefined, and both readings break.** design:105: "Emits only on change, so an idle yard is silent." Change of *what*?
+- Reading 1, "the snapshot object differs from the last one sent": `YardSnapshot.asOf` (design:80) and `stale.ageMs` (design:75) change on every poll by construction, so nothing is ever silent and the stated benefit is fiction.
+- Reading 2, "the adapter's data differs": then the `ok` to `stale` transition, which is caused by time passing and not by data changing, **never emits**. A client that connected while the lane was `ok` displays `ok` indefinitely while the server knows it is stale. That is `constitution.md:42-43` verbatim: "A stale board that looks live is the lying-canary disease this project's ancestors fought all year."
+
+**(b) No heartbeat, and silence is deliberate.** The design makes an idle yard produce zero bytes and simultaneously requires the client to detect connection loss (design:178, D7). A half-open TCP connection (laptop sleep, wifi drop, an intermediary silently dropping state) leaves `EventSource` in `readyState === OPEN` indefinitely with no error event. With no periodic traffic, the client has no signal at all. §5's row "SSE disconnects, client shows 'disconnected, last good as-of X'" is therefore unbacked in the most common real disconnect mode. The design's design-review-mandated "observability reality" question (`CLAUDE.md:115-117`, "does the code actually expose what the design consumes?") answers NO here.
+
+**(c) First-paint versus stream ordering race.** design:103 gives first paint via `GET /api/snapshot`; design:104 gives updates via SSE. The client does both. If the stream is subscribed first and an event arrives while the fetch is still in flight, the fetch resolves *afterward* with an **older** snapshot and overwrites the newer one. The board then renders stale state as current with no marking, until the next change event, which under reading (b) of (a) above may never come. No ordering rule, sequence number, or monotonic guard is specified. `CLAUDE.md:115` puts race conditions explicitly in this gate's scope.
+
+**Fix:** (a) define change detection precisely, and make the `ok`/`stale` transition an explicit emit trigger regardless of data equality; (b) mandate an SSE comment heartbeat at a defined interval and a client-side watchdog that flips to "disconnected" after N missed heartbeats, and put the heartbeat interval on the wire so the client does not hardcode it; (c) mandate monotonic application by `asOf` (or add a monotonically increasing `seq` to `YardSnapshot`, which is more robust given the clock concerns in MAJOR-6) and a red test that a late-resolving first-paint fetch does not overwrite a newer streamed snapshot.
+
+---
+
+### MAJOR-5. Concurrency and state ownership: the state inventory is incomplete and §3.4's claim about it is false
+
+**Location:** design:107-108, design:76, design:200-215, design:226-230.
+
+design:107-108: "Holds the **only** long-lived mutable state in the system: `lastGoodSnapshot`, `lastPollAt`, `connectedClients`." That claim is false three times over.
+
+**(a) There is no in-flight poll guard.** design:105 specifies "Poll loop on a fixed interval." If a poll outlasts the interval (a large file, a network drive, an antivirus scan on Windows, a disk stall), invocations stack. Two concurrent reads can complete out of order, and an **older** read then overwrites `lastGoodSnapshot`. `pollInFlight` (and the timer handle itself) are mutable server state the design does not enumerate, therefore they get no ledger row, therefore per `state-ledger.md:31-32` they are `LATENT_BUG` by default and nobody knows it. This is the "poll that overlaps a slow previous poll" lifecycle event, missing from design:205-212.
+
+**(b) Per-lane `lastGood` has no owner.** design:76 requires `failed` lanes to carry `lastGood?: T; lastGoodAsOf?: string`. Producing that requires remembering the last successful result **per lane**. But design:98 describes the assembler as depending only on "adapters" and design:68-69 describes it as a pure combiner. Either the assembler is stateful (undisclosed mutable state, unledgered, owned by Car A) or the server must thread prior state into it (an interface between Car A and Car C that the design does not specify). Both readings are live; Car A and Car C will each assume the other does it. Note also that `lastGoodSnapshot` (whole-snapshot, server) and per-lane `lastGood` are two different granularities of the same idea, which is a second copy of something that can drift, and `constitution.md:48-49` forbids exactly that.
+
+**(c) The ledger's ownership contradicts the living-contracts rule.** design:202-203 mandates the ledger be created "in the same commit as the code that creates the state," which restates `CLAUDE.md:243-245`. But design:229 assigns ledger instantiation to **Car C only**, while Car A creates the assembler's per-lane last-good state and Car D creates client-side state (rendered snapshot, connection status, reconnect counters, last-received `asOf`). If Car A lands before Car C, Car A's commit creates mutable state with no ledger to update, which its own reviewer must reject. If Car C lands first, it ledgers state that does not exist yet. Also: design:213 lists three fields, none of them client-side, yet design:209 enumerates "client reconnect" as a lifecycle event.
+
+**Fix:** add `pollInFlight` and the timer handle to §7; specify a skip-if-in-flight (not queue) policy and a red test for it; name the owner of per-lane last-good explicitly and give the assembler a stated interface the way `Adapter&lt;T&gt;` has one; either make the ledger Car A's deliverable (first state landed) with later cars appending, or make it a §9 obligation on every car; decide explicitly whether browser state is in the ledger's scope and say so.
+
+---
+
+### MAJOR-6. `asOf` provenance is unspecified, which determines whether staleness ever fires at all
+
+**Location:** design:45-46 (`AdapterResult.asOf`), design:74-75, design:95-96, design:139-141.
+
+`asOf` appears on `AdapterResult`, on every `LaneState`, and on `YardSnapshot`, and the entire staleness mechanism (design:95-96, and Law 5's headline surface) is computed from it. The design never says where it comes from. Two readings:
+
+- **Reading 1, the state file's mtime.** Then a `git checkout` or a clone rewrites mtime to *now*, so a state file whose contents are three days old reads as perfectly fresh. The demo fixture that D3 (design:31) and Law 7 (`constitution.md:54-55`) require is then permanently `ok`, which is a lie.
+- **Reading 2, a timestamp field inside the file, written by the StateWriter.** Then a checked-in fixture reads as very stale, which is honest but makes the demo look broken; and a fixture hand-edited with a future timestamp (design:139-141 explicitly anticipates hand-editing) yields a negative age that never crosses the threshold, so the lane is permanently `ok`.
+
+Both readings need mitigation and the design specifies neither. Related and unaddressed: `ageMs` is derived from wall-clock arithmetic, so a system clock step (NTP correction, DST on a naive local timestamp, a fixture from another machine) can make age negative or wildly large. `constitution.md:42-43` names the lying canary; this is the mechanism that produces it.
+
+**Fix:** state the provenance explicitly, require in-file timestamps produced by the writer, require the adapter to reject or loudly mark future-dated `asOf` (negative age is not `ok`, it is `failed` with "state file timestamp is in the future"), and specify whether staleness uses wall clock or a monotonic delta from the last successful poll. Add a §6 test for a future-dated fixture and one for a clock step backwards.
+
+---
+
+### MAJOR-7. No car owns documentation, README goes false on landing, and the gating matrix is never instantiated
+
+**Location:** design:200-203, design:217-221, design:226-230; `README.md:8-11`; `docs/templates/gating-matrix.md:1-8,23`; `CLAUDE.md:24-92`, `CLAUDE.md:76-81`.
+
+**(a) The gating matrix is silently dropped.** design:202 correctly instantiates `docs/contracts/state-ledger.md`. The design never mentions `docs/contracts/gating-matrix.md`, whose template says (gating-matrix.md:3-4) "copy to `docs/contracts/gating-matrix.md` when the first gated surface lands," and whose own worked example (gating-matrix.md:23) is literally **"Example: staleness banner | data age &gt; threshold | never (truth surface) | fresh fetch | DELIBERATE, no override"**. This train lands the staleness banner, the `no-adapter` panel, the `failed` panel, and the client disconnect banner. By the template's own definition (gating-matrix.md:6-7, "every surface that DECIDES something... flips a status"), that is four gated surfaces. The design instantiates one of two contract templates and does not mention the other, and the one it drops is the one whose example row this train implements verbatim.
+
+**(b) `README.md:8-11` becomes false the instant this train lands.** It currently reads "there is no code, no server, and no quickstart, and this README will not describe one until there is." `CLAUDE.md:78-79` is unambiguous: "**the commit that invalidates a document updates that document, in the same commit.** Not a follow-up ticket, not a cleanup pass." No car in design:226-230 has documentation in scope. No section of the design mentions the README, the quickstart, adapter-authoring docs, or `docs/setup.md`, whose GitNexus row (setup.md:35, trigger "FIRST CODE lands") and CI row (setup.md:36, trigger "first code PR, likely") both fire on this train.
+
+**(c) In a project whose North Star (`CLAUDE.md:24-27`) ranks documentation "equal to code... neither senior to the other," a four-car, fourteen-dispatch train with zero documentation scope is a structural omission, not an oversight.** Law 7 makes the quickstart part of the deliverable, and `CLAUDE.md:56-60` makes the quickstart the thing CI is supposed to execute.
+
+**Fix:** add the gating matrix to §7 alongside the state ledger; give documentation an explicit owner (either a fifth car or a named obligation on each of A-D, plus a README/quickstart obligation on whichever car makes the server runnable); state in §7 or §9 what happens to `setup.md:35-36`'s two triggers; and record whether CI lands with this train, because `CLAUDE.md:228` defines "verified" as "the pipeline that ships it went green" and without CI no car can honestly claim it.
+
+---
+
+### MAJOR-8. Two of the six named tests cannot be written as described
+
+**Location:** design:192-196.
+
+**(a) The atomicity test (design:193-194): "interleave a write with a poll; the poller never observes a partial file."** As specified this is a nondeterministic race test. Against a *correct* implementation it can never observe a partial file, and against an *incorrect* one it observes a partial file only probabilistically. `CLAUDE.md:96-97` requires "write the failing test, RUN it, confirm it fails for the stated reason." A probabilistically-red test cannot honor that rule, and the car assigned it will either flake, loop until it passes, or quietly weaken it. Worse, the test targets the wrong failure mode for this repo's platform: on Windows (and `board.ps1:41` establishes this repo is Windows-first) the realistic failure is not a partial read, it is `rename` over a destination another process holds open failing with `EPERM`/`EBUSY`. The design does not mention that at all, and it is the failure the atomic-write strategy actually risks here.
+
+**Writable replacement, deterministic red:** (i) spy on the fs module and assert the destination path is never passed to any write/truncate call and that exactly one `rename(tmp, dest)` occurs. An in-place implementation calls `writeFile(dest)` and never `rename`, so this fails for exactly the stated reason before the fix and passes after. (ii) assert the temp filename cannot be mistaken for the state file by the adapter. (iii) assert `rename` over the destination succeeds while a read handle on the destination is open, run on Windows. (iv) keep any interleaving loop as a non-gating soak, never as the red.
+
+**(b) The staleness test (design:192): "fake clock."** Faking the clock requires the assembler to accept an injected clock, but §3.3 gives `SnapshotAssembler` no interface block at all (contrast `Adapter&lt;T&gt;` at design:43-52, which does). design:95-96 says the assembler owns the threshold and the classification, without saying how either is supplied. The named test cannot be written until someone invents that constructor signature, and `CLAUDE.md:125-128` records three REJECT rounds paid for exactly this class of gap.
+
+**(c) The shared-type test (design:195-196)** is covered in MAJOR-2(a): it cannot fail.
+
+**Fix:** rewrite design:193-196 as above; give `SnapshotAssembler` a stated interface including its clock and threshold inputs.
+
+---
+
+### MAJOR-9. No build, module, or test-runner story for the browser half, which is the mechanism D2's guarantee rides on
+
+**Location:** design:30 (D2), design:114-119, design:102.
+
+D2 commits to "TypeScript on Node." §3.5 commits to a browser view in "plain TypeScript and DOM" that "tests under jsdom." design:102 serves it as static assets. The design never states:
+
+- **How TypeScript reaches the browser.** `tsc` to ESM served raw? A bundler? Native ES modules with import maps? This is not a detail: **it is the exact mechanism by which the type is or is not shared.** If the view is bundled separately from the server, or if types are re-declared in a `.d.ts` for the browser build, D2's guarantee evaporates and MAJOR-2 gets worse.
+- **Which test runner.** jsdom implies one; the repo's only existing test infrastructure is Pester (`scripts/tests/Board.Tests.ps1`), and `docs/setup.md` has no row for Node, npm, or any JS test framework.
+- **Which Node version, and whether the browser bundle and the server share a tsconfig.**
+
+A zero-context plan-writer cannot resolve these, and four cars resolving them independently is the compile-wall scenario `CLAUDE.md:125-132` scarred over.
+
+**Fix:** state the toolchain in the design (it is a decision, so it belongs in the §2 table), and state explicitly how the shared type physically reaches the browser build.
+
+---
+
+## MINOR FINDINGS
+
+- **Minor-1.** `scripts/board.ps1:29-39` (design:126) is the wrong line range; the policy is stated at `board.ps1:9-14`. See the citation audit.
+- **Minor-2.** The policy the design inherits cites `task-c2-report.md` twice (`board.ps1:13-14`, `board.ps1:38`). `git ls-files` returns no such file anywhere in this repo. The precedent the design leans on rests on a comment pointing at a document that does not exist here. Recommend the design (or spec) state the policy in its own words rather than inheriting it by reference.
+- **Minor-3.** design:31: "Zero inference means zero Law 1 risk." False as a categorical. The assembler *does* derive (staleness classification, design:95-96), `lastGood` retention renders data whose backing has expired (design:76), and MAJOR-1/4/6 are all Law 1 risks with zero inference involved. Downstream readers trust confident sentences; this one will be used to skip Law 1 tests on the adapter path.
+- **Minor-4. Law 2 is neither implemented nor deferred.** "The Dispatcher Commands" (`constitution.md:19-24`) is the second-ranked law and includes "If a dispatcher marks a train held, the board renders held, even if the data says rolling." The design has no override mechanism, and §8 (design:217-221) does not list one as out of scope either. It is simply absent. A defensible answer exists (in v0 the dispatcher's override *is* the StateWriter, because the human edits the source of truth), but the design must say it and put view-level override in §8.
+- **Minor-5. Law 3 is never cited and Car D is one paragraph.** `constitution.md:26-30` is the only law about whether the board is *useful*: "a REJECT should be visible before the report is read; a stalled car should look stalled at a glance." §3.5 (design:112-119, six lines) says nothing about visual hierarchy, and design:230 gives Car D "View, staleness rendering, honest-empty panels." Car D has the largest surface (four lane kinds x server-stale x client-disconnected x the missing unknown state, plus board-level versus lane-level placement of the disconnect banner) and the thinnest specification in the document. That is the right-sizing defect in this train: not too many cars, but a badly uneven distribution of specification across them.
+- **Minor-6. Law 4 versus Law 7 tension, unacknowledged.** design:89-91 makes `lanes` four required keys, which is a hardcoded board schema, and `constitution.md:54` says "pluggable adapters, **no hardcoded board schemas** or label taxonomies." Law 4 outranks Law 7, so the design's choice is *correct*, but the trade must be recorded: a stranger cannot add a fifth lane without editing the core type. One sentence in D4 fixes this.
+- **Minor-7. Tracking.** `CLAUDE.md:272` requires every piece of work to have an issue and one area label. This train runs four cars against issue #1 alone, labelled `area:view` (verified via `gh issue view 1`). Car B (design:228, StateWriter module plus CLI) is not view work and Car C (server, SSE, poll loop) is arguably not either. Either file the issues or record the ruling.
+- **Minor-8. No car ordering or dependency graph.** design:226-230 gives four scopes and no sequence. Car A owns `schema`; Car B's stated property 1 (design:131-134) is that the writer imports the same schema module. So B is blocked on A, or two cars touch one file. The design should state the ordering, since `CLAUDE.md:268` makes "a car and its review are one unit" a scheduling constraint.
+- **Minor-9. The staleness threshold value is never named.** design:95-96 says the assembler owns "the threshold"; §10 question 3 asks whether a *second* threshold is needed without the first ever being specified. Car A cannot write the staleness test without inventing a number.
+- **Minor-10. The train/car state vocabulary is not pulled in.** Issue #1's body already enumerates it: "staged / rolling / at inspection / shopped-with-reject-round-count / coupled-with-SHA". Three cars need this vocabulary in agreement (A defines `Car`, B's CLI accepts `rolling` at design:123, D renders it). The design mentions only `rejectRounds` (design:150-152). Inherit the enumeration explicitly; do not let three cars re-derive it.
+- **Minor-11. "Smoke-tested" is undefined for this CLI.** design:124-125. `board.ps1`'s smoke test means "run it against the live GitHub board" (`board.ps1:12-13`). StarCar's StateWriter CLI has no external service, so "smoke-tested" has two readings: an automated end-to-end run against a temp directory (which is just an integration test and is perfectly automatable), or a manual documented procedure. These are very different deliverables. The board.ps1 precedent transfers only partly, because the reason that wrapper is not unit-tested is that unit-testing it means mocking a live API. That reason does not apply here.
+- **Minor-12. No host, port, or URL is specified anywhere.** Law 7 (`constitution.md:56`, "documentation a stranger can deploy from"). §10 questions 1 and 2 acknowledge two of three configuration surfaces; this is the third.
+- **Minor-13. Pre-existing, verified, and in scope for the North Star check: `README.md:51` says the constitution is "(DRAFT until ratified)".** `docs/constitution.md:3` says "**RATIFIED by the owner, 2026-07-21**", landed in commit `c43def0`. `CLAUDE.md:76-79` makes the invalidating commit responsible; `c43def0` did not sweep it, and `d7b8463` (the commit under review) edited README.md and did not sweep it either. The reading-order section of the public README currently tells a stranger the constitution is a draft. Not caused by this design; flagged because the North Star check asked.
+- **Minor-14. Pre-existing, verified: `docs/setup.md:25` says branch protection is "admins exempt... admins stay exempt so the owner can always override (Law 2)".** I queried the live remote: `gh api repos/polecatspeaks/StarCar/branches/main/protection` returns `"enforce_admins": true`. `CLAUDE.md:188-204` documents the reversal and the fault-injection that proved it. `setup.md:25` is a lying canary about a security control, in the file a stranger reads to understand the repo's guards, and it is the exact defect class `CLAUDE.md:195-204` was written about.
+
+## NOTES
+
+- `board.ps1:1` says "GitHub Project 5" while the parameter default at `board.ps1:52` is `ProjectNumber = 6` and `docs/setup.md:20` says "user project 6". Pre-existing drift in the file the design cites as its policy precedent.
+- design:187-188: the fixture "written mid-flush" is byte-identically a truncated file, so it is not distinguishable from the "malformed" fixture. Keep it only if it exercises something different (e.g. the adapter encountering the writer's temp file).
+- design:47 `reason: string`: free-form prose or a coded reason? design:174 says "red panel showing the reason", which suggests free-form, but a coded reason is what lets Car D render differently for "file missing" versus "schema violation". Decide.
+- No backoff on repeated adapter failure. Probably correct for a local file poll at this scale; worth one sentence so a later reviewer knows it was considered.
+
+---
+
+## RULINGS ON THE FIVE OPEN QUESTIONS
+
+**Q1, poll interval: config value or constant? Ruling: a constructor parameter with an exported default constant, plus a single `STARCAR_POLL_MS` environment override read once at startup. Not a config file.**
+Reasons: (a) the staleness test (design:192) already requires injectable timing, so the parameter must exist for testability regardless of the Law 7 argument, which makes the constant-only option strictly more expensive, not simpler; (b) Law 7 wants a stranger to tune it and the marginal cost is one parameter; (c) §8 (design:217-221) excludes config infrastructure, so an env var is the right weight. **Additional binding requirement: the effective interval must appear in `YardSnapshot` and be rendered**, because Law 5 (`constitution.md:39-41`) makes the board's own operating parameters part of its self-knowledge, and because it is the number a stranger needs when the board looks slow.
+
+**Q2, state file location and configurability? Ruling: default to a repo-root-relative path resolved from the process CWD, overridable by `--state &lt;path&gt;` and `STARCAR_STATE`, with the resolved ABSOLUTE path carried in `YardSnapshot` and rendered on the board. Separately: the live state file and the demo fixture must be two different files.**
+Reasons: (a) Law 7 forbids hardcoded paths; (b) Law 5 requires the board to say what it is reading, and the single likeliest stranger failure mode is a board saying `failed: ENOENT` while the human cannot tell which path it looked at, which is a Law 5 self-knowledge failure with a one-field fix; (c) **the fixture separation is the substantive half of this ruling.** D3 (design:31) collapses "the live conductor state file" and "the in-repo synthetic demo fixture" into one artifact, and design:139-141 leans on it being git-tracked. As one file, every `starcar car set` dirties the working tree mid-train and every car's diff contains board noise, and the demo data is whatever state the last train left behind rather than a curated illustration. Split them: a curated `fixtures/demo-state.json` used by tests and by a documented demo mode, and a live state file whose tracked-or-ignored status the design states explicitly. Given the showcase thesis I would track the live file too, but that must be a stated decision, and the design must say whether the writer commits (it should not; a human does).
+
+**Q3, second staleness threshold? Ruling: NO. One threshold in v0, and render `ageMs` numerically so the human performs the second-tier judgment themselves.**
+Reasons: (a) the Healing Loop's anti-autoimmune edge (`the-healing-loop.md:73-78`): "imported ceremony that never caught anything here is a pruning candidate," and a second tier has caught nothing yet because nothing has run; (b) Law 3 (`constitution.md:30`): "Decoration that does not inform is cut," and two shades of yellow inform less than one number; (c) it costs nothing to defer, because `ageMs` is already on the wire (design:75), so a second tier is a pure view change later with zero schema churn. This is the one place in the whole design where I would spend *less* ceremony, and the author was right to ask.
+
+**Q4, is `connectedClients` ledger-worthy? Ruling: YES. Ledger it.**
+Reasons: (a) `docs/templates/state-ledger.md:11-14` names the exact failure mode of the opposite ruling: an audit of the ancestor project "found 99 latent instances of the same pattern, each individually 'too small to ledger'." The argument "it is only an implementation detail of the SSE layer" is verbatim the argument that produced ninety-nine bugs; (b) it is genuinely mutable, genuinely long-lived, and it changes across three of the four enumerated lifecycle events; (c) there is a real bug it catches: clients not removed on disconnect leak, and the leak is invisible until the "client reconnect" row forces someone to verdict it; (d) the cost of a ledger row is one line, and the cost of establishing the exemption precedent on the very first ledger this project writes is unbounded. **A ledger's first entry sets its threshold forever; set it low.**
+
+**Q5, must "server says stale" and "I am disconnected" be visually distinct? Ruling: YES, distinct, and they must be capable of being displayed simultaneously.**
+Reasons, and the decisive one is structural, not aesthetic: **the two conditions live at different scopes.** Staleness is a per-lane property produced by the assembler and carried inside `LaneState` (design:74-75); disconnection is a whole-board property of the client's transport and belongs to no lane. Merging them into "one degraded treatment" is a category error before it is a design choice: it forces the view either to paint a board-level condition onto four lanes or to hide a lane-level condition behind a board banner. Beyond that: (a) Law 6 (`constitution.md:49-50`) requires the board to SHOW disagreement rather than pick a winner, and D7 (design:35) already establishes these as two independent truths, so collapsing them in pixels discards a truth the data deliberately preserves; (b) both can be true at once (a lane went stale, *then* the connection dropped), and a single treatment cannot express that; (c) the actionability difference is total: "stale" means go look at the conductor or the adapter, "disconnected" means go look at the server or your network. Law 3 (`constitution.md:27-28`) is about shortening the path from state to decision, and these are two different decisions. **The design must also state where the disconnect indicator lives** (board chrome, not lane panels), which it currently does not.
+
+---
+
+## CONSTITUTION CHECK
+
+| Law | Verdict |
+|---|---|
+| **1. Truth** (`constitution.md:11-17`) | **FINDING.** Honored at design:175 ("No partial render, a half-parsed yard is unbacked") and design:178 (last-good stays but visibly marked), both correct. Violated by MAJOR-1 (no `unknown` state, against `constitution.md:17`'s explicit mandate), MAJOR-4 (a silently frozen stream renders as live), and MAJOR-6 (staleness may never fire). |
+| **2. The Dispatcher Commands** (`constitution.md:19-24`) | **FINDING (Minor-4).** Not implemented, not deferred, not mentioned. The second-ranked law is absent from both §1-§7 and §8. |
+| **3. Actionability** (`constitution.md:26-30`) | **FINDING (Minor-5).** Never cited. §3.5 is six lines and never addresses "a REJECT should be visible before the report is read," which is the law's own worked example and this project's whole premise. |
+| **4. Nothing Silently Lost** (`constitution.md:32-36`) | **HONORED, and this is the document's best work.** design:79-93 makes four lanes required keys of a discriminated union so that "no way to express 'this lane is absent'" is a compile error, and design:189-190 makes it a test. That is `the-healing-loop.md:36-40`'s "a structural impossibility beats them all" applied correctly. Caveat: MAJOR-3 means the signals lane may be lying in the other direction. |
+| **5. Self-Knowledge** (`constitution.md:38-43`) | **FINDING.** Honored at design:116-117 (permanent `asOf` stamp), design:55-56 (health inside the return type, not a side channel: a genuinely good structural move), and D7's refusal to merge two failure modes. Violated by MAJOR-4(b): with no heartbeat and deliberate silence, the board can look live while dead, which is `constitution.md:42-43`'s named disease verbatim. |
+| **6. One Truth** (`constitution.md:45-50`) | **FINDING.** Honored at design:95-96 (staleness classification in the assembler, "The view never computes it") and D7 (design:35). Weakened by MAJOR-1 (with no `unknown` state the view must invent something for the pre-poll window, which is derivation by omission) and MAJOR-5(b) (`lastGoodSnapshot` and per-lane `lastGood` are two copies of one idea that can drift, which the law forbids by name). |
+| **7. The Stranger** (`constitution.md:52-56`) | **FINDING.** Honored by `Adapter&lt;T&gt;` as an explicit seam (design:41-59) and by D3's fixture-as-demo-data. Violated in aggregate: no build story (MAJOR-9), no documentation owner (MAJOR-7), no host/port/path/interval defaults (Minor-12, open Qs 1-2), and four hardcoded lane keys (Minor-6). A stranger cannot build, run, or deploy from this document today. |
+| **8. Growth** (`constitution.md:58-62`) | **FINDING.** Honored in form: §10 exists and is genuine (design:238-240, "a design review that only confirms the author's confidence is a spelling check"), and the train routes through the full ladder. Violated by MAJOR-7(a): the gating matrix, one of exactly two Healing Loop contract templates this repo owns, is dropped in the train that lands its own example surface. |
+
+---
+
+## NORTH STAR CHECK
+
+**Documents this design leaves stale, or will:**
+
+1. **`README.md:8-11`** goes false the moment the server runs. `CLAUDE.md:78-79` requires the same commit. No car owns it. (MAJOR-7b.)
+2. **`docs/templates/gating-matrix.md`** never instantiated despite this train landing four gated surfaces including the template's own example row. (MAJOR-7a.)
+3. **`docs/setup.md:35`** GitNexus row: trigger is "FIRST CODE lands." Fires on this train. Unmentioned.
+4. **`docs/setup.md:36`** CI row: trigger is "first workflow need (likely: first code PR)." Fires on this train, and it carries the quickstart runner (#6) that `CLAUDE.md:56-60` designates as the enforcement mechanism for the North Star itself. Unmentioned. Without CI, `CLAUDE.md:228`'s definition of "verified" cannot be met by any car in this train, which should be recorded as a known degradation rather than discovered at merge.
+5. **Pre-existing, verified:** `README.md:51` (constitution "DRAFT", actually RATIFIED per `constitution.md:3`) and `docs/setup.md:25` ("admins exempt", live API returns `enforce_admins: true`). Minor-13 and Minor-14.
+
+**Is commenting issue #1 sufficient?** No, on two counts. First, a comment does not un-say a body: issue #1's body still reads "ROUTE: v0 static mock first to validate the layout", and a reader who scans the body and stops (which is most readers) gets the superseded route as ground truth. The body should be edited with a dated amendment note pointing at the comment and the design, so the primary surface is true. Second, and more importantly, the same living-document logic applies to items 1-4 above, which the design does not mention at all. The design correctly identified the one stale document that was in front of it and missed the four that its own landing will create.
+
+---
+
+## WHAT IS GOOD
+
+Stated plainly, and limited to what genuinely is. Three of the attacks I was told to run failed, and the reasons matter for the re-review:
+
+- **Every law citation is correct.** I opened all eleven. Not one wrong number, and the paraphrases are faithful to the text rather than convenient. The only citation defect in the document is a line range in a PowerShell file whose underlying claim is true.
+- **design:79-93 is the real thing.** Four required keys plus a discriminated union genuinely does convert Law 4 from a review rule into a compile error, and the design's own justification (`the-healing-loop.md:36-40`, structural impossibility over remembered guards) is correctly applied. I attacked this and it held. My only finding against it is that the union is missing one member, which is a completeness defect in a fundamentally sound structure, not a shape defect.
+- **Health inside the return type (design:44-56)** rather than as a side channel is the same move applied a second time, independently, and it is right: a lane cannot be rendered without carrying its own health because the type will not let you separate them.
+- **D6 (design:34) is correct and correctly reasoned.** "Polling is the dumber mechanism and the correct one," argued from the inode swap that atomic rename produces. That is exactly the right instinct. My only complaint is that the design does not apply that same instinct one hop later at the browser boundary: it never records why SSE beat a browser-side poll of `/api/snapshot`, an alternative that would delete MAJOR-4 in its entirety. I am not rejecting on the SSE choice, which is defensible, but the design owes a rejected-alternative line, and if SSE stays then all three sub-findings of MAJOR-4 must be closed.
+- **§10 is honest and it worked.** Question 4 in particular ("argued both ways; the reviewer should rule") is a real question with a real cost either way. A design that hides its soft spots produces a review that finds nothing.
+- **Right-sizing: the four-car split and the full ladder are correct for this scope, and I looked hard for the autoimmune direction.** `CLAUDE.md:18-22` reserves the full ladder for "new subsystems, rewrites, cross-boundary contracts," and this is all three at once, in the document every later contract inherits. Fourteen dispatches for a train that defines the wire format, the adapter seam, the state ledger, and the test policy is proportionate. The cars are split at genuine seams (schema/adapter/assembler, writer, server, view) and none is trivial. **The problem with this train is not too much process. It is that the specification load is distributed unevenly across the cars** (Minor-5: Car A gets three sections and an interface block, Car D gets one paragraph and the largest rendering matrix in the system), and that roughly ten contracts the cars need are still undetermined. The spec rung is genuinely load-bearing here, which is itself evidence the ladder is right-sized rather than ceremonial.
+
+---
+
+## RE-REVIEW GATE
+
+For APPROVE on the next round, all nine Majors must be closed in the design document, not deferred to the spec, because each one determines a contract that cars A through D inherit as ground truth. Minor-1 (citation), Minor-3 (the false categorical), Minor-4 (Law 2), and Minor-6 (Law 4 vs Law 7 trade) are one-sentence fixes and should land in the same revision. Minor-13 and Minor-14 are pre-existing repo defects outside this design's scope; I raise them because the North Star check asked and I verified both against the live remote, and they belong in a separate sweep, not in this design's revision.
+
+I edited nothing, wrote nothing, committed nothing, and pushed nothing. The worktree at `C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\64c15364-0933-4d6d-9b2e-d1ddbc918f9f\scratchpad\review-design-1` is as I found it, at `d7b8463a218980800f48bb8076ebe511226ec12d`.</result>
+<usage><subagent_tokens>71942</subagent_tokens><tool_uses>15</tool_uses><duration_ms>680368</duration_ms></usage>
+</task-notification>
