@@ -1,0 +1,1 @@
+{"session_id": "sess-fixture-1", "hook_event_name": "PostToolUse", "tool_name": "Task", "tool_input": {"description": "fixture car", "model": "sonnet", "prompt": "x", "subagent_type": "car"}, "tool_response": {"agentId": "a88e7dadda60940ac", "status": "async_launched", "resolvedModel": "claude-sonnet-5", "isAsync": true}}

@@ -14,6 +14,10 @@
           {
             "type": "command",
             "command": "sh .claude/hooks/post-task-probe.sh"
+          },
+          {
+            "type": "command",
+            "command": "sh .claude/hooks/starcar-producer-launch.sh"
           }
         ]
       },
@@ -101,6 +105,10 @@
           {
             "type": "command",
             "command": "sh .claude/hooks/subagent-stop-probe.sh"
+          },
+          {
+            "type": "command",
+            "command": "sh .claude/hooks/starcar-producer-stop.sh"
           }
         ]
       }

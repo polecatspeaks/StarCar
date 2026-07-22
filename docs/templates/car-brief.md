@@ -41,6 +41,12 @@ FINAL REPORT: per task - commit SHA, red evidence (test name + observed failure 
 green evidence (counts), deviations with justification; then total suite results, ledger
 arithmetic as committed, findings/disclosures/honest stops. Your report feeds your
 adversarial reviewer - make every claim verifiable.
+
+END YOUR REPORT WITH THE ARTIFACT ENVELOPE (mandatory - this is how your dispatch's
+`returned` record gets its outcome; the producer hook extracts it from your transcript):
+a fenced block, info string starcar-artifact, with three fields - outcome (done /
+done-with-findings / honest-stop), findings, abstract. NO ANGLE BRACKETS anywhere inside
+the envelope (they get HTML-escaped or filtered; the angle-bracket-free form lands clean).
 ```
 
 ## Reviewer brief addendum
@@ -76,4 +82,8 @@ demonstrate, and state that failing it escalates to the owner rather than to ano
 CONSTITUTION CHECK: name each law the diff implicates, one line of evidence each.
 
 VERDICT: APPROVE or REJECT up top; findings by severity with file:line.
+
+END YOUR REPORT WITH THE ARTIFACT ENVELOPE (mandatory - your verdict is a `returned`
+dispatch too): a fenced block, info string starcar-artifact, fields outcome (APPROVE /
+REJECT / honest-stop), findings, abstract. NO ANGLE BRACKETS inside the envelope.
 ```
