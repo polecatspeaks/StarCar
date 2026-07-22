@@ -1,6 +1,13 @@
 Status: Current
 
-# PR-18 correctness fixes - the Copilot second-pass train (offset sort + 8 more)
+# PR-18 correctness fixes - the Copilot second-pass train (offset sort + 8 more) [rev 2]
+
+**Review record: round 1 REJECT - 2 Major, 3 Minor, 1 Nit**
+(plan adversary, Opus). M1 (F1 left stale in-code comments) and M2 (F5 two-readable +
+mis-scoped contract change) folded below with `[PR1-*]` tags; the F1 spine was proven
+mechanically correct by probe and F4's placeholder worry was proven empirically MOOT (all
+48 records recompute-match the producer's canonicalisation - NO split, NO gap; F4
+implements no split). Disposition table at the end.
 
 REQUIRED SUB-SKILL: one car, one adversarial reviewer. Right-sized: this is
 coverage-class work (bug fixes + doc truing on a working system) EXCEPT the offset-sort
@@ -47,17 +54,37 @@ winner selection, and intent-hold supersession (a withdrawn hold can win). This 
 unexamined premise behind Car 1's M-A4-1 fix: `-DateKind String` + lexical sort assumed
 Z-normalization that the migration then violated.
 
-**The fix:** sort by the parsed INSTANT. A helper (put it in `Artifact.psm1` or a small
-shared spot the car chooses, exported, tested):
-`Get-AtInstant([string]$at)` returns `[System.DateTimeOffset]::Parse($at,
-[System.Globalization.CultureInfo]::Invariantculture,
+**The fix:** sort by the parsed INSTANT. Add `Get-AtInstant([string]$at)` to
+**`Artifact.psm1`** (module-exported, the ONE owner - Law 6; `Detect-Dispatches.ps1:46`
+and `:158` already inline the same `[datetimeoffset]::Parse(...RoundtripKind)` idiom
+[PR1-m3], so F1 also repoints those two to the new helper OR states in-comment why `:158`
+stays inline - it returns a `DateTimeOffset` for a subtraction, a different shape; the car
+picks and discloses). Body:
+`[System.DateTimeOffset]::Parse($at, [System.Globalization.CultureInfo]::InvariantCulture,
 [System.Globalization.DateTimeStyles]::RoundtripKind).UtcDateTime`. Sort by that instant,
-then `subject`, then `file` (total order preserved). Apply at all three sites.
+then `subject`, then `file` (total order preserved - `file` is unique per record). Apply
+at all three sites (`New-ArtifactIndex.ps1:59`, `Detect-Dispatches.ps1:128`, `:175`).
 
-**F1 also updates the contract [Law: living docs, and match-the-instrument]:**
-`schema/index-format.md:46` currently reads "sorted by `at`, then `subject`, then `file`".
-Change to state the sort key is `at` **normalized to a UTC instant** (offsets honored),
-then subject, then file - and add one line naming why (mixed offsets in the store).
+**[PR1-m1] FAIL LOUD, per record.** `Test-Json` does NOT assert the `date-time` format
+(proven by the adversary: a malformed `"not-a-date"` and a zoneless `"2026-07-22T16:39:57"`
+both validate). So `Get-AtInstant` must: on a parse failure, THROW an error NAMING the
+offending value; and REJECT a zoneless `at` (no `Z`/offset) explicitly rather than parse it
+TZ-dependently (which would silently break `New-ArtifactIndex.ps1`'s determinism guarantee).
+The generator/detector let that throw propagate as a loud, named failure - never a silent
+mis-sort, never a whole-batch crash with no attribution (catch, name the record's file, rethrow).
+Red-first cell: a record with a zoneless `at` makes `Get-AtInstant` throw a message naming it.
+*(A schema `pattern` constraining `at` to offset-bearing ISO-8601 is the mechanical form -
+deferred to an issue, since it touches the schema contract; F1 fails loud in the meantime.)*
+
+**F1 also updates the contract AND the code comments it invalidates [Law: living docs,
+same commit; PR1-M1 - round 1 caught F1 leaving these stale, the exact class F7 cleans up]:**
+- `schema/index-format.md:46`: "sorted by `at`" → sorted by `at` **normalized to a UTC
+  instant** (offsets honored), then subject, then file; one line naming why (mixed offsets).
+- **`New-ArtifactIndex.ps1:54-58`**: the comment asserting the *"lexical sort ... IS a
+  chronological sort ... only holds because 'at' was never coerced"* is now FALSE (that
+  equivalence was the bug). Rewrite it to describe the instant sort.
+- **`New-ArtifactIndex.ps1:30-37`**: the `-DateKind String` rationale (*"lexical sort ...
+  non-chronological across years without it"*) is stale; true it to the instant-sort reality.
 
 - [ ] **Step 1 - red-first fixture:** add a fixture to `ArtifactIndex.Tests.ps1` (and a
   detector cell to `Detector.Tests.ps1`) with two records whose LEXICAL and CHRONOLOGICAL
@@ -101,11 +128,15 @@ its `integrity` hash actually matches its body. **Fix:** a new Pester test
 (`scripts/tests/StoreIntegrity.Tests.ps1`) that, for every `artifacts/**/*.json`,
 (a) validates via `Test-StarcarArtifact` and (b) recomputes the integrity by the producer's
 canonicalisation and asserts it matches the stored `integrity`. It runs in the existing CI
-Pester step - no ci.yml change needed (the glob already covers scripts/tests). [Note: the
-migrated records used a PLACEHOLDER integrity (`sha256:` + zeros or the migration's
-computed value) - the car must check what the migration actually wrote and, if placeholders,
-scope the recompute assertion to producer-written records and validate-only the migrated
-ones, disclosing the split. RUN and find out before asserting.]
+Pester step - no ci.yml change needed (the glob already covers scripts/tests).
+
+**[PR1-M2-adjacent / round-1 ruling: NO SPLIT.** The adversary empirically recomputed all
+48 store records (migrated reviews AND producer) under the producer's canonicalisation and
+ALL match - the migration used that same canonicalisation, so there are no placeholders and
+no gap. F4 recomputes-and-asserts the WHOLE store, no producer-vs-migrated split. **[PR1-m2]
+`Get-Sha256Hex` is script-LOCAL in `Produce-Artifact.ps1` (not exported); F4 EXTRACTS it to
+a shared module (Law 6, one owner) and both the producer and the test consume it - never a
+copy.**
 
 - [ ] **Red-first:** corrupt one record's integrity in a fixture copy → the test fails;
   restore. Commit `test(harness): CI validates every store record schema + integrity (#7)`.
@@ -113,20 +144,32 @@ ones, disclosing the split. RUN and find out before asserting.]
 ## F5 - envelope read-failure is not a brief-failure [Copilot: Produce-Artifact.ps1:153]
 
 `Get-LastAssistantText` reports missing/unreadable/unparseable transcripts via `Errors`,
-but `:153` discards `.Text`'s companion errors and classifies EVERY read failure as
-`envelope: absent` (a BRIEF failure - the agent emitted no envelope). A producer-side read
-failure (transcript missing/unreadable) is a PRODUCER fault, not the brief's. **Fix:**
-capture `Get-LastAssistantText`'s full result; when it errors, classify
-`outcome: error, envelope: <a producer-fault value>` distinct from `absent`, raising the
-error to `_faults.log` (Law 4). Confirm the schema's `envelope` field permits the value
-(spec §2.3 names `absent`/`malformed`; a producer-read fault may need a third value -
-check the schema/vocab and either use an existing value with the fault in findings, or
-propose the addition in the commit; do NOT silently widen the schema).
+but `:153` DISCARDS those errors (`.Text` only) and classifies EVERY read failure as
+`envelope: absent` (a BRIEF failure - the agent emitted no envelope). Two bugs in one: the
+errors are DROPPED (Law 4 violation - the actual core of Copilot's finding), and a
+PRODUCER-side read failure is blamed on the brief.
+
+**CONDUCTOR RULING [PR1-M2] - NO SCHEMA CHANGE; the `envelope` closed enum stays
+`{absent, malformed}`.** Round 1 correctly flagged that "use an existing value" defeats the
+fix and "add a value" is a closed-enum contract change mis-filed as coverage-class. Ruled:
+the distinction is carried WITHOUT touching the enum. A returned record whose transcript
+CANNOT BE READ is not "we read it and found no envelope" (`absent`) - it is a producer
+fault, so:
+- **OMIT the `envelope` field entirely** (it is optional; absent-the-field ≠ the value
+  `absent`), set `outcome: error`, and put the read error in `findings`;
+- **RAISE the error to `_faults.log`** (Law 4 - fixes the drop);
+- A brief-absence (transcript read OK, no fence) keeps `envelope: absent` as today.
+A consumer distinguishes them cleanly: `envelope=absent` = brief failure; `envelope` field
+missing + `outcome=error` + a `_faults.log` line = producer read failure. No closed-contract
+widening, no spec §2.3/§9 edit, stays coverage-class. *(A dedicated `envelope: unreadable`
+value is a possible future schema enhancement - DEFERRED to an issue with the executable-spec
+track, NOT done here.)*
 
 - [ ] **Red-first:** a returned payload pointing at a NONEXISTENT transcript today lands
-  `envelope: absent` (brief blamed for a producer failure); after the fix it lands the
-  producer-fault classification with the read error in findings/_faults.log. Commit
-  `fix(harness): distinguish producer read-failure from an absent envelope (#7)`.
+  `envelope: absent` (brief blamed) AND silently drops the read error; after the fix it
+  lands `outcome: error`, NO `envelope` field, the read error in `findings`, and a
+  `_faults.log` line. Assert both the classification AND that the error is no longer
+  dropped. Commit `fix(harness): producer read-failure is not an absent envelope; stop dropping the error (#7)`.
 
 ## F6 - README status truth [Copilot: README.md:8]
 
@@ -177,11 +220,21 @@ ARMED, naming the ci.yml step as the evidence.
 | README status stale | F6 |
 | state-ledger staleness-owner stale | F7 |
 
+## Round-1 finding disposition [the carrier the delta walks]
+
+| ID | Finding | Disposition in rev 2 |
+|---|---|---|
+| PR1-M1 | F1 left stale in-code comments (New-ArtifactIndex.ps1:54-58, :30-37) | Folded: F1's same-commit doc-set now enumerates both, alongside index-format.md:46 |
+| PR1-M2 | F5 two-readable + mis-scoped closed-enum contract change | Folded: conductor ruling - NO schema change; omit envelope field + outcome:error + _faults.log; dedicated value deferred to an issue |
+| PR1-m1 | F1 crashes/mis-sorts on schema-valid malformed/zoneless `at` | Folded: Get-AtInstant fails LOUD per record (throws naming the value, rejects zoneless); schema pattern deferred to an issue |
+| PR1-m2 | F4 Get-Sha256Hex script-local | Folded: F4 EXTRACTS it to a shared module (Law 6) |
+| PR1-m3 | Law-6 parse-idiom duplication (Detect-Dispatches:46/158) | Folded: F1 repoints to Get-AtInstant or discloses why :158 stays inline |
+| PR1-Nit | F6 abbreviated quote | The car sentence-checks the full README:8 line |
+| — | F4 placeholder worry | Ruled MOOT by the adversary's recompute (all 48 match); F4 implements NO split |
+
 ## The plan-review record (rule 5)
 
-*Pending - plan adversary (Opus). Plan-writer evidence at base (conditions stated): the
-three Sort-Object sites read at base; 25 offset timestamps counted in the store; the
-state-ledger:66 and README surfaces read; the envelope :148-158 and index :64-66
-interpolation read. The adversary re-verifies and especially challenges F1's
-`DateTimeOffset.Parse` shape (does it round-trip every `at` the schema accepts? does the
-detector's OTHER sort at :128 use the same key?) and F4's placeholder-integrity caveat.*
+Round 1: **REJECT - 2 Major, 3 Minor, 1 Nit** (Opus plan adversary). The F1 spine was
+proven mechanically correct (DateTimeOffset round-trips both forms; three sort sites
+correct; F1-before-F2 ordering correct) and F4's placeholder worry proven empirically moot.
+Rev 2 folds all findings per the table. Round 2 is a delta to the same adversary.
