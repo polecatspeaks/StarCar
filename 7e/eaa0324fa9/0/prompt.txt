@@ -3258,3 +3258,7 @@ ok before we go, let's hold a quick post mortem. What have we learned over this 
 ---
 
 ok recommendations on how to improve items? I'm not sure how to handle the same agent delta pattern or the claude.md's growth.
+
+---
+
+ok this looks really solid for this phase. We need to fully accept that things will change and morph in ways we can not predict, so all we can solve for is the problems we have right infront of us.
