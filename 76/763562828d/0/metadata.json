@@ -1,0 +1,94 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "76763562828d",
+  "session_id": "64c15364-0933-4d6d-9b2e-d1ddbc918f9f",
+  "strategy": "manual-commit",
+  "created_at": "2026-07-22T08:16:00.2670954Z",
+  "branch": "dev",
+  "checkpoints_count": 1,
+  "save_step_count": 2,
+  "files_touched": [
+    "docs/reviews/2026-07-21-design-v0-round1-REJECT.md",
+    "scripts/Land-Verdict.ps1",
+    "scripts/Verify-Verdict.ps1"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-fable-5",
+  "turn_id": "bf2cb025a633",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 294,
+    "cache_creation_tokens": 785638,
+    "cache_read_tokens": 31703592,
+    "output_tokens": 244992,
+    "api_call_count": 147
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01SA8kMnb5keujPU6SUsz8mF",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:brainstorming"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "bf2cb025a633",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 77,
+        "end": 78,
+        "entry_ids": [
+          "ca5b3d06-a20a-4a2d-9194-8f0e613bcf4b"
+        ],
+        "tool_use_id": "toolu_01SA8kMnb5keujPU6SUsz8mF"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01SA8kMnb5keujPU6SUsz8mF"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:brainstorming",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 11
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-07-22T08:16:00.0710925Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 342,
+    "human_modified": 21,
+    "human_removed": 0,
+    "total_committed": 342,
+    "total_lines_changed": 365,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 13,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".claude/settings.local.json": 13
+      }
+    }
+  ]
+}

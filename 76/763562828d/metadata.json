@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "76763562828d",
+  "strategy": "manual-commit",
+  "branch": "dev",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/reviews/2026-07-21-design-v0-round1-REJECT.md",
+    "scripts/Land-Verdict.ps1",
+    "scripts/Verify-Verdict.ps1"
+  ],
+  "sessions": [
+    {
+      "metadata": "/76/763562828d/0/metadata.json",
+      "transcript": "/76/763562828d/0/full.jsonl",
+      "compact_transcript": "/76/763562828d/0/transcript.jsonl",
+      "content_hash": "/76/763562828d/0/content_hash.txt",
+      "prompt": "/76/763562828d/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 294,
+    "cache_creation_tokens": 785638,
+    "cache_read_tokens": 31703592,
+    "output_tokens": 244992,
+    "api_call_count": 147
+  }
+}
