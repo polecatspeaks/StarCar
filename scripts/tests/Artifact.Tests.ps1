@@ -26,7 +26,7 @@ Describe 'Test-StarcarArtifact conformance' {
     It 'an unrecognised kind is a DISCOVERY by name, never invalid' {
         $obj = [pscustomobject]@{ schema='starcar-artifact/1'; kind='migrated';
             subject='x'; session_id='s'; at='2026-07-22T00:00:00Z';
-            normalisation=@(); integrity='sha256:0' }
+            normalisation=@(); integrity='sha256:0000000000000000000000000000000000000000000000000000000000000000' }
         $r = Test-StarcarArtifact -InputObject $obj -SchemaPath $script:SchemaPath
         $r.Valid | Should -BeTrue
         $r.Discoveries | Should -Contain 'kind: migrated'

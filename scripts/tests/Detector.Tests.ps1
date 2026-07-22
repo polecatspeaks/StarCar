@@ -25,7 +25,7 @@ Describe 'Detect-Dispatches' {
             if ($null -ne $Budget) { $rec['budget'] = $Budget }
             if ($null -ne $Cost)   { $rec['cost'] = $Cost }
             $rec['normalisation'] = @()
-            $rec['integrity'] = 'sha256:0'
+            $rec['integrity'] = 'sha256:0000000000000000000000000000000000000000000000000000000000000000'
             $dir = Join-Path $Store $Subject
             New-Item -ItemType Directory -Path $dir -Force | Out-Null
             $file = Join-Path $dir "$Kind-$($At -replace '[-:]', '').json"

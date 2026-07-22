@@ -48,14 +48,32 @@ Describe 'Produce-Artifact' {
         # hook pipes OS stdin to `pwsh -File` or a caller pipes an object in-process -
         # both verified). `exit` inside an &-invoked script file is isolated: it sets
         # $LASTEXITCODE without terminating this runner.
+        #
+        # Q3 fix-cycle finding: the producer's catch block sets $ErrorActionPreference =
+        # 'Stop' in ITS OWN script scope (line 43), which makes its own Write-Error calls
+        # terminating. Invoked via `&` (not a separate process), an unhandled terminating
+        # error propagates OUT of the script and INTO this runner - `exit 1` is never
+        # reached, and `2>&1` does not catch it (that redirects the non-terminating error
+        # stream; a terminating error is a different mechanism). Measured directly: the
+        # SAME failure invoked as a genuinely separate `pwsh -File` process (how the real
+        # hook runs it) correctly exits 1, because the process boundary confines the
+        # terminating error. The try/catch below makes this harness match that real
+        # subprocess exit-code semantics without paying a per-test subprocess-spawn cost.
         function Invoke-Producer {
             param([string]$Payload, [string]$Kind, [string]$StoreRoot, [string]$Now)
-            if ($Now) {
-                $out = $Payload | & $script:Script -Kind $Kind -StoreRoot $StoreRoot -Now $Now 2>&1
-            } else {
-                $out = $Payload | & $script:Script -Kind $Kind -StoreRoot $StoreRoot 2>&1
+            $exitCode = 0
+            try {
+                if ($Now) {
+                    $out = $Payload | & $script:Script -Kind $Kind -StoreRoot $StoreRoot -Now $Now 2>&1
+                } else {
+                    $out = $Payload | & $script:Script -Kind $Kind -StoreRoot $StoreRoot 2>&1
+                }
+                $exitCode = $LASTEXITCODE
+            } catch {
+                $out = $_.Exception.Message
+                $exitCode = 1
             }
-            [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = ($out -join "`n") }
+            [pscustomobject]@{ ExitCode = $exitCode; Output = ($out -join "`n") }
         }
     }
 
@@ -166,6 +184,40 @@ Describe 'Produce-Artifact' {
         foreach ($p in $rec.PSObject.Properties) { if ($p.Name -ne 'integrity') { $copy[$p.Name] = $p.Value } }
         $body = $copy | ConvertTo-Json -Depth 20 -Compress
         ('sha256:' + (Get-Sha256Hex $body)) | Should -Be $rec.integrity
+    }
+
+    It 'Q3: a payload with a path-traversal agent_id (../evil) writes NOTHING, faults, and exits nonzero' {
+        $repo = New-FixtureRepo
+        $store = Join-Path $repo 'artifacts'
+        $before = @(Get-ChildItem -Path $repo -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
+        $payload = (Get-Payload 'stop-car.json' | ConvertFrom-Json)
+        $payload.agent_id = '../evil'
+        $json = $payload | ConvertTo-Json -Depth 20
+        $r = Invoke-Producer -Payload $json -Kind 'returned' -StoreRoot $store -Now '2026-07-22T10:05:00Z'
+        $r.ExitCode | Should -Not -Be 0
+        $after = @(Get-ChildItem -Path $repo -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
+        $faultsLog = Join-Path $store '_faults.log'
+        $newFiles = @($after | Where-Object { ($before -notcontains $_) -and ($_ -ne $faultsLog) })
+        $newFiles.Count | Should -Be 0 -Because 'no file may land inside or outside the store for a rejected subject'
+        Test-Path $faultsLog | Should -BeTrue
+        (Get-Content $faultsLog -Raw) | Should -Match ([regex]::Escape('../evil')) -Because 'Law 4: the rejected subject is named, never dropped'
+    }
+
+    It 'Q3: a payload with a path-separator agent_id (a/b) writes NOTHING, faults, and exits nonzero' {
+        $repo = New-FixtureRepo
+        $store = Join-Path $repo 'artifacts'
+        $before = @(Get-ChildItem -Path $repo -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
+        $payload = (Get-Payload 'stop-car.json' | ConvertFrom-Json)
+        $payload.agent_id = 'a/b'
+        $json = $payload | ConvertTo-Json -Depth 20
+        $r = Invoke-Producer -Payload $json -Kind 'returned' -StoreRoot $store -Now '2026-07-22T10:05:00Z'
+        $r.ExitCode | Should -Not -Be 0
+        $after = @(Get-ChildItem -Path $repo -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
+        $faultsLog = Join-Path $store '_faults.log'
+        $newFiles = @($after | Where-Object { ($before -notcontains $_) -and ($_ -ne $faultsLog) })
+        $newFiles.Count | Should -Be 0 -Because 'no file may land inside or outside the store for a rejected subject'
+        Test-Path $faultsLog | Should -BeTrue
+        (Get-Content $faultsLog -Raw) | Should -Match ([regex]::Escape('a/b')) -Because 'Law 4: the rejected subject is named, never dropped'
     }
 
     It 'ENTANGLEMENT (C2R1-M2): a foreign co-staged file stays OUT of the producer commit' {
