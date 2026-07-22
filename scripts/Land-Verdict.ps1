@@ -198,6 +198,60 @@ if ((Test-Path $Out) -and (-not $Force)) {
 $roundLine = ''
 if ($Round) { $roundLine = "Round: $Round" }
 
+# PROVENANCE AS CITATION.
+#
+# The owner's frame: treat Entire provenance the way an academic paper treats its
+# sources. That standard is higher than "add a link" - "see Smith 2019" is bad
+# practice, "Smith 2019, p. 47" is a citation. A reference must land a reader ON the
+# passage, or we have rebuilt persisted-but-unfindable with better manners.
+#
+# So the citation identifies the work (the Entire session), the exact locator within
+# it (the dispatch id), and the edition (the base commit the reviewer read), and it
+# gives the literal commands to follow the reference. Anyone can check that this
+# artifact says what its source said - which is the point of a citation, and the only
+# defence that actually constrains whoever controls this script.
+$sessionId = [System.IO.Path]::GetFileNameWithoutExtension($path)
+
+# Resolve the Entire checkpoint that covers the base commit, so the citation names a
+# precise location rather than gesturing at a session.
+#
+# The first version cited the session UUID. It was DEAD ON ARRIVAL - `entire checkpoint
+# explain <session-uuid>` answers "no checkpoint or commit found". Caught only because
+# the citation was actually followed before landing, which is the whole standard this
+# frame imposes: a reference nobody tried is a reference nobody can trust, and this
+# repo calls a dead citation a finding.
+#
+# Note: `entire` exits non-zero even on success here, so success is judged on output.
+$checkpointId = ''
+$explain = (entire checkpoint explain $Base 2>&1 | Out-String)
+if ($explain -match 'Checkpoint\s+([0-9a-f]{8,})') { $checkpointId = $Matches[1] }
+
+$checkpointRow = ''
+if ($checkpointId) { $checkpointRow = "| Entire checkpoint | ``$checkpointId`` |" }
+
+$provenance = @"
+## Provenance
+
+Cited the way a paper cites a source: the work, the exact locator within it, and the
+edition. Every reference below was followed before this file was written.
+
+| | |
+|---|---|
+| Base commit the reviewer read (**the lookup key**) | ``$Base`` |
+$checkpointRow
+| Dispatch, the locator within the session | ``$TaskId`` |
+| Entire session (context, NOT a lookup key) | ``$sessionId`` |
+| Landed by | ``scripts/Land-Verdict.ps1`` - verbatim extraction, never retyped |
+
+Follow the citation:
+
+``````
+entire checkpoint explain $Base
+entire checkpoint search "<a distinctive phrase from the body below>"
+git log entire/checkpoints/v1 --oneline    # the independently-written public copy
+``````
+"@
+
 $normalisedNote = 'none applied (the body contained no operator-environment paths).'
 if ($normalised) {
     $normalisedNote = 'the repository root was rewritten to ``<repo>`` and the operator home directory to ``~``, BEFORE hashing. Mechanical and narrow: only those two roots, longest-first, no other substitution. This is portability, not curation - findings, verdicts and counts are untouched, and the un-normalised original is on the Entire checkpoint branch.'
@@ -259,7 +313,7 @@ if ($outDir -and (-not (Test-Path $outDir))) { New-Item -ItemType Directory -Pat
 # defence against a determined conductor is PUBLICATION - Entire's checkpoint branch
 # holds an independently-written copy of the same body - and the hash's honest job is
 # detecting accident and drift, which this repo has already hit three times.
-$document = ($header + $separator + $body).Replace("`r`n", "`n")
+$document = ($header + "`n`n" + $provenance + $separator + $body).Replace("`r`n", "`n")
 $hash = Get-Sha256 -Text $document
 $integrityLine = "<!-- starcar-integrity: sha256=$hash covers every byte below this line; recompute with scripts/Verify-Verdict.ps1 -->`n"
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)

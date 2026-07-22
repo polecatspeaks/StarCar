@@ -1,4 +1,4 @@
-<!-- starcar-integrity: sha256=3b5991d0583a3bd245b2bd145234ca5e192eddf84a1076124960898fd03b22eb covers every byte below this line; recompute with scripts/Verify-Verdict.ps1 -->
+<!-- starcar-integrity: sha256=2295466ee5bacc8251d34540099c06a7d56977471036fc62c5c8e26c8127bb10 covers every byte below this line; recompute with scripts/Verify-Verdict.ps1 -->
 # Adversarial design review - v0 yard skeleton, round 1
 
 Status: Verdict of record
@@ -22,6 +22,27 @@ Reviewer: car agent type, Opus, read-only, detached worktree, no delegation
 > defence against whoever controls this script.
 >
 > Path normalisation: the repository root was rewritten to ``<repo>`` and the operator home directory to ``~``, BEFORE hashing. Mechanical and narrow: only those two roots, longest-first, no other substitution. This is portability, not curation - findings, verdicts and counts are untouched, and the un-normalised original is on the Entire checkpoint branch.
+
+## Provenance
+
+Cited the way a paper cites a source: the work, the exact locator within it, and the
+edition. Every reference below was followed before this file was written.
+
+| | |
+|---|---|
+| Base commit the reviewer read (**the lookup key**) | `d7b8463a218980800f48bb8076ebe511226ec12d` |
+| Entire checkpoint | `5aeb388529f1` |
+| Dispatch, the locator within the session | `a9fa2727d341bde1b` |
+| Entire session (context, NOT a lookup key) | `64c15364-0933-4d6d-9b2e-d1ddbc918f9f` |
+| Landed by | `scripts/Land-Verdict.ps1` - verbatim extraction, never retyped |
+
+Follow the citation:
+
+```
+entire checkpoint explain d7b8463a218980800f48bb8076ebe511226ec12d
+entire checkpoint search "<a distinctive phrase from the body below>"
+git log entire/checkpoints/v1 --oneline    # the independently-written public copy
+```
 <!-- verbatim-body-below: do not edit past this line -->
 
 Base verified at `d7b8463a218980800f48bb8076ebe511226ec12d`, clean worktree, detached. I read the design, the constitution, CLAUDE.md, the Healing Loop, both templates, `scripts/board.ps1`, the README, `docs/setup.md`, the commit that landed the design, live branch protection, and GitHub issue #1.

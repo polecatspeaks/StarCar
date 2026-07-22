@@ -1,4 +1,4 @@
-<!-- starcar-integrity: sha256=bc8d719f2409382b1a9e258790679b7ce159948b0360e4efa8e1c0c381679440 covers every byte below this line; recompute with scripts/Verify-Verdict.ps1 -->
+<!-- starcar-integrity: sha256=bb4b0fa434b392197f7f3e6ae7017ef0d26fbb8ce16b6b102ff3df918e2696c9 covers every byte below this line; recompute with scripts/Verify-Verdict.ps1 -->
 # Adversarial design review - v0 yard skeleton, round 2
 
 Status: Verdict of record
@@ -22,6 +22,27 @@ Reviewer: car agent type, Opus, read-only, detached worktree, no delegation
 > defence against whoever controls this script.
 >
 > Path normalisation: the repository root was rewritten to ``<repo>`` and the operator home directory to ``~``, BEFORE hashing. Mechanical and narrow: only those two roots, longest-first, no other substitution. This is portability, not curation - findings, verdicts and counts are untouched, and the un-normalised original is on the Entire checkpoint branch.
+
+## Provenance
+
+Cited the way a paper cites a source: the work, the exact locator within it, and the
+edition. Every reference below was followed before this file was written.
+
+| | |
+|---|---|
+| Base commit the reviewer read (**the lookup key**) | `444e0314f1ecbfe3a132b2f71c2be8963d1c1ad3` |
+| Entire checkpoint | `355c38864811` |
+| Dispatch, the locator within the session | `a56d4b46b4589a001` |
+| Entire session (context, NOT a lookup key) | `64c15364-0933-4d6d-9b2e-d1ddbc918f9f` |
+| Landed by | `scripts/Land-Verdict.ps1` - verbatim extraction, never retyped |
+
+Follow the citation:
+
+```
+entire checkpoint explain 444e0314f1ecbfe3a132b2f71c2be8963d1c1ad3
+entire checkpoint search "<a distinctive phrase from the body below>"
+git log entire/checkpoints/v1 --oneline    # the independently-written public copy
+```
 <!-- verbatim-body-below: do not edit past this line -->
 
 # VERDICT: REJECT
