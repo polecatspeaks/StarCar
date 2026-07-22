@@ -1,11 +1,11 @@
 # Design: the dispatch harness
 
-Status: **DRAFT rev 2 - awaiting adversarial design review (round 2)**
+Status: **DRAFT rev 3 - awaiting adversarial design review (round 3)**
 Issue: #7 (`area:adapters`)
 Date: 2026-07-22
 Ladder rung: design (rung 1 of: design → spec → plan → cars)
-History: rev 1 REJECT (7 Major, 10 Minor). Verdict landed verbatim at
-`docs/reviews/2026-07-22-harness-design-round1-REJECT.md`. See §13.
+History: rev 1 REJECT (7 Major), rev 2 REJECT (3 Major). Verdicts landed verbatim in
+`docs/reviews/`. See §13.
 
 ## 1. What this is
 
@@ -17,334 +17,372 @@ human remembered to type.
 ## 2. The class, and the citation frame
 
 A dispatch's output is ephemeral by default; the only thing between an artifact and
-oblivion was the conductor remembering to copy it out. That is **vigilance**, the weakest
-tier in the Healing Loop's hierarchy.
+oblivion was the conductor remembering to copy it out - **vigilance**, the weakest tier.
 
-Entire.io already provides **durability**. What it does not provide is **addressability**:
-an artifact buried in a multi-megabyte JSONL is safe and unusable. And the obvious manual
-fix was worse than the gap - the conductor began hand-transcribing a verdict about its own
-design, which is a hand-maintained mirror with the reviewed party doing the copying.
+Entire.io provides **durability**. It does not provide **addressability**: an artifact
+buried in a multi-megabyte JSONL is safe and unusable. And the obvious manual fix was worse
+than the gap - the conductor began hand-transcribing a verdict about its own design.
 **Verbatim-by-construction beats verbatim-by-discipline.**
 
-**Provenance is cited, not linked** (owner's frame). A paper's reference names the work,
-the exact locator, and the edition; *"see Smith 2019"* is bad practice. So every artifact
-carries a Provenance block with the base commit (the lookup key), the resolved Entire
-checkpoint id, and the dispatch id, plus the literal commands to follow it. **Every
-citation is followed before landing** - rev 1's first citation implementation cited the
-session UUID and was dead on arrival, caught only by trying it.
+**Provenance is cited, not linked.** A reference names the work, the exact locator and the
+edition, and **every citation is followed before landing**. Rev 2 broke this rule in its own
+text: it credited the integrity fix to `cd56035` when the fix was **`75f6a4f`** - and
+`cd56035` is the commit that *institutionalised* citation-following. Corrected here, and
+recorded because a citation rule whose author does not follow it is worse than none.
 
-This also resolves rev 1's condensed-vs-verbatim question: a paper carries its argument
-*and* deposits its supplementary material. The artifact keeps the verbatim body; the header
-carries the readable summary and the citation. The harness lift is identical either way,
-because the producer writes all of it and the conductor reads none of it.
-
-## 3. Trust model - corrected per round 1's ruling on Q5
+## 3. Trust model
 
 | Threat | Actual defence |
 |---|---|
-| The artifact changed after extraction - encoding drift, merge mangling, an edit in passing | **The integrity hash.** Not hypothetical: this repo has hit three such defects (ANSI decoding, BOM/CRLF, separator collision) |
-| A determined conductor rewrites a verdict | **Publication, not cryptography.** The conductor owns the producer, the hash function, the verifier and CI. What constrains them is that Entire's checkpoint branch holds an independently-written copy anyone can diff |
-| An agent writes an untrue verdict | **Nothing mechanical.** The defence is that verdicts are public and the next reviewer reads them |
-| The runner's transcript is forged | **Nothing.** We are not in an adversarial environment; if we ever are, this design does not help |
+| The artifact changed after extraction - encoding drift, merge mangling, an edit in passing | **The integrity hash.** Three such defects have already occurred |
+| A determined conductor rewrites a verdict | **Publication, not cryptography.** Entire's checkpoint branch holds an independently-written copy. Verified: `entire checkpoint explain 1c47c1d` resolves to checkpoint `16234ffe6e1b`, matching the Provenance row in the landed round-1 verdict |
+| An agent writes an untrue verdict | **Nothing mechanical.** Verdicts are public and the next reviewer reads them |
+| The runner's transcript is forged | **Nothing.** Not an adversarial environment |
 
-Rev 1 claimed the hash defended against a dishonest conductor with an empty
-"not defended" cell. **A reviewer fault-injected it and the claim collapsed**: flipping a
-header from `REJECT - 8 Major` to `APPROVE - 0 Major` left the body untouched and the
-verifier reported OK, exit 0. The hash covered the text nobody skims and left the claim
-everyone skims unprotected. Fixed in `cd56035`: the integrity line now covers every byte
-below it. The framing above is the honest version of what remains.
+The hash now covers **every byte** of a landed artifact, header claims included, fixed in
+**`75f6a4f`**. Round 2 re-ran the original injection from outside the repo: header-only and
+body-only tampering both produce `MISMATCH`, exit 1.
 
 ## 4. The artifact contract
 
-**The schema is the product; producers are adapters.** Law 7: a stranger's shop runs a
-different runner, so what ships is a documented format anyone can emit.
+**The schema is the product; producers are adapters.**
 
-### 4.1 Events, with identity
+### 4.1 Events, and content-addressed identity
 
-Artifacts are append-only events, never mutated. Round 1 upheld this and named its price:
-*"append-only plus no reaping is strictly worse for in-flight truth than a mutable record."*
-§5 pays that price.
+Append-only, never mutated.
 
 ```
-identity = (dispatch_id, kind, seq)
+event_id = sha256(canonical_content)          # content-addressed, universal
 ```
 
-- `dispatch_id` is the runner's id, **namespaced by the session** so it is unique across
-  sessions, machines and clones. Rev 1 left identity to "an opaque runner id" and the
-  fold's central operation is a join on that key.
-- `seq` disambiguates legitimate repeats (a task-id can notify more than once when an
-  agent is resumed).
-- **Idempotency:** landing is keyed on identity. A sweep re-landing what a hook already
-  landed is a no-op when content matches, and a **loud conflict** when it does not - never
-  a silent second copy. Rev 1 had a hook and a sweep both able to land the same event with
-  no dedup rule, so the fold's answer depended on iteration order.
-- **Clock:** `at` is stamped by the producer, and a `clock` field names which producer
-  stamped it. A sweep-landed event reconstructing a time from a transcript says so, because
-  a fold that compares two producers' clocks without knowing they differ is a fold that
-  lies quietly.
+Rev 2 used `identity = (dispatch_id, kind, seq)` and it failed twice. `seq` had **no
+assignment authority** - a `SubagentStop` hook fires in the moment and cannot know it is the
+Nth notification, while a sweep computes `seq` from transcript position, so the two
+producers disagree in exactly the resumed-agent case `seq` existed for. And `intent` and
+`ruling` are **not dispatches**, so they had no `dispatch_id` and therefore no address -
+which meant the only events carrying `supersedes` were the only events identity could not
+name. The pointer existed; the pointee did not.
 
-### 4.2 Event kinds and supersession
+Content addressing fixes both: every event has an address, computed identically by every
+producer, with no authority to assign.
+
+**Equality, stated explicitly** because rev 2's "a no-op when content matches" was
+unimplementable. The canonical content covers **judgement and subject fields only**:
+`kind`, `dispatch_id`, `session_id`, `subject`, `outcome`, `findings`, `abstract`,
+`body_sha256`, `supersedes`. It **excludes** producer-stamped provenance: `at`, `clock`,
+`producer`, `seq`. Rev 2's clock rule guaranteed a hook-landed and a sweep-landed copy of
+one event would differ in `at` and `clock`, so under its equality rule the **healthy case
+was a permanent loud conflict** - an instrument crying wolf by construction, which §4.3
+deletes the counts cross-check for on identical grounds.
+
+Two events with the same `event_id` are the same observation: the second landing is a
+no-op, and the provenance of both is recorded in one file's `observed_by` list. Different
+`event_id` for the same dispatch and kind means the observations genuinely disagree, which
+is a real finding and surfaces as one.
+
+### 4.2 Event kinds
 
 | Kind | Emitted when | Terminal? |
 |---|---|---|
 | `dispatched` | a subagent is launched | no |
-| `returned` | it completes (`delivered` / `honest-stop` / `error`) | yes |
-| `reaped` | liveness declares it lost (§5) | yes |
+| `returned` | it completes (`delivered` / `honest-stop` / `error`) | **yes** |
+| `presumed-lost` | liveness budget exceeded with no terminal event (§5) | **no** |
 | `intent` | the conductor declares what no dispatch can know | n/a |
 | `ruling` | the conductor decides an appeal or override | n/a |
 
-`verdict` is **not** a separate kind (round 1 ruling Q3): `kind` is set at `dispatched`
-from the brief, `outcome` at completion. A reviewer that returns garbage folds as a
-review dispatch with `outcome: error` - a verdict-shaped hole the board renders as
-*"reviewer failed to produce a verdict"* - with one record that cannot disagree with itself.
+`verdict` is not a kind: `kind` is set at `dispatched` from the brief, `outcome` at
+completion. A reviewer returning garbage folds as a review dispatch with `outcome: error` -
+a verdict-shaped hole the board renders as *"reviewer failed to produce a verdict"* - in
+one record that cannot disagree with itself.
 
-**Supersession, and Law 2.** Every `intent` and `ruling` carries `supersedes:
-<event-identity> | null`. Rev 1 had no supersession rule, which meant **a hold could be set
-and never released** - the channel that exists to serve the dispatcher's override could not
-express withdrawing one. `constitution.md:21-23` requires the board never to resist an
-override. Current intent = the latest un-superseded event for that subject.
+**`presumed-lost` is deliberately NON-TERMINAL**, which is the structural fix round 2
+identified and it dissolves three problems at once. Rev 2 marked its equivalent terminal,
+so a reaped dispatch that later returned produced **two terminal events with no fold rule** -
+and since supersession was granted only to `intent` and `ruling`, nothing could reconcile
+them. Non-terminal means any later `returned` simply supersedes the presumption. No
+two-terminal rule, no supersession grant for terminal kinds, no ordering tie-break.
+
+**Supersession** is available to every kind. `supersedes: <event_id> | null`. Current state
+for a subject = the latest un-superseded event. "Latest" is by **causal order** - an event
+superseding another is by definition after it - never by comparing producers' clocks, which
+§4.1's own clock rule warns is a fold that lies quietly. Two events superseding the same
+target is a genuine disagreement and surfaces as one rather than being tie-broken silently
+(Law 6: show the disagreement).
+
+A `supersedes` naming an unknown `event_id` lands and is **rendered as a dangling
+reference** - never ignored (Law 4: nothing silently lost), never fatal (Law 1: a whole
+board must not blank over one bad pointer).
 
 ### 4.3 Who supplies each field
 
-Round 1 ruling Q2, adopted: **the producer supplies everything it can observe; the agent
-supplies only judgement.**
-
 | Producer-derived (observable) | Agent-supplied (judgement) |
 |---|---|
-| `dispatch_id`, `seq`, `at`, `clock`, `model`, `base`, `gate`, `target`, `role`, `cost`, `producer` | `outcome`, `findings`, `abstract` |
+| `event_id`, `dispatch_id`, `session_id`, `at`, `clock`, `producer`, `model`, `base`, `gate`, `target`, `role`, `context_peak_tokens`, `cost` | `outcome`, `findings`, `abstract` |
 
-Rev 1 asked the agent for facts the producer already held, which is asking a stranger for
-your own address and creates an agent-drift surface for no gain.
+Rev 1 asked the agent for facts the producer already held. **The counts cross-check is
+deleted**: there is no defined finding grammar, "Major" appears in headings and prose, and
+the escape clause made the check unfalsifiable. Counts are the reviewer's assertion, hashed
+with the body that justifies them, and rendered as an assertion.
 
-**The cross-check is deleted.** Rev 1 claimed finding counts would be "cross-checked
-against the body where the body is structured enough to count." There is no defined finding
-grammar, the word *Major* appears in headings, quotations and prose, and the escape clause
-makes the check unfalsifiable. An instrument that cries wolf is worse than no instrument.
-**Counts are the reviewer's assertion, hashed together with the body that justifies them,
-and rendered as an assertion.**
+### 4.4 The envelope - now with measured constraints
 
-### 4.4 The envelope, and a problem rev 1 did not anticipate
+The agent ends its report with a fenced block, info string `starcar-artifact`, parsed as
+the **last** such block.
 
-The agent ends its report with a delimited block carrying `outcome`, `findings`, and a
-short `abstract` in its own words.
+Round 2 was the live test, and the result changes the format:
 
-Two things learned from the first agent ever asked to comply:
+- **The fence survives the platform's safety filter; the sentinel did not.** Rev 1 used
+  `<<<STARCAR-ARTIFACT-V1`, which the filter flagged as instruction-shaped and neutralised
+  outright (`docs/reviews/2026-07-22-harness-design-round1-REJECT.md:48`, and that verdict's
+  own envelope landed HTML-escaped at `:320-329`).
+- **But angle brackets INSIDE the payload are still escaped.** Round 2's envelope emitted
+  `abstract: >` and landed as `abstract: &gt;`
+  (`docs/reviews/2026-07-22-harness-design-round2-REJECT.md`). **Therefore the envelope
+  grammar forbids `<` and `>` entirely**: no YAML block scalars, no `<placeholder>` syntax.
+  Values are plain scalars or quoted strings on one line.
+- Selective mangling is more dangerous than total neutralisation because it looks like it
+  worked, so **the producer validates the landed bytes**, not just the extracted text, and
+  an escaped envelope is a loud failure.
 
-1. **The sentinel collided in the first document that used it.** The reviewer quoted the
-   opening sentinel while discussing it, and had to *reason about the parser* - deliberately
-   avoiding a matching close-tag - in order to comply. A separator that can appear in the
-   payload is not a separator, and "implausible in prose" is not a property a review of the
-   format can have.
-2. **The platform's own safety layer neutralised the tags**, flagging the output as
-   instruction-shaped. The metadata channel was mangled in transit by a layer neither the
-   conductor nor the agent controls.
+**Absent and malformed are different faults** and must not be reported as each other
+(the parked yard design already ruled this shape at `:496-498`):
 
-**Therefore the envelope must not be a novel sentinel.** It is a fenced code block with a
-declared info string (```` ```starcar-artifact ````), parsed as the LAST such block in the
-report, with nesting handled by the fence rules markdown already defines. If the block is
-absent or malformed, the artifact lands as `outcome: error` **with its body intact** and the
-board says so - never a guess, never a silent drop.
-
-### 4.5 Cost - adjudicated against round 1
-
-Rev 1 claimed the runner reports per-dispatch cost. Round 1 called that false. **The
-reviewer was wrong and the finding is downgraded with evidence**: the task notification
-carries `subagent_tokens`, `tool_uses` and `duration_ms`, verified present for all three
-dispatches (71942 / 99390 / 115565 tokens). It searched for `totalTokens` and concluded
-absence.
-
-Its deeper point stands and is adopted: `subagent_tokens` is **one conflated scalar** that
-does not separate input, output and cache reads, which bill at different rates. So `cost`
-is carried, labelled an **approximation**, and the fuel lane renders it as one - a gauge
-that implies precision it does not have would be a Law 1 defect on the surface whose whole
-job is honesty about spend.
-
-## 5. Liveness - the ghost problem
-
-Rev 1 derived "a car is rolling" from *a `dispatched` with no terminal event*. Kill the
-session, sleep the machine, or lose an agent without a completion signal, and that state is
-**permanent**: the board shows a car rolling that died days ago. `constitution.md:13-17`
-names the inverse (idle while burning) as the worst defect this project can ship; this is
-the same defect facing the other way.
-
-- Every `dispatched` carries `expect_by` = its dispatch time plus a **stated liveness
-  budget**.
-- A dispatch past `expect_by` with no terminal event folds as **`unknown`**, not `rolling` -
-  `constitution.md:17`: *"Unknown states render AS unknown, honestly."*
-- A reaper emits a `reaped` event once liveness is declared lost, so the store records the
-  judgement rather than the board re-deriving it every render.
-- **The board shows both** the elapsed time and that the dispatch is unaccounted for. A
-  reaped dispatch is not a failed one; we know we do not know.
-
-This is the price §4.1 owes for choosing append-only, paid explicitly.
-
-## 6. Detecting what is missing
-
-Round 1's sharpest structural point: **a hash verifies what exists; an absence is invisible
-to every mechanism in rev 1.** Verification, the index, and the "loud failure" on a bad
-envelope all operate on artifacts that arrived.
-
-So reconciliation is a first-class operation, not a backstop:
-
-- The `dispatched` event **is the ledger entry**. Reconciliation asserts every `dispatched`
-  has a terminal event or an explicit `unknown`.
-- The transcript is the second source: the sweep enumerates dispatches the runner recorded
-  and asserts each has an artifact. A dispatch in the transcript with no artifact is a
-  **missing-artifact finding**, surfaced, not silently absent.
-- **CI runs reconciliation**, which is the mechanical tier. Rev 1 assigned the sweep to
-  `/goodnight` - a human-invoked skill that, as round 1 found, *contains no sweep step*.
-  The class moved from vigilance to procedure and was claimed as closed. It is closed only
-  when a machine asserts completeness.
-
-## 7. Producers - the corrected hook lifecycle
-
-Rev 1's central claim was wrong in mechanism. `PostToolUse:Task` **fires at launch**, with
-`status: async_launched` and no body - proven from the transcript, and implied by our own
-`Land-Verdict.ps1`, which scrapes the transcript precisely because there is no result to
-read. The design asserted the opposite while the counter-evidence sat in its own tree.
-
-Corrected, and verified against the runner's documented hook events before being written
-here:
-
-| Event | Hook | What it carries |
+| Fault | Meaning | Rendered as |
 |---|---|---|
-| `dispatched` | `PostToolUse:Task` | Fires at launch. This is not a workaround - launch is exactly when a dispatch begins, so the "wrong" timing is the right trigger for this event |
-| `returned` | `SubagentStop` | *"Execute when subagent considers stopping."* Payload is `reason`, **not the body**, so extraction machinery stays; only the trigger changes |
-| `reaped` | reconciliation (§6) | not hook-driven |
+| No envelope | the agent did not comply - a brief or agent-definition failure | `outcome: error`, `envelope: absent` |
+| Envelope present, unparseable | the format or the channel broke - a producer failure | `outcome: error`, `envelope: malformed` |
 
-**Open and honest:** whether `SubagentStop` fires for asynchronously-dispatched subagents
-in the parent's hook context is **not yet verified empirically**. The event exists and is
-documented; its behaviour under async dispatch must be tested before the spec, and the
-spec is blocked on that test. Designing on an unverified mechanism is the exact error rev 1
-made.
+Both land **with the body intact**. Neither is a guess.
 
-**Law 7 obligations on the producer:** no hardcoded project path (rev 1's implementation
-violates this - `Land-Verdict.ps1` hardcodes the project directory); the vendor transcript
-format confined to the producer and documented as a known coupling; every runner-shaped
-field (`cost`, `producer`) marked **optional**, so a shop whose runner reports differently
-can still emit a conforming artifact.
+### 4.5 Cost - what the number actually is
 
-## 8. Publication, normalisation, and what stays out
+Rev 2 adjudicated correctly that the runner reports per-dispatch figures, and round 2 could
+not overturn that. But it mis-described what one of them **means**, and round 2 measured it:
 
-The store is public by construction, and the artifacts are committed automatically. That is
-a real decision, and round 1 was right that rev 1 had not named it.
+`subagent_tokens` tracks the sum of `cache_creation_input_tokens` - equivalently the final
+turn's input context - to within 0.3%. It **excludes 100% of output tokens and 100% of
+cache reads**. Independently re-verified before acceptance:
 
-**Owner ruling, adopted:** *"There is a difference between the full monty and being silly.
-Redacting full paths isn't hiding anything."* Operator-environment paths are normalised to
-`<repo>` and `~` **before hashing**, mechanically, narrowly, with the rule declared in each
-artifact and the un-normalised original preserved on the checkpoint branch. Normalisation
-is not curation: findings, verdicts and counts are untouched, and Law 7 actively wants a
-path a stranger can use. Already implemented (`3e247dc`); the `CLAUDE.md` NORTH STAR
-carries the principle and its scar.
+| dispatch | reported | Σ cache-creation | Σ all counters | under-report |
+|---|---|---|---|---|
+| `a9fa2727...` | 71,942 | 71,866 | 365,867 | **5.1x** |
+| `a56d4b46...` | 99,390 | 99,283 | 1,022,798 | 10.3x |
+| `a1bccdf2...` | 115,565 | 115,222 | 2,299,330 | 19.9x |
 
-Rev 1 also contradicted an existing in-repo ruling: the parked yard design forbids the
-board from rendering absolute paths for exactly this reason, while the artifact store
-published them verbatim. The repo held the principle and had not applied it to itself.
+It is *"how big did this conversation get"*, not *"what did this burn"*, and the error grows
+with dispatch length so it is not even a stable scale factor. Rev 2 called it an
+approximation and summed it into a fuel gauge - **the exact Law 1 defect §4.5 claimed to be
+avoiding, on the surface `README.md:44` calls the usage meter the operation is budgeted
+against.**
+
+Therefore, two distinct fields, neither pretending to be the other:
+
+- **`context_peak_tokens`** - always available, named for what it measures, rendered as
+  *context*, never as spend.
+- **`cost`** - the four counters separated (`input`, `output`, `cache_read`,
+  `cache_creation`), derived by producers that can read a per-turn usage record.
+  **Producer-optional** (Law 7: a shop whose runner reports differently must still emit a
+  conforming artifact).
+
+**The fuel lane renders spend ONLY from `cost`.** Where `cost` is absent the lane is
+`dark` - the parked design's own vocabulary for declared-but-unequipped - and never
+back-fills from `context_peak_tokens`. A lane honestly dark beats a lane confidently wrong.
+
+## 5. Liveness
+
+A `dispatched` with no terminal event is otherwise permanent: the board shows a car rolling
+that died days ago, the inverse of `constitution.md:13-17`'s worst defect.
+
+- Every `dispatched` carries **`expect_by`**, set **per dispatch** by the conductor, which
+  already writes a size class into every proposal under cost discipline. A shop-level
+  default applies when omitted, so an absent budget is never an infinite one. Round 2's
+  measured runs were 680s / 744s / 897s; a car implementing a plan will run far longer than
+  a reviewer, so a single global budget is wrong by construction.
+- **The transition is a gradient, not a cliff.** Past `expect_by` the board renders
+  `rolling (42m, expected <= 30m)` before it renders `unknown`, so a mis-set budget degrades
+  visibly instead of flipping a healthy car to unaccounted-for in one render.
+- A `presumed-lost` event carries **its own basis**: `reason`, the budget, the elapsed time,
+  and the `clock`/`producer` that judged it. An event recording "lost" without recording
+  *what was observed and by whom* asserts a fact nobody holds; with the basis it records a
+  true one - *"at T, producer P observed no terminal event and the budget was B"* - which
+  stays true whether or not the agent was alive.
+- Non-terminal (§4.2), so a later return supersedes it. `constitution.md:17`'s *"unknown
+  renders AS unknown"* describes a state the board can leave, not a grave.
+
+## 6. Detecting what is missing - two tiers, honestly scoped
+
+A hash verifies what exists; **an absence is invisible to it**. Rev 2 assigned
+reconciliation to CI and claimed closure. Round 2 found that CI cannot read the second
+source, and that the store-internal half only sees what was pushed.
+
+**Tier 1 - universal, mechanical, CI-runnable.** Every `dispatched` in the store has a
+terminal event or a `presumed-lost`. Any shop emitting conforming artifacts gets this. It is
+the ledger property: `dispatched` **is** the ledger entry.
+
+**Tier 2 - producer-dependent.** A second source enumerates dispatches the store never heard
+of, catching artifacts that were never written at all. Requires a runner that keeps an
+enumerable record. Two producers can supply it here: the local session transcript (complete,
+local-only, invisible to CI) and the **Entire checkpoint branch, which IS pushed** and does
+contain the transcripts - at the cost of a stated lag and a Law 7 coupling to Entire.
+
+**Law 5 requirement: the board renders which tier is in force**, exactly as it renders
+adapter health. A shop running tier 1 only must see that on the surface, not infer it.
+Without this split, §4's *"the schema is the product"* claims a closure a stranger's shop
+cannot obtain.
+
+**Stated gap, not papered over:** a dispatch that starts and dies before anything is
+committed is invisible to CI, because the evidence never reached it. Tier 1 run locally
+(pre-commit, or on demand) sees it; CI does not. The design does not claim otherwise.
+
+## 7. Producers - the hook lifecycle
+
+Rev 1's central claim was wrong: `PostToolUse:Task` **fires at launch**, `status:
+async_launched`, no body - proven from the transcript, and implied by `Land-Verdict.ps1`,
+which scrapes the transcript precisely because there is no result to read.
+
+| Event | Hook | Notes |
+|---|---|---|
+| `dispatched` | `PostToolUse:Task` | Fires at launch. Launch is when a dispatch begins, so this is the right trigger, not a workaround |
+| `returned` | `SubagentStop` | *"Execute when subagent considers stopping."* Payload is `reason`, **not the body**, so extraction stays; only the trigger changes |
+| `presumed-lost` | reconciliation (§6) | not hook-driven |
+
+**BLOCKING TESTS - the spec does not start until both are run.** Designing on an unverified
+mechanism is the error rev 1 made.
+
+1. **Does `SubagentStop` fire for asynchronously-dispatched subagents in the parent's hook
+   context?** Documented event, unverified behaviour. **If it does not fire**, there is no
+   hook for `returned` at all: the producer collapses to sweep-only transcript scraping, car
+   2's scope changes materially, and §11's approved dispatch figure is wrong. That is the
+   fallback branch, named so a negative result is a known path rather than a re-design.
+2. **Envelope round-trip.** Emit one fenced envelope, land it, read the landed bytes.
+   *Partially answered already by round 2* (§4.4): the fence survives, angle brackets do
+   not. The remaining test is whether the `<`/`>`-free grammar lands byte-clean.
+
+**Law 7 obligations:** no hardcoded project path (`Land-Verdict.ps1:56-65` currently
+violates this and must derive from the git root); the vendor transcript format confined to
+the producer and documented as a known coupling; `cost`, `context_peak_tokens` and
+`producer` marked **optional**.
+
+## 8. Publication and normalisation
+
+The store is public by construction and committed automatically - a real decision, named as
+one. **Owner ruling:** *"There is a difference between the full monty and being silly.
+Redacting full paths isn't hiding anything."*
+
+Operator-environment paths are normalised to `<repo>` and `~` **before hashing**,
+mechanically, narrowly, with the rule declared in each artifact and the un-normalised
+original preserved on the checkpoint branch. Normalisation is not curation: findings,
+verdicts and counts are untouched, and Law 7 wants a path a stranger can use. Implemented in
+`3e247dc`; `CLAUDE.md`'s NORTH STAR carries the principle and its scar.
 
 ## 9. The store
 
-- `docs/artifacts/YYYY-MM-DD/HHMMSS-<dispatch>-<kind>.md`, sortable and identity-bearing.
-- A **generated** `INDEX.md` from front-matter; hand-maintaining an index of a growing
-  store is the mirror class again and would rot within one train.
-- The index is regenerated on landing and **checked in CI** - a store whose index is stale
-  is a lying instrument.
-- `docs/reviews/` retires into the store, history preserved, in the same commit that
+- `docs/artifacts/YYYY-MM-DD/HHMMSS-<dispatch>-<kind>.md`. Per-artifact files, kept: a
+  single append-only file recreates the unnavigable-JSONL problem with better manners, while
+  per-file gives conflict-free git merges, per-artifact `git log`, and a stable URL per
+  verdict, which is what a public showcase needs.
+- A **generated** `INDEX.md`; hand-maintaining an index of a growing store is the mirror
+  class and would rot within one train.
+- Regenerated on landing and **checked in CI** - a store whose index is stale is a lying
+  instrument.
+- `docs/reviews/` retires into the store, history preserved, **in the same commit** that
   creates the index, so `README.md:20-21` is never momentarily false.
 
 ## 10. Derivation - intent versus facts
 
-**The conductor declares INTENT; the process emits FACTS.** They own different things, so
-no field has two writers and there is no precedence rule to get wrong. Round 1 called this
-"the best idea in the document" and it survives unchanged.
+**The conductor declares INTENT; the process emits FACTS.** No field has two writers, so
+there is no precedence rule to get wrong. Round 1 and round 2 both called this the best idea
+in the document.
 
 | Fact | Source |
 |---|---|
 | A car is rolling | `dispatched`, no terminal event, **within `expect_by`** |
-| A car is unaccounted for | `dispatched`, past `expect_by`, no terminal event → `unknown` |
+| A car is overdue | `dispatched`, past `expect_by`, no terminal event - rendered with elapsed and budget |
+| A car is unaccounted for | `presumed-lost` un-superseded |
 | A car is at inspection | its reviewer's `dispatched`, same rules |
 | REJECT rounds | count of terminal events with `outcome: REJECT` |
-| Cost burned | sum of `cost`, **rendered as an approximation** (§4.5) |
+| Context burned | sum of `context_peak_tokens` - **rendered as context, never as spend** |
+| Spend | sum of `cost`; **lane is `dark` where `cost` is absent** (§4.5) |
+| Which reconciliation tier is in force | §6, rendered (Law 5) |
 | A car is coupled at SHA | git |
 | Inbound freight | the issue tracker |
 | Train composition | conductor `intent` |
-| A train is held / released | conductor `intent`, latest un-superseded (§4.2) |
-
-Correction owed on rev 1's own account: it claimed to fix a two-fact-domain seam "where
-both the registry and the state file could supply a lane's position." **That was rev 2 of
-the yard design; rev 3 had already closed it.** A false claim about a sibling document, in
-a repo whose north star is documentation honesty. The parked design's status block
-overstates the damage too, naming §5.4 as rewritten when it is untouched; both are
-corrected when that document returns as rev 4.
+| A train is held / released | conductor `intent`, latest un-superseded |
 
 ## 11. Cars and cost
 
-Round 1's right-sizing ruling adopted: **three cars, not four.**
-
 | Car | Scope |
 |---|---|
-| 1 | Schema, identity, validator, store layout, generated index, **verification** (the inverse of the hashing this car defines, so it belongs beside it) |
-| 2 | Producer: hooks, extraction, envelope parsing, sweep, reconciliation; brief-template and agent-definition updates (the north star puts them in the commit that makes them necessary) |
-| 3 | CI wiring; migrate `docs/reviews/` into the store |
+| 1 | Schema, content-addressed identity, equality rule, validator, store layout, generated index, **verification** |
+| 2 | Producer: hooks, extraction, envelope parsing and landed-byte validation, sweep, tier-1 and tier-2 reconciliation; **`CLAUDE.md` envelope rule**, `docs/templates/car-brief.md`, `.claude/agents/car.md`, `.claude/skills/goodnight/SKILL.md` |
+| 3 | CI wiring; migrate `docs/reviews/` into the store; **`docs/setup.md` rows and `README.md:46-47`**; the parked yard design's `:559-561` |
+
+Documentation ownership is now stated **once**, in this table. Rev 2 split it between a car
+table and a disposition table that disagreed, so a car briefed from one wrote no
+documentation - the same defect round 1 raised as Minor-5, fixed as an instance and not as a
+shape.
 
 Three cars, three reviewers, plus design, spec and plan with reviews: **roughly 11
-dispatches**, model mix Opus throughout, size class **medium**. Down from rev 1's 14.
-**Approved by the owner on 2026-07-22, before dispatch** - the cost discipline rule is
-that exceeding a window is a decision made beforehand, never a discovery on the bill.
-REJECT rounds add to this figure and are expected outcomes, not overruns.
+dispatches**, Opus throughout, size class **medium**. **Approved by the owner on
+2026-07-22, before dispatch** (`66f3c78`). REJECT rounds add to this and are expected
+outcomes, not overruns. If blocking test 1 (§7) fails, this figure is void and must be
+re-approved.
 
-Car 3 wires this repo's first CI and is **not done when CI is green - done when someone has
-WATCHED it go red** (fault-inject, observe, revert, put the run URL in the report). A green
-light wired to nothing is worse than no light.
-
-One risk, stated: the schema's only consumer does not exist yet, so it is designed against
-an imagined reader. **Rev 4 of the yard design should be treated as this schema's first
-real review**, not as a downstream inheritor.
+**The spec carries a worked consumer example**: a synthetic train's artifacts folded into
+the yard board's vocabulary, showing every row of §10 derived end to end. That gives the
+imagined consumer a concrete voice at spec rung rather than waiting for rev 4, performs the
+sentence check once by construction, and doubles as Law 7's mandated in-repo synthetic demo
+data. The ladder is not inverted; rev 4 of the yard design remains this schema's first real
+review, with the worst surprises already found.
 
 ## 12. Out of scope
 
-Signing or non-repudiation beyond the integrity hash (§3). Retention and pruning. Producers
-for other runners, though the format must not prevent them. Rendering - the yard design's
-job. Migrating dispatches from before this train, **except** the three landed verdicts,
-which car 3 migrates (rev 1 contradicted itself on this).
+Signing beyond the integrity hash. Retention and pruning. Producers for other runners,
+though the format must not prevent them. Rendering - the yard design's job. Migrating
+dispatches from before this train, **except** the four landed verdicts, which car 3
+migrates.
 
-## 13. What changed from rev 1
+## 13. What changed from rev 2
 
-| Round 1 finding | Disposition |
+| Round 2 finding | Disposition |
 |---|---|
-| MAJOR-1 `PostToolUse:Task` fires at launch, not completion | §7 - corrected lifecycle, `SubagentStop` verified as a documented event, async behaviour flagged as blocking the spec |
-| MAJOR-2 nothing detects a missing artifact | §6 - reconciliation as a first-class CI operation, not a `/goodnight` step |
-| MAJOR-3 ghost dispatches | §5 - `expect_by`, `unknown` folding, `reaped` events |
-| MAJOR-4 hash does not cover rendered fields | §3 - already fixed in `cd56035`; trust model reframed around publication |
-| MAJOR-5 fold has no identity, ordering, dedup, supersession | §4.1, §4.2 - session-namespaced identity, idempotent landing, producer-stamped clocks, supersession so holds can be released |
-| MAJOR-6 cost source does not exist | §4.5 - **adjudicated against**: it does exist; downgraded to "conflated scalar, label it an approximation" |
-| MAJOR-7 unredacted public publication | §8 - owner ruling adopted and already implemented |
-| Minor-1 misdescribes the parked design | §10 - corrected, with the parked design's own overstatement noted |
-| Minor-2 `/goodnight` has no sweep step | §6 - reconciliation moves to CI; car 2 owns the skill update |
-| Minor-3/4 `setup.md`, `README.md:46-47` stale | Car 3; `README.md`'s adapter list is named explicitly |
-| Minor-5 §9 vs §10 on migration | §12 - resolved |
-| Minor-6 two version strings | §4.4 - one fenced info string, no second version namespace |
-| Minor-9 runner-shaped fields not optional | §7 - `cost` and `producer` marked optional |
-| Minor-10 four cars is one too many | §11 - three |
-| Ruling Q1 keep append-only | Kept, with §5 paying its price |
-| Ruling Q2 split by who can know | §4.3; cross-check deleted |
-| Ruling Q3 one record, `kind` at dispatch | §4.2 |
-| Ruling Q4 retire is safe if same commit | §9 |
-| Ruling Q5 hash reframed, not cut | §3 |
-| Ruling Q6 land with current scripts, migrate later | Done - all three verdicts landed; car 3 migrates |
+| MAJOR-1 `subagent_tokens` is a context high-water mark, not a conflated total; summing it into a fuel gauge under-reports 5.1-19.9x | §4.5 - split into `context_peak_tokens` (context, always) and optional `cost` (four counters); the fuel lane renders spend only from `cost` and is `dark` otherwise |
+| MAJOR-2 CI cannot read the second source; store-internal half sees only pushed events | §6 - two tiers, the board renders which is in force, the Entire checkpoint branch named as a CI-readable tier-2 producer, and the unpushed gap stated rather than papered over |
+| MAJOR-3(a) `seq` has no assignment authority; equality rule makes the healthy case a permanent conflict | §4.1 - content-addressed `event_id`, and an explicit equality set excluding producer-stamped provenance |
+| MAJOR-3(b) `intent`/`ruling` carry `supersedes` and are the only events identity cannot address | §4.1 - content addressing gives every event an address; supersession available to every kind |
+| MAJOR-3(c) reaped-then-returned produces two terminal events with no rule | §4.2 - `presumed-lost` is **non-terminal**; a later return supersedes it |
+| Minor-1 wrong commit credited for the integrity fix | §2, §3 - corrected to `75f6a4f`, with the irony recorded |
+| Minor-2 car scope and disposition tables disagree | §11 - one table |
+| Minor-3 `CLAUDE.md` unassigned | §11 - car 2 |
+| Minor-4 parked design's `:559-561` unassigned | §11 - car 3 |
+| Minor-5 parked status block also omits what rev 2 newly rewrites | Noted; corrected when that document returns as rev 4 |
+| Minor-6 no fallback branch if `SubagentStop` fails | §7 - branch named, with its cost consequence |
+| Minor-7 envelope test not gated like §7's twin | §4.4, §7 - now a blocking test, partially answered by round 2's live result |
+| Note-4 absent vs malformed envelope collapsed | §4.4 - separate faults, separate renderings |
+| Ruling Q1 budget per dispatch + default + gradient | §5 |
+| Ruling Q2 non-terminal, carries basis, renamed | §4.2, §5 |
+| Ruling Q3 two tiers, board renders which | §6 |
+| Ruling Q4 gate the envelope test | §7; answered in part by round 2 |
+| Ruling Q5 per-artifact grain kept | §9 |
+| Ruling Q6 no inversion; spec carries a worked consumer example | §11 |
 
 ## 14. Open questions for the design reviewer
 
-1. **`expect_by` needs a number.** A liveness budget too short reaps live agents; too long
-   and the board lies for hours. Round 2's review ran ~15 minutes. Is a fixed budget right,
-   or does it belong with the dispatch (the conductor knows if it briefed a big job)?
-2. **Is `reaped` honest, or does it launder a guess into a fact?** The reaper does not know
-   the dispatch died - only that it stopped reporting. Should the event be `presumed-lost`?
-3. **Reconciliation needs a second source, and the transcript is the runner's.** For a shop
-   whose runner keeps no transcript, is reconciliation impossible - and does that make §6's
-   closure runner-dependent, contradicting §4's Law 7 claim?
-4. **Does the fenced-block envelope survive the same safety filter** that neutralised the
-   sentinel? Untested, and the whole metadata channel rests on it.
-5. **Is a per-artifact file the right grain**, or does one train's ~11 dispatches produce a
-   directory nobody navigates even with an index?
-6. **§11 says rev 4 of the yard design is this schema's first real review.** Should the
-   harness spec therefore wait for rev 4, inverting the ladder for one rung?
+1. **Content addressing makes `event_id` depend on the canonical field set.** Adding a field
+   in a later schema version changes every future id. Is that acceptable, or does the id
+   need a version prefix - and does a version prefix reintroduce the drift it avoids?
+2. **`observed_by` (§4.1) accumulates on a file that §4.1 also says is never mutated.**
+   Those are in tension. Is a second observation an append to the file, a second file, or
+   simply dropped once the first has landed?
+3. **§6's tier-2 via the Entire checkpoint branch couples reconciliation completeness to a
+   third-party tool.** Is that acceptable under Law 7, given tier 1 is universal - or does
+   naming a specific vendor in the design leak the producer into the schema?
+4. **The fuel lane goes `dark` when `cost` is absent (§4.5), but `context_peak_tokens` is
+   always present.** Is showing context while hiding spend actually clearer than showing
+   nothing, or does a populated context figure beside a dark spend lane invite exactly the
+   misreading the split exists to prevent?
+5. **§5's gradient needs a threshold** - at what multiple of `expect_by` does `rolling
+   (overdue)` become `presumed-lost`? An unspecified number is a car inventing one.
+6. **Every artifact is committed automatically by a hook (§7, §8).** Nothing in this design
+   says what happens when that commit conflicts, or when a hook fires while the working tree
+   is mid-rebase. Is artifact landing safe to make automatic at all, or does it need a queue?
