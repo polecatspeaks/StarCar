@@ -25,7 +25,16 @@ $ErrorActionPreference = 'Stop'
 $files = @(Get-ChildItem -Path $StoreRoot -Filter *.json -Recurse -File)
 
 $rows = foreach ($f in $files) {
-    $obj = Get-Content $f.FullName -Raw -Encoding UTF8 | ConvertFrom-Json
+    # -DateKind String is load-bearing, not decoration (reviewer finding M-A4-1,
+    # measured present on this pwsh: (Get-Command ConvertFrom-Json).Parameters.Keys
+    # -contains 'DateKind' -> True). Without it, ConvertFrom-Json auto-detects the
+    # ISO-8601 'at' string and coerces it to [System.DateTime]; the invariant-culture
+    # cast back to string then drops the 'Z'/'T' markers and produces a
+    # MM/dd/yyyy HH:mm:ss form whose lexical sort is non-chronological across years
+    # (schema/index-format.md:55-57's worked example, which this generator implements,
+    # is otherwise a claim the code cannot produce - Law 1 - with the UTC marker
+    # silently dropped - Law 4). -DateKind String keeps 'at' a plain string end to end.
+    $obj = Get-Content $f.FullName -Raw -Encoding UTF8 | ConvertFrom-Json -DateKind String
     $relative = [System.IO.Path]::GetRelativePath($StoreRoot, $f.FullName).Replace('\', '/')
 
     $outcome = ''
@@ -42,7 +51,10 @@ $rows = foreach ($f in $files) {
 }
 
 # Total order per schema/index-format.md: at, then subject, then file - there are never
-# ties left to break arbitrarily.
+# ties left to break arbitrarily. Sorting the plain ISO-8601 UTC string (fixed-width,
+# zero-padded, most-significant field first) is a lexical sort that IS a chronological
+# sort - that equivalence is why the contract chose this format (schema/index-format.md).
+# It only holds because 'at' was never coerced to a culture-formatted string above.
 $sorted = @($rows | Sort-Object -Property At, Subject, File)
 
 $lines = New-Object System.Collections.Generic.List[string]
