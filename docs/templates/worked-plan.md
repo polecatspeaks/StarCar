@@ -6,9 +6,56 @@ Provenance: transposed from the ancestor shop's real plans (structure exact, con
 moved to the staleness-banner fiction). The seed's plan scar - "snippets calling
 constructor parameters that did not exist... three REJECT rounds" - happened to a plan
 missing the disciplines shown here. The stitches are: (1) the plan-writer SENTENCE-CHECKS
-ITSELF (opens the real file for every snippet before writing it), (2) the rule-5
-adversary re-verifies anyway, (3) findings fold as a BINDING ADDENDUM the cars read.
-Real plans run 1000-3500 lines; this shows one car fully worked.
+ITSELF (opens the real file for every snippet, and RUNS every behavioural red - see the
+amendment below), (2) the rule-5 adversary re-verifies anyway, (3) findings fold as a
+BINDING ADDENDUM the cars read. Real plans run 1000-3500 lines; this shows one car
+fully worked.
+
+**A note on this exemplar's own compression:** the bracketed prose below ("[Same
+five-step shape...]", "[full code in a real plan...]") is an EXEMPLAR ARTIFACT, not a
+licence. In a real plan every task carries all five steps and its snippets in full.
+The first plan written from this template mirrored the compression precisely - full
+snippet in the first task, prose thereafter, one task with no steps at all - and the
+reviewer filed it as a finding. The compression exists so this file stays readable;
+it does not transfer.
+
+> ## AMENDMENT 1 (2026-07-22, from the first plan's round-1 REJECT - plan-review
+> verdict `docs/reviews/2026-07-22-plan-review-car1-round1.md`)
+>
+> **A behavioural claim verified by reading is not verified. The plan-writer RUNS
+> every behavioural red before writing it into a task.**
+>
+> The original self-check said "open the real file for every snippet." That stitch
+> covers the ancestor's scar class - NONEXISTENT APIs, which reading catches - and it
+> worked: the first plan's snippets were clean. It does not cover EXISTENT APIs THAT
+> BEHAVE DIFFERENTLY THAN THEY READ. The first plan asserted, as "verified at base",
+> that a script exited 0 on an empty directory; reading the code says exactly that.
+> Running it says the opposite - StrictMode meets a null pipeline result two lines
+> earlier and the script throws, exit 1, making the quoted lines unreachable dead
+> code. The specified test PASSED ON ARRIVAL, which the TDD law calls proof of
+> nothing. One command would have exposed it; no amount of reading could.
+>
+> So the self-check is now two-part, and the plan states which part each claim got:
+> - **Structural claims** (this API exists, with this signature, at this line):
+>   OPEN the file at base. Reading suffices.
+> - **Behavioural claims** (this command exits N, this red fails with this message,
+>   this input produces this output): RUN it at base and quote the OBSERVED result.
+>   Every stated red in every task is a behavioural claim.
+>
+> Corollaries, each a finding the same round paid for:
+> - **Declare the runtime floor.** Global constraints name the runtime(s) the suites
+>   must pass under and the named APIs the plan depends on (the first plan's ruling
+>   silently required a validation API that exists in one installed shell and not the
+>   other). A plan that leaves the runtime unstated leaves every car a menu.
+> - **A Produces block for a DATA CONTRACT enumerates every field the spec mandates**,
+>   not just the ones the first task needs - a schema's consumers read the Produces
+>   block blind, and a field missing there is a field the next car invents.
+> - **The spec-coverage table is SUBSECTION-granular.** One blanket "section 3" row is
+>   where five field obligations and a vocabulary mechanism hid. Every numbered
+>   subsection maps to a task or names its deliberate deferral.
+> - **The ledger question is asked in two parts:** mutable process state, AND derived
+>   artifacts committed to git (a generated file with a staleness lifecycle is ledger
+>   state even when the process holds nothing).
 
 ---
 
@@ -83,7 +130,8 @@ fails for a DIFFERENT reason than the plan states is a car finding, not a shrug.
 - [ ] **Step 5: commit** `feat(freshness): verdict derivation with honest unknown (#12)`
 
 **Ledger:** no mutable state (pure function) - SAY SO explicitly; the reviewer checks
-the claim either way.
+the claim either way. [Amendment 1: the claim answers BOTH ledger questions - process
+state and committed derived artifacts - not just the first.]
 
 ### Task A.2 - thread the verdict onto Snapshot (breaking record change)
 [Same five-step shape. Enumerates every constructor site file:line - verified at base -
@@ -121,7 +169,9 @@ that signature. This dimension is what caught the ancestor's three-round plan: i
 constructor params, an invented type, a wrong-generic logger - each a compile wall a
 car would have hit mid-train, each caught at one-dispatch cost instead; (d) red
 validity - would each stated red fail for the STATED reason at its point in the
-sequence; (e) amendment-block fidelity to the spec, not re-derived.
+sequence, verified by RUNNING it, never by reading (Amendment 1: the first plan's
+worst Major was a stated red that reading confirms and running refutes); (e)
+amendment-block fidelity to the spec, not re-derived.
 
 Verdict shape (this exemplar's fictional round):
 

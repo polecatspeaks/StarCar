@@ -10,6 +10,31 @@ runner), #8 (board columns). Laws served, each naming the section that delivers 
 Source of truth: `docs/design/2026-07-22-dispatch-harness-design.md` rev 6 **plus BINDING
 AMENDMENT A1**. Design review: 5 rounds, closed by recorded conductor ruling (design §9b).
 
+> ## BINDING AMENDMENT S1 (conductor-applied, 2026-07-22, post-approval)
+>
+> **The §4 row-4 claim that `Verify-Verdict.ps1:94-96` "exits 0" on a zero-file store is
+> FALSE, and the lines are unreachable.** Found empirically at the plan rung (round-1
+> verdict, `docs/reviews/2026-07-22-plan-review-car1-round1.md`, Major 1): pointed at an
+> existing directory with zero `.md` files, the script **throws** `PropertyNotFoundStrict`
+> at `:94` and exits **1** - `Set-StrictMode -Version Latest` (`:27`) meets a `$null`
+> pipeline result at `:91`, so `$files.Count` explodes before the guard is reached.
+> `:95-96` is dead code on every path. Only the dir-ABSENT vacuous exit (`:87-90`, exit 0)
+> is real.
+>
+> Supersedes: §4 row 4's defect description, and §6's non-vacuity item *"Empty the store
+> and confirm the extended verifier fails where today it exits 0"* - unsatisfiable as
+> written, since the empty store already exits 1 (by crash, which is a truthful exit code
+> delivered as an unactionable stack trace, its own Law-5 defect). The item is replaced by:
+> **(a)** absent store fails loudly where today `:87-90` exits 0; **(b)** empty store fails
+> with an ACTIONABLE named-directory error where today it crashes with a strict-mode
+> throw; **(c)** the dead vacuous-exit code at `:94-96` is removed, not preserved.
+>
+> Why this survived three spec-review rounds: every round - including the round-3 review
+> that returned zero findings - verified the claim by READING the code, and reading
+> `:94-96` produces exactly the false claim. The behavioural truth took one command. The
+> corrected discipline is recorded as `worked-plan.md` Amendment 1: behavioural claims
+> are verified by RUNNING, structural claims by reading.
+
 Owner decisions locked: the harness is **core product, not tooling**; **path normalisation is
 portability, not curation**; nothing reaches `main` except from a good known working state.
 
