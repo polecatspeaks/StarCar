@@ -841,3 +841,7 @@ findings: {major: 7, minor: 10, note: 5}
 ---
 
 ok so 2. There is a difference between the full monty and being silly. Redacting full paths isn't hiding anything or sweeping things under the rug. That's just good portability and best practice, right?
+
+---
+
+oh here's an idea that might make things easier. Instead of the full transcript from entire, what about a shorter condesned text with a link to the entire convo as provenence? I feel like that satisfyies all the laws, but makes our harnass lift easier
