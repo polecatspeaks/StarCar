@@ -145,22 +145,42 @@ try {
     if ($Kind -eq 'returned') {
         $transcriptPath = Get-Prop $payload 'agent_transcript_path'
         $rawText = $null
+        $readErrors = @()
         if (-not [string]::IsNullOrWhiteSpace($transcriptPath)) {
-            $rawText = (Get-LastAssistantText -TranscriptPath $transcriptPath).Text
+            $readResult = Get-LastAssistantText -TranscriptPath $transcriptPath
+            $rawText = $readResult.Text
+            $readErrors = @($readResult.Errors)
         }
-        $env = if ($rawText) { Get-StarcarEnvelope -Text $rawText } else {
-            [pscustomobject]@{ Found = $false; Outcome = $null; Findings = $null; Abstract = $null; Fault = 'absent' }
-        }
-        if ($env.Found) {
-            $outcome = $env.Outcome; $findings = $env.Findings; $abstract = $env.Abstract
-        } else {
-            # Absent (brief failure) and malformed (producer failure) are different faults;
-            # both land with the body intact (spec S2.3). The raw report is retained in
-            # findings so nothing is silently lost (Law 4).
-            $envFault = if ($env.Fault -eq 'malformed') { 'malformed' } else { 'absent' }
+
+        if ($null -eq $rawText -and $readErrors.Count -gt 0) {
+            # F5 (docs/plans/2026-07-22-pr18-correctness-fixes-plan.md): a transcript READ
+            # FAILURE (not found / unreadable / unparseable - Get-LastAssistantText's own
+            # three cases) is a PRODUCER fault, not a BRIEF failure - it never reached the
+            # point of checking for a fence. Distinct from `envelope: absent` (brief
+            # emitted no envelope): OMIT the `envelope` field entirely (absent-the-field
+            # != the value 'absent'), classify outcome:error, and put the read error in
+            # findings so it is never dropped (Law 4) - raised to _faults.log too. The
+            # fault branch still sets `abstract` (schema requires it on `returned`
+            # records; the producer does not self-validate before writing).
             $outcome  = 'error'
-            $findings = if ($rawText) { $rawText } else { '' }
-            $abstract = "envelope $envFault - raw report retained in findings"
+            $findings = ($readErrors -join '; ')
+            $abstract = 'transcript read failure - see findings'
+            foreach ($e in $readErrors) { Add-Fault -Message "transcript read failure: $e" }
+        } else {
+            $env = if ($rawText) { Get-StarcarEnvelope -Text $rawText } else {
+                [pscustomobject]@{ Found = $false; Outcome = $null; Findings = $null; Abstract = $null; Fault = 'absent' }
+            }
+            if ($env.Found) {
+                $outcome = $env.Outcome; $findings = $env.Findings; $abstract = $env.Abstract
+            } else {
+                # Absent (brief failure) and malformed (producer failure) are different faults;
+                # both land with the body intact (spec S2.3). The raw report is retained in
+                # findings so nothing is silently lost (Law 4).
+                $envFault = if ($env.Fault -eq 'malformed') { 'malformed' } else { 'absent' }
+                $outcome  = 'error'
+                $findings = if ($rawText) { $rawText } else { '' }
+                $abstract = "envelope $envFault - raw report retained in findings"
+            }
         }
     } else {
         # dispatched: producer-optional metadata under the schema's open posture (same
