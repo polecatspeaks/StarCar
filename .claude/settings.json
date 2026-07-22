@@ -89,6 +89,17 @@
           }
         ]
       }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh .claude/hooks/subagent-stop-probe.sh"
+          }
+        ]
+      }
     ]
   },
   "permissions": {
