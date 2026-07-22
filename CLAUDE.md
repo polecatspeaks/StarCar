@@ -308,6 +308,19 @@ cars, and reviewers all consume it as ground truth. Prose gets no discount.
 
 - Work integrates on `dev`. Car branches cut from `dev`, merge back to `dev`.
 - `dev` reaches `main` by PR, reviewed, never by fast-forward push.
+
+**MERGE NORTH STAR: never PR or merge except from a good known working state.** A merge to
+`main` is not a progress report, it is an ASSERTION - that this state is sound and we stand
+behind it. Merging a design we already know is faulty publishes a claim we know is false,
+which is Law 1 applied to branch topology. `dev` accumulating many commits is not debt and
+not a growing risk; it is `dev` doing its job as a working surface. The question is never
+"how long since we merged", it is "is there a state worth asserting yet."
+
+*Scar: at 28 commits ahead, the conductor flagged the gap to `main` as "a growing untested
+path" and suggested PRing to exercise the gate. The owner refused: the harness design was
+mid-escalation and known faulty, so the PR would have been ceremony performed on wreckage -
+exercising a gate by feeding it something we already knew should not pass. A gate proved
+against work you would never ship proves nothing about work you would.*
 - The rule is enforced by branch protection on the remote, not by memory. A prose rule
   binds whoever reads it; a protected branch binds every actor, including a future agent
   that never read this file.
