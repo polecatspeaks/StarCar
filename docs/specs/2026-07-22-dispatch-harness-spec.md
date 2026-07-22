@@ -14,7 +14,7 @@ Owner decisions locked: the harness is **core product, not tooling**; **path nor
 portability, not curation**; nothing reaches `main` except from a good known working state.
 
 **[M8, folded] Retitled to "per dispatch EVENT".** Design P2 fixes the grain as a
-behavioural premise - *"a dispatch is the unit of record"* - and `design:137` says *"one record
+behavioural premise - *"a dispatch is the unit of record"* - and `design §5.1` says *"one record
 per dispatch event"*. Rev 1 dropped "event" from the title while §6 required two records for
 one dispatch, and simultaneously handed grain to the schema artifact. **Grain is behavioural
 and is fixed here** (ruling 1); the schema owns field names, types, ordering and identity.
@@ -78,7 +78,7 @@ envelope today, so that work is real and outstanding (§9).
 
 ### 2.4 Concurrent writes [M6, folded; ruling 5]
 
-Carried from `design:230`, not reopened as an unknown: **the producer writes its own path
+Carried from `design §6` (concurrent-write row), not reopened as an unknown: **the producer writes its own path
 only and never `git commit -a`; a contended commit retries; a failed write is RAISED, never
 dropped silently** (Law 4).
 
@@ -107,7 +107,7 @@ document specifying a schema.**
 Kinds: `dispatched`, `returned`, `presumed-lost`, `intent`, `ruling`.
 **[m6] "Subject" and "dispatch" are the same key** for the three dispatch kinds - the subject
 of a dispatch-lifecycle record IS its dispatch. `intent` and `ruling` have non-dispatch
-subjects. Identity is the schema artifact's (design §4.3).
+subjects. Identity is the schema artifact's (design §5.1).
 Precedence for one dispatch: `returned` > `presumed-lost` > `dispatched`.
 Within a kind: **latest-`at` wins, and the fold exposes a supersession marker**
 (`Land-Verdict.ps1:112-115` already implements this rule for repeat notifications).
@@ -124,7 +124,7 @@ code inside this train's scope, against its own non-goals.
 Kind and outcome vocabularies **ship as data, not as prose in this document**. An unrecognised
 value is rendered loudly by name and treated as **a discovery, not a bug**. An unreadable
 vocabulary file is **one board-level fault, never N per-lane faults**. Carried from
-`design:147-150` and `design:228`; rev 1 claimed Law 7 in its header while dropping Law 7's
+`design §5.2` and `design §6` (vocabulary-unreadable row); rev 1 claimed Law 7 in its header while dropping Law 7's
 mechanism.
 
 ### 3.3 Liveness gradient [M6, folded]
@@ -148,13 +148,13 @@ living only in a CI log is an unknown that fails to render as unknown.
 
 ### 3.6 Publication and trust [N1, folded — the obligations the ledger CLAIMED were carried]
 
-`design:26` assigns **publication and trust to the behavioural half** - this document's half.
+`design §0` assigns **publication and trust to the behavioural half** - this document's half.
 Rev 2's fidelity ledger asserted they landed in §8; §8 is silent on them and the citation
 pointed at the design's Cost section. The substance was genuinely absent. It is stated here:
 
 - **The normalisation rule is DECLARED IN EACH LANDED ARTIFACT.** A reader must be able to
   see what was substituted without leaving the file. (Only the *substitution rule itself* is
-  deferred to the schema artifact, per `design:37`.)
+  deferred to the schema artifact, per `design §0`.)
 - **The un-normalised original is PRESERVED on the checkpoint branch.** Normalisation is
   portability, not curation, and this is the clause that makes that true rather than asserted.
 - **Each artifact carries an integrity hash, and its independent counterpart is the checkpoint
@@ -174,7 +174,7 @@ callers", never first-proves.
 | Seven-parameter manual invocation | `Land-Verdict.ps1:39-51` | conductor, by hand | hook-driven. **[m3] The CLI survives for backfill and backfill happens precisely when no hook fired, so there is no payload path: the CLI takes an EXPLICIT transcript path argument** |
 | Vacuous-pass exits | `Verify-Verdict.ps1:87-90` (dir absent) and `:94-96` (zero files); invoked bare at `ci.yml:47` against the `:24` default `docs/reviews` | `ci.yml:47` | fail when the expected store is empty. **[M3, folded; ruling 4] The verifier is repointed at the new store and `ci.yml:47` is updated IN THE MIGRATION COMMIT.** Rev 1's two rows contradicted: one emptied `docs/reviews`, the other made an empty store fatal, and the literal reading turned CI red permanently |
 | `docs/reviews/` as a location | 8 landed verdicts | **[M2] `docs/setup.md:23-24`**, **`ci.yml:47`**, `README.md:20-21`, **`docs/friction-log.md:46`** | migrated into the store, history preserved, index created **in the same commit** |
-| ~~Both scripts' self-description as "the harness"~~ | **[M1, WITHDRAWN]** | — | **The string does not exist.** `grep -c -i harness` returns **0 and 0**; `Land-Verdict.ps1:1` says *"extract a dispatched agent's verdict VERBATIM"* and `Verify-Verdict.ps1:6` says *"the checker"*. Rev 1 inherited the claim from `design:257` without opening either file. The framing that DOES need fixing is at `docs/setup.md:24`, and it is row 5's job |
+| ~~Both scripts' self-description as "the harness"~~ | **[M1, WITHDRAWN]** | — | **The string does not exist.** `grep -c -i harness` returns **0 and 0**; `Land-Verdict.ps1:1` says *"extract a dispatched agent's verdict VERBATIM"* and `Verify-Verdict.ps1:6` says *"the checker"*. Rev 1 inherited the claim from `design §8` without opening either file. The framing that DOES need fixing is at `docs/setup.md:24`, and it is row 5's job |
 
 ## 5. Lifecycle
 
@@ -232,7 +232,7 @@ name; an unreadable vocabulary file is **one** fault.
    on an `isAsync: true` payload. Under a synchronous `Task`, `dispatched` and `returned` would
    land in the same breath and tier 1 goes vacuous.
 
-*[M6/ruling 5: rev 1's probe on git-index contention is DELETED. `design:230` already ruled
+*[M6/ruling 5: rev 1's probe on git-index contention is DELETED. `design §6` (concurrent-write row) already ruled
 it; it is carried in §2.4. A probe may not restate a settled ruling.*
 
 ## 8. Non-goals
@@ -272,7 +272,7 @@ stopping agent listed *itself* as running, so it is corroboration at best.
 | Two-tier detection, tier rendered | §2.5 |
 | Cost/context split, dark lane | §3.4 |
 | Ruling Q2 un-backfilled gap rendered | §3.5 |
-| Publication + trust (`design:5.7`, `design:233`) - normalisation declared in-artifact, original preserved, integrity hash with its independent copy | **§3.6** |
+| Publication + trust (`design §5.7`, `design §6` (artifact-altered row)) - normalisation declared in-artifact, original preserved, integrity hash with its independent copy | **§3.6** |
 
 ## 12. Review record
 
