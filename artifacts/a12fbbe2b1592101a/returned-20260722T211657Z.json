@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a12fbbe2b1592101a",
+  "session_id": "64c15364-0933-4d6d-9b2e-d1ddbc918f9f",
+  "at": "2026-07-22T21:16:57Z",
+  "outcome": "APPROVE",
+  "findings": "Zero Major, zero Minor across all three commits (0478afa, b10c152, a403193). Base verified a4031937e6c12ad6a22f3933d89a51112b80ac93, clean tree, scope entirely within fix surfaces. Suites re-run at HEAD by reviewer under pwsh 7.6.3 - tests 90 of 90, probes 12 of 12, Verify-Verdict 25 of 25 exit 0. Q3 path traversal fault-injected as real subprocess in isolated scratch repo - dotdot-evil and a-slash-b both exit 1 with zero files written and a faults.log line naming the rejected subject, clean id writes and commits normally, disclosed harness try-catch does not weaken other Producer assertions. Q4 no bytecode tracked, pycache gitignored. Q5 both probe hooks guard command-v-python - fault-injected with python stripped from PATH gives loud note plus exit 0 and no log dir, normal run logs the stamped payload. MAJOR-1 isolation proof re-derived for all four negative vectors - each flips invalid to valid on restoring its single missing field, integrity now 64-hex so the length no longer double-invalidates. MINOR-1 line citation removed with no numeric citation remaining and wreckage marker intact, header claim confirmed by running the demo (EQUAL true by shallow-copy construction). FIX 1 through 4 survived later commits, collateral fixture hashes bumped to 64-hex so nothing under test weakened. Whole-branch integrity green, migrated store artifacts validate under the tightened 64-hex pattern. Constitution laws 1, 4, 6, 7 and TDD honored.",
+  "abstract": "Final adversarial review of StarCar PR-18 fix branch. APPROVE - conductor may merge all three commits to dev, resolve Copilot and Qodo threads with fix SHAs, and re-request Copilot.",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:94ad2dcef8340e5175f69f4fc47e99d526c83df30b280370d44515b855321b94"
+}
