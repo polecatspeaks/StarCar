@@ -1,0 +1,9 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "migrated",
+  "subject": "disp-3",
+  "session_id": "session-ghi",
+  "at": "2026-07-22T13:00:00Z",
+  "normalisation": [],
+  "integrity": "sha256:3333333333333333333333333333333333333333333333333333333333333"
+}

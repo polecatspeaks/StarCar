@@ -1,0 +1,14 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "disp-1",
+  "session_id": "session-abc",
+  "at": "2026-07-22T10:05:00Z",
+  "outcome": "APPROVE",
+  "findings": "none",
+  "abstract": "Car 1 landed schema, validator, verifier fix, index generator, and both contract files.",
+  "normalisation": [
+    { "from_class": "repo-root", "to": "<repo>" }
+  ],
+  "integrity": "sha256:1111111111111111111111111111111111111111111111111111111111111"
+}

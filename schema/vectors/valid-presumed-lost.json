@@ -1,0 +1,14 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "presumed-lost",
+  "subject": "disp-2",
+  "session_id": "session-def",
+  "at": "2026-07-22T12:00:00Z",
+  "basis": {
+    "observed": "no return within budget",
+    "by": "watchdog-tier1",
+    "against_budget": 3600
+  },
+  "normalisation": [],
+  "integrity": "sha256:2222222222222222222222222222222222222222222222222222222222222"
+}

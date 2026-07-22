@@ -1,0 +1,10 @@
+{
+  "$comment": "Recognition vocabulary for the 'kind' field (spec S3.2: vocabularies are DATA, never a schema enum, because an unrecognised value must be a discovery, not a bug). Reporting an unrecognised kind is A.2's job.",
+  "values": [
+    "dispatched",
+    "returned",
+    "presumed-lost",
+    "intent",
+    "ruling"
+  ]
+}
