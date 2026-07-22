@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "2026-07-22-harness-design-round2-REJECT",
+  "session_id": "pre-harness-migration",
+  "at": "2026-07-22T04:54:19-04:00",
+  "outcome": "REJECT",
+  "findings": "{major: 3, minor: 7, note: 5}",
+  "abstract": "&gt;\n  Rev 2 closes four of round 1's seven Majors cleanly and correctly adjudicates\n  a fifth against the reviewer with evidence I verified and could not overturn:\n  the runner does report per-dispatch cost. MAJOR-4 is closed empirically -\n  header-only and body-only tampering both now produce MISMATCH, exit 1, from\n  copies outside the repo. Three Majors remain. First, the cost adjudication\n  stopped one measurement short: subagent_tokens tracks the sum of cache-creation\n  tokens (a high-water context mark) to within 0.3% across all three dispatches,\n  excluding every output token and every cache read, so the number under-reads\n  true burn by 5.5x, 10.3x and 19.9x - and section 10 sums it into a fuel gauge\n  labelled an approximation, which is the Law 1 defect section 4.5 says it is\n  avoiding. Second, section 6 assigns reconciliation to CI, but the second source\n  is the runner's local transcript which CI cannot read, and the store-internal\n  half only sees pushed events, so the session-died-before-commit case it exists\n  to catch stays invisible; the design is readable two ways and both fail. Third,\n  the fold is still not computable: seq has no assignment authority so the hook\n  and the sweep cannot agree on identity, the content-equality rule makes the\n  healthy case a permanent false conflict because the clock rule guarantees the\n  copies differ, intent and ruling events carry the supersedes pointer and are\n  the only events the identity scheme cannot address (so a Law 2 hold still\n  cannot be released), and a reaped dispatch that later returns produces two\n  terminal events with no fold rule. Making the liveness event non-terminal\n  dissolves the last of those and answers open question 2. Rulings given on all\n  six open questions; right-sizing attacked in both directions and ruled correct\n  at three cars and eleven dispatches, because this gate is catching rather than\n  merely adding friction.",
+  "body_file": "reviews/2026-07-22-harness-design-round2-REJECT.md",
+  "normalisation": [],
+  "integrity": "sha256:ea57345cde886afb7c5c78b2fbe5a213240aa525e747a12c23cdd924a720b848"
+}

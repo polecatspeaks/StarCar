@@ -303,3 +303,38 @@ base; README adapter sentence and friction-log drift verified by content-grep at
 isAsync 6/6 from the launch probe log; verdict-header shape (Round/Base/Verdict lines)
 read from a landed verdict at base; the CommandNotFoundException red class carried
 from four observed runs this train under pwsh 7.6.3. The adversary re-verifies.*
+
+### Spec §9 closeout (task C.4 - stated here, the frozen spec is never edited)
+
+Spec `docs/specs/2026-07-22-dispatch-harness-spec.md` §9's contracts-touched table has
+9 rows; rows 1-2 (state-ledger, gating-matrix instantiation) closed with Car 1, table
+row order continues at row 3 below. All 7 remaining rows are now CLOSED:
+
+| Row | Document | What changes | Owner | Status at HEAD |
+|---|---|---|---|---|
+| 3 | `CLAUDE.md` | Every brief must mandate the envelope (§2.3) | Car 2 | CLOSED - `CLAUDE.md:644` mandates the fenced `starcar-artifact` envelope (verified present at this car's HEAD, re-grepped, not assumed) |
+| 4 | `docs/templates/car-brief.md`, `.claude/agents/car.md`, `/goodnight` skill | Envelope and sweep duties | Car 2 | CLOSED - `docs/templates/car-brief.md:88` (envelope fields, no angle brackets), `.claude/agents/car.md:28` (same mandate), `.claude/skills/goodnight/SKILL.md` section 5b "Artifact-store sweep" (all re-verified present at this car's HEAD) |
+| 5 | `docs/setup.md:23-24` | Both rows describe the retired scripts and `docs/reviews/` | Car 3 | CLOSED - task C.1's commit `5ef0c57` (see this repo's git log), R10's landing-convention stated in the Verdict-landing row |
+| 6 | `README.md:46-47` | Adapter list still says "a conductor-maintained state file" | Car 3 | CLOSED - task C.1's commit `5ef0c57`, exact replacement text per `[C3R1-m3 folded]` |
+| 7 | `docs/friction-log.md:46` | Cites `Verify-Verdict` running only on memory | Car 3 | CLOSED - task C.1's commit `5ef0c57`, located by content (the row had drifted to line 47 by the time this car read it) |
+| 8 | `.github/workflows/ci.yml` | Verifier repoint (§4 row 4), index-staleness gate (§5.2), checkpoint-branch fetch (§2.5) | Car 3 | CLOSED - the verifier repoint landed with task C.1 (the bare invocation at `ci.yml:47` picked up `Verify-Verdict.ps1`'s new default with no textual change needed); the index-staleness gate and checkpoint-branch fetch landed with task C.2's commit `8571591`, alongside the ubuntu matrix leg (#14) and the probes-in-CI step (#10) |
+| 9 | The migration commit itself | §4 rows 4-5 constrain the store migration, the index creation and the `ci.yml:47` repoint into ONE commit | Car 3 | CLOSED - task C.1's commit `5ef0c57` is that one commit: 24 verdict bodies `git mv`'d (history preserved), 24 sibling `starcar-artifact/1` JSON records created (19 fence-parsed, 5 fallback-parsed - see the EXECUTION DISCOVERY note below), `artifacts/index.md` born and committed, `Verify-Verdict.ps1`'s default repointed |
+
+**EXECUTION DISCOVERY, not anticipated by round-2's "20 of 23 (measured, 21/24 by
+execution time) carry a fence" figure:** 2 of the fenced verdicts
+(`2026-07-22-harness-design-round4-REJECT-ESCALATED.md`,
+`2026-07-22-harness-design-round5-REJECT.md`) used a PRE-SCHEMA envelope grammar with
+extra unrecognized keys (`section_4_disposition:`, `round_6_recommended:`,
+`workflow_verdict:`) sitting between `outcome:` and `findings:`. `Envelope.psm1`'s
+`Get-StarcarEnvelope` (shared production code, Car 2's live producer path, correctly
+left untouched by this task) appends any unrecognized-key line to the PREVIOUS field
+for its own grammar, so a naive migration would have produced a multi-line `outcome` -
+not a valid vocabulary token, and it corrupted `artifacts/index.md`'s markdown table
+when first observed (a row split across three lines). Detected via a red test
+(`Migration.Tests.ps1`, "EXECUTION DISCOVERY" case) before the real migration ran;
+`Migrate-Verdicts.ps1` now falls back to the same deterministic header-token-plus-title
+path used for the 3 originally fence-less verdicts whenever a fence-parsed `outcome`
+contains a newline. Final split: 19 fence-parsed, 5 fallback-parsed (not the
+plan-writer's estimated 21/3 split) - a legitimate, disclosed deviation, caught by the
+test the plan itself mandated (Step 1's hash-round-trip and schema-validity
+assertions), never silently absorbed.

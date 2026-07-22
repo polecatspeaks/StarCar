@@ -20,7 +20,8 @@ reviewer filed it as a finding. The compression exists so this file stays readab
 it does not transfer.
 
 > ## AMENDMENT 1 (2026-07-22, from the first plan's round-1 REJECT - plan-review
-> verdict `docs/reviews/2026-07-22-plan-review-car1-round1.md`)
+> verdict `artifacts/reviews/2026-07-22-plan-review-car1-round1.md`, moved from
+> `docs/reviews/` by harness #7's migration commit - `git mv`, history preserved)
 >
 > **A behavioural claim verified by reading is not verified. The plan-writer RUNS
 > every behavioural red before writing it into a task.**

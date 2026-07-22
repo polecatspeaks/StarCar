@@ -9,7 +9,8 @@ committed artifacts - per spec `docs/specs/2026-07-22-dispatch-harness-spec.md` 
 
 ## Header (keep arithmetic current)
 
-Process state fields: 0. Derived committed artifact rows: 1 (no instance committed yet).
+Process state fields: 0. Derived committed artifact rows: 1 (instance live at
+`artifacts/index.md`).
 
 (2026-07-22, dispatch harness Car 1, task A.5): ledger created. Process 0 -> 0 (none to
 begin with). Derived-artifact classes 0 -> 1 (the artifact index, generator landed in
@@ -23,6 +24,15 @@ folds to stdout, exits - spec S5.1, and its own S5.1 tripwire held). Derived-art
 classes 1 -> 1: dispatch records are PRIMARY artifacts, not derived - they are the source
 the index derives FROM, so they add no derived row. The artifact index remains the only
 derived class, still uncommitted until Car 3's store migration.
+
+(2026-07-22, dispatch harness Car 3, task C.1 - THE MIGRATION COMMIT): the index
+instance is BORN here - `artifacts/index.md` is generated (`New-ArtifactIndex.ps1 -StoreRoot
+artifacts`) and committed for the first time, over the 24 migrated review records plus
+the producer's already-live dispatch records. Process state 0 -> 0 (no change - the
+generator remains stateless). Derived-artifact classes 1 -> 1 (same one class; it moves
+from "no instance yet" to "instance live", which is why this row flips IN THIS COMMIT -
+C.1 is the commit that invalidates the old "not yet" claim, so C.1 trues it, per the
+living-documents same-commit rule [C3R1-M3 folded]).
 
 ## Question 1 - mutable process state
 
@@ -53,9 +63,9 @@ order).
 
 | Derived artifact (owner class) | Generator | Committed? | Staleness owner | Verdict | Evidence (test name) |
 |---|---|---|---|---|---|
-| Artifact index (`scripts/New-ArtifactIndex.ps1`) | `New-ArtifactIndex.ps1` | not yet - no instance is committed until Car 3 migrates the store (spec S5.2, S4 row 5) | CI regenerate-and-diff, lands as Car 3's gate | DELIBERATE no-gate (posture recorded, not a gap) | `ArtifactIndex.Tests.ps1` (determinism, the enabler for Car 3's diff gate) |
+| Artifact index (`scripts/New-ArtifactIndex.ps1`) | `New-ArtifactIndex.ps1` | **YES - instance committed at `artifacts/index.md` (Car 3, task C.1, the migration commit)** | not yet - CI regenerate-and-diff gate lands as Car 3's next task (C.2) | DELIBERATE no-gate through C.1 (posture recorded, not a gap); flips in C.2's commit | `ArtifactIndex.Tests.ps1` (determinism, the enabler for C.2's diff gate) |
 
 A deliberate no-gate posture is still a row (`docs/templates/worked-ledger-and-gating.md`):
-the absence of a gate before Car 3 lands is a decision worth auditing, not a silent hole.
-This row's verdict flips only in the commit that lands Car 3's CI diff step, same-commit
-with that gate's own test.
+the absence of a gate before Car 3's C.2 lands is a decision worth auditing, not a silent
+hole. This row's verdict flips only in the commit that lands Car 3's CI diff step (task
+C.2), same-commit with that gate's own test - see `docs/contracts/gating-matrix.md`.

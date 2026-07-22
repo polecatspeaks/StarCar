@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "2026-07-22-car3-plan-review-round2",
+  "session_id": "pre-harness-migration",
+  "at": "2026-07-22T13:24:07-04:00",
+  "outcome": "APPROVE",
+  "findings": "Delta re-review of Car 3 plan rev 2 at base fa18a857, tree clean, all fixtures in TEMP and removed. All 11 round-1 findings (5 Major, 4 Minor, 2 Notes) walk ABSENT (closed). The two empirically-proven Majors re-verified by execution: C3R1-M1, R7v2's rev-2 record shape (schema const, session_id pre-harness-migration sentinel, findings via fence-parse or fallback) run through the landed Test-StarcarArtifact returns Valid=True on both parse paths where round 1 returned False; C3R1-M2, R9v2's flat artifacts/reviews default with recursion dropped, run against the round-1 fixture, verifies the body and exits 0 and never globs the root index.md. Fence measurement confirmed by grep: exactly 20 of 23 verdicts carry a starcar-artifact fence, the 3 fence-less are the early design reviews whose leading-token fallback all resolve to REJECT which is in the outcomes vocab, so no discovery noise. M3 contract flips now land in their invalidating commits (ledger in C.1, matrix in C.2, C.4 slimmed, rev-1 contradiction resolved). M4 Handback 2 is now mandatory regenerate-and-commit over the merged store before the ping with rollback stated, and the producer never touches index.md so the fix is correct. M5 R10 repoints the future-verdict landing convention to artifacts/reviews as one location one owner. Minors m1 to m4 and notes n1 n2 all closed and re-verified: :27 citation correct, leading-token fallback vocabulary-clean, README exact text sentence-checked truthful (store exists in-repo, board consumption deferred to #1), ubuntu honest-stop scope guard, probe 6 reproduction method stated, integrity round-trip asserted not field-presence. Zero new findings. No rev-2 fix introduced a defect elsewhere. Convergence clean, zero of three swirl triggers fired.",
+  "abstract": "Round-2 delta APPROVE of the dispatch-harness Car 3 plan. All eleven round-1 findings closed by mechanism; the two proven Majors re-verified by running the landed schema validator (Valid=True) and the anti-trap fixture (exit 0, index.md never globbed). Convergence is textbook: findings 11 to 0, none relocated, no fix-induced defects. Clean APPROVE, not rebase-list. Car 3 clears for dispatch on Sonnet.",
+  "body_file": "reviews/2026-07-22-car3-plan-review-round2.md",
+  "normalisation": [],
+  "integrity": "sha256:5d9cb290241d59f9313ddc6f0aea6cc4c7f2431505fb91488931036bdcbd6674"
+}

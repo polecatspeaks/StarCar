@@ -16,6 +16,19 @@
 #
 # This workflow is not "done" when it goes green. It is done when someone has WATCHED it
 # go RED - a green light wired to nothing is worse than no light.
+#
+# Car 3 additions (harness #7, #10, #14, spec [m5]):
+#   - the substrate-floor PROBE suite runs first, before the product suite (#10) - a
+#     probe red names exactly which landed claim just went stale, before the test suite
+#     even gets a chance to fail for a confusing downstream reason.
+#   - the artifact-INDEX STALENESS gate (spec S5.2, S6): the committed index is a second
+#     copy of the store that can drift from it, so CI regenerates and diffs it. This is
+#     the gate the state ledger and gating-matrix rows arm in this same commit.
+#   - the CHECKPOINT-BRANCH fetch (spec [m5]): non-fatal if the branch is absent, which
+#     it is on any fork (Law 7 - a stranger has no Entire checkpoint branch). This makes
+#     tier 2 CI-REACHABLE; tier-2 ENUMERATION itself stays deferred (R6v2).
+#   - the UBUNTU matrix leg (#14): the measured proof artifact for the portability claim
+#     the README's badge waits on. pwsh is preinstalled on both GitHub-hosted images.
 
 name: CI
 
@@ -27,9 +40,38 @@ on:
 
 jobs:
   verify:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Fetch the Entire checkpoint branch (non-fatal if absent)
+        shell: pwsh
+        run: |
+          # Tier 2 (spec S2.5) needs this ref reachable to be CI-reachable at all - today
+          # it is a bare checkout with no ref fetch, which is exactly what the
+          # gating-matrix's tier-2 row cites as the suppression cause. A fork has no
+          # Entire checkpoint branch (Law 7 - a stranger publishes nothing here), so
+          # absence is a LOUD note, never a build failure.
+          #
+          # M-A FIX (reviewer catch, fix-cycle round 1): GitHub's `shell: pwsh` wrapper
+          # appends `if ((Test-Path -LiteralPath variable:\LASTEXITCODE)) { exit
+          # $LASTEXITCODE }` after this run block. `git fetch` on an absent ref sets
+          # $LASTEXITCODE to 128 and NOTHING below reset it, so the wrapper's own
+          # appended line failed the step even though the script's own logic never
+          # called exit - "non-fatal" was false by construction. Fixed by explicitly
+          # resetting $LASTEXITCODE to 0 on the absence branch, so the wrapper's
+          # appended check sees a clean exit regardless of git's own code.
+          git fetch origin entire/checkpoints/v1 2>&1 | Out-String | Write-Host
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "::notice::entire/checkpoints/v1 not fetchable on this remote (expected on a fork or a clone with no Entire mirror) - tier 2 stays CI-unreachable this run."
+            $LASTEXITCODE = 0
+          } else {
+            Write-Host "Fetched entire/checkpoints/v1 - tier 2 is CI-reachable this run."
+          }
 
       - name: Show shell and encoding facts
         shell: pwsh
@@ -41,9 +83,11 @@ jobs:
       - name: Verify landed review verdicts are unaltered
         shell: pwsh
         run: |
-          # Every file in docs/reviews/ carries a starcar-integrity line hashing every
-          # byte below it - header claims included. A header flipped from REJECT to
-          # APPROVE once passed an earlier version of this check; the hash now covers it.
+          # Every file in artifacts/reviews/ carries a starcar-integrity line hashing
+          # every byte below it - header claims included. A header flipped from REJECT
+          # to APPROVE once passed an earlier version of this check; the hash now covers
+          # it. Bare invocation: the verifier's own default (artifacts/reviews, no
+          # recursion) is what this step exercises (R9v2, harness #7's migration commit).
           ./scripts/Verify-Verdict.ps1
 
       - name: Install Pester
@@ -66,6 +110,41 @@ jobs:
           if (-not $ok) { Write-Error "Pester install failed after 3 attempts - this is an INFRASTRUCTURE red, not a code red."; exit 1 }
           Import-Module Pester -MinimumVersion 5.0.0
           Write-Host "Pester $((Get-Module Pester).Version)"
+          # powershell-yaml: CiWrapperSimulation.Tests.ps1 parses ci.yml's real run: text
+          # via ConvertFrom-Yaml (rebase item from the Car 3 round-2 verdict - an
+          # undeclared substrate dependency is a Law 7 gap). GitHub runners preinstall
+          # it, so the install branch only runs on a stranger's box; same retry shape
+          # as Pester, same scar (gallery flakes must not read as verification results).
+          if (-not (Get-Command ConvertFrom-Yaml -ErrorAction SilentlyContinue)) {
+            $ok = $false
+            foreach ($attempt in 1..3) {
+              try {
+                Install-Module powershell-yaml -Force -Scope CurrentUser -ErrorAction Stop
+                $ok = $true; break
+              } catch {
+                Write-Host "::warning::powershell-yaml install attempt $attempt failed: $($_.Exception.Message)"
+                Start-Sleep -Seconds (5 * $attempt)
+              }
+            }
+            if (-not $ok) { Write-Error "powershell-yaml install failed after 3 attempts - INFRASTRUCTURE red."; exit 1 }
+          }
+          Write-Host "ConvertFrom-Yaml: $((Get-Command ConvertFrom-Yaml).Source)"
+
+      - name: Run substrate-floor probes
+        shell: pwsh
+        run: |
+          # Runs BEFORE the product suite (#10): a probe red names exactly which landed
+          # substrate fact just moved (shell floor, Test-Json, Pester version), instead
+          # of the product suite failing downstream for a confusing reason. Same
+          # zero-test refusal pattern as the board-tooling step below - a suite that
+          # discovers zero tests and reports success is a lying instrument.
+          $result = Invoke-Pester -Path ./scripts/probes -PassThru -Output Detailed
+          Write-Host "Passed: $($result.PassedCount)  Failed: $($result.FailedCount)"
+          if ($result.FailedCount -gt 0) { exit 1 }
+          if ($result.PassedCount -eq 0) {
+            Write-Error "Pester discovered ZERO probe tests. A green run that asserted nothing is not a pass."
+            exit 1
+          }
 
       - name: Run board tooling tests
         shell: pwsh
@@ -77,5 +156,21 @@ jobs:
             # A suite that runs zero tests and reports success is a lying instrument -
             # exactly the shape this repo rejects everywhere else.
             Write-Error "Pester discovered ZERO tests. A green run that asserted nothing is not a pass."
+            exit 1
+          }
+
+      - name: Verify the artifact index is not stale
+        shell: pwsh
+        run: |
+          # The committed index (spec S5.2) is a second copy of the store that can drift
+          # from it - Law 6 forbids an unowned second copy. Regenerate over the SAME
+          # store the repo just checked out and diff against the committed copy; any
+          # difference (a record landed without a matching index regeneration) fails
+          # the build. New-ArtifactIndex.ps1 is deterministic by construction
+          # (ArtifactIndex.Tests.ps1), so a clean tree produces a clean diff.
+          ./scripts/New-ArtifactIndex.ps1 -StoreRoot artifacts -OutFile artifacts/index.md
+          git diff --exit-code artifacts/index.md
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "artifacts/index.md is STALE - regenerate it (./scripts/New-ArtifactIndex.ps1 -StoreRoot artifacts -OutFile artifacts/index.md) and commit the result."
             exit 1
           }

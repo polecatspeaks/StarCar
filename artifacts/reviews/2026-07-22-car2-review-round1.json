@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "2026-07-22-car2-review-round1",
+  "session_id": "pre-harness-migration",
+  "at": "2026-07-22T12:30:37-04:00",
+  "outcome": "REJECT",
+  "findings": "One Major (M1, EXECUTION). B.4 (fb77b56) deleted Get-LiveTranscriptPath and net-shifted Land-Verdict.ps1 functions up by 4 lines, orphaning two code-comment citations Car 2 authored earlier in the same train: Envelope.psm1:96 cites Land-Verdict.ps1 lines 112 to 115 for the repeat-envelope precedent, which now lives at 109 to 111 (112 to 115 is path-normalisation code); Produce-Artifact.ps1:75 cites 118 to 166 for ConvertTo-PortablePaths, which is now 114 to 162 (166 falls inside Get-Sha256). Collateral: schema/index-format.md:63 same 118 to 166. B.4 is the commit that invalidated them and did not re-true them, violating the living-documents same-commit rule which binds code comments, matching the repo's round-3 spec precedent ruled Major, and undisclosed by the car. Fix is mechanical: repoint the three citations or reference by function name, one commit, same car, delta re-review. Everything else PASSES and was re-verified: scripts/tests 73 of 73, probes 8 of 8, Verify-Verdict exit 0 with 19 files; producer records schema-valid with integrity round-trip and equal launch and stop subject; all eight guards watched fire in isolated scratch repos; B.5 and B.6 doc claims traced to the code that honors them.",
+  "abstract": "REJECT on one mechanical, undisclosed citation-drift Major that the car's own B.4 commit caused and did not fix in-commit. The producer, detector, envelope extractor, retirement rider, and both documentation tasks are otherwise correct and fully verified against pwsh 7.6.3 at HEAD e6128ef. Adjudication ruled in the car's favor: the fold emits the liveness gradient and the board derives unaccounted-for, faithful to spec sections 3.1, 3.3, 3.5, and 8. Both marked deviations and the model-field placement ruled acceptable and disclosed. Review worktree stayed read-only and clean throughout; all fault injection ran in separate scratch directories.",
+  "body_file": "reviews/2026-07-22-car2-review-round1.md",
+  "normalisation": [],
+  "integrity": "sha256:f1077ee8063839802a28e17623ac5fa2c0d019bf8e86e074d7bfe97fcd2051e6"
+}

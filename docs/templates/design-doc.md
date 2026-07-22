@@ -59,7 +59,7 @@ document should not be written.
 |---|---|---|
 | `constitution.md:N` Law N | *what it rules out* | *filled in as the mechanism is written* |
 | `docs/templates/<x>.md` | | |
-| a prior verdict in `docs/reviews/` | | |
+| a prior verdict in `artifacts/reviews/` | | |
 
 Open every source and quote the binding clause. A constraint you paraphrase from memory is
 a constraint you will satisfy from memory.
@@ -166,7 +166,8 @@ review that finds nothing.
 # WORKED EXEMPLAR: the dispatch harness, and what §0-§2 would have caught
 
 The harness design (`#7`) ran four adversarial rounds and produced twelve Majors before
-being escalated. Four verdicts are landed verbatim in `docs/reviews/`. This is the wreckage
+being escalated. Four verdicts are landed verbatim in `artifacts/reviews/` (moved from
+`docs/reviews/` by harness #7's own migration commit - `git mv`, history preserved). This is the wreckage
 review: what the first three sections would have said, and what each would have prevented.
 
 ## §0 would have ended it in round zero

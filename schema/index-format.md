@@ -32,7 +32,8 @@ an artifact carrying one more field than this shop currently reads should never 
 conformance for that reason alone. Closing it would make every future field addition a
 breaking change for every existing producer, which is the opposite of what a vocabularies-
 as-data posture is trying to buy (spec S3.2). (Forward note from
-`docs/reviews/2026-07-22-plan-review-car1-round3.md`.)
+`artifacts/reviews/2026-07-22-plan-review-car1-round3.md`, moved from `docs/reviews/`
+by harness #7's migration commit - `git mv`, history preserved.)
 
 ## Index format
 

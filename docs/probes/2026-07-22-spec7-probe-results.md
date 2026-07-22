@@ -139,9 +139,65 @@ baseline" expectation is falsified by measurement. Tracked as a Car 3-adjacent
 optimization (issue filed); also a measured data point for the #14 runtime decision -
 a compiled binary's ~5ms start would retire most of this overhead.
 
+## #15 addendum - the latency split, measured (Car 3, task C.3)
+
+Probe 2's addendum measured the COMBINED per-dispatch hook overhead (~11-12s live, two
+pwsh process starts plus two git commits plus the entire hooks' own work, attribution
+unmeasured). This addendum times each candidate contributor IN ISOLATION on the same
+box, so a remedy decision has a measured breakdown to aim at instead of a guess. Method:
+`scripts/probes/HookLatency.Probes.Tests.ps1`, 10 iterations per component, min/median
+reported, NON-VACUITY asserted only (no time threshold - a loaded box runs slower and a
+threshold-based probe would cry wolf on the load, not on a regression). Reproduce with
+`Invoke-Pester -Path ./scripts/probes`.
+
+| Component | min | median | n |
+|---|---|---|---|
+| Bare `pwsh -NoProfile -Command exit` start | 184.2 ms | 188.8 ms | 10 |
+| `python -c pass` start | 19.9 ms | 20.6 ms | 10 |
+| One `Produce-Artifact.ps1` fixture run, end-to-end (write + commit in a temp repo) | 83.0 ms | 88.9 ms | 10 |
+| One probe-hook append (`.claude/hooks/post-task-probe.sh`) | 79.0 ms | 80.4 ms | 10 |
+
+**Observation, stated honestly:** the four isolated components sum to roughly 350-400ms
+at their median, an order of magnitude below Probe 2 addendum's measured ~11-12s
+combined per-dispatch overhead. Probe 2's own attribution ("two pwsh process starts per
+dispatch... all riding the blocking paths") does NOT, on this measurement, account for
+most of the latency - the dominant contributor is not identified by this split and
+remains open. This is the measurement's honest yield: it narrows where the overhead is
+NOT (these four isolated operations), not where it is. Remedy decisions (a compiled
+binary, batching commits, or further isolating the entire/Claude-Code-side hooks
+themselves) come after this measurement, per #15's own discipline - not decided here.
+
+## Probe 6 - spec §7 [m1]: is every dispatch in this shop asynchronous? **ANSWERED: YES, 6 of 6 measured.**
+
+§2.1's launch-time claim rests on an `isAsync: true` payload; under a synchronous
+`Task`, `dispatched` and `returned` would land in the same breath and tier 1 goes
+vacuous. Method: the committed `PostToolUse:Task` observation hook
+(`.claude/hooks/post-task-probe.sh`, wired via `.claude/settings.json`) logs every
+launch payload's shape to the gitignored `.claude/probe-logs/post-task.jsonl`. Measured
+at plan-writing (2026-07-22, conductor-observed, live session): **6 of 6 recorded
+launch payloads across this train carry `tool_response.isAsync: true`** - zero
+counterexamples.
+
+**REPRODUCTION METHOD, stated so this is a landed measurement probe and not a
+non-reproducible claim (C3R1-n1 folded):** the raw per-machine log is gitignored by
+design (`.gitignore:1`, `.claude/probe-logs/`) - a per-session artifact, not a durable
+one - but the HOOK that produces it is committed
+(`.claude/hooks/post-task-probe.sh`), so any future dispatch on any machine
+regenerates the observation in one launch: dispatch a `car` (or any `subagent_type`)
+agent, then inspect `.claude/probe-logs/post-task.jsonl`'s newest line for
+`tool_response.isAsync`. The finding itself (6/6) lands durably here, in the committed
+probe-results doc; only the raw evidence backing it is per-machine.
+
+**The residual, stated (unchanged from the design/spec rung):** a future synchronous
+dispatch surface - a runner or SDK version where `Task` resolves inline rather than
+async-launched - would collapse tier 1's grain (the `dispatched`/`returned` split the
+whole liveness-gradient fold depends on). This probe answers the question for THIS
+shop's current substrate; it is not a proof that no such surface will ever exist.
+
 ## What this unblocks
 
-All four §7 probes are now ANSWERED (probe 2's trigger fired at cars 2-3 planning; its
-hook-failure sub-case is recorded above as the one unmeasured residual). **The cars 2-3
-planning rung is fully unblocked, and probe 2's blocking-hook measurement is a binding
-design constraint on Car 2's producer.**
+All four §7 probes plus probe 6 (added [m1], Car 3) are now ANSWERED (probe 2's trigger
+fired at cars 2-3 planning; its hook-failure sub-case is recorded above as the one
+unmeasured residual). **The cars 2-3 planning rung is fully unblocked, probe 2's
+blocking-hook measurement is a binding design constraint on Car 2's producer, and probe
+6 closes the async-grain question spec §7 [m1] left open.**
