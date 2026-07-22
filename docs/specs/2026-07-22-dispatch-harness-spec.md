@@ -86,8 +86,8 @@ dropped silently** (Law 4).
 
 Tier 1 (every `dispatched` has a successor or renders unaccounted-for) needs only the
 artifacts, so any conforming shop gets it. Tier 2 (an enumerable second source) is
-producer-dependent; ours is the Entire checkpoint branch. **The board renders which tier is in
-force.**
+producer-dependent; ours is the Entire checkpoint branch. **The fold exposes which tier is in
+force**; what the board draws with it is #1's job (§3.1).
 
 **[m5, folded] Tier 2 is not CI-reachable as configured:** `.github/workflows/ci.yml:32` is a
 bare `actions/checkout@v4` with no ref fetch. Car 3 owns the fetch.
@@ -96,13 +96,18 @@ bare `actions/checkout@v4` with no ref fetch. Car 3 owns the fetch.
 
 **Owned by the schema artifact** (design §0 - the format half is executable or it does not
 exist): field names, types, ordering, identity, the index format, and the path-normalisation
-substitution rule.
+substitution rule. **[m4] Where a behavioural rule below must name a field to be stated at
+all - `cost`, `agent_type` - it names it; that is the rule identifying its subject, not this
+document specifying a schema.**
 
 **Owned here, because behavioural:**
 
 ### 3.1 Kinds, precedence, supersession
 
 Kinds: `dispatched`, `returned`, `presumed-lost`, `intent`, `ruling`.
+**[m6] "Subject" and "dispatch" are the same key** for the three dispatch kinds - the subject
+of a dispatch-lifecycle record IS its dispatch. `intent` and `ruling` have non-dispatch
+subjects. Identity is the schema artifact's (design §4.3).
 Precedence for one dispatch: `returned` > `presumed-lost` > `dispatched`.
 Within a kind: **latest-`at` wins, and the fold exposes a supersession marker**
 (`Land-Verdict.ps1:112-115` already implements this rule for repeat notifications).
@@ -140,6 +145,22 @@ spend is** (design P6) - a stranger's runner may report no high-water mark.
 
 A detected gap that is never filled is **visible debt, permanently, until filled**. A gap
 living only in a CI log is an unknown that fails to render as unknown.
+
+### 3.6 Publication and trust [N1, folded — the obligations the ledger CLAIMED were carried]
+
+`design:26` assigns **publication and trust to the behavioural half** - this document's half.
+Rev 2's fidelity ledger asserted they landed in §8; §8 is silent on them and the citation
+pointed at the design's Cost section. The substance was genuinely absent. It is stated here:
+
+- **The normalisation rule is DECLARED IN EACH LANDED ARTIFACT.** A reader must be able to
+  see what was substituted without leaving the file. (Only the *substitution rule itself* is
+  deferred to the schema artifact, per `design:37`.)
+- **The un-normalised original is PRESERVED on the checkpoint branch.** Normalisation is
+  portability, not curation, and this is the clause that makes that true rather than asserted.
+- **Each artifact carries an integrity hash, and its independent counterpart is the checkpoint
+  copy.** `scripts/Land-Verdict.ps1:281` states the reasoning: the independently-written
+  checkpoint copy, *"not the hash, is the defence against whoever controls this script."* That
+  is the Law 1 and Law 8 backstop for a public showcase, and rev 2 required neither half.
 
 ## 4. Retirement list
 
@@ -233,6 +254,7 @@ stopping agent listed *itself* as running, so it is corroboration at best.
 | `README.md:46-47` | Adapter list still says "a conductor-maintained state file" | Car 3 |
 | `docs/friction-log.md:46` | Cites `Verify-Verdict` running only on memory | Car 3 |
 | `.github/workflows/ci.yml` | Verifier repoint (§4 row 4), index-staleness gate (§5.2), checkpoint-branch fetch (§2.5) | Car 3 |
+| **The migration commit itself** | §4 rows 4-5 constrain the store migration, the index creation and the `ci.yml:47` repoint into ONE commit, spanning two cars' deliverables. **Car 3 authors it; car 1 lands the index generator first so car 3 has something to invoke.** Sequenced, not guessed | Car 3 |
 
 ## 10. Fidelity to the design
 
@@ -250,7 +272,7 @@ stopping agent listed *itself* as running, so it is corroboration at best.
 | Two-tier detection, tier rendered | §2.5 |
 | Cost/context split, dark lane | §3.4 |
 | Ruling Q2 un-backfilled gap rendered | §3.5 |
-| Normalisation before hashing | §8 (unchanged from design §9) |
+| Publication + trust (`design:5.7`, `design:233`) - normalisation declared in-artifact, original preserved, integrity hash with its independent copy | **§3.6** |
 
 ## 12. Review record
 
@@ -260,8 +282,20 @@ found none. Closed by recorded conductor ruling.
 
 Spec review round 1: **REJECT, 8 Major, 7 Minor, 6 rulings** -
 `docs/reviews/2026-07-22-harness-spec-round1-REJECT.md`. All eight Majors folded above and
-marked `[M#, folded]`; all six rulings adopted; minors m1, m2, m3, m5 folded, m4 resolved by
-§3's split, m6 and m7 resolved by §10 and this section. The reviewer ruled the defects
+marked `[M#, folded]`; all six rulings adopted; minors m1, m2, m3, m5 folded; **m4 and m6 were
+claimed closed in rev 2 and were NOT** - both are folded here instead (§3 preamble, §3.1),
+and the false claims are recorded rather than quietly corrected, because a review record that
+can assert an unsupported closure is the same class as N1 at lower stakes. m7 is closed by
+§10 plus this section. The reviewer ruled the defects
 **omissions, not structure** - a coverage defect, extended with a rider rather than rewritten.
 
-Spec review round 2: *pending.*
+Spec review round 2 (**DELTA re-review, same reviewer, resumed with context intact**):
+**REJECT, 1 Major, 4 Minor** - `docs/reviews/2026-07-22-harness-spec-round2-DELTA-REJECT.md`.
+12 of 15 prior findings CLOSED by mechanism, 6 of 6 rulings adopted as ruled with none in
+name only. The single Major was **inside the fidelity ledger built to prevent dropped
+requirements**: a false row claiming §8 carried publication when §8 was silent and the
+citation named the design's Cost section - *the fold that LOOKS folded*, which
+`worked-rung-carriers.md:48` names and `:57` predicted by warning that a central ledger needs
+CI to walk it. Folded as §3.6.
+
+Spec review round 3: *pending - fix-and-confirm scope only, per the round-2 disposition.*
