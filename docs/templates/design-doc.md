@@ -112,6 +112,33 @@ car owns updating each**. Ownership stated once, in one table.
 
 Dispatch count, model mix, size class. Owner approval recorded **before** dispatch.
 
+## §9b - Disposition of the prior round (re-revisions only, and it is not optional)
+
+> One row per prior **finding** AND per prior **ruling**. Every row gets a disposition:
+> **adopted / adapted / appealed / rejected-with-reason**. A blank is a defect.
+
+| Prior item | Kind | Disposition | Where |
+|---|---|---|---|
+| Major 1 … | finding | adopted | §5.3 |
+| Ruling on Q1 … | **ruling** | appealed - reason, evidence | §4 |
+
+**Rulings need rows as much as findings do, and this is the reason the section exists.**
+An implementer never silently overrides its own reviewer; rejection is appealable upward,
+never around. Disagreeing is legitimate and welcome - **disagreeing quietly is not**, and
+the failure mode is never a loud argument, it is an item that simply stops appearing.
+
+This is a structural guard against a known model bias, not a discipline exercise. A pull
+toward smoothing over conflict is not something an author can decide not to have; a table
+with an empty cell in it is something a reviewer can see.
+
+*Scar: three silent drops in one design series. A reviewer's measured cost figure was
+revised down with no statement of disagreement (the author's replacement figure was wrong).
+A ruling on schema membership was reversed with no disposition (the reversal was
+defensible - an appeal would have been legitimate and would have been upheld). A ruling on
+intra-kind ordering, which the reviewer had grounded in this repo's own shipped code, was
+dropped entirely. All three were invisible because the prior round's items had no
+mandatory row.*
+
 ## §10 - Open questions for the reviewer
 
 Real ones, with the cost of each answer. A design that hides its soft spots produces a
