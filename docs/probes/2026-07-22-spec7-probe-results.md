@@ -117,6 +117,28 @@ mechanism):** the last assistant message's text parsed from a real
 `content[].type=='text'` parts) equals the payload's `last_assistant_message` field
 verbatim. The transcript is authoritative; the payload field is unused by the design.
 
+## Probe 2 addendum - LIVE combined-hook latency after Car 2's merge (handback check 2)
+
+Measured at the first live fires of the full producer chain (launch: entire + probe +
+producer-launch hooks; stop: probe + producer-stop hooks), trivial Haiku dispatches,
+same box and session as all prior measurements:
+
+| Run | Hooks live | duration_ms |
+|---|---|---|
+| Baseline 1 (pre-producer) | probe only | 2,816 |
+| Baseline 2 (pre-producer) | probe only | 1,648 |
+| Live fire 1 (cold) | full chain | **14,049** |
+| Live fire 2 (warm) | full chain | **14,285** |
+
+**The ~11-12s overhead is STRUCTURAL, not cold-start** - the warm run matched the cold
+one. Attribution (unmeasured split, stated honestly): two pwsh process starts per
+dispatch (launch producer + stop producer), two git commits, plus the entire hooks'
+own work, all riding the blocking paths probe 2 established. The producer WORKS
+(records valid, subjects equal, entanglement-proven) but the plan's "sub-second beyond
+baseline" expectation is falsified by measurement. Tracked as a Car 3-adjacent
+optimization (issue filed); also a measured data point for the #14 runtime decision -
+a compiled binary's ~5ms start would retire most of this overhead.
+
 ## What this unblocks
 
 All four §7 probes are now ANSWERED (probe 2's trigger fired at cars 2-3 planning; its
