@@ -49,7 +49,21 @@ jobs:
       - name: Install Pester
         shell: pwsh
         run: |
-          Install-Module Pester -MinimumVersion 5.0.0 -Force -Scope CurrentUser -SkipPublisherCheck
+          # Retry: the gallery is a network dependency on every run and it HAS flaked -
+          # run 29913822738 failed here, skipped every test, and went unnoticed by the
+          # conductor for an hour. A transient in an install step must not read as a
+          # verification result.
+          $ok = $false
+          foreach ($attempt in 1..3) {
+            try {
+              Install-Module Pester -MinimumVersion 5.0.0 -Force -Scope CurrentUser -SkipPublisherCheck -ErrorAction Stop
+              $ok = $true; break
+            } catch {
+              Write-Host "::warning::Pester install attempt $attempt failed: $($_.Exception.Message)"
+              Start-Sleep -Seconds (5 * $attempt)
+            }
+          }
+          if (-not $ok) { Write-Error "Pester install failed after 3 attempts - this is an INFRASTRUCTURE red, not a code red."; exit 1 }
           Import-Module Pester -MinimumVersion 5.0.0
           Write-Host "Pester $((Get-Module Pester).Version)"
 
