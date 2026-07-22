@@ -205,6 +205,52 @@ when told to produce a test. Four rounds never asked why two producers wrote art
 all; removing that one unexamined premise dissolved roughly eight of the twelve findings.
 The owner named it: using a hammer to fix a watch.*
 
+## NO HEADERS HERE: truth is constructed by probes, and probes must LAND
+
+The ancestor shop has a standing rule: **check the SDK headers first** - before planning,
+writing, or assuming anything, verify against the third-party source of truth. This shop
+has no headers. Nothing above us is versioned, documented, and maintained by someone else;
+our substrate is the observed behaviour of shells, test frameworks, hook payloads, CI
+runners, and our own scripts - and nobody is keeping any of that true for us. So the
+source of truth does not exist to be checked. **It has to be constructed, and the
+instrument of construction is the PROBE**: run the real thing, observe the real result,
+quote the observation.
+
+The doctrine, owner-ratified 2026-07-22, in three parts:
+
+- **Probe before planning, writing, or assuming - anything the desk cannot prove.** The
+  structural/behavioural split governs which tier: structural claims (this API exists,
+  with this signature) are settled by opening the file; behavioural claims (this command
+  exits N, this hook fires once, this input produces this output) are settled ONLY by
+  running. Every stated red is a behavioural claim. Reading where a probe was owed
+  produces confident falsehood, which is Law 1's territory.
+- **A probe result is perishable; it becomes substrate only when it LANDS.** A header is
+  durable because a vendor maintains it; a probe is a point-in-time observation that goes
+  stale silently (a shell upgrade, a harness change, a hook payload revision). So an
+  unlanded probe is vigilance-tier memory in a shop whose workforce evaporates nightly.
+  Landing forms, strongest first: a pinned red-first test, a conformance vector, a
+  recorded measurement with coordinates (what, where, observed value, SHA) cited in the
+  consuming document. This is the Healing Loop's "validated facts land as tests or gates,
+  never only prose" - the probe is how the fact is validated; the landing is why it stays
+  true.
+- **Each layer's landed probes become the headers of the layer above.** That is what
+  "substrate upon substrate" means mechanically: the schema-plus-vectors artifact IS a
+  constructed header file for the artifact store, and the next train checks it first the
+  way the ancestor checks the SDK. Every design's probe list ("what the desk cannot
+  prove") is that design's register of headers still missing - per-design and
+  trigger-gated, never a standing bureaucracy, because a probe register that must be
+  ritually updated goes autoimmune like any other instrument.
+
+*Scar, both directions, same train. The cost: a plan asserted "verified at base" that a
+script exits 0 on an empty store - from READING it. Running it showed a StrictMode crash,
+exit 1, the quoted lines unreachable; the false claim had already survived three
+adversarial spec rounds because every round read instead of ran, and the fix consumed a
+spec amendment plus a REJECT round. The win: one probe wired hours early answered a
+blocking design question for free - SubagentStop fires exactly once per subagent, 74
+firings, 74 distinct agent ids - and a two-shell probe of Test-Json killed a menu by
+turning "pick a validation engine" into a measured runtime floor. Same session, same
+codebase: the unprobed claim cost two gates; the probed ones each cost one command.*
+
 ## LAW-FIRST design (the constitution is a design instrument, not a grading rubric)
 
 Every design opens with the constraints that bind it - which laws, templates, contracts and
