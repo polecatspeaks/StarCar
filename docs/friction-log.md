@@ -57,3 +57,10 @@ deliberately NOT bundled into the first workflow.
 they were installed today. If they are still catching nothing in a month, they are pruning
 candidates - the Healing Loop counts catches per gate, and a gate that never fires is
 ritual.
+
+## 2026-07-22 - continued
+
+| When | Friction | Cost | Class |
+|---|---|---|---|
+| 07-22 | **Q4 ANSWERED BY LIVE TEST.** The fenced-block envelope survives the platform safety filter structurally - ` ```starcar-artifact ` lands intact - but angle brackets INSIDE the payload are HTML-escaped: `abstract: >` landed as `abstract: &gt;`. A YAML block-scalar indicator is therefore unusable, and any `<placeholder>` syntax would be mangled too. The sentinel version was neutralised entirely; the fence version is mangled selectively, which is harder to notice. | One dispatch, and it answered a question rev 2 flagged as untested | Format constraint imposed by a layer we do not control |
+| 07-22 | `subagent_tokens` is a context high-water mark, not a spend total. Verified independently: reported 71,942 vs cache-creation sum 71,866 (0.1% match) vs 365,867 across all counters - a 5.1x under-report on the smallest dispatch. Labelling it "an approximation" would have shipped a budget gauge reading ~20% of true burn. | Caught at design rung; would have been a shipped Law 1 defect on the fuel surface | A number that exists is not a number that means what you assumed |
