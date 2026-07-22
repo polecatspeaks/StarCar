@@ -48,7 +48,7 @@ change is itself a process failure (the autoimmune mode - see the Healing Loop's
 | Review calibration | Any Major = REJECT; reviewers run suites themselves; swirl triggers escalate; reviewer rotation is carrier-backed |
 | The sentence check | Cross-boundary values: trace every hop, file:line |
 | Branch topology | Never commit to main; merge only from a known good state; protection binds admins; the PR cycle: Copilot reviews out-of-family, triage calibrates, owner rules |
-| Dispatch rules | Name the model; no nested delegation (by toolset); verify the worktree base; cars never push |
+| Dispatch rules | Name the model; no nested delegation (by toolset); verify the worktree base; cars never push; conductor hotfixes only within the five-leg boundary |
 | Verification honesty | Every claim carries suite, count, SHA, observer; second party re-derives; wait for CI's terminal state |
 | CARRIER rule | Obligations cross rungs in documents with IDs, never by memory; receivers refuse delivery without them |
 | Living contracts | State changes update the ledger in the same commit |
@@ -625,6 +625,21 @@ pushing to `main` mid-train.*
   past a contradiction is the failure mode that costs trains. Put truth on the SUCCESS
   branch of every brief - agents gradient toward success shapes, so give truth a success
   shape.
+
+**THE CONDUCTOR-HOTFIX EXCEPTION (boundary codified 2026-07-22, prescribed by the
+reviewer that confirmed its first use).** Implementation is cars' work; the conductor
+may author a code fix directly ONLY when ALL FIVE hold:
+(a) CI-blocking or equivalently urgent on the working branch;
+(b) mechanical, coverage-class - never structural;
+(c) red-first with a NON-VACUOUS pin (the failing test reproduces the actual defect and
+    proves its own probe valid);
+(d) disclosed in-commit as a deviation, naming the compensating review;
+(e) on a working branch, with a MANDATORY binding post-hoc adversarial review - a
+    review that re-runs, re-reproduces, and may OBJECT, forcing rework-forward.
+Any leg missing = dispatch a car. The exception exists so a sound one-off judgment
+does not erode into "the conductor writes whatever is convenient" - the boundary IS
+the rule. *First use: the entire-CLI guard (CI run 8c983a1's red), all five legs
+exhibited, CONFIRMED at `docs/reviews/2026-07-22-hotfix-confirm.md`.*
 - **Every brief mandates the report envelope.** A dispatch's final report ENDS with a
   fenced block, info string `starcar-artifact`, carrying `outcome`, `findings`, and
   `abstract` - and NO angle brackets inside it (measured: a sentinel form was neutralised
@@ -812,7 +827,7 @@ landed, what is parked, what happens first tomorrow.
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **StarCar** (593 symbols, 599 relationships, 0 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **StarCar** (711 symbols, 713 relationships, 0 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
 
