@@ -1,3 +1,4 @@
+<!-- starcar-integrity: sha256=a56f8ec235387409591f90075d8a7d610f8b7b25b3fedf478ad4b7ab05e1dbf4 covers every byte below this line; recompute with scripts/Verify-Verdict.ps1 -->
 # Adversarial design review - v0 yard skeleton, round 1
 
 Status: Verdict of record
@@ -14,8 +15,11 @@ Reviewer: car agent type, Opus, read-only, detached worktree, no delegation
 > one landing the review, and a hand-copied verdict is a hand-maintained mirror at a
 > process boundary.
 >
-> Body SHA-256: `5f713113023a6af9d9aa6bf3efefb0e2bfae49156b374e14fac599b51d5c4a98`
-> Recompute with: `scripts/Verify-Verdict.ps1 -Path <this file>`
+> Integrity: the `starcar-integrity` line at the top of this file hashes EVERY byte
+> below it - this header's claims as well as the verbatim body. Recompute with
+> `scripts/Verify-Verdict.ps1 -Path <this file>`. An independently-written copy of the
+> same body exists on the Entire checkpoint branch; that copy, not the hash, is the
+> defence against whoever controls this script.
 <!-- verbatim-body-below: do not edit past this line -->
 
 Base verified at `d7b8463a218980800f48bb8076ebe511226ec12d`, clean worktree, detached. I read the design, the constitution, CLAUDE.md, the Healing Loop, both templates, `scripts/board.ps1`, the README, `docs/setup.md`, the commit that landed the design, live branch protection, and GitHub issue #1.

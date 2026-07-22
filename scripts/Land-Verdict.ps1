@@ -135,7 +135,6 @@ $body = Get-ResultBlockForTask -Lines $lines -Id $TaskId
 # this script hashed one string and wrote a different one -- every landed file failed its
 # own verifier on the first run. The hash must cover exactly what lands on disk.
 $body = $body.Replace("`r`n", "`n").Trim()
-$hash = Get-Sha256 -Text $body
 
 # --- refuse to clobber silently ----------------------------------------------
 if ((Test-Path $Out) -and (-not $Force)) {
@@ -163,8 +162,11 @@ Reviewer: $Reviewer
 > one landing the review, and a hand-copied verdict is a hand-maintained mirror at a
 > process boundary.
 >
-> Body SHA-256: ``$hash``
-> Recompute with: ``scripts/Verify-Verdict.ps1 -Path <this file>``
+> Integrity: the ``starcar-integrity`` line at the top of this file hashes EVERY byte
+> below it - this header's claims as well as the verbatim body. Recompute with
+> ``scripts/Verify-Verdict.ps1 -Path <this file>``. An independently-written copy of the
+> same body exists on the Entire checkpoint branch; that copy, not the hash, is the
+> defence against whoever controls this script.
 "@
 
 # An explicit, collision-proof separator. The first version used a markdown rule, and
@@ -178,9 +180,30 @@ $separator = "`n<!-- verbatim-body-below: do not edit past this line -->`n`n"
 $outDir = Split-Path $Out -Parent
 if ($outDir -and (-not (Test-Path $outDir))) { New-Item -ItemType Directory -Path $outDir -Force | Out-Null }
 
+# INTEGRITY COVERS THE WHOLE DOCUMENT, not just the body.
+#
+# The first version hashed only the verbatim body, on the theory that the body is
+# what must not be altered. An adversarial reviewer fault-injected it: change the
+# HEADER from "REJECT - 8 Major" to "APPROVE - 0 Major", leave the body untouched,
+# and the verifier reported OK with exit 0. A file asserting APPROVE over a body
+# arguing REJECT passed its own integrity check.
+#
+# That is the worst shape a guard can have here: the header is what a reader skims
+# and what a generated index consumes, so the hash protected the text nobody reads
+# and left the claim everyone reads unprotected. Law 6 - the header was a second copy
+# of the body's verdict with nothing checking they agree.
+#
+# Now the hash covers everything after the integrity line itself, so the only edit it
+# cannot detect is a deliberate re-stamp. That is not a gap this mechanism can close:
+# the conductor owns the producer, the hash function and the verifier. The real
+# defence against a determined conductor is PUBLICATION - Entire's checkpoint branch
+# holds an independently-written copy of the same body - and the hash's honest job is
+# detecting accident and drift, which this repo has already hit three times.
 $document = ($header + $separator + $body).Replace("`r`n", "`n")
+$hash = Get-Sha256 -Text $document
+$integrityLine = "<!-- starcar-integrity: sha256=$hash covers every byte below this line; recompute with scripts/Verify-Verdict.ps1 -->`n"
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
-[System.IO.File]::WriteAllText((Join-Path (Get-Location) $Out), $document, $utf8NoBom)
+[System.IO.File]::WriteAllText((Join-Path (Get-Location) $Out), ($integrityLine + $document), $utf8NoBom)
 
 Write-Host "Landed $Out"
 Write-Host "  task id : $TaskId"

@@ -1,3 +1,4 @@
+<!-- starcar-integrity: sha256=9089e62799181281f45048fe7525f60934d2742c785d7ed5b5bbffa7ad3e02cc covers every byte below this line; recompute with scripts/Verify-Verdict.ps1 -->
 # Adversarial design review - v0 yard skeleton, round 2
 
 Status: Verdict of record
@@ -14,8 +15,11 @@ Reviewer: car agent type, Opus, read-only, detached worktree, no delegation
 > one landing the review, and a hand-copied verdict is a hand-maintained mirror at a
 > process boundary.
 >
-> Body SHA-256: `32473a928d4b1e34392d23daa91060af8c30adc652c64e188e0060cbece08511`
-> Recompute with: `scripts/Verify-Verdict.ps1 -Path <this file>`
+> Integrity: the `starcar-integrity` line at the top of this file hashes EVERY byte
+> below it - this header's claims as well as the verbatim body. Recompute with
+> `scripts/Verify-Verdict.ps1 -Path <this file>`. An independently-written copy of the
+> same body exists on the Entire checkpoint branch; that copy, not the hash, is the
+> defence against whoever controls this script.
 <!-- verbatim-body-below: do not edit past this line -->
 
 # VERDICT: REJECT

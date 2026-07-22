@@ -45,25 +45,25 @@ function Test-OneVerdict {
     # wolf poisons everything downstream of it.
     $raw = [System.IO.File]::ReadAllText($File).Replace("`r`n", "`n")
 
-    # An explicit separator that cannot occur in a markdown payload. A horizontal rule
-    # was tried first and failed: verdicts are full of rules, so the split landed inside
-    # the body and the hash covered a fragment.
-    $marker = "`n<!-- verbatim-body-below: do not edit past this line -->`n`n"
-    $idx = $raw.IndexOf($marker)
-    if ($idx -lt 0) {
-        Write-Host "UNPARSEABLE  $File (no header/body separator)"
+    # The integrity line is the FIRST line and covers every byte after it - header
+    # claims included. The first version of this checker hashed only the verbatim body,
+    # and an adversarial reviewer flipped a header from "REJECT - 8 Major" to
+    # "APPROVE - 0 Major" and got exit 0. The hash was protecting the text nobody skims
+    # and leaving the claim everyone skims unprotected.
+    $nl = $raw.IndexOf("`n")
+    if ($nl -lt 0) {
+        Write-Host "UNPARSEABLE  $File (no integrity line)"
         return $false
     }
+    $first = $raw.Substring(0, $nl)
+    $rest = $raw.Substring($nl + 1)
 
-    $header = $raw.Substring(0, $idx)
-    $body = $raw.Substring($idx + $marker.Length).Trim()
-
-    if ($header -notmatch 'Body SHA-256: `([0-9a-f]{64})`') {
-        Write-Host "NO HASH      $File (header claims no hash)"
+    if ($first -notmatch 'starcar-integrity: sha256=([0-9a-f]{64})') {
+        Write-Host "NO INTEGRITY $File (first line is not a starcar-integrity line)"
         return $false
     }
     $claimed = $Matches[1]
-    $actual = Get-Sha256 -Text $body
+    $actual = Get-Sha256 -Text $rest
 
     if ($claimed -eq $actual) {
         Write-Host "OK           $File"
@@ -73,8 +73,10 @@ function Test-OneVerdict {
     Write-Host "MISMATCH     $File"
     Write-Host "  claimed: $claimed"
     Write-Host "  actual : $actual"
-    Write-Host "  The landed body no longer matches what was extracted. Either it was"
-    Write-Host "  edited after landing, or it was not landed by Land-Verdict.ps1."
+    Write-Host "  This file changed after it was landed - header claims, verbatim body, or"
+    Write-Host "  both. Either it was edited, or it was not landed by Land-Verdict.ps1."
+    Write-Host "  Compare against the Entire checkpoint branch, which holds an"
+    Write-Host "  independently-written copy: git grep <a distinctive phrase> entire/checkpoints/v1"
     return $false
 }
 
