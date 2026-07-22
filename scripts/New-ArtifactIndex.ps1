@@ -76,11 +76,27 @@ $rows = foreach ($f in $files) {
 # changes.
 $sorted = @($rows | Sort-Object -Property AtInstant, Subject, File)
 
+# `subject`/`outcome` are open-vocabulary schema strings (no `enum`, no character
+# restriction - schema/starcar-artifact.schema.json), so a schema-VALID value can carry a
+# `|` (forges extra columns) or a raw newline (splits the row across physical lines) when
+# interpolated raw into the table (F3, docs/plans/2026-07-22-pr18-correctness-fixes-plan.md).
+# Escape BEFORE interpolation: `|` -> `\|`, and any newline (LF or CRLF) -> a single space.
+function Format-IndexCell {
+    param([string]$Value)
+    if ([string]::IsNullOrEmpty($Value)) { return $Value }
+    ($Value -replace '\|', '\|') -replace '\r?\n', ' '
+}
+
 $lines = New-Object System.Collections.Generic.List[string]
 $lines.Add('| subject | kind | at | outcome | file |')
 $lines.Add('|---|---|---|---|---|')
 foreach ($r in $sorted) {
-    $lines.Add("| $($r.Subject) | $($r.Kind) | $($r.At) | $($r.Outcome) | $($r.File) |")
+    $subject = Format-IndexCell $r.Subject
+    $kind    = Format-IndexCell $r.Kind
+    $at      = Format-IndexCell $r.At
+    $outcome = Format-IndexCell $r.Outcome
+    $file    = Format-IndexCell $r.File
+    $lines.Add("| $subject | $kind | $at | $outcome | $file |")
 }
 
 $content = ($lines -join "`n") + "`n"
