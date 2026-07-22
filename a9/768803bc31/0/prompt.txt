@@ -1702,3 +1702,7 @@ yeah that looks much better and saner, and lays the right philosphy ground work 
 ---
 
 ok PRing what we have is useless since our design is faulty. Do the redesign, we will PR when we have a good known working state. That's our merge north star. We don't PR/merge unless we have a good known working state.
+
+---
+
+"I told it to not be polite" this is a good guide star too! In this project we have no ego. Nothing is taken personally, and we are all blameless. It's about the code and the mission, not about feelings.
