@@ -19,6 +19,8 @@ else).
 | Resume-packet hook | `.claude/hooks/goodnight-resume-check.sh` | SessionStart announce, wired in `.claude/settings.json` |
 | Board tooling | `scripts/board.ps1` + `Board.psm1` (+ Pester tests) | Defaults: user project 6, repo polecatspeaks/StarCar; pure logic Pester-tested |
 | Templates | `docs/templates/` | Car brief, state ledger, gating matrix |
+| Verdict landing | `scripts/Land-Verdict.ps1` + `Verify-Verdict.ps1` | Extracts a dispatched agent's verdict VERBATIM from the session transcript by task id and stamps a body SHA-256; the verifier recomputes it. Never retype a verdict by hand - the author being reviewed is the one landing the review. **Expected to change:** superseded by the dispatch-harness design (#7), currently in adversarial review. Known limits are recorded in #7 rather than here, because they are findings about tooling under review, not setup instructions. |
+| Landed verdicts | `docs/reviews/` | Two design-review REJECTs, verbatim and hash-verified. The harness design proposes retiring this directory in favour of a single artifact store; until that lands, this is where verdicts live. |
 | MCP: context7 | `.mcp.json` | Library docs lookup, stack-agnostic |
 | MCP: gitnexus | `.mcp.json` | Server registered; serves nothing until first index (below) |
 | pr-review-toolkit plugin | `.claude/settings.json` | Enabled |
