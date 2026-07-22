@@ -25,13 +25,20 @@
 # file carries a SHA-256 of its own body so the verbatim claim is checkable rather
 # than asserted.
 #
-# SOURCES, in preference order:
-#   1. The live Claude Code session transcript (current, includes this turn).
-#   2. An Entire.io checkpoint blob on entire/checkpoints/v1 (durable, may lag one
-#      checkpoint behind).
+# TRANSCRIPT SOURCE: the caller supplies -TranscriptPath explicitly (now MANDATORY).
+# This is the harness backfill path (spec S4 row 3 [m3]): backfill happens precisely when
+# no producer hook fired, so there is no hook payload to read the path from and the
+# operator points the CLI at the transcript (a live session JSONL, or an Entire.io
+# checkpoint blob on entire/checkpoints/v1). The former auto-derivation of the live
+# transcript path from a hardcoded per-project directory (Get-LiveTranscriptPath, holding
+# the hardcoded path) is RETIRED here (spec S4 row 1). MARKED DEVIATION (C2R2-m1) from S4
+# row 1: the row prescribes "derivation from the git root" as the replacement; the deriver
+# is DELETED instead, because the producer (spec S2.1) now supplies the live path via the
+# SubagentStop hook payload, and an auto-deriver would be dead code the moment that landed.
+# The EXTRACTION (Get-ResultBlockForTask) is retained unchanged.
 #
 # Usage:
-#   scripts/Land-Verdict.ps1 -TaskId <id> -Out docs/reviews/<file>.md `
+#   scripts/Land-Verdict.ps1 -TaskId <id> -Out docs/reviews/<file>.md -TranscriptPath <path> `
 #       -Title '...' -Gate '...' -Target '...' -Base <sha> -Verdict 'REJECT' [-Round 2]
 #
 # Windows PowerShell 5.1 compatible: no ternary, no &&/||, ASCII only.
@@ -46,23 +53,12 @@ param(
     [Parameter(Mandatory)] [string]$Verdict,
     [string]$Round = '',
     [string]$Reviewer = 'car agent type, Opus, read-only, detached worktree, no delegation',
-    [string]$TranscriptPath = '',
+    [Parameter(Mandatory)] [string]$TranscriptPath,
     [switch]$Force
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-
-function Get-LiveTranscriptPath {
-    # Claude Code stores one JSONL per session under the per-project directory.
-    # Newest wins: a conductor lands verdicts from the session that produced them.
-    $dir = Join-Path $env:USERPROFILE '.claude\projects\C--Users-Chris-git-starcar'
-    if (-not (Test-Path $dir)) { return '' }
-    $f = Get-ChildItem $dir -Filter *.jsonl -ErrorAction SilentlyContinue |
-         Sort-Object LastWriteTime -Descending | Select-Object -First 1
-    if (-not $f) { return '' }
-    return $f.FullName
-}
 
 function Get-TranscriptLines {
     param([string]$Path)
@@ -175,8 +171,8 @@ function Get-Sha256 {
 }
 
 # --- resolve source -----------------------------------------------------------
+# -TranscriptPath is mandatory; the auto-derivation fallback is retired (see the header).
 $path = $TranscriptPath
-if (-not $path) { $path = Get-LiveTranscriptPath }
 $lines = Get-TranscriptLines -Path $path
 
 $body = Get-ResultBlockForTask -Lines $lines -Id $TaskId
