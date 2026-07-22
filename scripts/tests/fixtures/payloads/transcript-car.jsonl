@@ -1,0 +1,4 @@
+{"type":"user","message":{"role":"user","content":[{"type":"text","text":"Do the fixture task and end with the envelope."}]}}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"Acknowledged. Starting the fixture task now."}]}}
+{"type":"user","message":{"role":"user","content":[{"type":"text","text":"Great, wrap up."}]}}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"Fixture car report body: the task is complete.\n\n```starcar-artifact\noutcome: APPROVE\nfindings: none of note for the fixture car.\nabstract: Line one of the fixture abstract.\nLine two continues the summary.\nLine three closes it.\n```\n"}]}}
