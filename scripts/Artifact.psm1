@@ -84,4 +84,41 @@ function Test-StarcarArtifact {
     }
 }
 
-Export-ModuleMember -Function Test-StarcarArtifact
+function Get-AtInstant {
+    <#
+      Parses an artifact record's `at` timestamp to the UTC instant it represents,
+      honoring the offset (docs/plans/2026-07-22-pr18-correctness-fixes-plan.md F1). The
+      store carries mixed offsets -- migrated verdicts' `at` came from git authorship in
+      local time (e.g. -04:00) alongside Z-normalized producer output -- so a
+      chronological sort must compare the parsed INSTANT, never the lexical string:
+      '2026-07-22T14:18:03-04:00' (== 18:18:03Z) sorts BEFORE '2026-07-22T16:39:57Z'
+      lexically, but is LATER in time.
+
+      FAILS LOUD: `Test-Json` does not assert the `date-time` format (a malformed or
+      zoneless string is schema-VALID), so this helper throws a NAMED error on a parse
+      failure, and explicitly REJECTS a zoneless `at` (no `Z`/offset) rather than parsing
+      it TZ-dependently, which would silently break New-ArtifactIndex.ps1's determinism
+      guarantee. Callers (New-ArtifactIndex.ps1, Detect-Dispatches.ps1) catch, name the
+      offending record's file, and rethrow -- never a silent mis-sort, never a whole-batch
+      crash with no attribution.
+    #>
+    param(
+        [Parameter(Mandatory)] [string]$At
+    )
+
+    if ($At -notmatch '(?:Z|[+-]\d{2}:?\d{2})$') {
+        throw "Get-AtInstant: 'at' value '$At' has no timezone offset (no Z/offset suffix) -- refusing to parse it TZ-dependently"
+    }
+
+    try {
+        return [System.DateTimeOffset]::Parse(
+            $At,
+            [System.Globalization.CultureInfo]::InvariantCulture,
+            [System.Globalization.DateTimeStyles]::RoundtripKind
+        ).UtcDateTime
+    } catch {
+        throw "Get-AtInstant: could not parse 'at' value '$At' as a date-time instant: $($_.Exception.Message)"
+    }
+}
+
+Export-ModuleMember -Function Test-StarcarArtifact, Get-AtInstant

@@ -39,10 +39,20 @@ $repoRoot = Split-Path $PSScriptRoot -Parent
 if (-not $DefaultsPath) { $DefaultsPath = Join-Path $repoRoot 'config/harness-defaults.json' }
 if (-not $VocabDir)     { $VocabDir     = Join-Path $repoRoot 'schema/vocab' }
 
+Import-Module (Join-Path $PSScriptRoot 'Artifact.psm1') -Force
+
 $faults      = New-Object System.Collections.Generic.List[string]
 $discoveries = New-Object System.Collections.Generic.List[string]
 
 $nowIso = if ($Now) { $Now } else { (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') }
+# F1 (docs/plans/2026-07-22-pr18-correctness-fixes-plan.md) disclosure: this inline parse
+# stays inline rather than repointing to Artifact.psm1's Get-AtInstant. Get-AtInstant
+# returns a DateTime (.UtcDateTime) for SORTING; this value is subtracted from the
+# dispatched record's own DateTimeOffset parse (below) to compute elapsed seconds, which
+# needs BOTH operands to stay DateTimeOffset (a DateTime minus DateTimeOffset does not
+# compile) -- a different shape for a different purpose, not the duplication Get-AtInstant
+# exists to remove. $nowIso is always Z-suffixed (this process's own clock), so the
+# zoneless-rejection Get-AtInstant enforces is moot here regardless.
 $nowDto = [datetimeoffset]::Parse($nowIso, [cultureinfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind)
 
 # --- shop default budget (R5v2): ONE fault if unreadable, never infinite ----------------
@@ -124,10 +134,19 @@ foreach ($subject in ($bySubject.Keys | Sort-Object)) {
     $intentRecords   = @($subRecords | Where-Object { (Get-Prop $_ 'kind') -eq 'intent' })
 
     if ($dispatchRecords.Count -gt 0) {
-        # Winner: highest precedence, then latest-at within that kind.
+        # Winner: highest precedence, then latest-at within that kind. F1
+        # (docs/plans/2026-07-22-pr18-correctness-fixes-plan.md): latest-at must compare
+        # the parsed INSTANT (Get-AtInstant), never the lexical 'at' string - the store
+        # carries mixed offsets, so a lexical sort is chronological only when every
+        # record shares the same offset. A bad 'at' throws loud, attributed to this
+        # subject (the detector's records carry no file path - subject is its identity),
+        # never a silent mis-sort.
         $ranked = $dispatchRecords | Sort-Object `
             @{ Expression = { $precedence[[string](Get-Prop $_ 'kind')] } ; Descending = $true }, `
-            @{ Expression = { [string](Get-Prop $_ 'at') } ; Descending = $true }
+            @{ Expression = {
+                try { Get-AtInstant -At ([string](Get-Prop $_ 'at')) }
+                catch { throw "Detect-Dispatches: subject '$subject': $($_.Exception.Message)" }
+            } ; Descending = $true }
         $ranked = @($ranked)
         $winner = $ranked[0]
         $winnerKind = [string](Get-Prop $winner 'kind')
@@ -155,6 +174,12 @@ foreach ($subject in ($bySubject.Keys | Sort-Object)) {
             # Liveness gradient (S3.3). Budget: the record's own, else the shop default.
             $recBudget = Get-Prop $winner 'budget'
             $budget = if ($null -ne $recBudget) { [double]$recBudget } elseif ($null -ne $defaultBudget) { [double]$defaultBudget } else { $null }
+            # F1 disclosure (docs/plans/2026-07-22-pr18-correctness-fixes-plan.md): this
+            # inline parse stays inline rather than repointing to Get-AtInstant, which
+            # returns a DateTime (.UtcDateTime) for SORTING - a different shape from the
+            # DateTimeOffset this subtraction needs to pair with $nowDto above (a DateTime
+            # minus DateTimeOffset does not compile). Not the duplication Get-AtInstant
+            # exists to remove; this idiom computes elapsed time, never a sort order.
             $atDto = [datetimeoffset]::Parse([string](Get-Prop $winner 'at'), [cultureinfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind)
             $elapsed = [math]::Floor(($nowDto - $atDto).TotalSeconds)
             $entry['elapsed_seconds'] = [int64]$elapsed
@@ -172,7 +197,12 @@ foreach ($subject in ($bySubject.Keys | Sort-Object)) {
     }
 
     if ($intentRecords.Count -gt 0) {
-        $ordered = @($intentRecords | Sort-Object @{ Expression = { [string](Get-Prop $_ 'at') } ; Descending = $true })
+        # F1: latest-at intent-hold supersession must also compare the parsed instant -
+        # a lexical sort here is the bug that lets a withdrawn hold win (plan F1).
+        $ordered = @($intentRecords | Sort-Object @{ Expression = {
+            try { Get-AtInstant -At ([string](Get-Prop $_ 'at')) }
+            catch { throw "Detect-Dispatches: subject '$subject': $($_.Exception.Message)" }
+        } ; Descending = $true })
         $winner = $ordered[0]
         $superseded = @()
         for ($i = 1; $i -lt $ordered.Count; $i++) {

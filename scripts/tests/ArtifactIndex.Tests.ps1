@@ -93,3 +93,44 @@ Describe 'New-ArtifactIndex - the at column, year-spanning (M-A4-1)' {
         $subjectOrder | Should -Be @('year-jan-2026', 'year-jul-2026', 'year-2099')
     }
 }
+
+Describe 'New-ArtifactIndex - offset-aware chronological sort (F1)' {
+    <#
+      docs/plans/2026-07-22-pr18-correctness-fixes-plan.md F1: the store carries mixed
+      offsets (25 migrated verdicts carry a '-04:00' at from git authorship in local
+      time, alongside Z-normalized producer output). A lexical sort of 'at' is
+      chronological ONLY for same-offset timestamps:
+      '2026-07-22T14:18:03-04:00' (== 2026-07-22T18:18:03Z) sorts BEFORE
+      '2026-07-22T16:39:57Z' lexically ('14' < '16'), but is LATER in time. This fixture
+      pins the fix: chronological order by parsed instant, never lexical string order.
+    #>
+    BeforeAll {
+        $script:Root  = (git rev-parse --show-toplevel)
+        $script:Gen   = Join-Path $script:Root 'scripts/New-ArtifactIndex.ps1'
+        $script:Store = Join-Path $TestDrive 'offset-store'
+        New-Item -ItemType Directory -Path $script:Store | Out-Null
+
+        # subjX at 2026-07-22T14:18:03-04:00 == 2026-07-22T18:18:03Z (chronologically LATER)
+        # subjY at 2026-07-22T16:39:57Z                              (chronologically EARLIER)
+        $recX = @{
+            schema = 'starcar-artifact/1'; kind = 'dispatched'; subject = 'subjX'
+            session_id = 's'; at = '2026-07-22T14:18:03-04:00'
+            normalisation = @(); integrity = 'sha256:0000000000000000000000000000000000000000000000000000000000000000'
+        } | ConvertTo-Json
+        $recY = @{
+            schema = 'starcar-artifact/1'; kind = 'dispatched'; subject = 'subjY'
+            session_id = 's'; at = '2026-07-22T16:39:57Z'
+            normalisation = @(); integrity = 'sha256:0000000000000000000000000000000000000000000000000000000000000000'
+        } | ConvertTo-Json
+        [System.IO.File]::WriteAllText((Join-Path $script:Store 'subjX.json'), $recX)
+        [System.IO.File]::WriteAllText((Join-Path $script:Store 'subjY.json'), $recY)
+    }
+
+    It 'orders chronologically across mixed offsets: the earlier Z instant sorts first, even though its string sorts lexically after the offset string' {
+        $out = Join-Path $TestDrive 'offset-index.md'
+        & pwsh -NoProfile -File $script:Gen -StoreRoot $script:Store -OutFile $out
+        $rows = @(Get-Content $out | Where-Object { $_ -match '^\|' } | Select-Object -Skip 2)
+        $subjectOrder = $rows | ForEach-Object { ($_ -split '\|')[1].Trim() }
+        $subjectOrder | Should -Be @('subjY', 'subjX')
+    }
+}

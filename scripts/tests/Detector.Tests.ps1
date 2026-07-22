@@ -158,4 +158,31 @@ Describe 'Detect-Dispatches' {
         $fold = Invoke-Detector -StoreRoot $store -Now '2026-07-22T11:00:00Z'
         $fold.tier | Should -Be 'tier-1-only'
     }
+
+    It 'F1: within-kind latest-at winner resolves by chronological instant, not lexical string, across mixed offsets' {
+        # recA at 2026-07-22T14:18:03-04:00 == 18:18:03Z (chronologically LATER)
+        # recB at 2026-07-22T16:39:57Z                   (chronologically EARLIER, but its
+        # string sorts lexically AFTER recA's -- '16' > '14' -- so a lexical-descending
+        # sort picks recB as the (wrong) winner)
+        $store = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+        New-Record -Store $store -Subject 'disp-offset' -Kind 'returned' -At '2026-07-22T14:18:03-04:00' -Outcome 'CHRONO-LATEST'
+        New-Record -Store $store -Subject 'disp-offset' -Kind 'returned' -At '2026-07-22T16:39:57Z' -Outcome 'LEXICAL-LATEST-BUT-CHRONO-EARLIER'
+        $fold = Invoke-Detector -StoreRoot $store -Now '2026-07-22T20:00:00Z'
+        $e = @($fold.dispatches) | Where-Object { $_.subject -eq 'disp-offset' }
+        $e.outcome | Should -Be 'CHRONO-LATEST'
+    }
+
+    It 'F1: intent supersession resolves by chronological instant, not lexical string, across mixed offsets' {
+        # recA (2026-07-22T14:18:03-04:00 == 18:18:03Z) is the chronologically later hold
+        # and must WIN, superseding recB (2026-07-22T16:39:57Z, chronologically earlier).
+        # A lexical-descending sort picks recB, letting a withdrawn hold win.
+        $store = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+        New-Record -Store $store -Subject 'hold-offset' -Kind 'intent' -At '2026-07-22T14:18:03-04:00'
+        New-Record -Store $store -Subject 'hold-offset' -Kind 'intent' -At '2026-07-22T16:39:57Z'
+        $fold = Invoke-Detector -StoreRoot $store -Now '2026-07-22T20:00:00Z'
+        $e = @($fold.intents) | Where-Object { $_.subject -eq 'hold-offset' }
+        $e.at | Should -Be '2026-07-22T14:18:03-04:00'
+        @($e.superseded).Count | Should -Be 1
+        $e.superseded[0].at | Should -Be '2026-07-22T16:39:57Z'
+    }
 }
