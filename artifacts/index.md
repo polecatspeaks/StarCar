@@ -24,6 +24,7 @@
 | 2026-07-22-hotfix-confirm | returned | 2026-07-22T12:53:46-04:00 | CONFIRM | reviews/2026-07-22-hotfix-confirm.json |
 | 2026-07-22-car3-plan-review-round1 | returned | 2026-07-22T13:18:44-04:00 | REJECT | reviews/2026-07-22-car3-plan-review-round1.json |
 | 2026-07-22-car3-plan-review-round2 | returned | 2026-07-22T13:24:07-04:00 | APPROVE | reviews/2026-07-22-car3-plan-review-round2.json |
+| 2026-07-22-car3-review-round1 | returned | 2026-07-22T14:18:03-04:00 | REJECT | reviews/2026-07-22-car3-review-round1.json |
 | a83a3fefd4659985e | dispatched | 2026-07-22T16:39:57Z |  | a83a3fefd4659985e/dispatched-20260722T163957Z.json |
 | a83a3fefd4659985e | returned | 2026-07-22T16:40:01Z | done | a83a3fefd4659985e/returned-20260722T164001Z.json |
 | a62054a9e0f804eae | dispatched | 2026-07-22T16:41:19Z |  | a62054a9e0f804eae/dispatched-20260722T164119Z.json |
