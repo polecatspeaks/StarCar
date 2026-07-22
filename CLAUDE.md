@@ -354,6 +354,27 @@ CI proven in both directions, and six public verdicts. Not consolation - account
 - Reviewers run the suites themselves and re-verify claims empirically - a review that
   only reads the report is a spelling check.
 - A REJECT is a success outcome for the process. Scorecards count catches, not friction.
+- **Every re-review brief carries the prior rounds' history** - Major counts and which
+  sections they clustered in - and the reviewer rules on CONVERGENCE as well as
+  correctness. A fresh reviewer sees one document and can only judge whether it is right;
+  only the conductor holds the series, so only the conductor can hand over the evidence
+  that it is not getting better.
+- **The swirl-and-churn trigger.** Escalate to the owner, rather than dispatching another
+  round, when any two of: Major counts stop declining across rounds; findings cluster in
+  the same section across rounds; or a round's findings include defects the previous
+  round's own fixes created. The third is the sharpest - it means the defect is being
+  RELOCATED, not resolved. The reviewer that detects it sets a cap; the conductor honours
+  the cap.
+
+*Scar: a design ran four rounds at 7, 3, 4, 5 Majors, clustered in one section, with round
+4 observing that two of its five were defects round 3's fixes had introduced. The author
+believed each round that the next revision would close it - and when round 3 ordered
+exactly the right remedy, the author produced a fake version of it. THE SWIRL SURVIVES A
+CORRECT INSTRUCTION, which is why "notice you are churning" cannot be a self-administered
+rule: the state that needs detecting is the state that disables detection. It fired
+correctly only because a reviewer with the round history set a cap the conductor was bound
+by. Escalating earlier would have wasted the gate; escalating never would have burned the
+owner's attention four rounds later on a worse document.*
 
 *Scar: the day this calibration was ratified, reviewers rejected their own train's plan
 twice and a merged-that-day instrument was found crying wolf on 50 of 54 flags. All three

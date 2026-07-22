@@ -65,6 +65,12 @@ for user-facing documentation; an untraceable claim is a finding.
 GUARD CHECK: <any gate, guard, or protection this diff installs> - has anyone WATCHED it
 fire? A config read-back or a passing-on-arrival test is an assertion, not an
 observation; demand the fault-injection evidence or raise its absence as a finding.
+CONVERGENCE CHECK (re-reviews only): <prior rounds' Major counts and the sections they
+clustered in - the conductor MUST supply these; a fresh reviewer cannot know them>. Rule on
+whether this series is converging, not only on whether this document is correct. If any two
+of - Majors not declining, findings clustering in one section, or findings that are defects
+the previous round's fixes created - then SET A CAP: name what the next revision must
+demonstrate, and state that failing it escalates to the owner rather than to another round.
 CONSTITUTION CHECK: name each law the diff implicates, one line of evidence each.
 
 VERDICT: APPROVE or REJECT up top; findings by severity with file:line.
