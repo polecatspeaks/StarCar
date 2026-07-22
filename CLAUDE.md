@@ -569,6 +569,11 @@ the calibration membrane, the owner rules - then rinse, lather, repeat.**
      agreeableness's equally-unrecorded mirror);
    - **deferred** - accepted as an open end, which means an ISSUE exists before merge
      (never-drop, mechanically - an open end without a tracked owner is vigilance-tier).
+   **Every thread CLOSES with its provenance (owner SOP, 2026-07-22):** after the fix
+   lands, the thread is resolved WITH a reply stating what was fixed and the COMMIT SHA
+   that fixed it; dismissed threads resolve with the recorded reason; deferred threads
+   with the issue link. A resolve without a reply is a silent close - traceability is
+   the reply, and the thread becomes the finding's provenance record.
 4. **The owner rules on the triage.** That is the human gate branch protection encodes.
 5. **The calibration count is kept per PR**: comments / legit / dismissed / deferred.
    Copilot arrives uncalibrated and WILL cry wolf against ruled decisions; the triage
