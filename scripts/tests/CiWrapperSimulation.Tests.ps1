@@ -20,6 +20,11 @@ Describe 'CI checkpoint-fetch step - GitHub Actions shell:pwsh wrapper simulatio
     BeforeAll {
         $script:RepoRoot = (git rev-parse --show-toplevel)
         $script:CiYamlPath = Join-Path $script:RepoRoot '.github/workflows/ci.yml'
+        if (-not (Get-Command ConvertFrom-Yaml -ErrorAction SilentlyContinue)) {
+            throw ('ConvertFrom-Yaml unavailable: install the powershell-yaml module ' +
+                   '(ci.yml installs it with retry; on a local box: Install-Module powershell-yaml). ' +
+                   'This test parses the REAL ci.yml step text and cannot run without it.')
+        }
         $parsed = Get-Content $script:CiYamlPath -Raw | ConvertFrom-Yaml
         $step = $parsed.jobs.verify.steps | Where-Object { $_.name -like 'Fetch the Entire checkpoint branch*' }
         if (-not $step) { throw "ci.yml: the 'Fetch the Entire checkpoint branch' step was not found - renamed or removed?" }

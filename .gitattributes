@@ -26,4 +26,3 @@
 # the need it protects (hashed bytes surviving a fresh checkout unchanged) is still
 # live, just at the new path.
 artifacts/reviews/** -text
-docs/artifacts/** -text
