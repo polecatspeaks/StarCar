@@ -236,13 +236,42 @@ found by the reviewer, none by the author. And the premise underneath them - "tw
 write artifacts", worth eight of twelve findings - was never attacked at all, because no
 round questioned it. That one was caught by the owner pulling back, not by any gate.*
 
-## Missing workflow is a failure class, and the fix is prior art
+## ASK FOR THE PRIOR ART. It probably exists and was not ported.
+
+**Before building any workflow artifact, ask the owner whether prior art exists.** This
+repo's seed came from a working shop. The port was PARTIAL by necessity - rules came over,
+exemplars mostly did not - and **nothing prompts anyone to ask for the rest.** The owner is
+the bridge to it, and the question costs one sentence.
+
+*Scar: five adversarial design rounds and roughly half a million tokens were spent
+rediscovering dispatch practice the ancestor shop already had written down. When
+`worked-briefs.md` finally arrived it contained three things the conductor had never done -
+fix cycles go to the SAME agent followed by a DELTA re-review; plans carry binding amendment
+blocks that supersede stale text; reviewers may fault-inject locally provided they revert
+byte-identical. Five fresh full re-reviews at ~110k tokens each were spent where deltas
+would have served. The conductor never asked.*
+
+*Aggravating, and the reason this is its own rule: `docs/setup.md` ALREADY SAID SO. Its
+trigger-gated table reads "port the ancestor's `session-start.sh` PATTERN" and "generalize
+from the ancestor shop's `run-suites` / `watch-ci` patterns". Both were read in the first
+ten minutes of the founding session and parsed as "build later" rather than "prior art
+exists - ask for it".*
+
+**So the standing questions, at the start of any rung and at every session-start retro:**
+what prior art exists for this, has it been ported, and what does `docs/setup.md` already
+say is waiting? A rung with no artifact is not necessarily a rung with no prior art.
+
+## When no prior art exists: build it from wreckage
 
 When work fails repeatedly at one rung while other rungs run clean, suspect a **missing
-workflow artifact** before suspecting the worker. The seed ported the ladder's RULES from a
-shop where the workflow was tacit - you do not need a design template when you can open
-last month's design and imitate it. **Rules without exemplars do not bind**, and here there
-is no last month's design to open, because every worker is a new hire on day one.
+workflow artifact** before suspecting the worker - and **ask for the prior art first**
+(above). Only when none exists do you build.
+
+The seed ported the ladder's RULES from a shop where the workflow was tacit - you do not
+need a design template when you can open last month's design and imitate it. **Rules
+without exemplars do not bind**, and here there is no last month's design to open, because
+every worker is a new hire on day one. That is why the port was lossy in exactly this way:
+what was never written down could not travel.
 
 - A rule says what is forbidden. **An exemplar shows what compliance looks like.** Ship both.
 - Build the artifact **from real wreckage**, not from imagination: review the wreckage, name
