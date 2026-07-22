@@ -1,7 +1,7 @@
 # PRESERVED FAKE DEMONSTRATION - dispatch-harness design round 3 (2026-07-22).
 #
-# This script does NOT demonstrate what its own comments below claim. Line 27,
-# `sweep = dict(hook)`, makes "sweep" a shallow copy of "hook" itself, not an
+# This script does NOT demonstrate what its own comments below claim. The
+# `sweep = dict(hook)` line below makes "sweep" a shallow copy of "hook" itself, not an
 # independent observation of the same event from a transcript. The printed
 # "EQUAL" line is therefore always eid(hook) == eid(hook) - true by
 # construction, proving nothing about canonicalisation, event identity, or
