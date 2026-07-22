@@ -1706,3 +1706,7 @@ ok PRing what we have is useless since our design is faulty. Do the redesign, we
 ---
 
 "I told it to not be polite" this is a good guide star too! In this project we have no ego. Nothing is taken personally, and we are all blameless. It's about the code and the mission, not about feelings.
+
+---
+
+I want to highlight what you said about agents having a bias towards agreement. Because that is one thing we try to gaurd against. The highlight being a rejection IS a positive outcome. SO any outcome that leads to new tooling, process, data, correction, metrics or a complete reversal IS positive. We don't fail in this shop. We just learn a better way of doing everything. I want that codified for you, since it will help bound and govern your bias to be agreeable.
