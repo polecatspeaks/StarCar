@@ -93,7 +93,8 @@ function Get-StarcarEnvelope {
                                failure)
         Fault = $null       -> Found, all three fields present
       LAST fence wins when a report carries more than one block (repeat-envelope
-      precedent, Land-Verdict.ps1:112-115 -- the later notification is the current one).
+      precedent, Land-Verdict.ps1's Get-ResultBlockForTask last-wins return -- the later
+      notification is the current one).
       findings/abstract may span multiple lines: a value runs from its `key:` line until
       the next field key or the end of the block, and is preserved verbatim (LF-joined).
     #>

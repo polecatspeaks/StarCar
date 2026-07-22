@@ -5,7 +5,8 @@
 #
 # Deterministic by construction: same store in, byte-identical bytes out. LF line
 # endings and UTF-8 with no BOM, matching Land-Verdict.ps1's landed WriteAllText
-# precedent (scripts/Land-Verdict.ps1:317-321, structural - opened at base) -- the same
+# precedent (the WriteAllText with a BOM-free UTF8Encoding($false) in
+# scripts/Land-Verdict.ps1, structural - opened at base) -- the same
 # reasoning applies here: a hand-rolled Set-Content adds a BOM and rewrites LF to CRLF
 # on Windows PowerShell, and a byte-identical claim has to cover exactly what a naive
 # write would silently change.

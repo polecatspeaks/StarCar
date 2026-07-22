@@ -60,7 +60,8 @@ relative to the store root.
 ## Path-normalisation substitution rule
 
 Mechanical classes, ported from `Land-Verdict.ps1`'s `ConvertTo-PortablePaths` precedent
-(`scripts/Land-Verdict.ps1:118-166`, structural - opened at base):
+(the `ConvertTo-PortablePaths` function in `scripts/Land-Verdict.ps1`, structural - opened
+at base):
 
 - the repository root -> `<repo>`
 - the operator's home directory -> `~`

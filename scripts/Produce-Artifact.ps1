@@ -72,8 +72,9 @@ function Get-Sha256Hex {
 
 function Convert-PortablePath {
     # Rewrite operator-environment roots to portable placeholders BEFORE hashing, exactly
-    # the class Land-Verdict.ps1:118-166 established and schema/index-format.md:60-72
-    # declares (repo root -> <repo>, home -> ~, longest-first). Returns the rewritten text
+    # the class Land-Verdict.ps1's ConvertTo-PortablePaths established and
+    # schema/index-format.md:60-72 declares (repo root -> <repo>, home -> ~,
+    # longest-first). Returns the rewritten text
     # plus the list of from_class values that actually fired, so the record can DECLARE
     # each substitution it applied (schema `normalisation`; empty array means none).
     param([string]$Text, [string]$RepoRoot, [string]$HomeDir)
