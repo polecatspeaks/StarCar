@@ -32,7 +32,14 @@ Describe 'Store integrity - every artifacts/**/*.json record (F4)' {
         # on, never a look-alike copy.
         function Test-RecordIntegrity {
             param([string]$Path)
-            $rec = Get-Content $Path -Raw -Encoding UTF8 | ConvertFrom-Json
+            # -DateKind String is LOAD-BEARING (M-A4-1's third recurrence, caught by CI's
+            # different TZ 2026-07-22): without it ConvertFrom-Json coerces an offset-form
+            # `at` (the migrated records carry -04:00) into a local [datetime], and
+            # re-serialising it emits the RECOMPUTING machine's offset - so the hash matches
+            # only on the write-TZ box and fails on any other. Verifiers must read `at`
+            # VERBATIM. Producer records are Z-only and round-trip regardless, but the
+            # contract must hold for every record.
+            $rec = Get-Content $Path -Raw -Encoding UTF8 | ConvertFrom-Json -DateKind String
             $schemaResult = Test-StarcarArtifact -InputObject $rec -SchemaPath $script:SchemaPath
 
             $integrityOk = $false

@@ -77,3 +77,16 @@ Applied BEFORE the artifact's `integrity` hash is computed (normalisation is par
 writing the record, not editing one already written). Each substitution actually applied
 to a given artifact is declared in that artifact's own `normalisation` field - an empty
 array means nothing was substituted, never that normalisation was skipped.
+
+## Integrity canonicalisation: `at` is a VERBATIM string
+
+A record's `integrity` is `sha256` over the canonical body (every field in order, minus
+`integrity`, compact JSON). The `at` field is a **verbatim string** in that body - it is
+NEVER coerced to a date/time object. A verifier that recomputes the hash MUST read the
+record with `ConvertFrom-Json -DateKind String` (or its language's equivalent), because a
+plain parse coerces an offset-bearing `at` (e.g. the migrated verdicts' `-04:00` stamps)
+into a local datetime that re-serialises with the *recomputing machine's* offset - so the
+hash would match only on the timezone the record was written in. This is Law 7: a stranger
+on any timezone must be able to verify our records. (Scar: M-A4-1's coercion class recurred
+a third time in the StoreIntegrity test's recompute; only CI running in a different timezone
+than the author caught it, 2026-07-22.)

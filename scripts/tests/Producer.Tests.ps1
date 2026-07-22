@@ -120,7 +120,7 @@ Describe 'Produce-Artifact' {
         Invoke-Producer -Payload (Get-Payload 'stop-car.json')   -Kind 'returned'   -StoreRoot $store -Now '2026-07-22T10:05:00Z' | Out-Null
         Invoke-Producer -Payload (Get-Payload 'launch-car.json') -Kind 'dispatched' -StoreRoot $store -Now '2026-07-22T10:00:00Z' | Out-Null
         $disp = Get-Content (Join-Path $store 'a88e7dadda60940ac/dispatched-20260722T100000Z.json') -Raw | ConvertFrom-Json
-        $ret  = Get-Content (Join-Path $store 'a88e7dadda60940ac/returned-20260722T100500Z.json') -Raw | ConvertFrom-Json
+        $ret  = Get-Content (Join-Path $store 'a88e7dadda60940ac/returned-20260722T100500Z.json') -Raw | ConvertFrom-Json -DateKind String  # verbatim 'at' (M-A4-1 class)
         # THE MEASURED IDENTITY (Probe 5): tool_response.agentId == agent_id
         $disp.subject | Should -Be $ret.subject
         $disp.model | Should -Be 'claude-sonnet-5'
