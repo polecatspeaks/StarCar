@@ -44,7 +44,7 @@ Installed, all free and off-the-shelf, all verified rather than assumed:
 |---|---|---|
 | `.gitattributes` | The CRLF warning on every commit; protects hashed verdicts from filter rewrites on a fresh clone | All 3 verdicts still verify after the change |
 | PowerShell 7.6.3 | The encoding class - 3 defects, all inside the integrity tooling | Tested directly: no BOM on write, non-ASCII round-trips intact, `&&` works |
-| GitHub Actions CI | "Verified" was unachievable by our own definition; Pester tests nobody ran; `Verify-Verdict` running only on memory | Green run 29905304676 (19 tests, 3 verdicts); **RED run 29905432689** for the stated reason; green again after revert |
+| GitHub Actions CI | "Verified" was unachievable by our own definition; Pester tests nobody ran; `Verify-Verdict` running only on memory | Green run 29905304676 (19 tests, 3 verdicts); **RED run 29905432689** for the stated reason; green again after revert. **Store migrated (harness #7, Car 3):** the 3 verdicts this proof counted lived in `docs/reviews/` at the time; that directory is retired and its bodies now live in `artifacts/reviews/` (`git mv`, history preserved) - the proof's run IDs and counts are historical and untouched, only the directory the verifier now defaults to has moved |
 
 **Deliberately not installed** (the retro's anti-autoimmune half): PSScriptAnalyzer - would
 not have caught the encoding defects; shellcheck - two shell files; markdown linting -

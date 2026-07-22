@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "2026-07-21-design-v0-round1-REJECT",
+  "session_id": "pre-harness-migration",
+  "at": "2026-07-22T03:44:34-04:00",
+  "outcome": "REJECT",
+  "findings": "migrated: see body_file",
+  "abstract": "Adversarial design review - v0 yard skeleton, round 1",
+  "body_file": "reviews/2026-07-21-design-v0-round1-REJECT.md",
+  "normalisation": [],
+  "integrity": "sha256:4810596a40b6b30584eb366e894b8dde428bddd4b5e9e076dfcfb1b438c656fe"
+}

@@ -44,7 +44,8 @@ An agentic dev shop starts to look like a freight operation:
 - **The fuel gauge = the usage meter** the whole operation is budgeted against.
 
 StarCar renders that live, from pluggable data adapters (a git repo, an issue tracker's
-project board, a conductor-maintained state file) — never hardcoded to any one shop.
+project board, an artifact store - the dispatch harness's store lands in this repo; the
+board's consumption of it is #1's train) — never hardcoded to any one shop.
 
 ## Reading order
 

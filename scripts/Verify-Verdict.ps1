@@ -12,19 +12,28 @@
 # other party's words, and the party landing it is the party being reviewed.
 #
 # Usage:
-#   scripts/Verify-Verdict.ps1 -Path docs/reviews/<file>.md
-#   scripts/Verify-Verdict.ps1            # verifies every file in docs/reviews/
+#   scripts/Verify-Verdict.ps1 -Path artifacts/reviews/<file>.md
+#   scripts/Verify-Verdict.ps1            # verifies every file in artifacts/reviews/
 #
 # Exit 0 if every checked file matches; 1 if any mismatch or unparseable header, an
 # absent -ReviewsDir, or a -ReviewsDir with zero verdict files (spec amendment S1: both
 # were vacuous exit-0 or an unactionable crash before Car 1 task A.3 -- an absent store
 # and an empty store are failures to verify, never a pass with nothing checked).
 #
+# DEFAULT REPOINTED (Car 3, conductor ruling R9v2, harness #7's migration commit): the
+# store moved from docs/reviews/ to artifacts/reviews/, which holds ONLY integrity-headed
+# .md bodies (sibling starcar-artifact/1 .json records live alongside them, never a .md
+# themselves) and needs NO recursion. This directory NEVER globs artifacts/index.md,
+# because index.md lives one level up at the store ROOT (artifacts/), not inside
+# artifacts/reviews/ -- the round-1 reviewer proved a recursive default choked on exactly
+# that headerless file (Get-ChildItem -Recurse from `artifacts` would reach it); the fix
+# is this directory boundary, not a filter added on top of one that reaches too far.
+#
 # Windows PowerShell 5.1 compatible: no ternary, no &&/||, ASCII only.
 
 param(
     [string]$Path = '',
-    [string]$ReviewsDir = 'docs/reviews'
+    [string]$ReviewsDir = 'artifacts/reviews'
 )
 
 Set-StrictMode -Version Latest
