@@ -167,9 +167,37 @@ NOT (these four isolated operations), not where it is. Remedy decisions (a compi
 binary, batching commits, or further isolating the entire/Claude-Code-side hooks
 themselves) come after this measurement, per #15's own discipline - not decided here.
 
+## Probe 6 - spec §7 [m1]: is every dispatch in this shop asynchronous? **ANSWERED: YES, 6 of 6 measured.**
+
+§2.1's launch-time claim rests on an `isAsync: true` payload; under a synchronous
+`Task`, `dispatched` and `returned` would land in the same breath and tier 1 goes
+vacuous. Method: the committed `PostToolUse:Task` observation hook
+(`.claude/hooks/post-task-probe.sh`, wired via `.claude/settings.json`) logs every
+launch payload's shape to the gitignored `.claude/probe-logs/post-task.jsonl`. Measured
+at plan-writing (2026-07-22, conductor-observed, live session): **6 of 6 recorded
+launch payloads across this train carry `tool_response.isAsync: true`** - zero
+counterexamples.
+
+**REPRODUCTION METHOD, stated so this is a landed measurement probe and not a
+non-reproducible claim (C3R1-n1 folded):** the raw per-machine log is gitignored by
+design (`.gitignore:1`, `.claude/probe-logs/`) - a per-session artifact, not a durable
+one - but the HOOK that produces it is committed
+(`.claude/hooks/post-task-probe.sh`), so any future dispatch on any machine
+regenerates the observation in one launch: dispatch a `car` (or any `subagent_type`)
+agent, then inspect `.claude/probe-logs/post-task.jsonl`'s newest line for
+`tool_response.isAsync`. The finding itself (6/6) lands durably here, in the committed
+probe-results doc; only the raw evidence backing it is per-machine.
+
+**The residual, stated (unchanged from the design/spec rung):** a future synchronous
+dispatch surface - a runner or SDK version where `Task` resolves inline rather than
+async-launched - would collapse tier 1's grain (the `dispatched`/`returned` split the
+whole liveness-gradient fold depends on). This probe answers the question for THIS
+shop's current substrate; it is not a proof that no such surface will ever exist.
+
 ## What this unblocks
 
-All four §7 probes are now ANSWERED (probe 2's trigger fired at cars 2-3 planning; its
-hook-failure sub-case is recorded above as the one unmeasured residual). **The cars 2-3
-planning rung is fully unblocked, and probe 2's blocking-hook measurement is a binding
-design constraint on Car 2's producer.**
+All four §7 probes plus probe 6 (added [m1], Car 3) are now ANSWERED (probe 2's trigger
+fired at cars 2-3 planning; its hook-failure sub-case is recorded above as the one
+unmeasured residual). **The cars 2-3 planning rung is fully unblocked, probe 2's
+blocking-hook measurement is a binding design constraint on Car 2's producer, and probe
+6 closes the async-grain question spec §7 [m1] left open.**
