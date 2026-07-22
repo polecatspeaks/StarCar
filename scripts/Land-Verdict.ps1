@@ -115,6 +115,56 @@ function Get-ResultBlockForTask {
     return $found[$found.Count - 1]
 }
 
+function ConvertTo-PortablePaths {
+    # Rewrite operator-environment paths to portable placeholders BEFORE hashing.
+    #
+    # This is normalisation, not curation. The record is what happened - findings,
+    # verdicts, wrong calls, rejected work. An operator's home directory is not a
+    # finding; it is an accident of where a file happened to sit, and it is the one
+    # thing in these artifacts a stranger cannot use. Law 7 wants "<repo>/docs/..."
+    # because that is reproducible on their machine; the absolute path is noise that
+    # also happens to publish a username to a public repo.
+    #
+    # Portability and honesty point the same way here, so nothing is traded. What
+    # would be curation - softening a finding, dropping a Major, flattering a verdict -
+    # is exactly what the north star forbids and is untouched by this.
+    #
+    # Three properties keep it honest:
+    #   1. It runs BEFORE hashing, so it is part of writing the record, not editing a
+    #      record already written. Applied afterwards it would be tampering, and the
+    #      integrity line would (correctly) refuse it.
+    #   2. The rules are mechanical, narrow, and declared in the landed file, so a
+    #      reader knows exactly what was substituted and can reason about it.
+    #   3. Entire's checkpoint branch keeps the UN-normalised original. Nothing is
+    #      destroyed; the raw text is one git grep away.
+    #
+    # Deliberately narrow: only known environment roots, longest-first. Aggressive
+    # substitution would mangle a finding that is legitimately ABOUT a path.
+    param([string]$Text)
+
+    $repoRoot = (git rev-parse --show-toplevel 2>$null)
+    if ($LASTEXITCODE -ne 0) { $repoRoot = '' }
+    if ($repoRoot) { $repoRoot = $repoRoot.Replace('/', '\') }
+
+    $rules = @()
+    if ($repoRoot) { $rules += @{ From = $repoRoot; To = '<repo>' } }
+    if ($env:USERPROFILE) { $rules += @{ From = $env:USERPROFILE; To = '~' } }
+
+    # Longest first, so the repo root inside a home directory wins over the home rule.
+    $rules = $rules | Sort-Object { $_.From.Length } -Descending
+
+    foreach ($rule in $rules) {
+        $from = $rule.From
+        $to = $rule.To
+        # Plain form, and the doubled-backslash form that appears wherever the text
+        # quotes JSON or a shell string.
+        $Text = $Text.Replace($from, $to)
+        $Text = $Text.Replace($from.Replace('\', '\\'), $to)
+        $Text = $Text.Replace($from.Replace('\', '/'), $to)
+    }
+    return $Text
+}
+
 function Get-Sha256 {
     param([string]$Text)
     $sha = [System.Security.Cryptography.SHA256]::Create()
@@ -135,6 +185,9 @@ $body = Get-ResultBlockForTask -Lines $lines -Id $TaskId
 # this script hashed one string and wrote a different one -- every landed file failed its
 # own verifier on the first run. The hash must cover exactly what lands on disk.
 $body = $body.Replace("`r`n", "`n").Trim()
+$bodyRaw = $body
+$body = ConvertTo-PortablePaths -Text $body
+$normalised = ($body -ne $bodyRaw)
 
 # --- refuse to clobber silently ----------------------------------------------
 if ((Test-Path $Out) -and (-not $Force)) {
@@ -144,6 +197,11 @@ if ((Test-Path $Out) -and (-not $Force)) {
 
 $roundLine = ''
 if ($Round) { $roundLine = "Round: $Round" }
+
+$normalisedNote = 'none applied (the body contained no operator-environment paths).'
+if ($normalised) {
+    $normalisedNote = 'the repository root was rewritten to ``<repo>`` and the operator home directory to ``~``, BEFORE hashing. Mechanical and narrow: only those two roots, longest-first, no other substitution. This is portability, not curation - findings, verdicts and counts are untouched, and the un-normalised original is on the Entire checkpoint branch.'
+}
 
 $header = @"
 # $Title
@@ -167,6 +225,8 @@ Reviewer: $Reviewer
 > ``scripts/Verify-Verdict.ps1 -Path <this file>``. An independently-written copy of the
 > same body exists on the Entire checkpoint branch; that copy, not the hash, is the
 > defence against whoever controls this script.
+>
+> Path normalisation: $normalisedNote
 "@
 
 # An explicit, collision-proof separator. The first version used a markdown rule, and

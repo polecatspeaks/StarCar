@@ -1,4 +1,4 @@
-<!-- starcar-integrity: sha256=a56f8ec235387409591f90075d8a7d610f8b7b25b3fedf478ad4b7ab05e1dbf4 covers every byte below this line; recompute with scripts/Verify-Verdict.ps1 -->
+<!-- starcar-integrity: sha256=3b5991d0583a3bd245b2bd145234ca5e192eddf84a1076124960898fd03b22eb covers every byte below this line; recompute with scripts/Verify-Verdict.ps1 -->
 # Adversarial design review - v0 yard skeleton, round 1
 
 Status: Verdict of record
@@ -20,6 +20,8 @@ Reviewer: car agent type, Opus, read-only, detached worktree, no delegation
 > `scripts/Verify-Verdict.ps1 -Path <this file>`. An independently-written copy of the
 > same body exists on the Entire checkpoint branch; that copy, not the hash, is the
 > defence against whoever controls this script.
+>
+> Path normalisation: the repository root was rewritten to ``<repo>`` and the operator home directory to ``~``, BEFORE hashing. Mechanical and narrow: only those two roots, longest-first, no other substitution. This is portability, not curation - findings, verdicts and counts are untouched, and the un-normalised original is on the Entire checkpoint branch.
 <!-- verbatim-body-below: do not edit past this line -->
 
 Base verified at `d7b8463a218980800f48bb8076ebe511226ec12d`, clean worktree, detached. I read the design, the constitution, CLAUDE.md, the Healing Loop, both templates, `scripts/board.ps1`, the README, `docs/setup.md`, the commit that landed the design, live branch protection, and GitHub issue #1.
@@ -297,4 +299,4 @@ Stated plainly, and limited to what genuinely is. Three of the attacks I was tol
 
 For APPROVE on the next round, all nine Majors must be closed in the design document, not deferred to the spec, because each one determines a contract that cars A through D inherit as ground truth. Minor-1 (citation), Minor-3 (the false categorical), Minor-4 (Law 2), and Minor-6 (Law 4 vs Law 7 trade) are one-sentence fixes and should land in the same revision. Minor-13 and Minor-14 are pre-existing repo defects outside this design's scope; I raise them because the North Star check asked and I verified both against the live remote, and they belong in a separate sweep, not in this design's revision.
 
-I edited nothing, wrote nothing, committed nothing, and pushed nothing. The worktree at `C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\64c15364-0933-4d6d-9b2e-d1ddbc918f9f\scratchpad\review-design-1` is as I found it, at `d7b8463a218980800f48bb8076ebe511226ec12d`.
+I edited nothing, wrote nothing, committed nothing, and pushed nothing. The worktree at `~\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\64c15364-0933-4d6d-9b2e-d1ddbc918f9f\scratchpad\review-design-1` is as I found it, at `d7b8463a218980800f48bb8076ebe511226ec12d`.

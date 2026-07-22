@@ -84,6 +84,26 @@ commits get reverted in the open rather than force-pushed into nonexistence. Cur
 record to flatter the process destroys the only thing the showcase was demonstrating. The
 pressure grows as the audience does, which is why it is written down before there is one.
 
+**But normalisation is not curation, and confusing the two is its own failure.** The
+record is what happened: findings, verdicts, counts, wrong calls, rejected work. An
+operator's home directory is not a finding - it is an accident of where a file happened to
+sit. Rewriting `C:\Users\<someone>\...` to `<repo>` or `~` deletes nothing about the
+process and publishes nothing about the operator, and Law 7 actively WANTS it: an absolute
+path pinned to one machine is the one thing in an artifact a stranger cannot use.
+Portability and honesty point the same way, so nothing is traded. Three conditions keep it
+that way: normalisation happens BEFORE the artifact is hashed (afterwards it would be
+tampering with a record already written, and the integrity line would rightly refuse it);
+the rules are mechanical, narrow, and declared in the artifact itself; and the
+un-normalised original survives on the Entire checkpoint branch, one `git grep` away. What
+would be curation - softening a finding, dropping a Major, flattering a verdict - is
+untouched by any of this and remains forbidden.
+
+*Scar: three review verdicts published the operator's home path to a public repo before
+anyone noticed, and every future car report would have carried it by construction, because
+every brief mandates base-verification in a named worktree. Caught by a reviewer, whose
+finding also surfaced that the yard design had ALREADY ruled against rendering absolute
+paths for the same reason - the repo held the principle and had not applied it to itself.*
+
 **Documents are living, never static.** A document is true only at the moment of its
 commit. The instant the code diverges from it, that document has become a lying canary -
 a reader trusting a described mechanism the code no longer implements - and this project
