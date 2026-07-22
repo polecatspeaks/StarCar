@@ -27,13 +27,20 @@ conductor corrected the record: the plan was written by the conductor, so those 
 carry **zero signal about the car model**. The probe is unfired and still valid.
 
 > # BINDING AMENDMENT BLOCK (conductor-applied)
-> *Empty at rev 2. Round-1 rework landed as plan edits (this whole revision), per
-> `worked-plan.md:134` - the amendment block is for invalidations found AFTER the plan is
-> approved and cars are in flight. The car reads this block FIRST.*
+> 1. **Round-3 rebase list applied (2026-07-22, verdict
+>    `docs/reviews/2026-07-22-plan-review-car1-round3.md`, APPROVE-WITH-REBASE-LIST):**
+>    PR3-m1/m2/m3 - three stale "rev 2" version labels corrected in place (base section,
+>    this block's own note, disposition-table header). No task text, snippet, count, or
+>    interface changed. The gate is CLOSED; this revision is the dispatch text.
+>
+> *No other amendments. Round-1 and round-2 rework landed as plan edits (revisions 2 and
+> 3), per `worked-plan.md:134` - this block is for invalidations found after approval,
+> with cars in flight. The car reads this block FIRST.*
 
 ## Base, baselines, and the STOP rule
 
-Base commit for the car: **the commit that lands this rev 2** - verify by
+Base commit for the car: **the commit that lands this rev 3 with the round-3 rebase
+list applied** [PR3-m1] - verify by
 `git log -1 --format=%H -- docs/plans/2026-07-22-harness-car1-plan.md` matching your
 worktree HEAD's history and this file's text matching the committed version. [Round-1
 NOTE folded: rev 1 pinned a base that predated the plan file itself; harmless there,
@@ -523,7 +530,7 @@ at every commit.
 
 ## Round-1 finding disposition [the carrier the delta re-review walks]
 
-| ID | Finding (compressed) | Disposition in rev 2 |
+| ID | Finding (compressed) | Disposition (PR1 rows: rev 2; PR2/PR3 rows: rev 3) [PR3-m3] |
 |---|---|---|
 | PR1-M1 | A.3's red factually wrong; specified test passes on arrival | Folded: A.3 rewritten from MEASURED behaviour; spec amended (S1); both reds observed and quoted |
 | PR1-M2 | Five fields + ordering + index format + normalisation rule dropped | Folded: A.1's Produces enumerates all six contracts and all fields, each with spec authority |
@@ -543,6 +550,7 @@ at every commit.
 | PR2-M1 | `abstract` - the third envelope payload field - absent from the schema | Folded: field-table row (required when `returned`, spec §2.3), added to the valid-`returned` vector, plus a NEW invalid vector (`returned` missing `abstract`) pinning the conditional; vector minimum 8 to 9; suite totals rebased |
 | PR2-m1 | `producer` authority miscited to §3.4 | Folded: citation corrected - not spec-mandated, basis stated (Law 7 adapter metadata) |
 | PR2-m2 | A.4 snippet absent | Folded: full A.4 snippet (row count + `Get-FileHash` byte-identity), `Get-FileHash` structurally verified |
+| PR3-m1/m2/m3 | Three stale "rev 2" version labels | Folded via the binding addendum (amendment block entry 1): base section, amendment-block note, this table's header |
 
 ---
 
@@ -560,9 +568,20 @@ infidelity") and worked-plan Amendment 1 a complete closure of all six exemplar 
 and CONFIRMED the conductor's probe-report correction (round-1 execution defects were
 conductor-authored on Opus; zero signal about Sonnet-as-car; probe unfired and valid).
 
-Round 3 is a delta on the PR2 fixes only. Amendment 1 evidence: seven behavioural
-probes run by the plan-writer at base (`Test-Json` presence on both shells; `Test-Json`
-if/then; A.1's red; A.2's red; A.3's absent-dir and empty-dir behaviour; A.5's
-fault-injection; `BeforeDiscovery` expansion), plus the `Get-FileHash` structural check
-for A.4's new snippet - each quoted where used; the adversary re-verifies rather than
-trusting the notes.
+Round 3 (delta, same adversary): **APPROVE-WITH-REBASE-LIST - 0 Major, 3 Minor**
+(`docs/reviews/2026-07-22-plan-review-car1-round3.md`). All three PR2 folds ruled
+PRESENT, none DRIFTED; the count-rebase sweep found every operative rebase applied; the
+three Minors were mechanical stale version labels, applied by the conductor as the
+binding addendum (amendment block entry 1). Convergence: **7 to 1 to 0 Majors,
+monotonic, zero swirl conditions across all three rounds.** The reviewer also ruled
+in-band that `producer` needs no conductor ruling (optional + honestly disclosed), and
+left one forward note for A.1's car-adjacent future: state the schema's
+`additionalProperties` posture in `schema/index-format.md` when A.1 is built.
+
+**THE GATE IS CLOSED. This revision, with the addendum applied, is the dispatch text.**
+
+Amendment 1 evidence: seven behavioural probes run by the plan-writer at base
+(`Test-Json` presence on both shells; `Test-Json` if/then; A.1's red; A.2's red; A.3's
+absent-dir and empty-dir behaviour; A.5's fault-injection; `BeforeDiscovery` expansion),
+plus the `Get-FileHash` structural check for A.4's new snippet - each quoted where used;
+the adversary re-verified every one by running, across three rounds.
