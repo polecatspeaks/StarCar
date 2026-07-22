@@ -1,2 +1,3 @@
 .claude/probe-logs/
 testResults.xml
+__pycache__/

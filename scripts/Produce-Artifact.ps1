@@ -230,6 +230,14 @@ try {
     $record['integrity'] = 'sha256:' + (Get-Sha256Hex $bodyJson)
 
     # --- write to the R4 path: <store>/<subject>/<kind>-<compact-at>.json ----------------
+    # Q3 (path traversal, Copilot/Qodo round 2): $subject is payload-derived and MUST be
+    # sanitized before ANY path use. An allowlist alone is not enough - '..' alone passes
+    # '^[A-Za-z0-9._-]+$' (only dots), so both checks are required. A rejection raises
+    # (Law 4: never dropped) via the same catch-block Add-Fault path as every other
+    # validation failure below, then exits nonzero with NO write and NO commit.
+    if ($subject -notmatch '^[A-Za-z0-9._-]+$' -or $subject.Contains('..')) {
+        throw "rejected subject (path traversal risk): $subject"
+    }
     $compactAt = $at -replace '[-:]', ''
     $subjectDir = Join-Path $storeAbs $subject
     if (-not (Test-Path $subjectDir)) { New-Item -ItemType Directory -Path $subjectDir -Force | Out-Null }
