@@ -1,0 +1,8 @@
+{
+  "schema": "starcar-artifact/1",
+  "subject": "disp-4",
+  "session_id": "session-jkl",
+  "at": "2026-07-22T14:00:00Z",
+  "normalisation": [],
+  "integrity": "sha256:4444444444444444444444444444444444444444444444444444444444444"
+}

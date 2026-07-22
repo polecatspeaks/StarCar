@@ -1,0 +1,10 @@
+{
+  "$comment": "Recognition vocabulary for the 'outcome' field (only meaningful when kind = 'returned'). Same posture as kinds.json: data, not a schema enum.",
+  "values": [
+    "APPROVE",
+    "APPROVE-WITH-REBASE-LIST",
+    "REJECT",
+    "error",
+    "honest-stop"
+  ]
+}
