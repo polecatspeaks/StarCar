@@ -47,7 +47,7 @@ change is itself a process failure (the autoimmune mode - see the Healing Loop's
 | GUIDE STAR | Blameless is not vague and not polite; REJECT and reversal are SUCCESS outcomes with a durable artifact |
 | Review calibration | Any Major = REJECT; reviewers run suites themselves; swirl triggers escalate; reviewer rotation is carrier-backed |
 | The sentence check | Cross-boundary values: trace every hop, file:line |
-| Branch topology | Never commit to main; merge only from a known good state; protection binds admins |
+| Branch topology | Never commit to main; merge only from a known good state; protection binds admins; the PR cycle: Copilot reviews out-of-family, triage calibrates, owner rules |
 | Dispatch rules | Name the model; no nested delegation (by toolset); verify the worktree base; cars never push |
 | Verification honesty | Every claim carries suite, count, SHA, observer; second party re-derives; wait for CI's terminal state |
 | CARRIER rule | Obligations cross rungs in documents with IDs, never by memory; receivers refuse delivery without them |
@@ -550,6 +550,37 @@ against work you would never ship proves nothing about work you would.*
 - The rule is enforced by branch protection on the remote, not by memory. A prose rule
   binds whoever reads it; a protected branch binds every actor, including a future agent
   that never read this file.
+
+**THE PR CYCLE (owner-ratified 2026-07-22): conductor opens, Copilot reviews, triage is
+the calibration membrane, the owner rules - then rinse, lather, repeat.**
+
+1. The conductor opens the PR (dev to main, only from a known good state per the merge
+   north star). The body states the ASSERTION being made: counts, SHAs, gate history.
+2. **GitHub Copilot review is requested - deliberately out-of-family.** Every internal
+   reviewer shares Anthropic lineage and full doctrine immersion; that monoculture is
+   blind to its own premises by construction. Copilot inherits none of them - the
+   closest thing to "a stranger read this" available on demand, Law 7 as a review
+   instrument. It is INDEPENDENT, not blind (it can read the whole repo); independence
+   is the value.
+3. **Triage, comment by comment**, conductor recommends, each into exactly one of:
+   - **legit** - fixed before merge;
+   - **dismissed** - with a recorded one-line reason in the PR conversation (blameless
+     is not vague, applied to an external reviewer; a silent resolve is dismissiveness,
+     agreeableness's equally-unrecorded mirror);
+   - **deferred** - accepted as an open end, which means an ISSUE exists before merge
+     (never-drop, mechanically - an open end without a tracked owner is vigilance-tier).
+4. **The owner rules on the triage.** That is the human gate branch protection encodes.
+5. **The calibration count is kept per PR**: comments / legit / dismissed / deferred.
+   Copilot arrives uncalibrated and WILL cry wolf against ruled decisions; the triage
+   membrane absorbs that safely, and three PRs in the count says whether it is a 5%- or
+   40%-hit instrument - the instrument-audit cadence applied to a reviewer we do not
+   control. Weight it by its record, never by its confidence.
+
+*Forward note, not yet built: a Copilot review is a `returned` record from a different
+producer. The artifact schema's open `producer` posture was shaped for exactly this -
+when the harness matures, external review verdicts land in the same store, on the same
+board, under the same health-bar math as internal gates. The PR cycle is the store's
+first external adapter, waiting.*
 
 *Scar: on founding day the repo's first five commits went straight to `main` because no
 one had said not to yet, and the session was one approval away from committing the
