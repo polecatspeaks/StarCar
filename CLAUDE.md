@@ -319,6 +319,17 @@ Every new session opens with a retro on tooling and harness friction, before oth
    someone must review, secure, and keep true. Build only what does not exist.
 4. **Right-size the recommendation.** A retro that installs something every session goes
    autoimmune. Some friction is worth living with, and saying so is a valid outcome.
+5. **Check `docs/setup.md`'s trigger-gated table before classifying anything as friction.**
+   A capability we deliberately deferred will look exactly like a missing one, and a tool
+   nagging about a state we chose is working as designed. The retro is itself an
+   instrument, and an instrument that cries wolf is worse than none.
+
+*Scar: the first retro ever run classified GitNexus's stale-index warning as a
+"cross-project tooling leak" and recommended suppressing it. `docs/setup.md` already
+recorded that the index is trigger-gated on first code landing, because there is nothing
+to index before that. The owner withdrew it within minutes. The false positive is kept
+visible in the friction log rather than deleted - a retro that hides its own misfires
+cannot be calibrated.*
 
 **Log friction as it happens, not at the retro.** A retro that runs on memory is a memory
 test, and in this shop the workforce evaporates nightly. Anything that cost time, produced

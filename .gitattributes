@@ -1,0 +1,25 @@
+# Line-ending normalisation.
+#
+# Every commit in the founding session emitted "LF will be replaced by CRLF" - noise on
+# a channel where a real warning has to be visible, which is the lying-instrument shape:
+# a reader learns to ignore the stream, and the one warning that mattered goes with it.
+#
+# LF everywhere, in the index AND the working tree. Both shells in use here (Git Bash and
+# PowerShell) read LF fine, and consistent bytes matter more than usual in this repo
+# because landed review verdicts are SHA-256 hashed. A checkout that silently rewrote line
+# endings would make every artifact fail its own integrity check on a fresh clone - the
+# exact false-alarm class the verifier already had to be fixed for once.
+* text=auto eol=lf
+
+# Explicit, so intent survives a future edit to the wildcard above.
+*.md    text eol=lf
+*.ps1   text eol=lf
+*.psm1  text eol=lf
+*.sh    text eol=lf
+*.json  text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+
+# Landed verdicts are hashed byte-for-byte. Never let a filter touch them.
+docs/reviews/**  -text
+docs/artifacts/** -text

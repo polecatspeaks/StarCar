@@ -1,0 +1,67 @@
+# StarCar CI
+#
+# Exists because CLAUDE.md defines "verified" as "the pipeline that ships it went green,
+# not that your local run passed." Until this workflow existed, no car in this repo could
+# honestly claim verification, and two real guards ran only when the conductor remembered
+# to run them:
+#
+#   - Pester tests for the board tooling: written, committed, and executed by nobody.
+#   - Verify-Verdict: the integrity check on landed review verdicts. A guard that runs on
+#     memory is vigilance, the weakest tier in the Healing Loop's hierarchy.
+#
+# Deliberately small. Three guards are parked on CI's arrival (#3 area-label check, #4
+# docs-were-reviewed check, #6 quickstart runner) and are NOT added here - a workflow that
+# grows a check per session is the autoimmune failure mode. They land when their own work
+# lands.
+#
+# This workflow is not "done" when it goes green. It is done when someone has WATCHED it
+# go RED - a green light wired to nothing is worse than no light.
+
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show shell and encoding facts
+        shell: pwsh
+        run: |
+          Write-Host "PowerShell $($PSVersionTable.PSVersion)"
+          Write-Host "Default encoding behaviour matters here: landed verdicts are SHA-256"
+          Write-Host "hashed, and PS 5.1's ANSI reads and BOM writes broke that twice."
+
+      - name: Verify landed review verdicts are unaltered
+        shell: pwsh
+        run: |
+          # Every file in docs/reviews/ carries a starcar-integrity line hashing every
+          # byte below it - header claims included. A header flipped from REJECT to
+          # APPROVE once passed an earlier version of this check; the hash now covers it.
+          ./scripts/Verify-Verdict.ps1
+
+      - name: Install Pester
+        shell: pwsh
+        run: |
+          Install-Module Pester -MinimumVersion 5.0.0 -Force -Scope CurrentUser -SkipPublisherCheck
+          Import-Module Pester -MinimumVersion 5.0.0
+          Write-Host "Pester $((Get-Module Pester).Version)"
+
+      - name: Run board tooling tests
+        shell: pwsh
+        run: |
+          $result = Invoke-Pester -Path ./scripts/tests -PassThru -Output Detailed
+          Write-Host "Passed: $($result.PassedCount)  Failed: $($result.FailedCount)"
+          if ($result.FailedCount -gt 0) { exit 1 }
+          if ($result.PassedCount -eq 0) {
+            # A suite that runs zero tests and reports success is a lying instrument -
+            # exactly the shape this repo rejects everywhere else.
+            Write-Error "Pester discovered ZERO tests. A green run that asserted nothing is not a pass."
+            exit 1
+          }
