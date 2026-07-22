@@ -15,6 +15,16 @@ These rules were not designed in the abstract — each was paid for, some severa
 a production multi-agent shop. Every rule carries its scar. A rule without its scar is a
 Chesterton's fence awaiting pruning, so the stories stay attached.
 
+The house phrase for how this shop builds is **GEOLOGICAL DEVELOPMENT** (owner coinage,
+2026-07-22): substrates hold everything up, and they are laid in readable order —
+constitution as bedrock, doctrine and templates as strata, each train depositing the
+layer the next one stands on. Probes are core samples (drill before you build; the
+surface reading lies). Scars are the fossil record (the rock IS the history). And the
+substrate is mutable the way rock is — by METAMORPHISM under measured pressure, never by
+rewriting a stratum in place: its law of change is **evidence-gated evolution**, meaning
+every mutation traces to a scar or a measurement, and the change itself stays readable in
+the record forever.
+
 **Right-sizing rule (read first):** the full ladder below is calibrated for consequential,
 multi-car work. Scale ceremony to stakes: a small, coverage-class change takes a car and
 one adversarial reviewer; only structural work (new subsystems, rewrites, cross-boundary
