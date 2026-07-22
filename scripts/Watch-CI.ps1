@@ -38,7 +38,7 @@ param(
     [string]$Branch = '',
     [int]$IntervalSeconds = 120,
     [int]$TimeoutMinutes = 30,
-    [string]$RecordDir = 'artifacts/ci-checks',
+    [string]$RecordDir = '.ci-checks',
     [string]$WorkflowName = 'CI'
 )
 
