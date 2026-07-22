@@ -205,21 +205,64 @@ when told to produce a test. Four rounds never asked why two producers wrote art
 all; removing that one unexamined premise dissolved roughly eight of the twelve findings.
 The owner named it: using a hammer to fix a watch.*
 
-## Consult the institution before designing (and SHOW that you did)
+## LAW-FIRST design (the constitution is a design instrument, not a grading rubric)
 
-Every design document states which existing laws, templates, contracts and prior verdicts
-it checked itself against, and what each one required. Not a ritual citation list - a
-short section naming the constraints that were looked up and what they ruled.
+Every design opens with the constraints that bind it - which laws, templates, contracts and
+prior verdicts apply, and **what each one FORBIDS** - written BEFORE any mechanism exists.
+Then the mechanism is designed to satisfy them. Use `docs/templates/design-doc.md`; its
+first three sections are the instrument check, the constraints, and the premises, and they
+come before the design proper because that ordering is the whole point.
 
-*Scar: three times in one founding session, a ratified rule already covered the mistake
-being made. Law 7 forbids hardcoded label taxonomies - a design hardcoded one and spent
-three rounds tuning it. The gating-matrix template's only worked example says the
-staleness banner is suppressed "never (truth surface), DELIBERATE, no override" - a design
-added a demo-mode suppression and a reviewer quoted the template back. The Healing Loop
-requires validated facts to land as tests, not prose - a protocol was specified in prose
-for four rounds. Every one was findable by looking. Reviewers caught all three, which
-means the institution worked and the author did not consult it; a lookup that only happens
-at review has already cost a dispatch by the time it fires.*
+This is the constitutional form of red-first. A test written after the code grades the
+code; a test written before it bounds the code. Same with the laws. Ending a design with a
+constitution check performed by the REVIEWER means the laws graded a mechanism that was
+built without them - which is test-after wearing a different hat.
+
+**The diagnostic: who finds the law?** In a law-first process the author hits the
+constraint while writing and the reviewer finds nothing there. **If the reviewer is
+finding the laws, the constraints were not on the page when the mechanism was built** -
+the same signal as QA finding every bug.
+
+**Write the premises down too.** Adversarial review is blind to unquestioned premises: a
+reviewer rejects what is on the page and cannot reject the assumption that put it there. A
+premise nobody wrote down will survive every round and will be the thing that was actually
+wrong. For each, state what would change if it were false.
+
+*Scar: seven constraints were violated across one design's four rounds - Law 7 on hardcoded
+taxonomies, the Healing Loop on prose-versus-tests, Law 1 on unknown-renders-as-unknown,
+Law 6 on second copies, Law 4 on silent loss, Law 2 on releasing a hold, and the gating
+matrix on suppressing a truth surface. All seven were findable by looking. All seven were
+found by the reviewer, none by the author. And the premise underneath them - "two things
+write artifacts", worth eight of twelve findings - was never attacked at all, because no
+round questioned it. That one was caught by the owner pulling back, not by any gate.*
+
+## Missing workflow is a failure class, and the fix is prior art
+
+When work fails repeatedly at one rung while other rungs run clean, suspect a **missing
+workflow artifact** before suspecting the worker. The seed ported the ladder's RULES from a
+shop where the workflow was tacit - you do not need a design template when you can open
+last month's design and imitate it. **Rules without exemplars do not bind**, and here there
+is no last month's design to open, because every worker is a new hire on day one.
+
+- A rule says what is forbidden. **An exemplar shows what compliance looks like.** Ship both.
+- Build the artifact **from real wreckage**, not from imagination: review the wreckage, name
+  the class, attack the class. A worked example drawn from a genuine failure teaches what an
+  invented one cannot, and it cannot flatter.
+- **Do not build an artifact for a rung you have never run.** That is inventing prior art
+  you do not have, which is the same failure one rung over. Defer it with a stated trigger
+  - the first time the rung is reached - and record the deferral in `docs/setup.md`'s
+  trigger-gated table so it is a decision rather than an omission.
+- **Defer the content; carry the shape.** What an artifact must CONTAIN is unknowable before
+  the rung runs. What it must be SHAPED like - constraints before mechanism, instrument
+  choice declared, premises stated - transfers.
+
+*Scar: design was the only rung in the ladder with no artifact, and it produced four REJECT
+rounds and twelve Majors on its first outing while every rung that had one (car brief,
+reviewer addendum, ledger, gating matrix) ran clean. The failures were not random; they
+landed exactly where the scaffolding was missing, at the most upstream rung, so everything
+downstream inherited them. The ancestor's own plan-review scar - three REJECT rounds on one
+plan - is this same class at a different rung, ported into the seed as a wound without its
+stitches.*
 
 ## Review calibration (binding, uniform)
 

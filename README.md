@@ -53,7 +53,8 @@ project board, a conductor-maintained state file) — never hardcoded to any one
 2. [`docs/the-healing-loop.md`](docs/the-healing-loop.md) — how the process that builds it
    repairs and hardens itself.
 3. [`CLAUDE.md`](CLAUDE.md) — the operating rules, each carrying the scar that earned it.
-4. `docs/templates/` — the working artifacts (car briefs, state ledger, gating matrix).
+4. [`docs/templates/design-doc.md`](docs/templates/design-doc.md) — the design workflow: constraints before mechanism, with a worked exemplar built from a real four-round failure.
+5. `docs/templates/` — the other working artifacts (car briefs, state ledger, gating matrix).
 
 ## License
 
