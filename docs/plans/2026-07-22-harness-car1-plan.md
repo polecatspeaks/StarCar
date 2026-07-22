@@ -1,6 +1,6 @@
 Status: Current
 
-# Dispatch harness - Car 1 implementation plan, rev 2 (schema, validator, verifier, index, contracts)
+# Dispatch harness - Car 1 implementation plan, rev 3 (schema, validator, verifier, index, contracts)
 
 REQUIRED SUB-SKILL: one car per task group, adversarial reviewer per car.
 
@@ -9,12 +9,15 @@ AMENDMENT S1** (the §4-row-4 "exits 0" claim was falsified empirically at this 
 supersedes it and rewrites §6's non-vacuity item). Design: rev 6 + A1.
 
 Review record: **round 1 REJECT - 7 Major, 8 Minor**
-(`docs/reviews/2026-07-22-plan-review-car1-round1.md`). Every finding is folded inline
-below, tagged `[PR1-Mn]` / `[PR1-mn]`; the disposition table at the end is the carrier the
-delta re-review walks. Rev 2 also complies with `worked-plan.md` **Amendment 1**, minted
-from that round: **every behavioural claim below was RUN by the plan-writer and quotes the
-observed result**; structural claims were opened at base. Which part each claim got is
-stated where it appears.
+(`docs/reviews/2026-07-22-plan-review-car1-round1.md`); **round 2 (delta) REJECT - 1
+Major, 2 Minor** (`docs/reviews/2026-07-22-plan-review-car1-round2.md`), with all 15
+round-1 IDs ruled PRESENT, none DRIFTED, and convergence ruled healthy (7 to 1, zero
+swirl conditions, no cap). Every finding from both rounds is folded inline, tagged
+`[PR1-*]` / `[PR2-*]`; the disposition table at the end is the carrier the delta
+re-review walks. This plan complies with `worked-plan.md` **Amendment 1**: **every
+behavioural claim below was RUN by the plan-writer and quotes the observed result**;
+structural claims were opened at base. Which part each claim got is stated where it
+appears.
 
 **Scope: Car 1 only.** Cars 2 and 3 are planned after Car 1 lands - Car 1 is the
 owner-approved **model probe** (car on Sonnet, reviewer on Opus; the reviewer reports
@@ -37,7 +40,8 @@ NOTE folded: rev 1 pinned a base that predated the plan file itself; harmless th
 avoided here.] Baselines at dispatch, re-derived by the car, STOP on mismatch:
 
 - `Invoke-Pester -Path ./scripts/tests` (under **pwsh 7**, see runtime floor): **21 passing, 0 failed**
-- `./scripts/Verify-Verdict.ps1` (bare): **12 verdict files verified, exit 0**
+- `./scripts/Verify-Verdict.ps1` (bare): **13 verdict files verified, exit 0** (the two
+  plan-review verdicts landed between rounds; rev 2 said 12 - a count rebase, not a drift)
 
 ## Global constraints
 
@@ -74,8 +78,8 @@ There is **no `dispatch_id` field**. One join key, Law 6.
 **R3 [PR1-M1, PR1-M6, per spec amendment S1]:** the verifier's vacuous and crashing exits
 are retired **unconditionally - no switch**. Round 1 falsified both premises: the
 empty-store "exits 0" claim (it crashes, exit 1, `:95-96` dead) and the default-off
-justification (`docs/reviews/` holds 12 files, so an armed check leaves `ci.yml:47` green
-untouched either way). A switch whose arming depends on Car 3 remembering is the
+justification (`docs/reviews/` holds 13 files at rev 3, so an armed check leaves
+`ci.yml:47` green untouched either way). A switch whose arming depends on Car 3 remembering is the
 vigilance tier; unconditional behaviour needs no memory. Absent dir: exit 1 naming it;
 zero verdict files: exit 1 with an actionable named-directory message replacing the
 strict-mode crash; the dead code is removed. `ci.yml` is untouched at Car 1 (spec ruling
@@ -108,12 +112,13 @@ and the yard train consume this block blind.
 | `at` | string, ISO-8601 UTC | always | spec §3.1 (latest-`at` wins) |
 | `outcome` | string, vocabulary `outcomes.json` | when `kind` = `returned` | spec §2.3 |
 | `findings` | string | when `kind` = `returned` | spec §2.3 |
+| `abstract` | string - the human-readable summary a board renders | when `kind` = `returned` | spec §2.3 [PR2-M1 - the THIRD envelope payload field, from the same sentence as `outcome` and `findings`; dropped by rev 1, rev 2, AND all three spec-review rounds, surfaced by the round-2 delta walk] |
 | `envelope` | string, `absent` or `malformed` - records the envelope fault class | optional, only meaningful on `returned` | spec §2.3 [PR1-M2]: *"Absent and malformed are different faults"*, both land with the body intact |
 | `budget` | number (seconds) | optional - shop default applies at FOLD time, never infinite (the default is the detector's, not the schema's) | spec §3.3 [PR1-M2] |
 | `basis` | object: `observed`, `by`, `against_budget` | when `kind` = `presumed-lost` | spec §3.3 [PR1-M2] |
 | `cost` | object | optional - **producer-optional by Law 7** | spec §3.4 |
 | `context_peak_tokens` | number | optional | spec §3.4 |
-| `producer` | string | optional | spec §3.4 |
+| `producer` | string | optional | not spec-mandated [PR2-m1 - rev 2 miscited §3.4, which governs cost/context optionality and names no such field]. Basis stated: Law 7 metadata naming the emitting adapter, optional exactly as cost is |
 | `normalisation` | array of `{from_class, to}` substitution declarations - **declared in each landed artifact** | always (empty array = nothing substituted) | spec §3.6 [PR1-M2] |
 | `integrity` | string, `sha256:<hex>` over the canonical body | always | spec §3.6 [PR1-M2] |
 
@@ -142,11 +147,13 @@ alongside the ordering: the mechanical classes from `Land-Verdict.ps1`'s
 repo paths to `<repo>`, home directories to `~`, each substitution declared in the
 artifact's `normalisation` field.
 
-*Vectors (minimum eight):* valid `dispatched`; valid `returned` (with `outcome`,
-`findings`, `integrity`, `normalisation`); valid `presumed-lost` with `basis`; valid
-record with unrecognised `kind` vocabulary value [the discovery vector]; invalid:
-missing `kind`; invalid: `returned` missing `outcome`; invalid: `presumed-lost` missing
-`basis`; invalid: missing `integrity`.
+*Vectors (minimum nine):* valid `dispatched`; valid `returned` (with `outcome`,
+`findings`, **`abstract`** [PR2-M1], `integrity`, `normalisation`); valid `presumed-lost`
+with `basis`; valid record with unrecognised `kind` vocabulary value [the discovery
+vector]; invalid: missing `kind`; invalid: `returned` missing `outcome`; invalid:
+`returned` missing `abstract` [PR2-M1 - pins the conditional requirement so the new
+field's schema clause cannot be vacuous]; invalid: `presumed-lost` missing `basis`;
+invalid: missing `integrity`.
 
 - [ ] **Step 1 - write the failing tests**
 
@@ -176,9 +183,9 @@ Describe 'Artifact schema and conformance vectors' {
         Test-Path (Join-Path $script:Vocab 'outcomes.json') | Should -BeTrue
     }
 
-    It 'ships at least eight vectors, each with an .expect sibling' {
+    It 'ships at least nine vectors, each with an .expect sibling' {
         $cases = Get-ChildItem $script:Vectors -Filter *.json -ErrorAction SilentlyContinue
-        $cases.Count | Should -BeGreaterOrEqual 8
+        $cases.Count | Should -BeGreaterOrEqual 9
         foreach ($c in $cases) {
             $expect = [System.IO.Path]::ChangeExtension($c.FullName, '.expect')
             Test-Path $expect | Should -BeTrue -Because "$($c.Name) needs an .expect sibling"
@@ -200,7 +207,7 @@ for the file-absent reason; a red for any other reason is a finding to report.
 - [ ] **Step 3 - minimal implementation:** the schema (with `if`/`then` for the
   conditional requirements - the plan-writer measured `Test-Json` honouring `if`/`then`
   on 2020-12: good=True, bad=False), both vocab files, `schema/index-format.md`, the
-  eight vectors.
+  nine vectors.
 - [ ] **Step 4 - green + suite:** `Invoke-Pester -Path ./scripts/tests` under pwsh:
   **21 + 4 = 25** passing, 0 failed expected. State the observed count.
 - [ ] **Step 5 - commit:** `feat(schema): artifact schema, vocabularies as data, conformance vectors (#7)`
@@ -289,7 +296,7 @@ Describe 'Test-StarcarArtifact conformance' {
 - [ ] **Step 3 - implement** `Test-StarcarArtifact`: `Test-Json` for `Valid`/`Errors`,
   vocab recognition for `Discoveries`, `try/catch` around vocab reads collapsing to one
   error.
-- [ ] **Step 4 - green + suite:** **25 + 8 (vectors) + 2 = 35** passing expected; the
+- [ ] **Step 4 - green + suite:** **25 + 9 (vectors) + 2 = 36** passing expected; the
   exact observed count is the car's to report.
 - [ ] **Step 5 - commit:** `feat(schema): pwsh validator - Test-Json shape, vocab discoveries (#7)`
 
@@ -311,7 +318,7 @@ path. A truthful exit code delivered as a stack trace is a Law 5 defect: it degr
 loudly but unactionably.
 
 **The fix is unconditional - no switch [R3, PR1-M6].** `ci.yml:47`'s bare invocation
-stays green because `docs/reviews/` holds 12 verdict files at base (measured); `ci.yml`
+stays green because `docs/reviews/` holds 13 verdict files at base (measured); `ci.yml`
 is not touched in this task (the repoint is Car 3's migration commit, spec ruling 4; the
 vacuity-refusal precedent for Pester is `ci.yml:76-81` [PR1-m1 - rev 1 miscited `:62`]).
 
@@ -353,13 +360,13 @@ Describe 'Verify-Verdict refuses vacuous passes and crashes' {
   the NEXT assertion - *"Expected regular expression 'zero verdict files' to match..."* -
   because today's output is the strict-mode stack trace. **That partial-pass is expected
   and stated here so the car does not mistake it for a wrong red.** Test 3 passes at
-  base (12/12 clean, measured) - it is the regression pin, not a red.
+  base (13/13 clean, measured) - it is the regression pin, not a red.
 - [ ] **Step 3 - implement:** `:87-90` absent: error naming the directory, exit 1;
   `:91`'s result coerced with `@(...)`; `:94-96` replaced by an actionable zero-files
   error naming the directory, exit 1. Keep 5.1 compatibility for THIS script (`:20`'s
   existing convention - the floor applies to new files).
-- [ ] **Step 4 - green + suite:** **35 + 3 = 38** expected; bare
-  `./scripts/Verify-Verdict.ps1` re-run: **12 verified, exit 0** - the regression pin.
+- [ ] **Step 4 - green + suite:** **36 + 3 = 39** expected; bare
+  `./scripts/Verify-Verdict.ps1` re-run: **13 verified, exit 0** - the regression pin.
 - [ ] **Step 5 - commit:** `fix(verify): absent store fails loudly, empty store fails actionably, dead path removed (#7)`
 
 **Ledger (both parts):** none / none - state both.
@@ -376,16 +383,46 @@ same store, byte-identical output (LF, UTF-8 no BOM, per the repo's landed
 derived state; CI regenerate-and-diff is Car 3's gate; the generator itself is
 stateless. `#requires -Version 7.4`.
 
-- [ ] **Step 1 - write the failing tests:** fixture store with three artifacts (two
-  subjects, one superseded pair) - one row per artifact, sorted per
-  `schema/index-format.md`; **and two runs produce byte-identical files**
-  (`Get-FileHash` equality) - the property Car 3's diff gate stands on.
+- [ ] **Step 1 - write the failing tests [PR2-m2 - snippet added in rev 3]:**
+
+```powershell
+#requires -Version 7.4
+Describe 'New-ArtifactIndex - one row per artifact, deterministic' {
+    BeforeAll {
+        $script:Root = (git rev-parse --show-toplevel)
+        $script:Gen  = Join-Path $script:Root 'scripts/New-ArtifactIndex.ps1'
+        $script:Store = Join-Path $TestDrive 'store'
+        New-Item -ItemType Directory -Path $script:Store | Out-Null
+        # Fixture: three artifacts, two subjects, one superseded pair (same subject,
+        # two 'at' values) - written here from A.1's vector shapes.
+        # [The car builds the three fixture files from A.1's landed vectors.]
+    }
+
+    It 'produces one row per artifact, sorted per schema/index-format.md' {
+        $out = Join-Path $TestDrive 'index.md'
+        & pwsh -NoProfile -File $script:Gen -StoreRoot $script:Store -OutFile $out
+        $rows = @(Get-Content $out | Where-Object { $_ -match '^\|' } | Select-Object -Skip 2)
+        $rows.Count | Should -Be 3
+    }
+
+    It 'two runs over the same store produce byte-identical output' {
+        $a = Join-Path $TestDrive 'a.md'; $b = Join-Path $TestDrive 'b.md'
+        & pwsh -NoProfile -File $script:Gen -StoreRoot $script:Store -OutFile $a
+        & pwsh -NoProfile -File $script:Gen -StoreRoot $script:Store -OutFile $b
+        (Get-FileHash $a -Algorithm SHA256).Hash | Should -Be (Get-FileHash $b -Algorithm SHA256).Hash
+    }
+}
+```
+
+  Structural check (Amendment 1): `Get-FileHash` opened - `Microsoft.PowerShell.Utility`,
+  `-Algorithm` parameter present, verified by the plan-writer.
+
 - [ ] **Step 2 - run, confirm the red REASON.** **RUN by the plan-writer at base,
   observed verbatim:** *"CommandNotFoundException: The term
   './scripts/New-ArtifactIndex.ps1' is not recognized as a name of a cmdlet, function,
   script file, or executable program."*
 - [ ] **Step 3 - implement.**
-- [ ] **Step 4 - green + suite:** **38 + 2 = 40** expected.
+- [ ] **Step 4 - green + suite:** **39 + 2 = 41** expected.
 - [ ] **Step 5 - commit:** `feat(index): deterministic index generator per schema/index-format.md (#7)`
 
 **Ledger (both parts [PR1-M5]):** no mutable process state. **Derived committed
@@ -436,7 +473,7 @@ test name.
   first, run, observe the two flags, then add the headers).
 - [ ] **Step 3 - write both files** with `Status: Current` headers, per the templates,
   and annotate the two template trigger lines.
-- [ ] **Step 4 - green + suite:** **40** passing expected (DocPolicy's walk is a loop
+- [ ] **Step 4 - green + suite:** **41** passing expected (DocPolicy's walk is a loop
   inside one `It` - the count does not move [round-1 NOTE folded]); 0 failed.
 - [ ] **Step 5 - commit:** `docs(contracts): state ledger (both questions) + gating matrix; template triggers fired (#7)`
 
@@ -481,7 +518,7 @@ test name.
 ## Task count and totals
 
 5 tasks, one car. Suite trajectory (expected; the car reports observed, under pwsh):
-21 -> A.1 25 -> A.2 35 -> A.3 38 -> A.4 40 -> A.5 40. Verify-Verdict bare: 12/12 exit 0
+21 -> A.1 25 -> A.2 36 -> A.3 39 -> A.4 41 -> A.5 41. Verify-Verdict bare: 13/13 exit 0
 at every commit.
 
 ## Round-1 finding disposition [the carrier the delta re-review walks]
@@ -503,16 +540,29 @@ at every commit.
 | PR1-m6 | Template trigger lines invalidated, not updated | Folded: both template files in A.5's Files, same commit |
 | PR1-m7 | Gating Evidence unsatisfiable for future gates | Folded: pending-with-planned-name instruction |
 | PR1-m8 | §9 rows 1-2 are Car 1's | Folded: A.5 + coverage table row |
+| PR2-M1 | `abstract` - the third envelope payload field - absent from the schema | Folded: field-table row (required when `returned`, spec §2.3), added to the valid-`returned` vector, plus a NEW invalid vector (`returned` missing `abstract`) pinning the conditional; vector minimum 8 to 9; suite totals rebased |
+| PR2-m1 | `producer` authority miscited to §3.4 | Folded: citation corrected - not spec-mandated, basis stated (Law 7 adapter metadata) |
+| PR2-m2 | A.4 snippet absent | Folded: full A.4 snippet (row count + `Get-FileHash` byte-identity), `Get-FileHash` structurally verified |
 
 ---
 
 ## The plan-review record (rule 5)
 
 Round 1: **REJECT - 7 Major, 8 Minor** (`docs/reviews/2026-07-22-plan-review-car1-round1.md`).
-Convergence context for the delta re-review: this is round 2; the findings above are
-folded per the disposition table; the reviewer walks the IDs Present / Absent / DRIFTED
-and rules on convergence as well as correctness. Amendment 1 evidence in this revision:
-seven behavioural probes run by the plan-writer at base (`Test-Json` presence on both
-shells; `Test-Json` if/then; A.1's red; A.2's red; A.3's absent-dir and empty-dir
-behaviour; A.5's fault-injection; `BeforeDiscovery` expansion), each quoted where used;
-the adversary re-verifies rather than trusting the notes.
+Round 2 (delta, same adversary): **REJECT - 1 Major, 2 Minor**
+(`docs/reviews/2026-07-22-plan-review-car1-round2.md`). All 15 round-1 IDs ruled
+PRESENT, none DRIFTED; every behavioural fold re-verified by the reviewer BY RUNNING.
+Convergence ruled healthy: 7 to 1 Majors, findings shrinking and moving, zero swirl
+conditions, no cap. The round-2 Major (`abstract`) was a pre-existing gap missed by
+both plan rounds AND all three spec-review rounds - surfaced by the delta walk, not
+introduced by rev 2. Round 2 also ruled spec amendment S1 a faithful fold ("no
+infidelity") and worked-plan Amendment 1 a complete closure of all six exemplar holes,
+and CONFIRMED the conductor's probe-report correction (round-1 execution defects were
+conductor-authored on Opus; zero signal about Sonnet-as-car; probe unfired and valid).
+
+Round 3 is a delta on the PR2 fixes only. Amendment 1 evidence: seven behavioural
+probes run by the plan-writer at base (`Test-Json` presence on both shells; `Test-Json`
+if/then; A.1's red; A.2's red; A.3's absent-dir and empty-dir behaviour; A.5's
+fault-injection; `BeforeDiscovery` expansion), plus the `Get-FileHash` structural check
+for A.4's new snippet - each quoted where used; the adversary re-verifies rather than
+trusting the notes.
