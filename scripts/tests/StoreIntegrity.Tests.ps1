@@ -92,4 +92,22 @@ Describe 'Store integrity - every artifacts/**/*.json record (F4)' {
         (Get-Content $anyRecord.FullName -Raw -Encoding UTF8) | Should -Be $originalBytes
         (Test-RecordIntegrity -Path $anyRecord.FullName).IntegrityOk | Should -BeTrue -Because 'the real record was never touched by the fault injection'
     }
+
+    It 'reads offset-form at as a VERBATIM string, never a coerced datetime (TZ-independent M-A4-1 guard)' {
+        # The durable mechanism behind the CI-timezone catch (2026-07-22, hotfix 6c5165d8b's
+        # post-hoc review recommendation): the recompute path must parse with -DateKind String
+        # so an offset-bearing at-stamp stays the exact stored string. This guard reds on ANY
+        # box (including the author's -04:00) the instant -DateKind String is dropped, because
+        # the TYPE coercion (string to datetime) happens regardless of timezone - only the
+        # re-serialisation is TZ-dependent. Converts the environmental CI guard into a
+        # committed test (Healing Loop: mechanism over attention).
+        $offsetRecords = @(Get-ChildItem (Join-Path $script:RepoRoot 'artifacts') -Recurse -Filter *.json |
+            Where-Object { (Get-Content $_.FullName -Raw) -match '"at"\s*:\s*"[^"]*[+-]\d\d:\d\d"' })
+        $offsetRecords.Count | Should -BeGreaterThan 0 -Because 'the migrated verdicts carry offset at-stamps; this guard needs one'
+        foreach ($f in $offsetRecords) {
+            $rec = Get-Content $f.FullName -Raw -Encoding UTF8 | ConvertFrom-Json -DateKind String
+            $rec.at | Should -BeOfType [string] -Because "$($f.Name)'s at must parse as a verbatim string, not a coerced datetime"
+        }
+    }
+
 }

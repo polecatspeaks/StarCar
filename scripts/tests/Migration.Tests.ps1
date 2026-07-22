@@ -79,7 +79,7 @@ Describe 'Migrate-Verdicts' {
         Test-Path (Join-Path $repo 'artifacts/reviews/with-fence.md') | Should -BeTrue
         Test-Path (Join-Path $repo 'docs/reviews/with-fence.md') | Should -BeFalse
 
-        $rec = Get-Content $jsonPath -Raw | ConvertFrom-Json
+        $rec = Get-Content $jsonPath -Raw | ConvertFrom-Json -DateKind String
         $rec.schema | Should -Be 'starcar-artifact/1'
         $rec.kind | Should -Be 'returned'
         $rec.subject | Should -Be 'with-fence'
@@ -98,7 +98,7 @@ Describe 'Migrate-Verdicts' {
         & $script:Script -SourceDir (Join-Path $repo 'docs/reviews') -DestDir (Join-Path $repo 'artifacts/reviews')
         $LASTEXITCODE | Should -Be 0
 
-        $rec = Get-Content (Join-Path $repo 'artifacts/reviews/no-fence.json') -Raw | ConvertFrom-Json
+        $rec = Get-Content (Join-Path $repo 'artifacts/reviews/no-fence.json') -Raw | ConvertFrom-Json -DateKind String
         $rec.outcome | Should -Be 'REJECT'
         $rec.findings | Should -Be 'migrated: see body_file'
         $rec.abstract | Should -Be 'A rejected review'
@@ -111,7 +111,7 @@ Describe 'Migrate-Verdicts' {
         Add-Verdict -Repo $repo -Name 'hash-check.md' -Content (Get-VerdictBody -Title 'Hash check' -Verdict 'APPROVE' -Fence $fence)
         & $script:Script -SourceDir (Join-Path $repo 'docs/reviews') -DestDir (Join-Path $repo 'artifacts/reviews')
 
-        $rec = Get-Content (Join-Path $repo 'artifacts/reviews/hash-check.json') -Raw | ConvertFrom-Json
+        $rec = Get-Content (Join-Path $repo 'artifacts/reviews/hash-check.json') -Raw | ConvertFrom-Json -DateKind String
         $rec.integrity | Should -Match '^sha256:[0-9a-f]+$'
         # Re-derive independently: every field in file order EXCEPT integrity, compact JSON -
         # a shape that carries the field but a bogus hash must NOT pass this assertion.
@@ -160,7 +160,7 @@ Describe 'Migrate-Verdicts' {
         & $script:Script -SourceDir (Join-Path $repo 'docs/reviews') -DestDir (Join-Path $repo 'artifacts/reviews')
         $LASTEXITCODE | Should -Be 0
 
-        $rec = Get-Content (Join-Path $repo 'artifacts/reviews/pre-schema-fence.json') -Raw | ConvertFrom-Json
+        $rec = Get-Content (Join-Path $repo 'artifacts/reviews/pre-schema-fence.json') -Raw | ConvertFrom-Json -DateKind String
         $rec.outcome | Should -Be 'REJECT'
         $rec.outcome | Should -Not -Match "`n"
         $rec.findings | Should -Be 'migrated: see body_file'

@@ -119,7 +119,7 @@ Describe 'Produce-Artifact' {
         $store = Join-Path $repo 'artifacts'
         Invoke-Producer -Payload (Get-Payload 'stop-car.json')   -Kind 'returned'   -StoreRoot $store -Now '2026-07-22T10:05:00Z' | Out-Null
         Invoke-Producer -Payload (Get-Payload 'launch-car.json') -Kind 'dispatched' -StoreRoot $store -Now '2026-07-22T10:00:00Z' | Out-Null
-        $disp = Get-Content (Join-Path $store 'a88e7dadda60940ac/dispatched-20260722T100000Z.json') -Raw | ConvertFrom-Json
+        $disp = Get-Content (Join-Path $store 'a88e7dadda60940ac/dispatched-20260722T100000Z.json') -Raw | ConvertFrom-Json -DateKind String  # verbatim at (index-format.md contract)
         $ret  = Get-Content (Join-Path $store 'a88e7dadda60940ac/returned-20260722T100500Z.json') -Raw | ConvertFrom-Json -DateKind String  # verbatim 'at' (M-A4-1 class)
         # THE MEASURED IDENTITY (Probe 5): tool_response.agentId == agent_id
         $disp.subject | Should -Be $ret.subject
@@ -138,7 +138,7 @@ Describe 'Produce-Artifact' {
         $json = $payload | ConvertTo-Json -Depth 20
         $r = Invoke-Producer -Payload $json -Kind 'returned' -StoreRoot $store -Now '2026-07-22T11:00:00Z'
         $r.ExitCode | Should -Be 0
-        $rec = Get-Content (Join-Path $store 'a88e7dadda60940ac/returned-20260722T110000Z.json') -Raw | ConvertFrom-Json
+        $rec = Get-Content (Join-Path $store 'a88e7dadda60940ac/returned-20260722T110000Z.json') -Raw | ConvertFrom-Json -DateKind String  # verbatim at (index-format.md contract)
         $rec.outcome | Should -Be 'error'
         $rec.envelope | Should -Be 'absent'
         (Test-StarcarArtifact -InputObject $rec -SchemaPath $script:SchemaPath).Valid | Should -BeTrue
@@ -161,7 +161,7 @@ Describe 'Produce-Artifact' {
         $json = $payload | ConvertTo-Json -Depth 20
         $r = Invoke-Producer -Payload $json -Kind 'returned' -StoreRoot $store -Now '2026-07-22T13:00:00Z'
         $r.ExitCode | Should -Be 0
-        $rec = Get-Content (Join-Path $store 'a88e7dadda60940ac/returned-20260722T130000Z.json') -Raw | ConvertFrom-Json
+        $rec = Get-Content (Join-Path $store 'a88e7dadda60940ac/returned-20260722T130000Z.json') -Raw | ConvertFrom-Json -DateKind String  # verbatim at (index-format.md contract)
 
         $rec.outcome | Should -Be 'error'
         $rec.PSObject.Properties['envelope'] | Should -Be $null -Because 'a producer read failure is not the brief-failure value absent'
@@ -197,7 +197,7 @@ Describe 'Produce-Artifact' {
         $payload.agent_transcript_path = ($tpath -replace '\\', '/')
         $json = $payload | ConvertTo-Json -Depth 20
         Invoke-Producer -Payload $json -Kind 'returned' -StoreRoot $store -Now '2026-07-22T12:00:00Z' | Out-Null
-        $rec = Get-Content (Join-Path $store 'a88e7dadda60940ac/returned-20260722T120000Z.json') -Raw | ConvertFrom-Json
+        $rec = Get-Content (Join-Path $store 'a88e7dadda60940ac/returned-20260722T120000Z.json') -Raw | ConvertFrom-Json -DateKind String  # verbatim at (index-format.md contract)
         $rec.abstract | Should -Match '<repo>/scripts/thing.ps1'
         $rec.abstract | Should -Not -Match ([regex]::Escape($repo))
         @($rec.normalisation).Count | Should -BeGreaterThan 0
@@ -208,7 +208,7 @@ Describe 'Produce-Artifact' {
         $repo = New-FixtureRepo
         $store = Join-Path $repo 'artifacts'
         Invoke-Producer -Payload (Get-Payload 'stop-car.json') -Kind 'returned' -StoreRoot $store -Now '2026-07-22T10:05:00Z' | Out-Null
-        $rec = Get-Content (Join-Path $store 'a88e7dadda60940ac/returned-20260722T100500Z.json') -Raw | ConvertFrom-Json
+        $rec = Get-Content (Join-Path $store 'a88e7dadda60940ac/returned-20260722T100500Z.json') -Raw | ConvertFrom-Json -DateKind String  # verbatim at (index-format.md contract)
         $rec.integrity | Should -Match '^sha256:[0-9a-f]+$'
         # Re-derive independently: every field in file order EXCEPT integrity, compact JSON.
         $copy = [ordered]@{}
