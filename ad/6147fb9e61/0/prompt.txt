@@ -1734,3 +1734,7 @@ ok if you lookin the templates folder again, you'll see some amazing new prior a
 ---
 
 ok let's give it a go again and see how our bootstrapping is. I think you see what I mean by bootstrapping is painful up front, but the velocity gains down the road are worth it.
+
+---
+
+while you wait review the docs folder again, we just ported over some more prior art you will need soon
