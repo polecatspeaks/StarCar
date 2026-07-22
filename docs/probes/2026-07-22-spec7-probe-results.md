@@ -27,12 +27,26 @@ record that closes it) is therefore NOT a defensive nicety: it is the ONLY mecha
 that accounts for kills, and this measurement is why. Session death presumably behaves
 the same or worse; not separately probed (the desk cannot kill its own session).
 
-## Probe 2 - does a slow or failing hook block the dispatch? **DEFERRED, trigger stated.**
+## Probe 2 - does a slow hook block the dispatch? **ANSWERED: YES - the stop path blocks for the hook's full runtime.**
 
-Requires deliberately degrading the live hook and measuring dispatch latency - a
-disruption not worth taking mid-train. Trigger: before Car 2's producer hook lands, the
-car's plan includes a timed probe (hook with a deliberate sleep; measure whether launch
-or stop latency moves). Recorded here so the deferral is a decision, not an omission.
+Trigger fired at cars 2-3 planning (as deferred below in the original entry). Method: a
+deliberate `sleep 10` injected into the SubagentStop probe hook, one trivial dispatch,
+hook restored byte-identical afterward (diff empty, firing logged normally).
+
+| Run | Hook | Observed dispatch duration |
+|---|---|---|
+| Baseline 1 (control) | normal | 2,816 ms |
+| Baseline 2 (control) | normal | 1,648 ms |
+| Slowed | + `sleep 10` | **11,609 ms** |
+
+The added latency (~10s) appears IN FULL on the dispatch's stop/notification path - the
+hook is BLOCKING, not fire-and-forget. **Consequence, binding on Car 2's producer
+design:** the producer hook's synchronous work must stay cheap (one file write); any
+expensive step (git commit with contention retries, network) either moves off the hook's
+critical path or its cost is knowingly accepted as per-dispatch latency the conductor
+feels on every return. A hook FAILURE was not separately probed (the hook is `sh -c`
+fire-and-report; a failing command's effect on the dispatch is assumed non-fatal but
+unmeasured - Car 2's plan states this residual explicitly if it leans on it).
 
 ## Probe 3 - are the four cost counters present on every model tier? **ANSWERED: YES, all three tiers.**
 
@@ -67,6 +81,7 @@ already knows.
 
 ## What this unblocks
 
-Spec §7 marks probes 1 and 4 blocking before Car 2. Both are answered. Probe 2 is
-deferred INTO Car 2's plan with its trigger stated above. Probe 3 is answered on all
-tiers. **The cars 2-3 planning rung is unblocked.**
+All four §7 probes are now ANSWERED (probe 2's trigger fired at cars 2-3 planning; its
+hook-failure sub-case is recorded above as the one unmeasured residual). **The cars 2-3
+planning rung is fully unblocked, and probe 2's blocking-hook measurement is a binding
+design constraint on Car 2's producer.**
