@@ -41,6 +41,12 @@ it does not transfer.
 > - **Behavioural claims** (this command exits N, this red fails with this message,
 >   this input produces this output): RUN it at base and quote the OBSERVED result.
 >   Every stated red in every task is a behavioural claim.
+> - **Quote observations WITH their conditions** (added post-Car-1: three car-disclosed
+>   findings traced to condition-free quotes). An observed message is true under a
+>   shell, a version, and a LAYER (a FullyQualifiedErrorId is not the rendered
+>   exception name; an error-stream line is not stdout). State the conditions next to
+>   the quote, and any assertion built on the quote must match the layer the runtime
+>   actually renders - the car executes under ITS conditions, not the plan-writer's.
 >
 > Corollaries, each a finding the same round paid for:
 > - **Declare the runtime floor.** Global constraints name the runtime(s) the suites
