@@ -1,0 +1,11 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "dispatched",
+  "subject": "a83a3fefd4659985e",
+  "session_id": "64c15364-0933-4d6d-9b2e-d1ddbc918f9f",
+  "at": "2026-07-22T16:39:57Z",
+  "model": "claude-haiku-4-5-20251001",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:64aa9f4aba0cba941625858d4a099afa545ac7180adaf08df967cadebbfd68e7"
+}
