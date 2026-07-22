@@ -3237,3 +3237,16 @@ abstract: APPROVE. The same Sonnet car fixed its own M-A4-1 defect from a precis
 <result>ok</result>
 <usage><subagent_tokens>25747</subagent_tokens><tool_uses>0</tool_uses><duration_ms>2816</duration_ms></usage>
 </task-notification>
+
+---
+
+<task-notification>
+<task-id>a88e7dadda60940ac</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\64c15364-0933-4d6d-9b2e-d1ddbc918f9f\tasks\a88e7dadda60940ac.output</output-file>
+<status>completed</status>
+<summary>Agent "Control: clean completion probe" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>ok</result>
+<usage><subagent_tokens>26118</subagent_tokens><tool_uses>0</tool_uses><duration_ms>1648</duration_ms></usage>
+</task-notification>
