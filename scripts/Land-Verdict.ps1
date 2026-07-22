@@ -218,9 +218,16 @@ $sessionId = [System.IO.Path]::GetFileNameWithoutExtension($path)
 # repo calls a dead citation a finding.
 #
 # Note: `entire` exits non-zero even on success here, so success is judged on output.
+# Guarded: CI runners and stranger machines have no entire CLI (run 8c983a1 went red on
+# exactly this - the first CI run ever to exercise the landing path). Absent CLI degrades
+# LOUDLY (a note, Law 5) to a landing without the checkpoint row, never a crash.
 $checkpointId = ''
-$explain = (entire checkpoint explain $Base 2>&1 | Out-String)
-if ($explain -match 'Checkpoint\s+([0-9a-f]{8,})') { $checkpointId = $Matches[1] }
+if (Get-Command entire -ErrorAction SilentlyContinue) {
+    $explain = (entire checkpoint explain $Base 2>&1 | Out-String)
+    if ($explain -match 'Checkpoint\s+([0-9a-f]{8,})') { $checkpointId = $Matches[1] }
+} else {
+    Write-Host 'note: entire CLI unavailable - checkpoint provenance row omitted'
+}
 
 $checkpointRow = ''
 if ($checkpointId) { $checkpointRow = "| Entire checkpoint | ``$checkpointId`` |" }

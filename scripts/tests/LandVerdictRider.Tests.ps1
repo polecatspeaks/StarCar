@@ -69,6 +69,27 @@ Describe 'Land-Verdict retains the extractor (Get-ResultBlockForTask)' {
         $LASTEXITCODE | Should -Be 0
     }
 
+    It 'lands WITHOUT the entire CLI on PATH (the CI-environment pin - run 8c983a1 red)' {
+        # CI run on merge 8c983a1 failed here: Land-Verdict called `entire` unguarded and
+        # CI runners do not have it. Simulate the runner: child pwsh whose PATH excludes
+        # every directory holding an entire executable, then land a verdict.
+        $entireDirs = @(Get-Command entire -All -ErrorAction SilentlyContinue |
+            ForEach-Object { Split-Path $_.Source })
+        $cleanPath = ($env:PATH -split ';' | Where-Object { $_ -and ($entireDirs -notcontains $_) }) -join ';'
+
+        $repo = New-TempRepo
+        $tp = New-Transcript -Repo $repo -TaskId 'TASK2' -Body 'landed without entire on PATH'
+        $cmd = "`$env:PATH = '$($cleanPath -replace "'", "''")'; " +
+               "if (Get-Command entire -ErrorAction SilentlyContinue) { Write-Error 'probe invalid: entire still resolvable'; exit 9 }; " +
+               "Set-Location '$repo'; " +
+               "& '$script:LandVerdict' -TaskId 'TASK2' -Out 'landed2.md' -Title 'T' -Gate 'G' " +
+               "-Target 'X' -Base 'abc123' -Verdict 'REJECT' -TranscriptPath '$tp' -Force"
+        $out = & pwsh -NoProfile -NonInteractive -Command $cmd 2>&1
+        $LASTEXITCODE | Should -Be 0 -Because (($out | Select-Object -Last 5) -join ' | ')
+        Test-Path (Join-Path $repo 'landed2.md') | Should -BeTrue
+        (Get-Content (Join-Path $repo 'landed2.md') -Raw) | Should -Match 'landed without entire on PATH'
+    }
+
     It 'NON-VACUITY: a task id with no result block fails - the extractor really matches' {
         $repo = New-TempRepo
         $tp = New-Transcript -Repo $repo -TaskId 'TASK1' -Body 'present'
