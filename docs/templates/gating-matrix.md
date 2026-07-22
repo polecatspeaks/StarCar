@@ -1,7 +1,7 @@
 # Gating matrix (template)
 
 Status: Current
-Use: template - copy to `docs/contracts/gating-matrix.md` when the first gated surface lands.
+Use: template - copy to `docs/contracts/gating-matrix.md` when the first gated surface lands. First copied: 2026-07-22, dispatch harness Car 1 (`docs/contracts/gating-matrix.md`) - three rows: tier 1 detection, tier 2 detection, index staleness.
 
 The living inventory of every surface that DECIDES something (fires an alert, suppresses
 an output, flips a status, blocks an action): what gates it, what resets the gate, and

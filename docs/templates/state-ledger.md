@@ -1,7 +1,7 @@
 # State ledger (template)
 
 Status: Current
-Use: template - copy to `docs/contracts/state-ledger.md` when the first mutable service state lands.
+Use: template - copy to `docs/contracts/state-ledger.md` when the first mutable service state lands. First copied: 2026-07-22, dispatch harness Car 1 (`docs/contracts/state-ledger.md`) - process state answered "none"; the derived-committed-artifact question is what actually fired the trigger (the artifact index, born in Task A.4).
 
 The living inventory of every mutable field in long-lived services, with a verdict per
 lifecycle event. Any commit adding or changing such state updates this file IN THE SAME
