@@ -34,3 +34,26 @@ Format: `date | what happened | what it cost | class`.
 | 07-22 | No CI exists, so `CLAUDE.md`'s definition of "verified" (the pipeline that ships it went green) is unachievable by any car. Three guards are parked on it (#3, #4, #6). | Structural: verification honesty is currently aspirational | Missing capability |
 | 07-22 | Landing a verdict takes 7 hand-typed parameters and a remembered command. | Per-artifact manual cost; the class the harness train exists to close | Manual step that should be mechanical |
 | 07-22 | I leaned on multiple-choice menus during open design discussion; the owner twice redirected wanting to talk it through. | 2 wasted round trips | Interaction pattern, not tooling |
+
+## Retro #1 outcome (2026-07-22)
+
+Installed, all free and off-the-shelf, all verified rather than assumed:
+
+| Install | Closes | Proof |
+|---|---|---|
+| `.gitattributes` | The CRLF warning on every commit; protects hashed verdicts from filter rewrites on a fresh clone | All 3 verdicts still verify after the change |
+| PowerShell 7.6.3 | The encoding class - 3 defects, all inside the integrity tooling | Tested directly: no BOM on write, non-ASCII round-trips intact, `&&` works |
+| GitHub Actions CI | "Verified" was unachievable by our own definition; Pester tests nobody ran; `Verify-Verdict` running only on memory | Green run 29905304676 (19 tests, 3 verdicts); **RED run 29905432689** for the stated reason; green again after revert |
+
+**Deliberately not installed** (the retro's anti-autoimmune half): PSScriptAnalyzer - would
+not have caught the encoding defects; shellcheck - two shell files; markdown linting -
+ceremony with no incident behind it. Revisit when something earns them.
+
+**Still open from this retro:** the manual verdict-landing step (the harness train, #7),
+the board's missing columns (#8), and the three guards parked on CI (#3, #4, #6) which were
+deliberately NOT bundled into the first workflow.
+
+**Scorecard note for the next retro:** these three gates have caught nothing yet, because
+they were installed today. If they are still catching nothing in a month, they are pruning
+candidates - the Healing Loop counts catches per gate, and a gate that never fires is
+ritual.
