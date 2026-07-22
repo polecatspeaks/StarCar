@@ -15,7 +15,10 @@
 #   scripts/Verify-Verdict.ps1 -Path docs/reviews/<file>.md
 #   scripts/Verify-Verdict.ps1            # verifies every file in docs/reviews/
 #
-# Exit 0 if every checked file matches; 1 if any mismatch or unparseable header.
+# Exit 0 if every checked file matches; 1 if any mismatch or unparseable header, an
+# absent -ReviewsDir, or a -ReviewsDir with zero verdict files (spec amendment S1: both
+# were vacuous exit-0 or an unactionable crash before Car 1 task A.3 -- an absent store
+# and an empty store are failures to verify, never a pass with nothing checked).
 #
 # Windows PowerShell 5.1 compatible: no ternary, no &&/||, ASCII only.
 
@@ -85,15 +88,18 @@ if ($Path) {
     $files = @($Path)
 } else {
     if (-not (Test-Path $ReviewsDir)) {
-        Write-Host "No $ReviewsDir directory. Nothing to verify."
-        exit 0
+        Write-Error "$ReviewsDir does not exist. Nothing was verified -- an absent verdict store is a failure, not a vacuous pass."
+        exit 1
     }
-    $files = Get-ChildItem $ReviewsDir -Filter *.md | ForEach-Object { $_.FullName }
+    # @(...) forces an array even when Get-ChildItem's pipeline returns nothing, so
+    # $files.Count below is always a valid property read, never a StrictMode crash on
+    # $null (the real defect this task retires -- see the header comment).
+    $files = @(Get-ChildItem $ReviewsDir -Filter *.md | ForEach-Object { $_.FullName })
 }
 
 if ($files.Count -eq 0) {
-    Write-Host "No verdict files found. Nothing to verify."
-    exit 0
+    Write-Error "$ReviewsDir contains zero verdict files. Nothing was verified -- an empty store is a failure, not a vacuous pass."
+    exit 1
 }
 
 $allOk = $true
