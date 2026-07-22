@@ -584,6 +584,19 @@ pushing to `main` mid-train.*
   past a contradiction is the failure mode that costs trains. Put truth on the SUCCESS
   branch of every brief - agents gradient toward success shapes, so give truth a success
   shape.
+- **Every brief mandates the report envelope.** A dispatch's final report ENDS with a
+  fenced block, info string `starcar-artifact`, carrying `outcome`, `findings`, and
+  `abstract` - and NO angle brackets inside it (measured: a sentinel form was neutralised
+  by a safety filter and a later form landed with `>` HTML-escaped; the angle-bracket-free
+  form lands byte-clean). This is not decoration: it is HOW a `returned` dispatch record
+  obtains its outcome. The producer hook (`scripts/Produce-Artifact.ps1`) extracts the
+  envelope from the dispatch's own transcript (spec #7 §2.3); a brief that omits the
+  mandate produces reports with no envelope, and every record then lands `envelope:
+  absent`. The mandate lives in the carriers a dispatch actually reads -
+  `docs/templates/car-brief.md`, `.claude/agents/car.md` - so it binds by template, not by
+  memory. *Scar: rev 1 of the harness plan dropped these envelope-mandate documents into a
+  blanket file-list phrase; without the mandate the feature's central mechanism emits
+  nothing.*
 
 ## Verification honesty
 
