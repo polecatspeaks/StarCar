@@ -311,6 +311,38 @@ that record.
    did §1 and §2 read as paperwork? A workflow artifact that produces ceremony is worse than
    none, and this is the only round that can judge it honestly.
 
+
+## BINDING AMENDMENT A1 - 2026-07-22, after rev 6
+
+**Amendments SUPERSEDE contradicting text anywhere above.** Read word for word; this
+mechanism is borrowed from `docs/templates/worked-briefs.md`, which exists because plans
+and designs go stale between writing and dispatch, and a full rewrite is the wrong-sized
+patch.
+
+**§7's blocking test is CLOSED - answered empirically, not argued.** A `SubagentStop` probe
+wired hours before the question was asked recorded 74 firings across 74 distinct
+`agent_id`s: **exactly once per subagent**, for 4 of 4 dispatches that completed after the
+probe existed. **P4 is CONFIRMED.** §9's cost line stands and does not need re-approval.
+
+Three consequences that supersede the text above:
+
+1. **The producer MUST filter on `agent_type`.** 70 of 74 firings carry `agent_type: ""` -
+   internal harness subagents doing tool-level work, transcripts already deleted. Only 4
+   were `car`. An unfiltered producer writes **74 artifacts per session instead of 7**,
+   which would drown the store on day one. §2b's roll-call gains this as a trigger
+   condition.
+2. **The payload hands over `agent_transcript_path` directly**, so the producer never
+   scrapes the parent session transcript. **This removes the Law 7 coupling the design has
+   carried since rev 1** (§8's "vendor transcript format confined to the producer" shrinks
+   to one documented field) and reduces car 2's scope.
+3. **The payload also carries `background_tasks` with live statuses** - a liveness source
+   the design did not know existed. It is NOT reliable alone: in 4 of 74 payloads the
+   stopping agent still listed *itself* as running, a race between the hook firing and the
+   task list updating. Usable as corroboration for §5.5's tier 1, never as its sole source.
+
+*Recorded rather than folded in, per the amendment doctrine: a reader of §7 must be able to
+see that it was gated, and see what closed it.*
+
 ## §11 - History
 
 | Rev | Verdict | What it cost, what it bought |
@@ -321,6 +353,7 @@ that record.
 | 4 | REJECT, 5 Major, **escalated** | The demonstration was `sweep = dict(hook)` - proof by tautology |
 | 5 | REJECT, **2 Major** | **The failure class MOVED** - rounds 1-4 found only protocol defects; round 5 found none. Workflow verdict: *"It worked. It is not yet finished."* |
 | 6 | this | Bounded fix + recorded ruling. No round 6 |
+| A1 | amendment | Blocking test closed by measurement; `agent_type` filter required; a Law 7 coupling removed |
 
 The class was never *"the fold is hard."* It was **failure due to a non-existent workflow**,
 at the one rung with no prior art, because the seed ported rules without exemplars. All four
