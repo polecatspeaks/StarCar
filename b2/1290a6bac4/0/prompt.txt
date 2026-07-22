@@ -1722,3 +1722,7 @@ exactly, and the fact that we decided to kick the adjutication up to me is the r
 ---
 
 perfect. Now lets codify it so it persists in both memory and in our SOP
+
+---
+
+nah, that's not a calibration or a failure on your end. That's just how your model is built, and I've been doing this long enough to know that I have to guard yoru biases
