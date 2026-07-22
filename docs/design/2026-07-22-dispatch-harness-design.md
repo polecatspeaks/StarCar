@@ -1,18 +1,20 @@
 # Design: the dispatch harness
 
-Status: **DRAFT rev 5 - awaiting adversarial design review (round 5)**
+Status: **rev 6 - round 5's findings closed by bounded fix + RECORDED CONDUCTOR RULING (no round 6)**
 Issue: #7 (`area:adapters`)
 Date: 2026-07-22
 Written through `docs/templates/design-doc.md` - the first document to use it.
-History: revs 1-4 REJECT (7, 3, 4, 5 Majors), escalated to the owner. See §11.
+History: revs 1-5 REJECT (7, 3, 4, 5, **2**). Round 5 recommended NO round 6. See §9b, §11.
 
-> **This document is 232 lines against rev 4's 454 - about half - and that is the result,
+> **This document was 236 lines against rev 4's 454 - about half - and that is the result,
 > not a summary.** §0 amputated the protocol half into executable work; §2 killed a premise
 > worth eight of twelve findings. Both happened before a line of mechanism was written.
 >
-> *(The first draft of this line claimed "a third". Measured: 232/454 = 51%. Corrected
-> before review rather than after, which is the point of measuring a claim you are about to
-> publish.)*
+> *(The first draft claimed "a third"; measured 51% and corrected. Round 5 then found the
+> corrected number ALSO stale - the correcting commit added four lines while asserting the
+> old count, so the true figure was 236/454 = 52%. A hand-maintained mirror drifted inside
+> the commit that fixed it, which is the sharpest possible demonstration of why the claim
+> should have cited a command instead of a number.)*
 
 ## §0 - Instrument check
 
@@ -28,15 +30,18 @@ climbing and clustered, because a prose instrument cannot resolve at a protocol'
 it finds different defects forever and each round feels like progress. The Healing Loop had
 already ruled it: *"validated facts must land as tests or gates, never only prose."*
 
-**Nothing in this document specifies a byte, a hash input, a field order, or a comparison
-rule.** Where it needs one it names the executable artifact that owns it.
+**Nothing in this document specifies a byte, a field order, or a comparison rule.** Where it
+needs one it names the executable artifact that owns it - including §5.7's path
+normalisation, which IS a hash-input transformation and whose precise rule (repo root and
+home only, longest-first, no other substitution) belongs to the **schema artifact**, not to
+this prose. Rev 5 claimed "nor a hash input" and §5.7 falsified it in the same document.
 
 ## §1 - Constraints, before the mechanism
 
 | Source | What it FORBIDS here | How this design satisfies it |
 |---|---|---|
-| Law 1, `constitution.md:11-17` | Rendering what cannot be backed. *"Unknown states render AS unknown, honestly."* | §5's liveness has an explicit unaccounted-for state; §6 has a row for every absence |
-| Law 2, `:19-23` | *"never resists an override"* | Conductor `intent` is a first-class record and can be withdrawn (§5.4) |
+| Law 1, `constitution.md:11-17` | Rendering what cannot be backed. *"Unknown states render AS unknown, honestly."* | §5.3 liveness; §5.8.2 derives unaccounted-for; §6 now has rows for concurrent writes, orphan `returned`, and an un-backfilled gap |
+| Law 2, `:19-23` | *"never resists an override"* | §5.8.3 - a later `intent` for a subject supersedes the earlier, which is how a hold is withdrawn without mutation. **Rev 5 claimed this row and delivered no mechanism** |
 | Law 3, `:25-30` | *"Decoration that does not inform is cut"* | Only two rendered states per dispatch, plus a basis on demand (§5.3) |
 | Law 4, `:32-36` | Anything the adapters can see being *"silently dropped"*; a missing lane reading as no trains | §5.5's detector reports gaps loudly; unparseable artifacts land with body intact |
 | Law 5, `:38-43` | Degrading silently; freshness invisible | §5.5 renders which detection tier is in force; §5.3's lost-record carries its own basis |
@@ -74,6 +79,34 @@ lifecycle, backups and a query layer, none of which exist here.
 
 **P5. The board reads artifacts; the conductor declares only what no dispatch can know.**
 *If false:* we are back to a hand-maintained state file, which is what #7 exists to remove.
+
+**P6. Context is producer-optional, exactly as spend is.** A stranger's runner may report no
+high-water mark. *If false:* nothing, but rev 5 asserted context was *"always available"*
+and that was an undeclared producer capability (round 5, Minor 7).
+
+### §2b - Producer roll-call
+
+Round 5's amendment, and it exists because §2 as written surfaces only **positive**
+premises - things an author consciously chose. It was blind to the **absent** premise: five
+premises were declared and not one said *"something writes the `dispatched` record."* That
+single gap produced all three instances of round 5's Major 1.
+
+| Record | What writes it | Trigger | Durable when | If two arrive for one dispatch |
+|---|---|---|---|---|
+| `dispatched` | producer hook | **launch** - `PostToolUse:Task` fires at launch with no body, established at `docs/reviews/2026-07-22-harness-design-round1-REJECT.md:66` | file written, then committed; visible to CI after push | latest-`at` wins; the supersession is rendered (§5.8) |
+| `returned` | producer hook | subagent stop - **BLOCKING TEST, §7** | same | same |
+| `presumed-lost` | a human, prompted by the tier-1 detector | detector raises a gap; human confirms and lands | same | same |
+| `intent`, `ruling` | the conductor, deliberately | a decision | same | later supersedes earlier (§5.8) |
+
+**Two producers are not reintroduced.** The hook writes; the detector only ever *raises*.
+A human landing a `presumed-lost` or a backfill is the same single writer acting
+deliberately - which is why P1 survives, and why an un-backfilled gap must be **rendered**
+rather than merely logged (§5.5).
+
+**Because `dispatched` is written at launch and `returned` at stop, tier 1 is not vacuous.**
+Rev 5 left the producer unnamed, and under the reading where one stop-hook wrote both, a
+`dispatched` always had its successor in the same breath and the detector could never fire -
+a green light wired to nothing.
 
 ## §3 - The problem
 
@@ -128,6 +161,25 @@ A `dispatched` with no successor otherwise reads as *running* forever. So:
   which budget. It asserts a true fact about an observation rather than a guess about the
   world, and any later return supersedes it.
 
+### 5.8 Supersession - the three cases
+
+Rev 5 stated one rule and left three undefined. §0 assigns *"what the board may claim"* to
+this document, so these are answered here rather than deferred to the schema.
+
+1. **Two records of one kind for one dispatch: latest-`at` wins, and the board renders that
+   a supersession occurred.** Adopting round 4's Q1 ruling, which grounded it in this
+   repo's own shipped code - `scripts/Land-Verdict.ps1:112-115`, *"a task-id can notify more
+   than once... the LAST result is the current one; landing an earlier one would publish a
+   superseded verdict."* Rev 5 dropped that ruling with no disposition; it is adopted here.
+2. **`unaccounted-for` is DERIVED; `presumed-lost` is a RECORD that closes it.** The board
+   derives unaccounted-for from a `dispatched` past budget with no successor - available
+   from artifacts alone, so tier 1 is universal. A human landing a `presumed-lost` record
+   *closes* that state with an observed basis. Rev 5 defined the same term both ways.
+3. **A later `intent` for a subject supersedes the earlier one.** That is how a hold is
+   withdrawn, satisfying Law 2 without mutating anything. Rev 5's §1 claimed this was
+   satisfied and no mechanism delivered it - the exact rev-1 defect the design template
+   lists in its own exemplar.
+
 ### 5.4 Intent and rulings
 
 The conductor declares what no dispatch can know: train composition, and holds. A hold must
@@ -175,6 +227,9 @@ and counts are untouched.
 | Vocabulary value unrecognised | Rendered loudly by name. **A discovery** | 1, 4 |
 | Vocabulary or registry unreadable | One board-level fault, **not N per-lane faults** - one config error must not be reported as N discoveries | 1, 5 |
 | Spend unavailable | Fuel lane dark. Never inferred from context | 1 |
+| Two writes land concurrently | Cars run in parallel and artifacts are git files, so writes contend. The producer writes its own path only and never `git commit -a`; a contended commit retries, and a failed write is **raised, never dropped silently** | 4 |
+| A `returned` whose `dispatched` never landed | Tier 1 is directional and cannot see it. Tier 2 catches it; the board renders an orphan rather than inferring a dispatch that was never recorded | 1, 4 |
+| A gap detected and never backfilled | Rendered as a first-class board state - visible debt, permanently, until filled. A gap living only in a CI log is an unknown that fails to render as unknown | 1, 4 |
 | Artifact altered after landing | Integrity check fails; the checkpoint branch holds an independent copy | 1 |
 
 ## §7 - Out of scope, and the blocking test
@@ -193,11 +248,13 @@ shrinks, and §9 is void pending re-approval.
 
 | Document | What changes | Owner |
 |---|---|---|
-| `docs/setup.md` | Harness rows; the already-stale CI row | Car 3 |
+| `docs/contracts/state-ledger.md` | **Instantiated** - the artifact store is new mutable state, and the ledger is a same-commit contract | Car 1 |
+| `docs/contracts/gating-matrix.md` | **Instantiated** - tier 1 and tier 2 are new gated surfaces | Car 1 |
+| `docs/setup.md` | Harness rows; the already-stale CI row; `:21` omits `design-doc.md`; `:23` says "two design-review REJECTs" against seven landed | Car 3 |
 | `README.md:46-47` | Adapter list still says "a conductor-maintained state file" | Car 3 |
 | `CLAUDE.md` | Every brief must mandate an envelope | Car 2 |
 | `docs/templates/car-brief.md`, `.claude/agents/car.md`, `/goodnight` | Envelope and sweep duties | Car 2 |
-| `scripts/Land-Verdict.ps1`, `Verify-Verdict.ps1` | De-hardcode the project path; headers call themselves "the harness"; extend verification to the new store | Car 2 |
+| `scripts/Land-Verdict.ps1`, `Verify-Verdict.ps1` | De-hardcode the project path; headers call themselves "the harness"; extend verification to the new store - **and fix its vacuity**: it exits 0 when the directory is absent or empty, invoked bare by CI, so extending it as-is yields a guard that passes on nothing. Carried unowned since round 4 | Car 2 |
 | The parked yard design | Returns as rev 4 against this contract | Not this train |
 
 ## §9 - Cost
@@ -208,6 +265,39 @@ already spent on revs 1-4. **Void and re-approved if the §7 blocking test fails
 
 Per the **merge north star**, none of this reaches `main` until there is a good known
 working state to assert.
+
+## §9b - Disposition of round 5
+
+Every finding AND every ruling gets a row. A blank is a defect - this section exists
+because three rulings were silently dropped across rounds 2-5, and none was visible.
+
+| Prior item | Kind | Disposition | Where |
+|---|---|---|---|
+| Major 1 - no record kind has a named producer; no named durability point | finding | **adopted** | §2b roll-call |
+| Major 2a - two `returned` for one dispatch undefined; round 4's Q1 ruling dropped | finding + **dropped ruling** | **adopted**, and the drop is recorded rather than quietly repaired | §5.8.1 |
+| Major 2b - `unaccounted-for` defined two incompatible ways | finding | **adopted** - derived state, record closes it | §5.8.2 |
+| Major 2c - a hold cannot be cleared | finding | **adopted** | §5.8.3 |
+| Minor 1 - §0's absolute claim falsified by §5.7 | finding | **adopted** | §0 |
+| Minor 2 - tier 2 lag unruled | finding | **adopted** | §5.5 |
+| Minor 3 - CI cannot fetch the checkpoint branch | finding | **adopted** | §5.5, car 3 |
+| Minor 4 - state ledger and gating matrix absent from §8 | finding | **adopted** | §8, car 1 |
+| Minor 5 - `setup.md` stalenesses under-enumerated | finding | **adopted** | §8 |
+| Minor 6 - size claim stale inside its own correction | finding | **adopted** | header note |
+| Minor 7 - context asserted "always available" | finding | **adopted** | P6 |
+| Minor 8 - `Verify-Verdict` vacuity, unowned since round 4 | finding | **adopted** | §8, car 2 |
+| Minor 9 - no §6 row for an orphan `returned` | finding | **adopted** | §6 |
+| Ruling Q1 - the §0 line is correctly drawn | ruling | **adopted** | §0 unchanged |
+| Ruling Q2 - keep the read-only detector; **render an un-backfilled gap** | ruling | **adopted** | §6, §5.5 |
+| Ruling Q3 - keep the vendor named, add its limits | ruling | **adopted** | §5.5 |
+| Ruling Q4 - the template worked; amend §2 with a roll-call | ruling | **adopted** | §2b here; template amended separately |
+| Workflow: §1 column 3 is a hand-maintained mirror | ruling | **adopted** | rows now cite §-locators |
+| Workflow: §4's "Driven by" is near-ceremony, not a gate | ruling | **adopted** | template demoted it |
+
+**RECORDED CONDUCTOR RULING.** Round 5 recommended no round 6: *"the remedy is a small table
+and three sentences, and everything left has an executable gate waiting for it at spec and
+car."* Adopted. This revision closes the findings; the next gate is the §7 blocking test,
+then spec. Per `CLAUDE.md` a conductor ruling is recorded, not merely acted on - this is
+that record.
 
 ## §10 - Open questions for the reviewer
 
@@ -229,7 +319,8 @@ working state to assert.
 | 2 | REJECT, 3 Major | Cost gauge caught reading 18% of true burn |
 | 3 | REJECT, 4 Major | A live forgery found in the integrity tooling by fault injection |
 | 4 | REJECT, 5 Major, **escalated** | The demonstration was `sweep = dict(hook)` - proof by tautology |
-| 5 | this | Written through the workflow those four rounds paid for |
+| 5 | REJECT, **2 Major** | **The failure class MOVED** - rounds 1-4 found only protocol defects; round 5 found none. Workflow verdict: *"It worked. It is not yet finished."* |
+| 6 | this | Bounded fix + recorded ruling. No round 6 |
 
 The class was never *"the fold is hard."* It was **failure due to a non-existent workflow**,
 at the one rung with no prior art, because the seed ported rules without exemplars. All four
