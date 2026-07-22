@@ -1,6 +1,13 @@
 Status: Current
 
-# Dispatch harness - Car 3 implementation plan, rev 1 (migration, CI gates, portability leg)
+# Dispatch harness - Car 3 implementation plan, rev 2 (migration, CI gates, portability leg)
+
+Review record: **round 1 REJECT - 5 Major, 4 Minor, 2 Notes**
+(`docs/reviews/2026-07-22-car3-plan-review-round1.md`), M1 and M2 empirically proven by
+the reviewer (R7's shape run through the landed validator: Valid=False; R9's recursive
+glob run against a fixture: the headerless `index.md` fails verification). All eleven
+findings folded inline, tagged `[C3R1-*]`; disposition table at the end. The one-commit
+reading was BLESSED in principle; R8 ruled SOUND; both stand unchanged.
 
 REQUIRED SUB-SKILL: one car per task group, adversarial reviewer per car.
 
@@ -42,20 +49,34 @@ with the shell stated.
 
 ### Conductor rulings (recorded, reviewable)
 
-**R7 - the migration form: verdict BODIES stay markdown and MOVE; each gains a sibling
-JSON record.** The 22 landed verdicts are hash-verified `.md` bodies - their integrity
-lines cover every byte, so converting them would be editing the record (forbidden).
-Ruled: `git mv docs/reviews/<name>.md artifacts/reviews/<name>.md` (history preserved -
-`git mv` keeps follow/blame); each migrated verdict gains a sibling record
-`artifacts/reviews/<name>.json` with `kind: returned`, **`subject` = the verdict's
-filename slug** (stable, unique, human-meaningful; historical verdicts predate machine
-subjects and their task ids are not reliably in-file), `at` = the file's FIRST git
-authorship timestamp (deterministic: `git log --follow --format=%aI -- <file> | tail
--1`), `outcome` = the header's `**Verdict: X**` value, `abstract` = the Title line,
-`normalisation: []`, `integrity` over the record's own canonical body, plus extra field
-`body_file` (open posture) pointing at the sibling `.md` relative to the store root.
-The index then carries one row per verdict (it globs `*.json`), and `Verify-Verdict`
-keeps verifying the `.md` bodies unchanged.
+**R7v2 [C3R1-M1 folded - R7 was schema-invalid, PROVEN by the reviewer running the
+landed validator; this version was built against that same validator's requirements].**
+Verdict BODIES stay hash-verified markdown and MOVE (`git mv` - history preserved);
+each gains a sibling record `artifacts/reviews/<name>.json` with the COMPLETE required
+field set:
+- `schema`: `starcar-artifact/1` (the const - M1's first missing field);
+- `kind`: `returned`;
+- `subject`: the filename slug (stable, unique; **MARKED deviation from the schema's
+  identity semantic** - these records have no dispatch, and the deviation is stated
+  here rather than implied);
+- `session_id`: `pre-harness-migration` (a sentinel, deterministic and honest - M1's
+  second missing field; historical verdicts predate machine session ids);
+- `at`: the file's FIRST git authorship timestamp (`git log --follow --format=%aI --
+  <file> | tail -1`);
+- `outcome`/`findings`/`abstract` **[C3R1-m2 folded]**: parsed from the verdict's OWN
+  landed envelope fence where present - **measured at base: 20 of 23 verdicts carry a
+  ```` ```starcar-artifact ```` fence** whose fields were written by the reviewer that
+  authored the verdict (the truest possible source). For the 3 fence-less early
+  verdicts, deterministic fallback: `outcome` = the LEADING TOKEN of the
+  `**Verdict: X**` header line (matches the vocabulary; the rich remainder is prose),
+  `findings` = `migrated: see body_file`, `abstract` = the Title line;
+- `normalisation: []`; `integrity` computed **by the same canonicalisation
+  `Produce-Artifact.ps1` uses** (compact JSON of ordered fields, integrity excluded -
+  named by function, [C3R1-n2 folded]) - and C.1's tests VERIFY the hash round-trips,
+  not merely that a field exists;
+- extra `body_file` (open posture) pointing at the sibling `.md`.
+The index carries one row per record; `Verify-Verdict` keeps verifying the `.md`
+bodies unchanged.
 
 **R8 - "the eight landed verdicts" reads as the CLASS.** Spec §8 scoped migration to
 "the eight landed verdicts" - the count at spec time. Eight has floated to 22 by the
@@ -63,15 +84,26 @@ train's own reviews: the self-referential-baseline class, already named at Car 1
 Ruled: migrate ALL verdicts landed in `docs/reviews/` at migration time; the number is
 whatever `ls | wc -l` says that day.
 
-**R9 - the verifier's default repoints in the migration commit.** Post-migration,
-`docs/reviews/` is EMPTY-then-deleted, and S1 made an absent default dir a loud
-failure - so `Verify-Verdict.ps1:24`'s default `docs/reviews` MUST become
-`artifacts` in the same commit, with a `-Recurse` rider (`:97`'s `Get-ChildItem` is
-non-recursive - structural, read at base - and the store nests `.md` under
-`artifacts/reviews/` and subjects' dirs). `ci.yml:47`'s bare invocation then stays
-textually bare and semantically repointed - spec ruling 4's "updated in the migration
-commit" is satisfied by the default change plus the ci.yml edits C.2 makes anyway;
-the plan states this reading so the reviewer can rule on it rather than find it.
+**R9v2 [C3R1-M2 folded - R9's `artifacts` default + `-Recurse` was PROVEN to choke on
+the headerless `index.md`, turning the migration commit CI-red].** The verifier's
+default (`Verify-Verdict.ps1:27` [C3R1-m1 - rev 1 miscited `:24`, a comment]) becomes
+**`artifacts/reviews`** - the directory that holds ONLY integrity-headed `.md` bodies,
+needs NO recursion (the `-Recurse` rider is DROPPED entirely; rev 1's nesting rationale
+was factually false - subject dirs hold only `.json`), and never sees `index.md`.
+`ci.yml:47`'s bare invocation stays textually bare and semantically repointed in the
+migration commit - the one-commit reading the round-1 reviewer BLESSED, now actually
+met because the repointed bare verifier exits 0.
+
+**R10 [C3R1-M5 folded - the future-verdict flow, ruled rather than left two-readable].**
+From the migration commit forward, the landing convention for rich verdict `.md` bodies
+is **`artifacts/reviews/`** - the conductor's `-Out` argument points there, and
+`docs/setup.md`'s convention row says so in the same commit. Future verdicts therefore
+land INSIDE the verifier's default coverage; nothing can land silently unverified in a
+resurrected `docs/reviews/` because the convention, the verifier default, and the docs
+all point at one place (Law 6: one location, one owner). The producer's auto-written
+JSON `returned` records remain the machine layer; the rich `.md` is the body companion
+for gate verdicts, landed by the conductor via the backfill CLI, verified by the same
+gate as ever.
 
 ## Car 3 - Tasks C.1-C.4
 
@@ -83,35 +115,46 @@ stale); Create `scripts/tests/Migration.Tests.ps1`; the migration EXECUTION then
 touches: all `docs/reviews/*.md` (git mv), created `artifacts/reviews/*.json`,
 regenerated `artifacts/index.md` (via `scripts/New-ArtifactIndex.ps1` - Car 1 landed
 it first precisely so this car has something to invoke, spec §9), Modify
-`scripts/Verify-Verdict.ps1` (default + `-Recurse`, R9), Modify `docs/setup.md:23-24`,
-Modify `README.md` (the adapter sentence at ~:46-47: "a conductor-maintained state
-file" becomes the artifact store), Modify `docs/friction-log.md` (the row citing
-Verify-Verdict "running only on memory" - LOCATE BY CONTENT, the cited line number
-has already drifted; name-anchor lesson).
+`scripts/Verify-Verdict.ps1` (default to `artifacts/reviews`, NO recursion, R9v2);
+Modify `docs/setup.md:23-24` (including R10's landing-convention row); Modify
+`README.md` **[C3R1-m3 folded - the EXACT replacement text, so no premature
+board-consumption claim ships]:** the adapter parenthetical becomes `(a git repo, an
+issue tracker's project board, an artifact store - the dispatch harness's store lands
+in this repo; the board's consumption of it is #1's train)`; Modify
+`docs/friction-log.md` (the Verify-Verdict "running only on memory" row - LOCATE BY
+CONTENT, the cited line has already drifted); **and [C3R1-M3 folded - living
+contracts binds THIS commit]: Modify `docs/contracts/state-ledger.md` IN THIS
+COMMIT** - the index-instance row flips "no instance yet" to "instance live at
+artifacts/index.md", because C.1 is the commit that invalidates it, so C.1 trues it.
 
-- [ ] **Step 1 - failing tests** (fixture: a temp dir with two fake verdict `.md`
-  files carrying real integrity headers): Migrate-Verdicts produces a `.json` per
-  `.md` with outcome parsed from the header and `body_file` set; idempotent (second
-  run changes nothing); the record validates via `Test-StarcarArtifact`; the index
-  regenerated over the fixture store includes the new rows; `Verify-Verdict -ReviewsDir
-  <fixture> ` with nested dirs finds the bodies only with the `-Recurse` rider (red:
-  without the rider, nested bodies are MISSED - assert found-count).
+- [ ] **Step 1 - failing tests** (fixture: a temp dir with fake verdict `.md` files
+  carrying real integrity headers - at least one WITH an envelope fence and one
+  WITHOUT, covering both R7v2 parse paths): Migrate-Verdicts produces a `.json` per
+  `.md` with outcome/findings/abstract from the fence where present and the fallback
+  where not; idempotent (second run changes nothing); the record **validates via
+  `Test-StarcarArtifact` AND its `integrity` round-trips under the producer's
+  canonicalisation** [C3R1-M1/n2 - the round-1 reviewer proved a shape can pass a
+  field-presence check while carrying a bogus hash; assert the hash, not the field];
+  the index regenerated over the fixture store includes the new rows;
+  `Verify-Verdict -ReviewsDir <fixture>/reviews` (flat, R9v2) verifies every body and
+  **exits 0 with `index.md` present at the fixture ROOT** - the anti-trap assertion,
+  pinning that the default never globs the index [C3R1-M2].
 - [ ] **Step 2 - red REASONS (plan-writer evidence, conditions stated):** the script
   red is the established `CommandNotFoundException` class (pwsh 7.6.3, observed
-  verbatim on B.2/B.3's identical shape); the `-Recurse` red is structural-plus-run:
-  `Verify-Verdict.ps1:97` is non-recursive (read at base), so the nested-fixture
-  count assertion fails against the unmodified script - the car RUNS and quotes it.
+  verbatim four times this train); the anti-trap red: point the CURRENT verifier
+  (default `docs/reviews`) at a fixture root CONTAINING `index.md` - the round-1
+  reviewer observed `NO INTEGRITY ...index.md ... ANY FAIL = True` (their fixture,
+  quoted in the landed verdict); the car re-derives before fixing.
 - [ ] **Step 3 - implement + EXECUTE the migration** (tool first, then the one
-  commit: mv + records + index + verifier + all four mirrors).
-- [ ] **Step 4 - green + suites:** all suites; `./scripts/Verify-Verdict.ps1` bare now
-  verifies the store (expect: every migrated body verified, exit 0); the index diff
-  gate dry-run: regenerate and `git diff --exit-code artifacts/index.md` clean.
+  commit: mv + records + index + verifier default + all mirrors + the ledger flip).
+- [ ] **Step 4 - green + suites:** all suites; `./scripts/Verify-Verdict.ps1` bare
+  (new default `artifacts/reviews`) verifies every migrated body, exit 0; the index
+  diff gate dry-run: regenerate and `git diff --exit-code artifacts/index.md` clean.
 - [ ] **Step 5 - commit** (ONE commit): `feat(harness): the migration - verdicts into the store, index live, verifier repointed (#7)`
 
 **Ledger both parts:** process none. Derived committed artifacts: **the index instance
-is BORN here** - the A.5 ledger row's "no instance yet" flips; C.4 updates the ledger
-in its docs pass (same-train, and the gating matrix's index-staleness row flips to
-ARMED at C.2 - stated so the reviewer checks the pair).
+is BORN here and the ledger row flips IN THIS COMMIT** [C3R1-M3 folded - the
+same-commit law; rev 1's deferral to C.4 was the violation].
 
 ### Task C.2 - CI: the gates and the portability leg
 
@@ -132,7 +175,12 @@ Four additions, each tracing to a landed obligation:
 4. **Ubuntu matrix leg** (#14): `strategy.matrix.os: [windows-latest, ubuntu-latest]`,
    `runs-on: ${{ matrix.os }}`. pwsh is preinstalled on both. Any Windows-only step
    guards on `runner.os`. THE PROOF ARTIFACT for the portability claim - both legs
-   green is the measured fact #14's README badge waits on.
+   green is the measured fact #14's README badge waits on. **[C3R1-m4 folded - scope
+   guard]:** whether the EXISTING suite passes on ubuntu is unproven; if the ubuntu
+   leg surfaces a failing test, that is CODE work outside this task's ci.yml-only
+   file list - the car HONEST-STOPS on it with the failure quoted, and does NOT
+   expand C.2's scope to fix it. The stop is the success outcome; the fix is a
+   rider decision.
 
 - [ ] **Step 1-2 - red:** ci.yml is not locally executable; the red is the
   REVIEWER-side sentence check plus the conductor's CI handback (stated, not faked -
@@ -141,7 +189,11 @@ Four additions, each tracing to a landed obligation:
   quote it) and the local stale-index fault proof from C.1's fixture.
 - [ ] **Steps 3-5**; commit: `ci: probes floor, index staleness gate, checkpoint fetch, ubuntu matrix leg (#7, #10, #14)`
 
-**Ledger:** none / none (CI config; the gating matrix flip is C.4's docs pass).
+**Ledger:** process none / derived none NEW - but **[C3R1-M3 folded]: the
+gating-matrix flip (index-staleness row DEFERRED to ARMED, with the CI step named as
+evidence) lands IN THIS COMMIT** - C.2 is the commit that arms the gate, so C.2 trues
+the matrix; `docs/contracts/gating-matrix.md` joins this task's Files. [Rev 1's
+internal contradiction - "flips at C.2" vs "C.4's docs pass" - is resolved: C.2.]
 
 ### Task C.3 - the latency split, measured (#15)
 
@@ -161,42 +213,49 @@ deliverable; remedy decisions come after, per #15's discipline).
 
 **Ledger:** none / none.
 
-### Task C.4 - docs truth pass: probe 6, gating flips, ledger, spec §9 closeout
+### Task C.4 - docs truth pass: probe 6 and the spec §9 closeout
 
-**Files:** Modify `docs/probes/2026-07-22-spec7-probe-results.md` (Probe 6: spec §7
-[m1] "is every dispatch asynchronous?" - ANSWERED for this shop: 6 of 6 recorded
-launch payloads carry `isAsync: true`, probe log, 2026-07-22; the residual - a future
-synchronous dispatch surface would collapse tier 1's grain - stated); Modify
-`docs/contracts/gating-matrix.md` (index-staleness row: DEFERRED becomes ARMED with
-the CI step named as evidence; tier-2 row cites the fetch landed + enumeration still
-deferred); Modify `docs/contracts/state-ledger.md` (the index instance row flips:
-"generator landed, no instance yet" becomes "instance live at artifacts/index.md,
-staleness owner: CI diff gate"); spec §9 rows 3-9 all now DONE - state the closeout
-in the plan-review record, not by editing the frozen spec.
+**Files [C3R1-M3 slimmed this task - the contract flips moved into C.1 and C.2, the
+commits that invalidate them]:** Modify `docs/probes/2026-07-22-spec7-probe-results.md`
+(Probe 6: spec §7 [m1] "is every dispatch asynchronous?" - ANSWERED for this shop: 6
+of 6 recorded launch payloads carry `isAsync: true`, probe log, 2026-07-22;
+**[C3R1-n1 folded] the entry states the REPRODUCTION METHOD** - the committed
+`post-task-probe.sh` hook logs every launch, so any dispatch regenerates the
+observation; the residual - a future synchronous dispatch surface would collapse tier
+1's grain - stated); tier-2 gating-matrix row wording (fetch landed, enumeration
+deferred) if C.2 did not already carry it; spec §9 rows 3-9 closeout stated in the
+plan-review record, never by editing the frozen spec.
 
 - [ ] **Steps 1-5**; the red is DocPolicy on any new doc (none expected - state n/a)
   plus the reviewer's sentence check; commit:
-  `docs(harness): probe 6 landed, gates armed, ledger trued - spec section-9 closeout (#7)`
+  `docs(harness): probe 6 landed with its method - spec section-9 closeout (#7)`
 
-**Ledger:** IS this task; arithmetic inline (derived instances 0 -> 1, armed).
+**Ledger:** none / none (the flips already landed with their invalidating commits).
 
 ## §Handback - conductor-only after merge
 
 1. Push and watch BOTH matrix legs to terminal conclusion (the portability fact).
-2. Watch the index-staleness gate live: one dispatch writes a record, the index goes
-   stale, CI must fail on the next push until regenerated - the §6 fault, fired in
-   anger once, then the regeneration habit (or a follow-up automation issue) decided.
-3. The store-growth reconcile: records written by the producer during Car 3's
-   review cycle merge cleanly with the migrated store.
-4. THE PING: on gate-green, notify the owner (ready-to-spin, per standing
-   instruction) and WAIT before opening the PR.
+2. **[C3R1-M4 folded - MANDATORY, before the ping]: regenerate `artifacts/index.md`
+   over the MERGED store and commit it.** The producer wrote records on the
+   conductor's checkout during Car 3's cycle; those are absent from the car's
+   committed index, so the merged HEAD fails C.2's own staleness gate until the
+   regenerate-and-commit lands. The same applies after any rollback (`git revert` of
+   the migration commit is sufficient - the round-1 reviewer verified the mv-reversal
+   restores everything byte-preserved - but the reverted index needs the same
+   regenerate). MERGE NORTH STAR: no PR until this is done and CI is green.
+3. Watch the index-staleness gate live: one dispatch writes a record, the index goes
+   stale, CI must fail on the next push until regenerated - the §6 fault fired in
+   anger once; then decide the regeneration habit (or file the automation issue).
+4. THE PING: on gate-green (which now includes the reconcile in step 2), notify the
+   owner (ready-to-spin, per standing instruction) and WAIT before opening the PR.
 
 ## Spec-coverage table (Car 3's share - subsection-granular)
 
 | Obligation | Disposition |
 |---|---|
-| §4 row 4 (S1 form): verifier repointed in the migration commit | C.1 (R9) |
-| §4 row 5: store migration + history + index, one commit | C.1 (R7, R8) |
+| §4 row 4 (S1 form): verifier repointed in the migration commit | C.1 (R9v2) |
+| §4 row 5: store migration + history + index, one commit | C.1 (R7v2, R8) |
+| Future-verdict landing convention | R10 + C.1's setup.md row [C3R1-M5] |
 | §5.2: index committed, CI regenerates and diffs | C.1 (instance) + C.2 (gate) |
 | §6: stale index fails CI | C.2 (local fault proof) + Handback 2 (live) |
 | §2.5 [m5]: checkpoint-branch fetch | C.2 |
@@ -215,9 +274,30 @@ tests (car reports observed per commit; the plan predicts direction, not numbers
 the self-referential class, closed). Verify-Verdict: exit 0, every body verified, at
 every boundary.
 
+## Round-1 finding disposition [the carrier the delta walks]
+
+| ID | Finding (compressed) | Disposition in rev 2 |
+|---|---|---|
+| C3R1-M1 | R7 record shape schema-invalid (proven: missing schema/session_id/findings) | R7v2: complete field set; envelope-fence parse (20/23 measured) with deterministic fallback; integrity round-trip asserted, not field-presence |
+| C3R1-M2 | R9's artifacts default + -Recurse chokes on headerless index.md (proven) | R9v2: default `artifacts/reviews`, NO recursion, anti-trap assertion pinned in C.1's tests |
+| C3R1-M3 | Contract flips deferred out of the invalidating commits | Ledger flip into C.1; matrix flip into C.2; C.4 slimmed; rev-1's internal contradiction resolved |
+| C3R1-M4 | "Merge cleanly" false comfort; merged HEAD fails the staleness gate | Handback 2: MANDATORY regenerate-and-commit over the merged store before the ping; rollback story stated |
+| C3R1-M5 | Future verdicts could land unverified in a resurrected docs/reviews | R10: landing convention repoints to artifacts/reviews, one location one owner, setup.md row in the migration commit |
+| C3R1-m1 | :24 miscited for the default | :27 cited (R9v2) |
+| C3R1-m2 | Verdict-header parse ambiguity, vocabulary pollution | R7v2: envelope-fence first; fallback = LEADING TOKEN of the header |
+| C3R1-m3 | README edit risked premature board-consumption claim | Exact replacement text specified in C.1's Files |
+| C3R1-m4 | Ubuntu suite portability unproven; scope-creep risk | Scope guard in C.2: honest-stop on any ubuntu test failure, never expand |
+| C3R1-n1 | isAsync raw evidence gitignored | Probe 6 entry states the reproduction method (committed hook regenerates on any dispatch) |
+| C3R1-n2 | Integrity canonicalisation unspecified; bogus hash would pass | R7v2 names the producer's canonicalisation; C.1 asserts round-trip |
+
 ## The plan-review record (rule 5)
 
-*Pending - plan adversary (Opus, fresh series), five dimensions + rulings R7/R8/R9.
+Round 1: **REJECT - 5 Major, 4 Minor, 2 Notes**
+(`docs/reviews/2026-07-22-car3-plan-review-round1.md`); M1/M2 proven by execution; the
+one-commit reading BLESSED; R8 SOUND. Round 2 is a delta to the same reviewer walking
+the disposition table.
+
+*Plan adversary dimensions + rulings R7v2/R9v2/R10 on re-review.
 Plan-writer evidence (conditions stated): Verify-Verdict.ps1:97 non-recursion read at
 base; README adapter sentence and friction-log drift verified by content-grep at base;
 isAsync 6/6 from the launch probe log; verdict-header shape (Round/Base/Verdict lines)
