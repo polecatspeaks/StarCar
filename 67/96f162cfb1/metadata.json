@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "6796f162cfb1",
+  "strategy": "manual-commit",
+  "branch": "dev",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "docs/design/2026-07-23-ui-mockup-brief.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/67/96f162cfb1/0/metadata.json",
+      "transcript": "/67/96f162cfb1/0/full.jsonl",
+      "compact_transcript": "/67/96f162cfb1/0/transcript.jsonl",
+      "content_hash": "/67/96f162cfb1/0/content_hash.txt",
+      "prompt": "/67/96f162cfb1/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 2009,
+    "cache_creation_tokens": 12472625,
+    "cache_read_tokens": 459090907,
+    "output_tokens": 1342032,
+    "api_call_count": 1005
+  }
+}
