@@ -62,5 +62,5 @@ essentially every poll that crosses a whole second, not only on a real state cha
 not fixed: the ordering review scoped this cycle's C4R-3 ask to `ageBucketMs`'s inclusion
 direction specifically, and whether `elapsed_seconds` should be quantised the same way (and
 at what granularity) is a genuinely separate design question, not a silent side-fix riding
-on an unrelated commit. Recorded here so it is a decision awaiting the conductor's triage,
+on an unrelated commit. Recorded here so it is triaged as issue #27 (deferred, triggers stated there),
 never a silently-dropped observation.

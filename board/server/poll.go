@@ -368,7 +368,8 @@ func foldRecordsFrom(records []store.Record) []fold.Record {
 // only, and this is a genuinely separate design question (should
 // elapsed_seconds be quantised the same way ageBucketMs is, and if so at
 // what granularity) that deserves its own decision, not a silent
-// side-fix riding on an unrelated commit.
+// side-fix riding on an unrelated commit. Triaged as issue #27
+// (deferred; triggers stated there).
 func mustMarshalStripped(snap Snapshot) []byte {
 	stripped := snap
 	stripped.Seq = 0
