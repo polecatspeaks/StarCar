@@ -1,7 +1,11 @@
 #requires -Version 7.4
 # Plan task 2.4 (docs/plans/2026-07-23-yard-board-plan.md S3, [PB-2, folded]):
 # schema/vocab/board-defs.json is the PRESENTATIONAL vocabulary the wire schema's
-# `vocabularies` block requires (schema/yard-snapshot.schema.json:102-112) -
+# `vocabularies` block requires (schema/yard-snapshot.schema.json's top-level
+# properties.vocabularies - a JSON-pointer-path citation, not a line number: C2R-1
+# review round 1 caught this file citing :102-112, true at base 395aa9f but rotted
+# by this same train's own 9d53b9c inserting 85 $defs lines above it, which moved
+# the block to :187-197 without either citing file being touched) -
 # positions/outcomes/roles/liveness arrays of {id, label, register}. Recognition
 # VALUES stay owned by the existing vocab files (schema/vocab/outcomes.json,
 # schema/vocab/roles.json) and by the mechanism-closed position/liveness sets
