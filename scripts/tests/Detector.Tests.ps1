@@ -11,8 +11,9 @@
 # vectors (subject-partition, manifest-supersession, empty-vocab-one-fault) - this file is
 # the SAME suite the Go fold's own vector-runner (board/fold) conforms to, per YB-7/YB-9.
 #
-# CARVED OUT (plan-round-1 amendment [PB-1, folded], spec 7b.1) - these four cases are
-# environmental/pwsh-IO behaviours, not language-neutral fold semantics, and stay imperative:
+# CARVED OUT (plan-round-1 amendment [PB-1, folded], spec 7b.1) - THREE cases remain
+# environmental/pwsh-IO behaviours, not language-neutral fold semantics, and stay
+# imperative:
 #   - unreadable-vocab-dir: a fault-injected nonexistent path, emitting a path-bearing fault
 #     string no cross-language deep-equal can pin (the runner contract never injects a path
 #     into the comparison).
@@ -20,12 +21,26 @@
 #   - the tier assertion: asserts a field (`tier`) the runner contract explicitly EXCLUDES
 #     from comparison (schema/vectors/README.md: "tier and generated_at are excluded from
 #     comparison (environmental)").
-#   - the shop-default budget case: depends on the REAL config/harness-defaults.json, which
-#     the runner contract never injects (no DefaultsPath parameter in the vector shape).
 # The Go fold gets its own-idiom equivalents for the two read-failure behaviours (unreadable
 # vocab dir, unreadable defaults) in its own test suite (board/fold, plan task 3.3) - the
 # vectors cannot carry them, so without an own-idiom test they would be silently uncovered
 # in Go.
+#
+# REVERSAL (spec Amendment 2, issue #22, C3R-1 - Car 3 review round 1 REJECT, Major): the
+# FOURTH original carve-out - "the shop-default budget case" - was a FALSE PREMISE. Reading
+# config/harness-defaults.json is IO; APPLYING its value to render `overdue` is a fold
+# SEMANTIC that changes rendered state, proven when the reviewer constructed a byte-identical
+# budget-less dispatched record on which the pwsh detector rendered overdue/1800 and the
+# (un-threaded) Go fold rendered dispatched/null - a real divergence, invisible to the D18
+# cross-verifier because no vector exercised it. The vector `input` shape now carries an
+# OPTIONAL `defaults.dispatch_budget_seconds` (schema/vectors/README.md), a new vector
+# (`budget-less-past-injected-default`) pins the semantic, and both fold bodies thread the
+# supplied default and emit `budget_source: record|default`. The one imperative test that
+# used to carry this case (`It 'a dispatched with no record budget falls back to the shop
+# default'`, below) is KEPT, re-scoped: it now tests the genuinely-environmental detail that
+# -DefaultsPath's OWN default resolves to the real config/harness-defaults.json file when no
+# override is given - a real-file-resolution check, not the fold semantic itself (which the
+# new vector now covers language-neutrally with an injected value).
 #
 # Rules under test map to spec citations:
 #   precedence returned > presumed-lost > dispatched          (S3.1)
@@ -149,6 +164,12 @@ Describe 'Detect-Dispatches (plan 3.1, spec YB-10) - carved-out cases + fixture-
             # {"values": [...]} shape), then invokes the detector with input.now as the
             # injected clock. This is the runner contract's steps 1+2, implemented once
             # here so every vector shares one materialiser.
+            #
+            # input.defaults (C3R-1a, spec Amendment 2): OPTIONAL. When present, its
+            # dispatch_budget_seconds is written to a temp file in the SAME shape
+            # config/harness-defaults.json uses ({"dispatch_budget_seconds": N}) and passed
+            # via -DefaultsPath, so the vector controls the shop default the fold applies -
+            # never depending on the real config file's current (mutable) value.
             param($Vector)
             $tmp = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
             $storeRoot = Join-Path $tmp 'store'
@@ -172,7 +193,14 @@ Describe 'Detect-Dispatches (plan 3.1, spec YB-10) - carved-out cases + fixture-
                 ($obj | ConvertTo-Json -Depth 10) | Set-Content -Path (Join-Path $vocabDir "$($prop.Name).json") -Encoding utf8
             }
 
-            Invoke-Detector -StoreRoot $storeRoot -Now ([string]$Vector.input.now) -VocabDir $vocabDir
+            $defaultsPath = $null
+            if ($null -ne $Vector.input.defaults -and $null -ne $Vector.input.defaults.dispatch_budget_seconds) {
+                $defaultsPath = Join-Path $tmp 'defaults.json'
+                $defaultsObj = [ordered]@{ dispatch_budget_seconds = $Vector.input.defaults.dispatch_budget_seconds }
+                ($defaultsObj | ConvertTo-Json -Depth 5) | Set-Content -Path $defaultsPath -Encoding utf8
+            }
+
+            Invoke-Detector -StoreRoot $storeRoot -Now ([string]$Vector.input.now) -VocabDir $vocabDir -DefaultsPath $defaultsPath
         }
     }
 
@@ -199,12 +227,21 @@ Describe 'Detect-Dispatches (plan 3.1, spec YB-10) - carved-out cases + fixture-
             $fold.tier | Should -Be 'tier-1-only'
         }
 
-        It 'a dispatched with no record budget falls back to the shop default' {
+        It 'a dispatched with no record budget falls back to the REAL config/harness-defaults.json when -DefaultsPath is not overridden' {
+            # Re-scoped by spec Amendment 2 (C3R-1): the FOLD SEMANTIC this case used to be
+            # the sole carrier of - "apply a supplied default, render overdue" - is now
+            # covered language-neutrally by the budget-less-past-injected-default vector
+            # (an injected value, never the real file). What remains genuinely
+            # environmental here is narrower: does -DefaultsPath's OWN unset-default
+            # resolve to the real config/harness-defaults.json path correctly. budget_source
+            # is asserted too (now that the detector emits it) as a non-vacuity check that
+            # this real-file path also exercises the provenance field, not just the number.
             $store = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
             New-Record -Store $store -Subject 'disp-6' -Kind 'dispatched' -At '2026-07-22T10:00:00Z'
             $fold = Invoke-Detector -StoreRoot $store -Now '2026-07-22T12:00:00Z'
             $e = @($fold.dispatches) | Where-Object { $_.subject -eq 'disp-6' }
             $e.budget_seconds | Should -Be 1800
+            $e.budget_source | Should -Be 'default'
             $e.state | Should -Be 'overdue'
         }
     }

@@ -28,6 +28,16 @@
 # budget degrades visibly) -- and per Probe 1 this budget path is the ONLY way a killed
 # dispatch (which fires no stop hook) is ever surfaced. Spend renders from `cost` only;
 # absent is reported absent and never borrowed from context (S3.4).
+#
+# BUDGET PROVENANCE (spec Amendment 2, issue #22, C3R-1): applying the shop default to a
+# budget-less dispatched record is a FOLD SEMANTIC (it changes the rendered state), never
+# environmental IO - the earlier carve-out that called it IO was a false premise, reversed
+# after a reviewer constructed a real pwsh-vs-Go divergence on this exact path. Every
+# dispatched entry that renders a `budget_seconds` value also carries `budget_source`:
+# 'record' (the record supplied its own budget) or 'default' (the shop default was
+# applied) - present ONLY alongside a non-null `budget_seconds`, never a phantom source for
+# a null budget. Both the pwsh detector and the Go port (board/fold) emit this field
+# identically; schema/vectors/fold/ pins the cross-language contract.
 
 param(
     [Parameter(Mandatory)] [string]$StoreRoot,
@@ -210,9 +220,28 @@ foreach ($subject in ($bySubject.Keys | Sort-Object)) {
             $entry['spend'] = if ($null -ne $cost) { $cost } else { 'absent' }
         }
         elseif ($winnerKind -eq 'dispatched') {
-            # Liveness gradient (S3.3). Budget: the record's own, else the shop default.
+            # Liveness gradient (S3.3). Budget: the record's own, else the shop default -
+            # C3R-1 / spec Amendment 2 (owner ruling, issue #22): applying the shop default
+            # to render `overdue` is a FOLD SEMANTIC, not environmental IO. The spec 7b.1
+            # carve-out that called this environmental was a false premise, proven when the
+            # round-1 reviewer constructed a byte-identical budget-less input on which the
+            # pwsh detector rendered overdue/1800 and the (un-threaded) Go fold rendered
+            # dispatched/null - a real divergence on the ONLY killed-dispatch surface
+            # (design S3.3, Probe 1). `budget_source` now discloses WHICH patience produced
+            # the rendered state: 'record' when the record carried its own budget, 'default'
+            # when the shop default was applied - present ONLY when `budget_seconds` itself
+            # is non-null (Amendment 2 item (b): kept minimal, never a phantom source for a
+            # null budget).
             $recBudget = Get-Prop $winner 'budget'
-            $budget = if ($null -ne $recBudget) { [double]$recBudget } elseif ($null -ne $defaultBudget) { [double]$defaultBudget } else { $null }
+            $budget = $null
+            $budgetSource = $null
+            if ($null -ne $recBudget) {
+                $budget = [double]$recBudget
+                $budgetSource = 'record'
+            } elseif ($null -ne $defaultBudget) {
+                $budget = [double]$defaultBudget
+                $budgetSource = 'default'
+            }
             # F1 disclosure (docs/plans/2026-07-22-pr18-correctness-fixes-plan.md): this
             # inline parse stays inline rather than repointing to Get-AtInstant, which
             # returns a DateTime (.UtcDateTime) for SORTING - a different shape from the
@@ -224,10 +253,12 @@ foreach ($subject in ($bySubject.Keys | Sort-Object)) {
             $entry['elapsed_seconds'] = [int64]$elapsed
             if ($null -ne $budget) {
                 $entry['budget_seconds'] = $budget
+                $entry['budget_source'] = $budgetSource
                 if ($elapsed -gt $budget) { $entry['state'] = 'overdue' }
             } else {
                 # No default available (defaults file unreadable): the fault is already
-                # raised; render the elapsed truthfully without inventing a budget.
+                # raised; render the elapsed truthfully without inventing a budget, and
+                # budget_source stays absent (nothing was applied).
                 $entry['budget_seconds'] = $null
             }
         }
