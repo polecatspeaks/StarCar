@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StarCar yard board</title>
+  <link rel="stylesheet" href="/css/board.css">
+</head>
+<body>
+  <!--
+    StarCar yard board (plan section 6, task 5.3): a live wall-display
+    status board rendering the dispatch harness's artifact store the way a
+    dispatcher watches a rail yard. Vanilla ESM, no build step (D19) - this
+    file and every module it imports run unmodified in a plain browser,
+    with no bundler and no transpile step.
+
+    Consumes ONLY /api/snapshot, /api/stream (SSE), and
+    /schema/yard-snapshot.schema.json - never the store or the fold
+    directly (this car's binding scope, plan section 6's own header line).
+  -->
+  <main id="board-root">
+    <p>Loading the yard board&hellip;</p>
+  </main>
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

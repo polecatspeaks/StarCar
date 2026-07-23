@@ -13,6 +13,7 @@ func testConfig(t *testing.T, storeRoot string) Config {
 	cfg.StorePath = storeRoot
 	cfg.SchemaDir = filepath.Join(repoRoot(t), "schema")
 	cfg.BoardDefsPath = filepath.Join(cfg.SchemaDir, "vocab", "board-defs.json")
+	cfg.WebDir = filepath.Join(repoRoot(t), "board", "web")
 	return cfg
 }
 

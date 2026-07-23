@@ -15,6 +15,10 @@ type Config struct {
 	StorePath     string
 	SchemaDir     string
 	BoardDefsPath string
+	// WebDir is board/web/ - the view's static assets (index.html, js/,
+	// css/, vendor/). Served at "/" (plan section 6, task 5.3: "the view
+	// (board/web/) lands with Car 5", replacing task 4.3's placeholder).
+	WebDir string
 	// DefaultsPath is config/harness-defaults.json - the shop-default
 	// dispatch budget (C3R-1d, spec Amendment 2, issue #22), threaded into
 	// every Fold call via WithDefaultBudgetSeconds so a budget-less legacy

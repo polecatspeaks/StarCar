@@ -2,15 +2,22 @@ package main
 
 import (
 	"net/http"
+	"path/filepath"
 	"time"
 )
 
-// registerHandlers wires the three routes plan task 4.3 names: GET /,
-// GET /api/snapshot, GET /api/stream - nothing else.
+// registerHandlers wires the routes task 4.3 named (GET /api/snapshot,
+// GET /api/stream) plus what Car 5 (plan section 6) adds to close the
+// walking skeleton: GET / and every board/web/ static asset (index.html,
+// js/*.js, vendor/**, css/*.css), and GET /schema/yard-snapshot.schema.json
+// so the browser's validator consumes THE schema file itself, never a
+// hand-maintained copy under board/web/ (design rev 5 S5.4 item 2, D15 -
+// "a hand-maintained mirror anywhere is a finding").
 func registerHandlers(mux *http.ServeMux, srv *Server) {
 	mux.HandleFunc("/api/snapshot", srv.handleSnapshot)
 	mux.HandleFunc("/api/stream", srv.handleStream)
-	mux.HandleFunc("/", srv.handleIndex)
+	mux.HandleFunc("/schema/yard-snapshot.schema.json", srv.handleWireSchema)
+	mux.Handle("/", http.FileServer(http.Dir(srv.cfg.WebDir)))
 }
 
 // handleSnapshot and handleStream both call marshalSnapshot (snapshot.go) -
@@ -74,12 +81,12 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// handleIndex is a placeholder "/" response - Car 5 (plan section 6) builds
-// the real board/web/ view; this server's job (task 4.3) is GET /, GET
-// /api/snapshot, GET /api/stream, nothing else.
-func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Write([]byte(`<!doctype html><html><head><title>StarCar yard board</title></head>` +
-		`<body><p>The yard board server is running. The view (board/web/) lands with Car 5.` +
-		` See <a href="/api/snapshot">/api/snapshot</a>.</p></body></html>`))
+// handleWireSchema serves schema/yard-snapshot.schema.json byte-for-byte
+// from disk - the SAME file board/store's Go-side adapter compiles
+// (cfg.SchemaDir), never a second copy vendored under board/web/. The
+// browser's validator (board/web/js/validate.js) fetches this route at
+// startup (design rev 5 S5.4 item 2: "a hand-maintained mirror anywhere is
+// a finding").
+func (s *Server) handleWireSchema(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, filepath.Join(s.cfg.SchemaDir, "yard-snapshot.schema.json"))
 }

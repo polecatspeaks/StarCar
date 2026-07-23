@@ -47,10 +47,19 @@ export function applyIncomingPayload(state, payload, validator) {
     };
   }
 
-  // Task 5.3 extends this branch with seq-ordering (apply only if seq
-  // exceeds the last applied) - see applyIncomingPayload's own test file
-  // history / the plan's task split. Until then a valid payload always
-  // replaces the snapshot outright.
+  // Seq ordering (task 5.3; schema/yard-snapshot.schema.json's own `seq`
+  // description: "the client applies a snapshot only if seq exceeds the
+  // last applied"). A payload whose seq does not EXCEED the last applied
+  // one is a stale/duplicate frame under normal SSE delivery and a
+  // deliberate no-op here - cheap (one integer comparison) and correct
+  // under the churn issue #27 describes (elapsed_seconds is unquantised,
+  // so seq can bump on nearly every poll while a dispatch is actively
+  // running; this comparison must never grow heavier than an int compare
+  // regardless of how often it runs).
+  if (typeof payload.seq === 'number' && payload.seq <= state.lastAppliedSeq) {
+    return state;
+  }
+
   return {
     snapshot: payload,
     lastAppliedSeq: typeof payload.seq === 'number' ? payload.seq : state.lastAppliedSeq,

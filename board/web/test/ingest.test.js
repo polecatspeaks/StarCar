@@ -59,3 +59,40 @@ test('a VALID payload arriving after a discard clears the stale mark and the cli
   assert.deepEqual(state.clientConditions, []);
   assert.deepEqual(state.snapshot, { seq: 2, lanes: [] });
 });
+
+// --- seq ordering (task 5.3; design rev 5 S5.4/S5.6; issue #27 context) ---
+//
+// "The client applies a snapshot only if seq exceeds the last applied"
+// (schema/yard-snapshot.schema.json's own `seq` description). Issue #27:
+// while a dispatch is actively running, `elapsed_seconds` is unquantised
+// and can bump `seq` on nearly every poll - this comparison must stay a
+// single cheap integer check under that churn, never anything heavier.
+
+test('a VALID payload with a LOWER seq than the last applied is a no-op (stale/duplicate frame, cheap under churn)', () => {
+  const validator = createValidator(miniSchema);
+  let state = initialIngestState();
+  state = applyIncomingPayload(state, { seq: 5, lanes: [] }, validator);
+  const beforeStale = state;
+
+  state = applyIncomingPayload(state, { seq: 3, lanes: ['should-be-ignored'] }, validator);
+  assert.deepEqual(state, beforeStale, 'a lower seq must be dropped as a no-op, never applied and never even marked stale');
+});
+
+test('a VALID payload with an EQUAL seq to the last applied is also a no-op (seq must EXCEED, not just reach, the last applied)', () => {
+  const validator = createValidator(miniSchema);
+  let state = initialIngestState();
+  state = applyIncomingPayload(state, { seq: 7, lanes: [] }, validator);
+  const beforeEqual = state;
+
+  state = applyIncomingPayload(state, { seq: 7, lanes: ['should-be-ignored'] }, validator);
+  assert.deepEqual(state, beforeEqual);
+});
+
+test('a VALID payload with a HIGHER seq applies normally', () => {
+  const validator = createValidator(miniSchema);
+  let state = initialIngestState();
+  state = applyIncomingPayload(state, { seq: 1, lanes: [] }, validator);
+  state = applyIncomingPayload(state, { seq: 2, lanes: ['x'] }, validator);
+  assert.deepEqual(state.snapshot, { seq: 2, lanes: ['x'] });
+  assert.equal(state.lastAppliedSeq, 2);
+});
