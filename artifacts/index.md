@@ -97,3 +97,4 @@ dispatch batch between regenerations.
 | a0ff9e48c78041347 | dispatched | 2026-07-23T15:00:36Z |  | a0ff9e48c78041347/dispatched-20260723T150036Z.json |
 | accbde6200eebcfc4 | dispatched | 2026-07-23T15:07:53Z |  | accbde6200eebcfc4/dispatched-20260723T150753Z.json |
 | accbde6200eebcfc4 | returned | 2026-07-23T15:11:58Z | REJECT | accbde6200eebcfc4/returned-20260723T151158Z.json |
+| accbde6200eebcfc4 | returned | 2026-07-23T15:14:39Z | APPROVE | accbde6200eebcfc4/returned-20260723T151439Z.json |
