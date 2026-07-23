@@ -1,0 +1,5 @@
+ok playwright will make our adversarial reviews much tighter and more agressive now
+
+---
+
+you're correct 100%, but playwright gives the adversary better tooling to dig out those majors for us
