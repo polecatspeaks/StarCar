@@ -115,7 +115,7 @@ reads or writes it; it is out of `board/server`'s process boundary entirely.
 ## Question 3, added (2026-07-23, yard-board train Car 5, plan task 5.3) - the browser's own state
 
 **Landed, confirming the note above rather than trueing it away from - the note held.**
-`board/web/js/app.js` owns four in-memory fields, all VIEW-TRANSIENT (per-tab, never
+`board/web/js/app.js` owns five in-memory fields across four lifecycle rows [C5R-1, swept], all VIEW-TRANSIENT (per-tab, never
 persisted, never sent anywhere): `ingestState.snapshot` (the last VALIDATED wire
 snapshot), `ingestState.lastAppliedSeq` (the seq-ordering row below), `ingestState.
 markedStale` + `ingestState.clientConditions` (task 5.2's discard-keeps-last-render

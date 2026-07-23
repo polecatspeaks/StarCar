@@ -445,7 +445,19 @@ the fresh reviewer finds a ruling unsound against evidence. New questions, real 
    (a migration touching the landed harness suite)? Neither is free; rule on which debt
    is cheaper to hold.
 
-## §12b - Spec-rung amendments (binding; supersede the named text above)
+## §12b - Spec-rung and car-rung amendments (binding; supersede the named text above)
+
+**Amendment 3 (2026-07-23, Car 5 + its review - the EventSource substrate discovery):**
+D9/D19's transport is amended from "SSE via `EventSource`" to "SSE via a
+browser-native reader" - implemented as `fetch`+`ReadableStream`
+(`board/web/js/sse-protocol.js`). The premise that broke the letter of the original:
+the server's heartbeat is a bare SSE comment (deliberately state-invisible), and
+native `EventSource` fires NO event for comment lines, making the
+two-missed-heartbeats disconnect rule unimplementable against that API. The
+substitute honors D19's rationale in full (vanilla JS, browser-native, zero build
+step) and was proposed by the car as a CANDIDATE, ruled faithful by its reviewer,
+and ratified here - the letter amended, the rationale intact, the discovery recorded
+as the substrate probe it is.
 
 **Amendment (2026-07-23, on spec approval - the spec's §7 obligation, conductor-landed):**
 
