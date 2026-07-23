@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a0ff9e48c78041347",
+  "session_id": "64c15364-0933-4d6d-9b2e-d1ddbc918f9f",
+  "at": "2026-07-23T15:38:45Z",
+  "outcome": "done",
+  "findings": "none",
+  "abstract": "Car 3 (yard-board train) completed all five tasks (3.1, 3.2, 3.R, 3.3, 3.4) in the mandated order, one commit per task, on branch car/board-car3 from verified base 896e10e. Task 3.1 rehomed 11 of 15 Detector.Tests.ps1 imperative cases into schema/vectors/fold/ declarative fixtures plus one new semantic vector, converted the suite into a fixture-driven runner using Pester -ForEach (after diagnosing and fixing a real Pester v5 discovery/run scope-boundary defect), and kept the four named carved-out cases imperative. Task 3.2 fixed the empty-vocab detector bug red-first (quoted RED and GREEN), disclosing and fixing a genuine PowerShell if-expression array-unrolling defect found along the way, and proved real-store parity before and after. Task 3.R closed the patternProperties-key gap in board/re2.go, red-first, confirming propertyNames was already covered. Task 3.3 ported the fold to Go as board/fold, matching the literal Fold(records, vocab, now) interface, passing all vectors, with a deliberate non-vacuity fault-injection proof (since it passed green on first attempt) and own-idiom env-fault tests for the two carved-out cases. Task 3.4 added the D18 cross-verifier CI step and locally verified its command logic in both green and injected-divergence directions via the CiWrapperSimulation technique, catching and fixing a real Go test-cache staleness bug (missing -count=1) along the way. Final state: Pester 217/217 (0 inconclusive), board Go suite 6/6 + board/fold 3+14 tests all green, real-store detector output unchanged (faults=[], discoveries=[], 49 dispatches, 1 intent), probe-yard-snapshot.mjs PASS. Working tree is clean with no untracked files. The live CI-watched divergence injection remains an explicit conductor handback at merge, not claimed by this car.",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:5d9cbb2688560f17ea968c128f3a4a49a42edc9031ffcddf7d45124fe9f83443"
+}
