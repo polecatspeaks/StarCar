@@ -127,6 +127,7 @@ body {
 
 .register-nominal {
   border-left-color: var(--nominal);
+  color: var(--nominal);
 }
 .register-in-progress {
   border-left-color: var(--in-progress);
