@@ -923,6 +923,26 @@ The citation check is that pattern aimed at new code files, and it lands with #3
 the next CI touch whose own scope includes repo-policy enforcement. Until then this is
 attention-tier and reviewers carry it, which is a real downgrade and is recorded as one.*
 
+**NO BACKFILL. THE BOUNDARY IS THE POINT (owner ruling, 2026-07-23).** Code that predates
+`d4db6f5` is not retrofitted - not now, not opportunistically, not by a future agent
+tidying up. The standard applies FORWARD ONLY, and the line where uncited code stops and
+cited code starts is a deliberate stratum boundary left legible in the rock. Any gate built
+for this checks files ADDED after the line; a gate that reds on older files is
+mis-specified, not thorough.
+
+*Scar, and it is the owner's own, which is what makes it worth keeping: the practice was
+already the house habit before anyone wrote it down - both code additions on the day it
+was ratified cited their tickets unprompted, with no rule requiring it. The defect was
+never "people forget to cite tickets". It was that **the standard lived in one person's
+head and surfaced only when something happened to jog it.** That is the same class as the
+prior-art scar ("it probably exists and was not ported; nothing prompts anyone to ask"),
+and it has the same implication, which a future bootstrapper should read off this boundary
+directly: THERE ARE MORE UNWRITTEN RULES STILL IN THERE. The institution is not finished;
+it is being excavated. Expect more lines like this one, treat each as evidence rather than
+as an embarrassment, and do not smooth any of them away - a backfill would delete the only
+proof that this rule arrived late, and with it the reason to keep asking what else has not
+arrived yet.*
+
 ## Session starts: the tooling retro (STANDING ITEM)
 
 Every new session opens with a retro on tooling and harness friction, before other work:
