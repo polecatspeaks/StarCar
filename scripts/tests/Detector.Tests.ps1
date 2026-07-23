@@ -130,6 +130,21 @@ Describe 'Detect-Dispatches' {
         $lit.spend.output_tokens | Should -Be 23
     }
 
+    It 'recognises done, CONFIRM, and done-with-findings as outcome vocabulary (YB-3) - no discovery raised' {
+        # YB-3 (spec 2026-07-23-yard-board S2): done/CONFIRM were OBSERVED in the live
+        # store (5 and 3 records respectively) firing discoveries; done-with-findings is
+        # enumerated by the envelope contract (docs/templates/car-brief.md:47-48). All
+        # three must be recognised outcome vocabulary, not discoveries.
+        $store = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+        New-Record -Store $store -Subject 'disp-done'      -Kind 'returned' -At '2026-07-22T10:00:00Z' -Outcome 'done'
+        New-Record -Store $store -Subject 'disp-confirm'   -Kind 'returned' -At '2026-07-22T10:00:01Z' -Outcome 'CONFIRM'
+        New-Record -Store $store -Subject 'disp-dwf'       -Kind 'returned' -At '2026-07-22T10:00:02Z' -Outcome 'done-with-findings'
+        $fold = Invoke-Detector -StoreRoot $store -Now '2026-07-22T11:00:00Z'
+        $fold.discoveries | Should -Not -Contain 'outcome: done'
+        $fold.discoveries | Should -Not -Contain 'outcome: CONFIRM'
+        $fold.discoveries | Should -Not -Contain 'outcome: done-with-findings'
+    }
+
     It 'an unrecognised vocabulary value is reported BY NAME as a discovery' {
         $store = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
         New-Record -Store $store -Subject 'mig-1' -Kind 'migrated' -At '2026-07-22T10:00:00Z'
