@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "bf390acab02f",
+  "strategy": "manual-commit",
+  "branch": "dev",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "docs/design/2026-07-21-v0-yard-skeleton-design.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/bf/390acab02f/0/metadata.json",
+      "transcript": "/bf/390acab02f/0/full.jsonl",
+      "compact_transcript": "/bf/390acab02f/0/transcript.jsonl",
+      "content_hash": "/bf/390acab02f/0/content_hash.txt",
+      "prompt": "/bf/390acab02f/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1885,
+    "cache_creation_tokens": 12116096,
+    "cache_read_tokens": 439469588,
+    "output_tokens": 1279389,
+    "api_call_count": 943
+  }
+}
