@@ -4,7 +4,7 @@
   "input": {
     "records": [
       { "schema": "starcar-artifact/1", "kind": "dispatched", "subject": "abc123", "session_id": "s1", "at": "2026-07-23T10:00:00Z", "normalisation": [], "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000" },
-      { "schema": "starcar-artifact/1", "kind": "returned", "subject": "abc123", "session_id": "s1", "at": "2026-07-23T10:05:00Z", "outcome": "done", "findings": "none", "abstract": "x", "normalisation": [], "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000" },
+      { "schema": "starcar-artifact/1", "kind": "returned", "subject": "abc123", "session_id": "s1", "at": "2026-07-23T10:05:00Z", "outcome": "dane", "findings": "none", "abstract": "x", "normalisation": [], "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000" },
       { "schema": "starcar-artifact/1", "kind": "intent", "subject": "train:t1", "session_id": "s1", "at": "2026-07-23T10:01:00Z", "normalisation": [], "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000" }
     ],
     "vocab": {
@@ -22,7 +22,7 @@
         "state": "returned",
         "at": "2026-07-23T10:05:00Z",
         "superseded": [ { "kind": "dispatched", "at": "2026-07-23T10:00:00Z" } ],
-        "outcome": "done",
+        "outcome": "dane",
         "spend": "absent"
       }
     ],
