@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "2db32c0780b4",
+  "strategy": "manual-commit",
+  "branch": "dev",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "CLAUDE.md",
+    "docs/friction-log.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/2d/b32c0780b4/0/metadata.json",
+      "transcript": "/2d/b32c0780b4/0/full.jsonl",
+      "compact_transcript": "/2d/b32c0780b4/0/transcript.jsonl",
+      "content_hash": "/2d/b32c0780b4/0/content_hash.txt",
+      "prompt": "/2d/b32c0780b4/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 2671,
+    "cache_creation_tokens": 18325637,
+    "cache_read_tokens": 676985665,
+    "output_tokens": 1642225,
+    "api_call_count": 1336
+  }
+}
