@@ -65,6 +65,14 @@
       "type": "string",
       "description": "Optional. Not spec-mandated (S3.4 governs cost/context optionality and names no such field). Basis: Law 7 metadata naming the emitting adapter, optional exactly as cost is."
     },
+    "model": {
+      "type": "string",
+      "description": "Optional, dispatched-only. Issue #26: an observed producer field with clear provenance, not spec-mandated - written by scripts/Produce-Artifact.ps1:285 only when kind=dispatched, sourced from the Task tool_response's resolvedModel (scripts/Produce-Artifact.ps1:204). Same open-posture-extra class as producer/cost. Not part of the canonical field order in schema/index-format.md (a disclosed producer deviation, not an omission)."
+    },
+    "body_file": {
+      "type": "string",
+      "description": "Optional, returned-only. Issue #26: an observed producer field with clear provenance, not spec-mandated - written by scripts/Migrate-Verdicts.ps1:152 on migrated verdict records, the store-root-relative path to the verdict's landed markdown body. That script's own header (scripts/Migrate-Verdicts.ps1:22) already calls it 'an open-posture extra'. Same open-posture-extra class as producer/cost. Not part of the canonical field order in schema/index-format.md (a disclosed producer deviation, not an omission)."
+    },
     "normalisation": {
       "type": "array",
       "description": "Declared in each landed artifact. Empty array means nothing was substituted.",

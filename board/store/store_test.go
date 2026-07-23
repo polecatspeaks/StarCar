@@ -342,6 +342,60 @@ func TestScanTrainManifestRecordSurvivesAndIsNotFlaggedUnknown(t *testing.T) {
 	}
 }
 
+// TestScanKnownProducerFieldsNotUnrecognised is the red-first pin for issue
+// #26: `model` (Produce-Artifact.ps1:285, dispatched-only, sourced from the
+// Task tool_response's resolvedModel) and `body_file` (Migrate-Verdicts.ps1:152,
+// migrated returned verdicts) are OBSERVED, PROVENANCED producer fields, not
+// unknown ones - they must join the known key-set the same way "manifest" did
+// (DR3-1 item 4) and must NOT trip record-unrecognised-fields.
+func TestScanKnownProducerFieldsNotUnrecognised(t *testing.T) {
+	a := newAdapter(t)
+	root := t.TempDir()
+	writeFixture(t, root, "dispatched-subj/dispatched-1.json", `{
+		"schema": "starcar-artifact/1",
+		"kind": "dispatched",
+		"subject": "dispatched-subj",
+		"session_id": "session-1",
+		"at": "2026-07-23T10:00:00Z",
+		"model": "claude-sonnet-5",
+		"normalisation": [],
+		"integrity": `+fakeIntegrity+`
+	}`)
+	writeFixture(t, root, "returned-subj/returned-1.json", `{
+		"schema": "starcar-artifact/1",
+		"kind": "returned",
+		"subject": "returned-subj",
+		"session_id": "session-1",
+		"at": "2026-07-23T11:00:00Z",
+		"outcome": "done",
+		"findings": "none",
+		"abstract": "migrated verdict",
+		"body_file": "reviews/2026-07-23-example.md",
+		"normalisation": [],
+		"integrity": `+fakeIntegrity+`
+	}`)
+
+	result, err := a.Scan(root, time.Now().UTC())
+	if err != nil {
+		t.Fatalf("Scan: %v", err)
+	}
+	if len(result.Records) != 2 {
+		t.Fatalf("expected both records to survive, got %d", len(result.Records))
+	}
+	if v, ok := result.Records[0].Fields["model"]; !ok || v != "claude-sonnet-5" {
+		t.Fatalf("the 'model' field's VALUE must be preserved in Fields, got %v", result.Records[0].Fields)
+	}
+	if v, ok := result.Records[1].Fields["body_file"]; !ok || v != "reviews/2026-07-23-example.md" {
+		t.Fatalf("the 'body_file' field's VALUE must be preserved in Fields, got %v", result.Records[1].Fields)
+	}
+
+	for _, c := range result.Conditions {
+		if c.Code == "record-unrecognised-fields" {
+			t.Fatalf("issue #26: 'model' and 'body_file' are declared producer fields with clear provenance and must NOT trip record-unrecognised-fields, got %v", c)
+		}
+	}
+}
+
 // TestScanValidRecordsSurvive is the baseline sanity case: ordinary
 // well-formed records with no anomalies survive with zero conditions.
 func TestScanValidRecordsSurvive(t *testing.T) {

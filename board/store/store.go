@@ -90,7 +90,13 @@ func NewAdapter(schemaDir string) (*Adapter, error) {
 // per-record unknown-field diff compares against. "manifest" is included per
 // DR3-1 item 4 - the manifest payload key joins the known key-set in the
 // same change that lands the manifest contract, so D17's disclosure never
-// fires on a well-formed manifest record.
+// fires on a well-formed manifest record. "model" and "body_file" are
+// included per issue #26: both are OBSERVED PRODUCER FIELDS WITH CLEAR
+// PROVENANCE (model: Produce-Artifact.ps1:285, dispatched-only, sourced from
+// the Task tool_response's resolvedModel; body_file: Migrate-Verdicts.ps1:152,
+// migrated returned verdicts), and the same epistemic rule that added
+// "manifest" applies here - an observed, provenanced producer field gets
+// DECLARED, not left to fire the unknown-field disclosure forever.
 type typedRecord struct {
 	Schema            string          `json:"schema"`
 	Kind              string          `json:"kind"`
@@ -106,6 +112,8 @@ type typedRecord struct {
 	Cost              json.RawMessage `json:"cost"`
 	ContextPeakTokens *float64        `json:"context_peak_tokens"`
 	Producer          string          `json:"producer"`
+	Model             string          `json:"model"`
+	BodyFile          string          `json:"body_file"`
 	Normalisation     json.RawMessage `json:"normalisation"`
 	Integrity         string          `json:"integrity"`
 	Manifest          json.RawMessage `json:"manifest"`
