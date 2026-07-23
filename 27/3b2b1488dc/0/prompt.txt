@@ -7096,3 +7096,7 @@ HAVAGLANCE is a theory that I read in a military fiction book. It boils down to:
 <status>completed</status>
 <summary>Background command "Watch CI for the NIRTS vocabulary push" completed (exit code 0)</summary>
 </task-notification>
+
+---
+
+oh you'll need to know this one: Full Sentence Flow. This is where a reviewer traces a whole data flow from generation, though to presentation. I believe there is something in our docs about this scar.
