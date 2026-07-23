@@ -7082,3 +7082,7 @@ ah good call. NIRTS == Need It Right This Second. The other side of YAGNI
 ---
 
 standing house rule: if I throw terms or acronyms you don't understand, pause and ask for clarification. I have a lot of terms like NIRTS or HAVAGLANCE that will confuse you.
+
+---
+
+HAVAGLANCE is a theory that I read in a military fiction book. It boils down to: Can I have a glance at it and understand everything it's trying to tell me in that glance.
