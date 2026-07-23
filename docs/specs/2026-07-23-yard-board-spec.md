@@ -189,6 +189,24 @@ truth), first-poll window (`never-polled` vs `not-applicable`).
 | `README.md` + quickstart | the board exists; local-only; "no adapters" line dies | view car |
 | `docs/setup.md` | Go toolchain row; #3/#4 land-or-re-park | toolchain car |
 
+## 7b. Plan-rung amendments (binding; supersede the named text above)
+
+**Amendment (2026-07-23, plan review round 1, PB-1/PB-3 - inherited blind spots
+resolved at the rung that hit them):**
+
+1. **YB-10's scope refined:** "the existing `Detector.Tests.ps1` imperative cases
+   migrate" applies to the cases expressible as pure fold semantics (records + vocab
+   + now → outputs). Environmental/pwsh-IO cases - unreadable-vocab-dir,
+   unreadable-defaults-path, the tier assertion, the shop-default-injection case -
+   are NOT rehomable under the runner contract (path-bearing fault strings and
+   excluded fields) and remain imperative per-language tests; each fold
+   implementation carries own-idiom equivalents for the environmental behaviours.
+   Total coverage is preserved and its arithmetic stated at migration.
+2. **§7's table gains the dropped carrier row:** `scripts/tests/StoreIntegrity.Tests.ps1`
+   | extended so `^train:` records are ALSO validated against
+   `schema/starcar-manifest.schema.json` (YB-1's enforcement clause, previously
+   stated but tasked nowhere) | schema car.
+
 ## 8. Backfill (Q6 ruling folded)
 
 One coarse `train:pre-harness-era` manifest by default, grouping the migrated records
