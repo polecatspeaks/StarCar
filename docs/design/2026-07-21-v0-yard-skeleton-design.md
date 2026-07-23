@@ -1,9 +1,15 @@
 # Design: v0 yard skeleton
 
 Status: Open
-State: **rev 5 - round 3 findings folded** - awaiting design review round 4 (FRESH
-reviewer: the mechanical rotation trigger fires at round count 4; the landed verdicts
-are the round-history carrier)
+State: **rev 5 APPROVED at design review round 4 (2026-07-23, 0 Major, 2 Minor) -
+proceeds to the SPEC rung.** DR4-1 (empty-vocab vector homes
+with the FOLD vectors, on the D18 cross-verifier's path) and DR4-2 (the pwsh detector's
+empty-vocab edit is a named scoped task) fold into the spec revision. Q6-Q8 ruled
+binding (coarse backfill default; `train:` prefix KEPT with guardrails; vectors rehome
+to a language-neutral `schema/vectors/`). The round-4 reviewer was FRESH under the
+mechanical rotation trigger and reviewed cold from the landed verdicts alone - the
+record sufficed; rotation is proven outside the drill. Verdict:
+`artifacts/reviews/2026-07-23-design-v0-round4-APPROVE.md`. Convergence: 9 → 8 → 3 → 0.
 Issue: #1 (`area:view`)
 Date: 2026-07-21 (rev 3: 2026-07-22; rev 4: 2026-07-23; rev 5: 2026-07-23)
 Ladder rung: design (rung 1 of: design → spec → plan → cars)
@@ -455,6 +461,11 @@ the fresh reviewer finds a ruling unsound against evidence. New questions, real 
   Q1-Q5 ruled. Verdict verbatim: `artifacts/reviews/2026-07-23-design-v0-round3-REJECT.md`.
 - **Rev 5** (2026-07-23, this document): round 3 folded - every DR3 finding and Q ruling
   dispositioned inline (`[DR3-n, folded]` / `[Qn, ruling adopted]` markers; roll-up in
-  §9b). Awaiting round 4 under REVIEWER ROTATION (the mechanical trigger at round count
-  4): a fresh reviewer, briefed from the landed verdicts, rules on convergence and on
-  whether the folds are substance or drift.
+  §9b). **APPROVED at round 4** under REVIEWER ROTATION: the fresh reviewer
+  reconstructed the series from the landed verdicts alone (record ruled sufficient - the
+  rotation doctrine proven outside the drill), walked every disposition PRESENT with
+  zero DRIFTED, re-verified the substrate citations and probes independently, found 2
+  Minor (DR4-1 vector homing, DR4-2 detector-edit scoping - both spec-revision items),
+  and ruled convergence HEALTHY AND TERMINAL: 9 → 8 → 3 → 0 Major. Q6-Q8 ruled binding.
+  The spec rung inherits the verdict's seven-item executable-obligations handoff.
+  Verdict: `artifacts/reviews/2026-07-23-design-v0-round4-APPROVE.md`.
