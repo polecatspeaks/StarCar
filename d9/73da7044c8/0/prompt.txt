@@ -7636,3 +7636,60 @@ abstract: Car 3 fix cycle round 2 is APPROVE, merge clear. The round-1 Major - t
 <status>completed</status>
 <summary>Background command "Watch CI for the handback-record push" completed (exit code 0)</summary>
 </task-notification>
+
+---
+
+<task-notification>
+<task-id>a093b1df791839bd5</task-id>
+<tool-use-id>toolu_018xF7ffuyXKkXBfSHnN286C</tool-use-id>
+<output-file>C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\f2abfa3b-6242-44cc-997f-b970da29a104\tasks\a093b1df791839bd5.output</output-file>
+<status>completed</status>
+<summary>Agent "Car 4: the server" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>All verification complete. Here is my final report.
+
+## Summary
+
+Verified base at start: `bef57f5c16c1cbd59484ed915ae41eeb6b63f636` on branch `car/board-car4` — matched (plan base `c4daeae` plus cars 1-3 merged; bef57f5 is the tip after conductor's CI-divergence-proof revert). No contradiction found; proceeded.
+
+**Commits (in order):**
+- `b18c950` — `board/store`: StoreAdapter (task 4.1)
+- `8261ba0` — `board/assemble`: the Assembler (task 4.2), plus a same-commit schema fix (dispatchesPayload's missing `budget_source`)
+- `a3fa33d` — `board/server`: the Go server (task 4.3) + living contracts (task 4.4, same commit)
+- `099ac49` — self-caught doc fix: the poll-timer ledger row was missing from the previous commit
+
+### Task 4.1 — `board/store` (`C:/Users/Chris/AppData/Local/Temp/claude/C--Users-Chris-git-starcar/64c15364-0933-4d6d-9b2e-d1ddbc918f9f/scratchpad/car-board-4/board/store/store.go`)
+Red confirmed first (`undefined: Adapter`/`NewAdapter`), then green: 10 top-level tests + 2 subtests, all pass. Double-decode (typed struct + `map[string]json.RawMessage`) discloses unknown fields without quarantining them; schema-shape validation runs the pinned `jsonschema/v6` against both `starcar-artifact.schema.json` and the layered `starcar-manifest.schema.json` (Law 6, no reimplementation). Issue #24 closed: `time.Parse(time.RFC3339, at)` explicitly quarantines malformed/zoneless `at` before a record can reach `board/fold.Fold` — proven by a fixture test asserting zero survivors. Future-dated `at` quarantined the same way. `go vet`/`gofmt` clean.
+
+### Task 4.2 — `board/assemble` (`.../board/assemble/assemble.go`, `types.go`, `boarddefs.go`)
+10 tests, all green on first implementation. The two-step join (fold names the winning manifest; the Assembler fetches its raw payload, never re-selecting "latest" itself) is proven by `TestAssembleSupersedingManifestWins`. YB-14 (`manifest-membership-collision`) and DR3-3 (`subject-namespace-collision`) both red-first, both green. Found and fixed forward in the same commit: `schema/yard-snapshot.schema.json`'s `dispatchesPayload` had no slot for `budget_source`, which `board/fold` has emitted since Car 3's fix cycle — trued up with disclosure in the schema's own `$comment`.
+
+### Task 4.3 — `board/server` (package `main`, `.../board/server/*.go`)
+24 tests, all green. Poll loop with skip-not-queue guard (`TryBeginPoll`/`EndPoll`, atomic CAS); change detection excludes `seq`/all `asOf`-shaped fields but includes `freshness.kind`/`ageBucketMs`, seq assigned after comparison. Staleness proven to fire on data age regardless of `demoMode` (`TestDemoModeIsWireDisclosureOnlyAndStalenessStillFires`, a genuine fault-injection comparison, not just a positive case). SSE event name asserted against the schema's own `$defs.sseEventName.const`. `/api/snapshot`/`/api/stream` proven byte-identical over real HTTP. A real assembled snapshot validates against `schema/yard-snapshot.schema.json` via the pinned `jsonschema/v6`.
+
+**A real defect found and fixed in this same commit, red-first:** `board/fold.Output.Faults`/`Discoveries` were computed every poll and then silently discarded — never reaching the wire. `TestFoldDiscoveriesAndFaultsSurfaceAsBoardConditions` was red on arrival (`board=[]` for an unrecognised `kind`); `buildSnapshot` now folds both into the wire `board[]` array.
+
+**A second defect found and fixed:** the plan's own documented quickstart (`cd board &amp;&amp; go run ./server`) puts the process cwd one level *below* the repo root, but my first draft assumed cwd was the repo root — `board/artifacts` and `board/schema` don't exist. Added `resolveDefaultRepoRoot` (tested both invocation shapes) before this ever shipped.
+
+**Live-serve observation** (real store, real schema/vocab, real `config/harness-defaults.json`, `go run ./server` from `board/`, then killed): `curl http://127.0.0.1:4600/api/snapshot` returned `laneCount: 5`, all five registered lanes present (`dispatches/gates/trains:live`, `freight:dark`, `fuel:bagged`), 53 real dispatch entries (sample: `{"assigned":false,"at":"2026-07-22T03:44:34-04:00","outcome":"REJECT","spend":"absent","state":"returned","subject":"2026-07-21-design-v0-round1-REJECT","superseded":[]}`), 52 `record-unrecognised-fields` board conditions correctly naming the real store's `model` field, `vocabularies.positions` length 4. Confirmed stopped afterward (`curl` timed out, exit 28).
+
+### Task 4.4 — living contracts (same commit as 4.3, plus one self-caught follow-up)
+`docs/contracts/state-ledger.md`: 0 → 9 process-state fields (seq, lastGoodSnapshot, lastPollAt, pollInFlight, poll timer, per-lane lastGoodAsOf, connectedClients, lane-id set, vocab/default-budget pair), each verdicted across 4 lifecycle events; 8 SAFE, 1 DELIBERATE_CARRY. `docs/contracts/gating-matrix.md`: 3 → 8 surfaces; disconnect row explicitly discloses "server half only — the client flip is Car 5's" rather than over-claiming. The poll-timer row was missing from my first pass; caught on re-read and fixed in `099ac49` with an honest arithmetic correction, not an amend.
+
+### Findings / disclosed deviations (no HONEST-STOP needed — none blocked me)
+- Design S5.2 mentions a per-position `surfacesData` flag; the landed `schema/yard-snapshot.schema.json`/`board-defs.json` (Car 2's task 2.4) never carry it. I conformed to the *landed* schema (YB-4: the schema wins) rather than inventing a field it doesn't have — disclosed in `snapshot.go`'s `Lane` doc comment.
+- `ageBucketMs` quantisation bucket (5000ms) is my own disclosed choice — nothing pins the exact size.
+- "Clock steps back" (design's other half of the future-dated-`at` row) is handled only as a per-record future-dated-`at` quarantine at the store layer; a systemic backwards-clock-across-polls check was not built, since plan task 4.1's own fixture list names only "future-dated at."
+- Quarantine detail strings use store-root-relative paths, not the pwsh detector's absolute-path convention — a deliberate, safer choice consistent with this repo's path-normalisation law.
+- Added `board/.gitignore` (`*.exe`) after my own `go run` left a stray `board/server.exe` — caught before staging, never committed.
+
+### Suite state at HEAD (`099ac49`)
+`go test -count=1 ./...`: board 6, board/assemble 10, board/fold 4 (+17 vector subtests, Car 3's), board/server 24, board/store 10 (+2 subtests) — all green. `go vet ./...` clean. `gofmt -l ./...` empty. `Invoke-Pester ./scripts/tests`: **235/235** (unchanged baseline — no pwsh files touched). `node board/web/probe-yard-snapshot.mjs`: PASS (schema still compiles/validates after my additive `budget_source` fix). `git status`: clean.
+
+```starcar-artifact
+outcome: done
+findings: Two self-found-and-fixed defects landed same-train, both red-first: (1) board/fold's Faults/Discoveries were computed every poll and silently discarded, never reaching the wire - TestFoldDiscoveriesAndFaultsSurfaceAsBoardConditions was red on arrival (board=[]), fixed in commit a3fa33d. (2) the plan's own documented quickstart (cd board &amp;&amp; go run ./server) puts cwd one level below the repo root, which my first draft's path defaults did not account for - fixed with resolveDefaultRepoRoot, tested both invocation shapes, before it ever shipped. One same-commit schema fix: schema/yard-snapshot.schema.json's dispatchesPayload had no slot for budget_source though board/fold has emitted it since Car 3's fix cycle - trued up in commit 8261ba0. One self-caught documentation omission: the poll-timer ledger row was missing from the state ledger's first pass, caught on re-read and corrected with honest arithmetic in a follow-up commit (099ac49) rather than an amend. Disclosed, non-blocking scope notes: the design's per-position surfacesData flag never landed in the schema/board-defs.json Car 2 shipped, so this car conforms to the landed schema (no such field) per YB-4 rather than inventing one; ageBucketMs's 5-second quantisation bucket is an undictated, disclosed choice; "clock steps back" (the other half of one design failure-table row) was scoped out since plan task 4.1 only names future-dated at as a required fixture; the disconnect gating-matrix row is explicitly marked server-half-only since the client-side 2-missed-heartbeat flip is Car 5's. No plan-vs-code contradiction blocked any task; no HONEST-STOP was needed.
+abstract: Car 4 implemented board/store (StoreAdapter, double-decode with D17 unknown-field disclosure, schema-shape validation via the pinned jsonschema/v6, and issue #24's malformed/zoneless-at quarantine), board/assemble (the fold-winner-to-raw-manifest join per design 5.3, YB-14 manifest-membership-collision, DR3-3 subject-namespace-collision), and board/server (the poll loop with skip-not-queue and seq/asOf-excluding change detection, SSE with the schema-tethered event name, YB-15 demoMode proven non-suppressing via fault injection, and one-marshal-path byte identity proven over real HTTP), then landed docs/contracts/state-ledger.md and gating-matrix.md in the same commit as the state they describe. All four tasks are red-first with quoted red-then-green transitions; the wire output validates against schema/yard-snapshot.schema.json under the pinned validator; the server was run live against the real repo store and observed serving all five lanes, real dispatch data, and real disclosed board conditions, then stopped. Final state: go test -count=1 ./... all green across board/board/assemble/board/fold/board/server/board/store, go vet clean, gofmt empty, Pester 235/235 (unchanged baseline), the Node schema probe PASS, and a clean working tree at commit 099ac49 on branch car/board-car4.
+```</result>
+<usage><subagent_tokens>370581</subagent_tokens><tool_uses>176</tool_uses><duration_ms>2441398</duration_ms></usage>
+</task-notification>
