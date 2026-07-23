@@ -9,6 +9,12 @@ to this file about itself: find your word, understand it, leave. Deeper law live
 A term used in a ratified document and missing here is a defect - add it in the commit
 that notices.
 
+**Tense convention `[GL-1, folded]`:** plain present tense means the behavior RUNS
+today. Ratified-but-unbuilt behavior is marked `[RULED, in flight - ref]`; contracted
+design vocabulary for a surface not yet rendering (the board's lanes, registers,
+positions) is legitimate glossary content because a LANDED contract backs it, and its
+entries say which artifact does.
+
 ## House phrases (owner coinage or adoption)
 
 - **GEOLOGICAL DEVELOPMENT** - how this shop builds: substrates laid in readable order,
@@ -66,21 +72,36 @@ that notices.
 - **Liveness** - a dispatch's folded state: `dispatched` (in flight, within patience),
   `overdue` (silent past its budget), `returned` (came back), `presumed-lost`
   (a watchdog gave up; a late return still wins).
-- **Patience / budget** - the time a dispatch is granted before its silence becomes an
+- **Budget / effort** - the time a dispatch is granted before its silence becomes an
   alarm. Governs ALARM, never abort: blowing the budget makes work visible, not
-  failed. Declared as a class at the ticket (small/medium/large patience), frozen to
-  seconds at dispatch by the producer's stamp, enforced at the fold, disclosed on the
-  board via **budget_source** (`record` = the dispatch carried its own promise;
-  `default` = the shop's fallback patience was assumed).
+  failed. TODAY (landed): a record may carry its own `budget` in seconds; otherwise
+  the fold applies the shop default (`config/harness-defaults.json`, 1800s) at fold
+  time, and a silent dispatch past it folds to `overdue`. `[RULED, in flight - issue
+  #22, spec Amendment 2, Car 3's fix cycle]`: the ticket declares an **effort** class
+  (`lite`/`normal`/`heavy` - the work-side estimate; formerly "patience", renamed by
+  owner ruling), config maps class to seconds, the producer stamps the concrete
+  budget at dispatch (the frozen promise), and the fold discloses **budget_source**
+  (`record` vs `default`). None of that in-flight chain runs yet.
 - **Manifest** - a train's declaration: title, tickets, members with roles. Declares
   IDENTITY and membership only - status always comes from the fold, never the
   manifest. Direction of travel: derived from the kanban board and dispatch-time
   linkage rather than hand-written.
 - **Supersession** - a newer record for the same subject winning over an older one,
   with the older one still exposed. Nothing is edited; truth is appended.
-- **Detector / discovery** - the fold's instrument for vocabulary it does not
-  recognise: an unknown state renders loudly BY NAME as a discovery (a state nobody
-  enumerated yet), never coerced and never hidden.
+- **Detector** `[GL-2, folded]` - the tiered liveness-and-accountability mechanism
+  itself: the fold script (`scripts/Detect-Dispatches.ps1`) that reads the store and
+  answers "is every dispatch accounted for" (tier 1: the records alone; tier 2: a
+  second enumerable source, deferred).
+- **Discovery** - the fold's output for vocabulary it does not recognise: an unknown
+  kind, outcome, or state renders loudly BY NAME (a state nobody enumerated yet),
+  never coerced and never hidden.
+- **Producer** `[GL-3, folded]` - the hook (`scripts/Produce-Artifact.ps1`) that
+  writes store records mechanically when a dispatch starts and stops, harvesting the
+  envelope from the dispatch's own transcript. The reason nobody hand-writes history.
+- **Adapter** `[GL-4, folded]` - a pluggable data source behind the board's one seam:
+  something that can be polled for facts (the store is v0's sole adapter; the ticket
+  queue and spend gauge await theirs). Health travels inside an adapter's return
+  value, never beside it.
 - **Envelope** - the fenced `starcar-artifact` block ending every dispatch report:
   outcome, findings, abstract. How a `returned` record gets its outcome.
 - **Vector** - a conformance fixture: this pile of records in, exactly this fold truth

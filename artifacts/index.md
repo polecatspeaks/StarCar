@@ -101,3 +101,5 @@ dispatch batch between regenerations.
 | a0ff9e48c78041347 | returned | 2026-07-23T15:38:45Z | done | a0ff9e48c78041347/returned-20260723T153845Z.json |
 | ae55c4d7156cb410b | dispatched | 2026-07-23T15:40:14Z |  | ae55c4d7156cb410b/dispatched-20260723T154014Z.json |
 | ae55c4d7156cb410b | returned | 2026-07-23T15:57:24Z | REJECT | ae55c4d7156cb410b/returned-20260723T155724Z.json |
+| a5b5e3024cb48da0c | dispatched | 2026-07-23T16:15:32Z |  | a5b5e3024cb48da0c/dispatched-20260723T161532Z.json |
+| a5b5e3024cb48da0c | returned | 2026-07-23T16:20:43Z | REJECT | a5b5e3024cb48da0c/returned-20260723T162043Z.json |
