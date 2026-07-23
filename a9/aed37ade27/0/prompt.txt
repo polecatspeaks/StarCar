@@ -7512,3 +7512,7 @@ and this is where we start to see velocity really uptick. the more substrate we 
 ---
 
 spot check: Please provide citation and proof of TDD in the trains today. One citation is enough.
+
+---
+
+Spot check passed. That's pretty damn cool, if I do say so myself.
