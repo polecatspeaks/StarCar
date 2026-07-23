@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "04fd2acfeb03",
+  "strategy": "manual-commit",
+  "branch": "dev",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "artifacts/index.md",
+    "artifacts/reviews/2026-07-23-board-car3-review-round1-REJECT.md",
+    "docs/specs/2026-07-23-yard-board-spec.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/04/fd2acfeb03/0/metadata.json",
+      "transcript": "/04/fd2acfeb03/0/full.jsonl",
+      "compact_transcript": "/04/fd2acfeb03/0/transcript.jsonl",
+      "content_hash": "/04/fd2acfeb03/0/content_hash.txt",
+      "prompt": "/04/fd2acfeb03/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 2417,
+    "cache_creation_tokens": 13875414,
+    "cache_read_tokens": 574482907,
+    "output_tokens": 1538295,
+    "api_call_count": 1209
+  }
+}
