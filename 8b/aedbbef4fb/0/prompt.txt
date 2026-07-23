@@ -5575,3 +5575,7 @@ abstract: &gt;
 ---
 
 lets examine that cost. It is handrolled, and it has to be by reality. We can't automate a future pipeline we haven't built. We can't build it with out writing the manifest, and the manifest can't be written with out tickets. So it is hand rolled each time, but that's by need. THere is still provenence.
+
+---
+
+install approved
