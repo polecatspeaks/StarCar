@@ -128,8 +128,16 @@ Describe 'Detect-Dispatches (plan 3.1, spec YB-10) - carved-out cases + fixture-
             param($Expected, $Actual, [string]$Field, [string]$VectorName)
             $e = ConvertTo-FoldComparable $Expected
             $a = ConvertTo-FoldComparable $Actual
-            $eJson = $e | ConvertTo-Json -Depth 20 -Compress
-            $aJson = $a | ConvertTo-Json -Depth 20 -Compress
+            # -InputObject, never a pipe: piping an EMPTY array to ConvertTo-Json passes
+            # zero objects down the pipeline, so it never executes and $eJson/$aJson end up
+            # $null instead of the literal "[]" - silently comparing two nulls as "equal"
+            # for a doubly-empty field, and (worse) rendering a genuinely-empty actual as
+            # an uninformative "$null" in a failure message instead of "[]" when the
+            # expected side is non-empty (observed while red-pinning empty-vocab-one-fault,
+            # 3.2/YB-8: the correct fault-mismatch failure printed "but got $null" rather
+            # than "but got '[]'" until this fix).
+            $eJson = ConvertTo-Json -InputObject $e -Depth 20 -Compress
+            $aJson = ConvertTo-Json -InputObject $a -Depth 20 -Compress
             $aJson | Should -Be $eJson -Because "vector '$VectorName': field '$Field' must deep-equal 'expected.$Field' (schema/vectors/README.md's runner contract)"
         }
 
@@ -219,11 +227,6 @@ Describe 'Detect-Dispatches (plan 3.1, spec YB-10) - carved-out cases + fixture-
 
         It "vector: <VectorId>" -ForEach $vectorData {
             $vector = Get-Content $VectorPath -Raw | ConvertFrom-Json -DateKind String
-
-            if ($vector.name -eq 'empty-vocab-one-fault') {
-                Set-ItResult -Inconclusive -Because 'red-on-arrival pin for 3.2 (YB-8)'
-                return
-            }
 
             $fold = Invoke-FoldVectorRun -Vector $vector
             Assert-FoldFieldDeepEqual -Expected $vector.expected.faults      -Actual $fold.faults      -Field 'faults'      -VectorName $vector.name

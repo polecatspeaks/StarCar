@@ -11,7 +11,11 @@
 #                  docs/setup.md; shipping a wolf-crier to fill a row would violate the
 #                  severity philosophy the spec itself cites.
 #   generated_at : the Now used (injected or wall clock)
-#   faults       : board-level faults, ONE per unreadable read (S3.2), never N per record
+#   faults       : board-level faults, ONE per unreadable read (S3.2), never N per record.
+#                  A vocabulary file that reads and parses but carries zero values is a
+#                  FAULT too (valid-but-empty, design S6 DR3-2/spec YB-8), identical in
+#                  shape to the malformed-vocabulary fault: ONE combined string naming
+#                  every empty file, never a per-record fan-out.
 #   discoveries  : unrecognised kind/outcome values, reported BY NAME (S3.2), never a bug
 #   dispatches   : one entry per dispatch subject (dispatched|returned|presumed-lost)
 #   intents      : one entry per intent subject, latest-at winning (S3.1, Law 2)
@@ -68,8 +72,43 @@ $kindValues = @()
 $outcomeValues = @()
 $vocabOk = $true
 try {
-    $kindValues    = (Get-Content (Join-Path $VocabDir 'kinds.json') -Raw -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json).values
-    $outcomeValues = (Get-Content (Join-Path $VocabDir 'outcomes.json') -Raw -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json).values
+    $kindsParsed    = Get-Content (Join-Path $VocabDir 'kinds.json') -Raw -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json
+    $outcomesParsed = Get-Content (Join-Path $VocabDir 'outcomes.json') -Raw -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json
+    # The OUTER @(...) is load-bearing, not decoration: an if/else used as an expression
+    # unrolls an empty-array branch onto the output stream, and capturing ZERO pipeline
+    # objects into a variable yields $null, not an empty array (observed: `$v = if ($true)
+    # { @() } else { @() }` leaves $v as $null under Set-StrictMode -Version Latest, and
+    # $v.Count then throws PropertyNotFoundException). Wrapping the whole if/else forces
+    # array semantics on the RESULT rather than the branch, so a genuinely empty
+    # values:[] still yields a real zero-length array whose .Count is 0.
+    $kindValues    = @(if ($null -ne $kindsParsed.values)    { $kindsParsed.values }    else { @() })
+    $outcomeValues = @(if ($null -ne $outcomesParsed.values) { $outcomesParsed.values } else { @() })
+
+    # DR4-2 (spec YB-8, design rev 5 S6 [DR3-2]): a vocabulary file that reads and parses
+    # cleanly but carries ZERO values is neither missing nor malformed - it is VALID but
+    # EMPTY, and design S6 rules this identical in shape to the malformed-vocabulary fault:
+    # ONE combined board condition, and the detector must NOT fan out (the landed detector
+    # before this fix DID fan out here: with $vocabOk left true and both value arrays
+    # empty, every record's kind/outcome fails the `-notcontains` check and becomes a false
+    # "discovery" per record - observed 2026-07-23 against
+    # schema/vectors/fold/empty-vocab-one-fault.json: faults=[], discoveries=[kind:
+    # dispatched, kind: returned, outcome: done, kind: intent] - the N-wolf-cries cascade
+    # rev 2 MAJOR-3 rejected). Every empty file is named, alphabetically, in ONE fault
+    # string (the vector's exact pinned text is a cross-language contract surface, spec
+    # YB-8's disclosed posture).
+    $emptyVocabFiles = @()
+    if ($kindValues.Count -eq 0)    { $emptyVocabFiles += 'kinds.json' }
+    if ($outcomeValues.Count -eq 0) { $emptyVocabFiles += 'outcomes.json' }
+    if ($emptyVocabFiles.Count -gt 0) {
+        # "Identical to malformed" (design S6 DR3-2): a vocabulary fault suppresses
+        # discovery reporting entirely, the same way an unreadable vocab dir does below -
+        # never a partial per-file suppression, because a fold that discovers kinds off an
+        # empty outcomes vocabulary (or vice versa) is still discovering off vocabulary the
+        # design has already declared unusable.
+        $vocabOk = $false
+        $sortedEmpty = ($emptyVocabFiles | Sort-Object) -join ', '
+        $faults.Add("vocabulary: valid but empty: $sortedEmpty")
+    }
 } catch {
     $vocabOk = $false
     $faults.Add("vocab: could not read recognition vocabulary files from '$VocabDir'")
