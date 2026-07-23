@@ -355,6 +355,20 @@ func foldRecordsFrom(records []store.Record) []fold.Record {
 // that is actually observable STATE, never the bare passage of wall-clock
 // time. Panics only on a json.Marshal failure of a fully static Go value,
 // which cannot happen for this struct family - never reached in practice.
+//
+// DISCLOSED, OUT OF SCOPE (found writing the C4R-3 fix-cycle test, Car 4
+// review round 1): this function does NOT strip a "dispatched"-winner
+// entry's elapsed_seconds (board/fold.DispatchEntry, recomputed every poll
+// from now-at), which is a raw, continuously-increasing counter exactly
+// like the fields this function DOES strip - unlike ageBucketMs, it is not
+// quantised. A live train with an actively dispatched (not yet returned)
+// car will therefore see seq bump on every poll that ticks past a whole
+// second, not just on a real state change. Not fixed here: the review that
+// ordered this comment scoped the ask to ageBucketMs's inclusion direction
+// only, and this is a genuinely separate design question (should
+// elapsed_seconds be quantised the same way ageBucketMs is, and if so at
+// what granularity) that deserves its own decision, not a silent
+// side-fix riding on an unrelated commit.
 func mustMarshalStripped(snap Snapshot) []byte {
 	stripped := snap
 	stripped.Seq = 0

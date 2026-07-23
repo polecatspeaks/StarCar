@@ -51,3 +51,16 @@ client exists yet - `board/web/` is Car 5's task (plan section 6). Naming the sp
 rather than marking the whole row GATED on the strength of only the server's half, is the
 point of a living gating matrix: a reader must never infer client behaviour from a
 server-only test.
+
+**Disclosed finding, out of this fix cycle's scope (2026-07-23, found writing the C4R-3
+regression test, Car 4 review round 1 fix cycle):** the Staleness row's change-detection
+comparison (`mustMarshalStripped`, `poll.go`) strips `freshness.asOf`/`lastGoodAsOf` but
+does NOT strip a dispatched-winner entry's `elapsed_seconds` (`board/fold.DispatchEntry`,
+recomputed every poll from `now - at`) - unlike `ageBucketMs`, this field is not quantised,
+so a live train with an actively dispatched (not yet returned) car will bump `seq` on
+essentially every poll that crosses a whole second, not only on a real state change. Found,
+not fixed: the ordering review scoped this cycle's C4R-3 ask to `ageBucketMs`'s inclusion
+direction specifically, and whether `elapsed_seconds` should be quantised the same way (and
+at what granularity) is a genuinely separate design question, not a silent side-fix riding
+on an unrelated commit. Recorded here so it is a decision awaiting the conductor's triage,
+never a silently-dropped observation.

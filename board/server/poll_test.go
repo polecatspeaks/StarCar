@@ -204,6 +204,92 @@ func TestPollOnceChangeDetectionExcludesSeqAsOfIncludesFreshnessKind(t *testing.
 	}
 }
 
+// TestChangeDetectionFiresOnAgeBucketBoundaryCrossing (C4R-3, Car 4 review
+// round 1, Minor): mustMarshalStripped keeps freshness.kind/ageBucketMs and
+// strips only raw timestamps, so INCLUSION of ageBucketMs in change
+// detection is correct by construction - but nothing pinned the direction
+// that matters: a stale lane whose age crosses a 5000ms bucket boundary
+// between two polls (poll.go's ageBucketMsGranularity) must be seen as a
+// real change and bump seq, even though nothing else about the store
+// changed at all.
+//
+// The fixture is deliberately a RETURNED record, not a dispatched one: a
+// "dispatched" winner's elapsed_seconds recomputes every poll (fold.go),
+// which is NOT stripped by mustMarshalStripped and would confound this test
+// with a second, unrelated churn source (elapsed_seconds itself changes
+// every second, independent of ageBucketMs's 5-second quantisation) -
+// caught while writing this exact test (observed live: a dispatched fixture
+// bumped seq on a same-bucket 1-second gap purely from elapsed_seconds
+// ticking). Disclosed as its own finding in this car's report, out of this
+// fix cycle's stated scope (which asked only for the ageBucketMs-crossing
+// pin, not a redesign of elapsed_seconds churn) - a "returned" record has no
+// elapsed_seconds field at all (fold.go's DispatchEntry.MarshalJSON), so
+// this fixture isolates EXACTLY the ageBucketMs variable the review named.
+func TestChangeDetectionFiresOnAgeBucketBoundaryCrossing(t *testing.T) {
+	root := t.TempDir()
+	writeRecord(t, root, "s1/returned-1.json", `{
+		"schema": "starcar-artifact/1",
+		"kind": "returned",
+		"subject": "s1",
+		"session_id": "session-1",
+		"at": "2026-07-23T10:00:00Z",
+		"outcome": "done",
+		"findings": "f",
+		"abstract": "a",
+		"normalisation": [],
+		"integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+	}`)
+	srv := newTestServer(t, root)
+
+	recordAt := time.Date(2026, 7, 23, 10, 0, 0, 0, time.UTC)
+
+	// age = 16s -> stale (stalenessMs default 15000), ageBucketMs = 15000.
+	now1 := recordAt.Add(16 * time.Second)
+	snap1, changed1, err := srv.PollOnce(now1)
+	if err != nil || !changed1 {
+		t.Fatalf("first poll: snap=%+v changed=%v err=%v", snap1, changed1, err)
+	}
+	lane1 := laneByID(snap1, "dispatches")
+	if lane1.Freshness.Kind != "stale" || lane1.Freshness.AgeBucketMs == nil || *lane1.Freshness.AgeBucketMs != 15000 {
+		t.Fatalf("test setup: expected stale/ageBucketMs=15000, got %+v", lane1.Freshness)
+	}
+
+	// age = 21s -> STILL stale, but ageBucketMs = 20000 - a bucket crossing
+	// with NOTHING ELSE in the store having changed (a "returned" record's
+	// wire shape carries no elapsed_seconds, so it is byte-identical here
+	// apart from the bucket). This must still bump seq: ageBucketMs is
+	// included in change detection, by name, per design S5.6 and this
+	// package's own mustMarshalStripped doc comment.
+	now2 := recordAt.Add(21 * time.Second)
+	snap2, changed2, err := srv.PollOnce(now2)
+	if err != nil {
+		t.Fatalf("second poll: %v", err)
+	}
+	lane2 := laneByID(snap2, "dispatches")
+	if lane2.Freshness.AgeBucketMs == nil || *lane2.Freshness.AgeBucketMs != 20000 {
+		t.Fatalf("test setup: expected the second poll's ageBucketMs=20000 (a real bucket crossing), got %v", lane2.Freshness.AgeBucketMs)
+	}
+	if !changed2 {
+		t.Fatalf("a bucket-boundary crossing (ageBucketMs 15000 -> 20000) must be detected as a change, even with no other difference in the store")
+	}
+	if snap2.Seq != snap1.Seq+1 {
+		t.Fatalf("seq after a bucket crossing = %d, want %d", snap2.Seq, snap1.Seq+1)
+	}
+
+	// Control: a further advance that stays WITHIN the current bucket (age
+	// 22s -> still bucket 20000, same as snap2's) must NOT be a change -
+	// proving the crossing above is really about the bucket boundary, not
+	// merely "any later poll at all".
+	now3 := recordAt.Add(22 * time.Second)
+	snap3, changed3, err := srv.PollOnce(now3)
+	if err != nil {
+		t.Fatalf("third poll: %v", err)
+	}
+	if changed3 {
+		t.Fatalf("a same-bucket advance (22s, still bucket 20000) must NOT be a change; seq stayed %d then moved to %d", snap2.Seq, snap3.Seq)
+	}
+}
+
 // TestLastPollAtLedgerField: plan task 4.4's lastPollAt ledger row - nil
 // before any poll, and set to the injected "now" after each PollOnce call
 // (including a poll whose scan FAILS - lastPollAt records that an attempt

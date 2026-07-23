@@ -7,9 +7,10 @@ import (
 )
 
 // sseEventName is the SSE event name this server writes. It MUST equal
-// schema/yard-snapshot.schema.json's $defs.sseEventName.const - a test
-// (sse_test.go) asserts this against the schema's own constant, never
-// against a locally re-typed string with no tether back to the schema.
+// schema/yard-snapshot.schema.json's $defs.sseEventName.const -
+// TestSSEEventNameMatchesSchemaConstant (sse_const_test.go) asserts this
+// against the schema's own constant, never against a locally re-typed
+// string with no tether back to the schema.
 const sseEventName = "yard"
 
 // WireBoardCondition mirrors schema/yard-snapshot.schema.json's
@@ -75,7 +76,8 @@ type Snapshot struct {
 // marshalSnapshot is the ONE marshal path (design S5.4 item 5): both
 // /api/snapshot and /api/stream call this exact function, so their outputs
 // for the same Snapshot value are byte-identical by construction (pinned by
-// sse_test.go's byte-identity test), never two hand-maintained encodings.
+// TestSnapshotAndStreamShareOneMarshalPath, handlers_test.go), never two
+// hand-maintained encodings.
 func marshalSnapshot(s Snapshot) ([]byte, error) {
 	return json.Marshal(s)
 }

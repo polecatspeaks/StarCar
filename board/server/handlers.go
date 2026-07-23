@@ -16,7 +16,8 @@ func registerHandlers(mux *http.ServeMux, srv *Server) {
 // handleSnapshot and handleStream both call marshalSnapshot (snapshot.go) -
 // the ONE marshal path (design S5.4 item 5) - so their bytes for the same
 // Snapshot value are identical by construction, pinned by
-// sse_test.go's byte-identity test.
+// TestSnapshotAndStreamShareOneMarshalPath (handlers_test.go)'s byte-identity
+// test.
 func (s *Server) handleSnapshot(w http.ResponseWriter, r *http.Request) {
 	data, err := marshalSnapshot(s.CurrentSnapshot())
 	if err != nil {
