@@ -34,6 +34,16 @@
 #     tier 2 CI-REACHABLE; tier-2 ENUMERATION itself stays deferred (R6v2).
 #   - the UBUNTU matrix leg (#14): the measured proof artifact for the portability claim
 #     the README's badge waits on. pwsh is preinstalled on both GitHub-hosted images.
+#
+# Car 1 additions (yard-board plan, docs/plans/2026-07-23-yard-board-plan.md task 1.2):
+#   - actions/setup-go, driven by board/go.mod's `go` directive (not a hardcoded version
+#     here - board/go.mod is the one place the Go version is pinned, Law 6).
+#   - `go vet ./...` then `go test ./...`, both run with board/ as the working directory,
+#     on BOTH matrix legs.
+#   - zero-test refusal, same shape as the two Pester zero-test guards above: `go test`
+#     can exit 0 on a package with no test functions at all, so the exit code alone is
+#     not proof anything ran. The step parses `go test -json` output and counts distinct
+#     "run" actions; zero counted tests fails the build even if go test itself exited 0.
 
 name: CI
 
@@ -161,6 +171,45 @@ jobs:
             # A suite that runs zero tests and reports success is a lying instrument -
             # exactly the shape this repo rejects everywhere else.
             Write-Error "Pester discovered ZERO tests. A green run that asserted nothing is not a pass."
+            exit 1
+          }
+
+      - name: Set up Go (board/)
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: board/go.mod
+
+      - name: Run board Go vet + tests
+        shell: pwsh
+        working-directory: board
+        run: |
+          go vet ./...
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "go vet ./... failed in board/"
+            exit 1
+          }
+
+          # Zero-test refusal (same shape as the two Pester guards above): `go test`
+          # can exit 0 on a package tree with no test functions at all, so the exit
+          # code alone does not prove anything ran. `go test -json` emits one "run"
+          # action per test function invocation; count DISTINCT (Package, Test) pairs
+          # rather than trusting the process exit code in isolation.
+          $jsonLines = & go test ./... -json 2>&1
+          $testExit = $LASTEXITCODE
+          $jsonLines | ForEach-Object { Write-Host $_ }
+
+          $runEvents = $jsonLines | Where-Object { $_ -is [string] -and $_.TrimStart().StartsWith('{') } | ForEach-Object {
+            try { $_ | ConvertFrom-Json } catch { $null }
+          } | Where-Object { $_ -and $_.Action -eq 'run' -and $_.Test }
+          $testCount = ($runEvents | ForEach-Object { "$($_.Package)/$($_.Test)" } | Select-Object -Unique).Count
+          Write-Host "go test discovered $testCount test(s) in board/"
+
+          if ($testExit -ne 0) {
+            Write-Error "go test ./... failed in board/ (exit $testExit)"
+            exit 1
+          }
+          if ($testCount -eq 0) {
+            Write-Error "go test discovered ZERO tests in board/. A green run that asserted nothing is not a pass."
             exit 1
           }
 
