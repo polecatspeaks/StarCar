@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bdbjijjo1</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\e92f5a0b-1b9e-4913-98b3-c319b4d5e90b\tasks\bdbjijjo1.output</output-file>
+<status>completed</status>
+<summary>Background command "Watch CI to terminal state for the latest push" completed (exit code 0)</summary>
+</task-notification>
