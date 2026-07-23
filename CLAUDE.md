@@ -32,6 +32,21 @@ forbids, build everything NIRTS demands, and the gap between them is zero. A sur
 "NIRTS-honored" when it delivers exactly what its reader needs at the second of reading -
 the Solari-board glance, the ticket number that already existed.
 
+Third house phrase: **HAVAGLANCE** (owner adoption from military fiction, 2026-07-23) -
+*can I have a glance at it and understand everything it is trying to tell me in that
+glance.* The acceptance test for every information surface this shop builds, and the
+named form of Law 3's "a dispatcher resolves the board in one pass." The bar is TOTAL
+transmission in a single look: a surface can be glanceable and still fail HAVAGLANCE by
+delivering only half its story. The three-register color law, the verbatim state words,
+and the honesty chrome all exist to pass this test.
+
+**Standing interaction rule (owner, 2026-07-23):** the owner carries a large personal
+lexicon (NIRTS, HAVAGLANCE, more coming). When the owner uses a term or acronym the
+conductor does not know, PAUSE AND ASK - never infer. NIRTS proved the failure mode:
+the conductor's contextual inference was close-but-wrong, and close-but-wrong
+vocabulary compounds silently in a shop where conversation becomes doctrine. Once
+expanded, a term that does rule-work lands here; every term lands in conductor memory.
+
 **Right-sizing rule (read first):** the full ladder below is calibrated for consequential,
 multi-car work. Scale ceremony to stakes: a small, coverage-class change takes a car and
 one adversarial reviewer; only structural work (new subsystems, rewrites, cross-boundary
