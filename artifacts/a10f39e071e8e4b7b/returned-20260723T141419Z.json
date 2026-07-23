@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a10f39e071e8e4b7b",
+  "session_id": "64c15364-0933-4d6d-9b2e-d1ddbc918f9f",
+  "at": "2026-07-23T14:14:19Z",
+  "outcome": "APPROVE",
+  "findings": "Three Minor, zero Major. C1R-1 (Minor, doc) VENDOR.md line 42 dead citation - cites board/web/vendor/probe-yard-snapshot.mjs but the probe is at board/web/probe-yard-snapshot.mjs. C1R-2 (Minor, guard coverage) board/re2.go findPatterns walks the pattern keyword only, not patternProperties or propertyNames regex keys - latent hole, no current schema uses them so non-blocking. C1R-3 (Minor, doc precision) docs/setup.md #3/#4 ruling has an ambiguous \"that file\" antecedent (the Running them section lives in repo-policy-check-patterns.md not DocPolicy.Tests.ps1) and overstates that the section names the trigger for issues 3/4/6 to land together.",
+  "abstract": "Adversarial round-1 review of yard-board Car 1 (first Go in the repo) at HEAD 6152524 against base 2051ffe. All eight car claims independently re-derived by running. go test 4/4 PASS and go vet clean from board dir, repo root, and a foreign cwd (runtime.Caller root resolution holds). Pinned jsonschema v6.0.2 confirmed in go.mod and go.sum, compiles and validates the real store schema. RE2 probe red-first re-proven by injecting a lookahead into the real third schema yard-snapshot.schema.json and watching the checker fail naming the file and pattern, then restoring byte-identical - proves the glob reaches all three schemas. CI Go step extracted via ConvertFrom-Yaml and executed four ways: green exit 0 with 4 tests, tests-removed exit 1 via zero-test refusal while go test itself exited 0, injected failing test exit 1, compile error exit 1 caught by go vet first. Order of checks means a build failure surfaces as red not zero-test confusion; subtest over-count is harmless to a zero-vs-nonzero guard. The issue-20 staleness step if condition is byte-untouched. JS probe passes from both cwds with no experimental flags, all nine vendored files byte-identical to the npm 4.1.1 tarball, shasum and integrity match VENDOR.md exactly, zero bare or builtin imports, non-vacuity delete-lanes check executes. Pester 178/178 at HEAD, working tree clean. setup.md Go and Node rows and the issue 3/4 re-park ruling are sound with a genuinely narrower trigger. Three Minor doc and coverage findings, no Major, APPROVE. Live CI red on both matrix legs at merge is the deferred conductor-handback observation. All fault injections restored byte-identical, committed and pushed nothing.",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:63dab171f960b0cc759a744523fdfe41e1b13c1501e561a0436ffc8fb8672e8d"
+}
