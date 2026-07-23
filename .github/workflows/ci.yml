@@ -68,6 +68,37 @@
 #     (an empty scratch directory produced "tests 0" and exit 0), so the TAP reporter's
 #     "# tests N" trailer line is parsed and a zero count fails the build even though
 #     the process itself exited cleanly.
+#
+# Car 33 additions (issue #33, the #31 defect class): register-css.test.js (a regex over
+# board.css's TEXT) cannot see a computed-style/cascade defect - minidom.js has no CSS
+# engine, which is exactly how #31 (every row rendering in the needs-attention color)
+# passed all 50 node tests that existed the day it shipped. This car adds a REAL browser
+# to the SAME `node --test` suite (the playwright LIBRARY, never `@playwright/test` - one
+# test runner stays one test runner) driving the REAL board/server/ Go binary against the
+# REAL artifacts/ store (never a mock, never a static fixture page - owner's binding
+# amendment). Two new steps land before the node --test step: `npm ci` (board/web/'s
+# first package.json/package-lock.json, TEST-side only per docs/setup.md's Node.js row)
+# and `npx playwright install --with-deps --only-shell chromium` (--only-shell: headless
+# Chromium launches chrome-headless-shell by default - OBSERVED via DEBUG=pw:browser -
+# so installing only that variant was measured to cut the download from ~690 MiB to
+# ~274 MiB; --with-deps installs ubuntu-latest's system libraries, a no-op on
+# windows-latest). BOTH matrix legs run it (no reasoned single-leg deferral here: the
+# added footprint was measured small enough, and the whole point of this repo's
+# dual-OS matrix - #14's own portability proof - is that a browser/CSS defect could
+# plausibly render differently per OS, so skipping a leg would defeat the reason a
+# second leg exists). The browser download is CACHED (actions/cache@v4), keyed on
+# runner.os + a hash of board/web/package-lock.json: the chromium build Playwright
+# installs is pinned 1:1 to the playwright package version, so a lockfile-hash key is
+# sufficient invalidation (a version bump changes the hash and forces a fresh
+# download; nothing can "hit stale"). The cache PATH is OS-conditional
+# (`~/.cache/ms-playwright` on Linux, `~/AppData/Local/ms-playwright` on Windows -
+# Playwright's own documented default locations); including runner.os in the key means
+# the two legs' caches never collide. Failing loudly on a missing browser needed NO new
+# guard: OBSERVED directly (Car 33 report) -
+# with the browser binary absent, `chromium.launch()` throws inside the test's `before`
+# hook, both tests report `not ok`/`hookFailed`, `node --test`'s own exit code goes
+# non-zero, and the EXISTING zero-test-refusal step below already fails the build on
+# that exit code - a missing-browser CI run cannot read as a silent pass.
 
 name: CI
 
@@ -237,17 +268,68 @@ jobs:
             exit 1
           }
 
-      - name: Run board/web node --test suite (composition matrix, YB-6)
+      - name: Install board/web test dependencies (npm ci)
+        shell: pwsh
+        working-directory: board/web
+        run: |
+          # Issue #33: the FIRST package.json/package-lock.json in this
+          # repo, deliberately scoped to board/web/ (the only place with
+          # node tests) - a TEST-side dependency, gate-triggered by #33's
+          # own trigger (the #31 defect class: a computed-style/cascade bug
+          # that passed all 50 node tests because minidom.js has no CSS
+          # engine). The SHIPPED board/web/ runtime (js/, css/, index.html)
+          # still has no build step and no npm dependency - `npm ci` here
+          # installs nothing that ships (docs/setup.md's Node.js row).
+          npm ci
+
+      - name: Cache Playwright browser download
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.os == 'Windows' && '~\AppData\Local\ms-playwright' || '~/.cache/ms-playwright' }}
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('board/web/package-lock.json') }}
+
+      - name: Install Playwright chromium (headless shell only) for the real-browser test
+        shell: pwsh
+        working-directory: board/web
+        run: |
+          # --only-shell: `chromium.launch()` in headless mode (the only
+          # mode this suite uses) launches chrome-headless-shell, not full
+          # Chromium, by default - OBSERVED via DEBUG=pw:browser (Car 33
+          # report). Installing only the shell variant was measured to cut
+          # the download from ~690 MiB to ~274 MiB. --with-deps installs
+          # the Linux system libraries chrome-headless-shell needs
+          # (fontconfig, libnss3, etc.) on the ubuntu-latest leg; it is a
+          # harmless no-op on windows-latest (OBSERVED: this exact command
+          # exits cleanly on Windows with nothing extra to install).
+          npx playwright install --with-deps --only-shell chromium
+
+      - name: Run board/web node --test suite (composition matrix YB-6 + real-browser register regression, #33)
         shell: pwsh
         working-directory: board/web
         run: |
           # Plan task 5.1: the composition engine (compose.js) is a pure
           # module, matrix-tested by Node's stdlib test runner - no
-          # framework, no build step, no browser (board/web/js runs
-          # unmodified in both Node and a plain <script type="module">
-          # browser context). GitHub-hosted runners preinstall Node
-          # (docs/setup.md's Node.js row, same disclosure shape as the
-          # Pester/ConvertFrom-Yaml rows above); a stranger's box may not.
+          # framework, no build step for the SHIPPED view (board/web/js
+          # runs unmodified in both Node and a plain <script type="module">
+          # browser context; D19 still binds the browser runtime, never
+          # Node - docs/setup.md's Node.js row). GitHub-hosted runners
+          # preinstall Node (same disclosure shape as the Pester/
+          # ConvertFrom-Yaml rows above); a stranger's box may not.
+          #
+          # Issue #33 changes what this step ALSO does: one file in this
+          # suite (test/browser-register-cascade.test.js) drives a real
+          # Chromium (via the playwright LIBRARY, not @playwright/test -
+          # still one runner, one command) against the real board/server/
+          # Go binary (built on the fly via `go build`, using the `go`
+          # this job's earlier "Set up Go" step already put on PATH) reading
+          # the real artifacts/ store, because minidom.js's hand-rolled DOM
+          # shim has no CSS engine and cannot see a cascade/inheritance
+          # defect (issue #31, which passed all 50 tests that existed the
+          # day it shipped). The test asserts on getComputedStyle values
+          # ONLY, never a pixel diff (the owner's binding amendment on #33:
+          # windows-latest and ubuntu-latest rasterise fonts differently, so
+          # a pixel assertion would fail across legs for reasons unrelated
+          # to correctness).
           Write-Host "node $(node --version)"
 
           # Zero-test refusal, same shape as the Pester and Go guards above:
