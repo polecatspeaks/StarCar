@@ -7240,3 +7240,7 @@ yeah there it is, that's what we needed I think. what's even more we can use the
 <status>completed</status>
 <summary>Background command "Watch CI for the amendment push" completed (exit code 0)</summary>
 </task-notification>
+
+---
+
+ok for the record, how are we defining patience again? we're g onna need a human readable vocab sheet soon, if not already
