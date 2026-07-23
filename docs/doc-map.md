@@ -41,6 +41,7 @@ Documents here sort along three axes, not one:
 | `docs/templates/` (16 files) | reference + WORKED EXEMPLAR | LIVING | The rung artifacts: brief/design/spec/plan/ledger/matrix templates plus the two `*-patterns` docs, paired where possible with a worked-\* exemplar drawn from real wreckage (nine of those). The template dedup question belongs to the session-start retro's bounded check `[DM-1, fixed: the map's first committed count was 15, from memory; ls says 16 - the map's own reality-wins rule applied to itself one review later]` |
 | `.claude/agents/car.md` | reference | LIVING | The car agent definition - the toolset that structurally enforces no-nested-delegation |
 | `docs/doc-map.md` (this file) | reference (navigation) | LIVING | The map itself - a documentation surface like any other, subject to its own reality-wins rule |
+| `docs/glossary.md` | reference (vocabulary) | LIVING | The human-readable vocab sheet: house phrases, rail metaphor, store/fold terms, process terms - one or two sentences each, HAVAGLANCE-honored |
 
 ## DEV family - building and reviewing this code
 
