@@ -7896,3 +7896,47 @@ abstract: Round-2 delta re-review of Car 4's fix cycle (commit 5dd1fc8, one comm
 ---
 
 brainwave incoming: Ever bit of text on the dashbaord as it relates to the trains and the cars should be clickable to it's source/provenence/status
+
+---
+
+<task-notification>
+<task-id>a82c503743b088b8e</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\f2abfa3b-6242-44cc-997f-b970da29a104\tasks\a82c503743b088b8e.output</output-file>
+<status>completed</status>
+<summary>Agent "Car 5: the view + README" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>50/50 confirmed at HEAD `4e5fb8a`. Everything is verified and the worktree is clean. Let me compose the final report.
+
+## Summary
+
+**Base verified:** worktree at the assigned path, branch `car/board-car5`, base commit `bebfaefac06648e984998cdb13562754067f47f4` — confirmed via `git log -1` and `git branch --show-current` before any edit, matching the brief.
+
+**Final HEAD:** `4e5fb8a9ad9fe283406989629965b9a082e73833` (5 commits: `3dcbe56`, `27c2d94`, `374dd62`, `0fbc034`, `4e5fb8a`). Worktree clean, nothing pushed.
+
+### Task 5.1 — `board/web/js/compose.js`, YB-6 matrix, `node --test` CI leg (commit `3dcbe56`)
+Red: `node --test board/web/test/compose.test.js` failed `ERR_MODULE_NOT_FOUND` for `board/web/js/compose.js` (didn't exist). Green: 7/7, then 11/11 with `vocab.js`. The 30-case three-axis matrix asserts against an independently-computed expected register, not the SUT's own `mostSevereRegister`. Same commit: `.github/workflows/ci.yml` gained a `node --test` step with a zero-test-refusal guard, verified both directions locally (11/0 counted; `node --test` itself exits 0 on zero discovered tests, observed).
+
+### Task 5.2 — wire validation + discard (commit `27c2d94`)
+Red: `ERR_MODULE_NOT_FOUND` for `../js/validate.js`. Green: 15/15. Non-vacuity: the real vendored validator against the real schema validates a captured live `/api/snapshot` payload (`valid: true`) and rejects it with `lanes` deleted (`valid: false`).
+
+### Task 5.3 — the board (commits `374dd62`, `0fbc034`)
+`lanes.js`/`render.js` (34/34 green, tested against a real captured snapshot fixture), then static serving (`board/server/static_test.go`, red: `cfg.WebDir undefined`, then "still serves ... placeholder text"), `sse-protocol.js` (heartbeat watchdog using Node's built-in mock timers), seq ordering extension to `ingest.js`, `dom-writer.js` + hand-rolled `minidom.js` shim, `app.js`, `index.html`, `board.css`. Final: 50/50 `node --test`, 59/59 Go tests across all 5 `board/` packages, `go vet` clean, `gofmt -l` clean. `docs/contracts/gating-matrix.md`'s Disconnect row and `docs/contracts/state-ledger.md`'s new Q3 (browser state) updated same-commit.
+
+**Disclosed deviation (not a stop):** D19 (`docs/design/2026-07-21-v0-yard-skeleton-design.md:133`) names `EventSource` explicitly, but the server's heartbeat is a bare SSE comment (`board/server/sse.go:75-77`) which native `EventSource` delivers to no listener — making the gating matrix's "resets on any frame, data or heartbeat" rule (`docs/contracts/gating-matrix.md:43`, pre-existing) unimplementable against that API. Resolved with a raw `fetch`+`ReadableStream` reader (`sse-protocol.js`) — still vanilla JS/no build step, D19's underlying rationale intact — tested and disclosed in-commit and in the gating matrix. Flagged for the conductor as a candidate D19 amendment.
+
+### Task 5.4 — README quickstart (commit `4e5fb8a`)
+Verified from a **clean `git clone`** (not just this worktree): `GET /`, `/api/snapshot`, `/js/app.js` → 200; `/api/stream` → real `event: yard` SSE frame; the clean clone's snapshot validated (`valid: true`) via the same vendored validator the browser uses. `docs/doc-map.md` trued.
+
+### Task 5.5 — closing verification
+Ran the server from this worktree; confirmed all five lanes (real store, honest day-one/stale state, `freight`/`fuel` correctly carry no `data` key); curled every asset `app.js` transitively imports (all 200, correct `Content-Type: text/javascript`/`text/css`/`application/json`); ran the full suite (Node 50/50, Go 59/59, Pester 242/242, probe PASS); killed the server (port 4600 confirmed free). **Handback to conductor:** the actual human/browser look and screenshot — I have no browser tool in this session and did not fabricate one.
+
+**Other disclosures:** GitNexus MCP tools were not present in this session's toolset (impact analysis done by direct code/caller reading instead); `docs/setup.md`'s #6 quickstart-runner CI trigger is untouched (an owner-level maturity call, out of scope) though a real quickstart now exists; visual fidelity implements the binding contracts and the steering direction structurally, not pixel-perfect mockup polish (system font stacks, no network font fetch) — noted for the conductor's screenshot gate. No honest-stop was needed.
+
+```starcar-artifact
+outcome: done
+findings: Disclosed engineering deviation from design D19 (docs/design/2026-07-21-v0-yard-skeleton-design.md:133 names EventSource explicitly): the server heartbeat is a bare SSE comment (board/server/sse.go:75-77) invisible to native EventSource, making the pre-existing gating-matrix disconnect rule (any frame, data or heartbeat, resets the watchdog) unimplementable against that API. Resolved with a raw fetch+ReadableStream SSE reader (board/web/js/sse-protocol.js), tested (node --test) and disclosed in docs/contracts/gating-matrix.md's Disconnect row - flagged as a candidate D19 amendment for the conductor, not a silent substitution. Other disclosures: the wire's fresh freshness variant carries no ageBucketMs (only stale does), so live+fresh renders the word fresh alone rather than the mockup's illustrative fresh, 2s ago, honoring Rule 3 (no client-computed age) over the mock's illustrative text. Visual fidelity implements the binding contracts fully (three registers, verbatim state and outcome words, honesty chrome, bagged and dark dignity distinguished) and the steering direction structurally (track-schematic trains and gates, Solari dense rows for dispatches) but not pixel-perfect mockup polish - system monospace and condensed-sans font stacks instead of the named IBM Plex Mono and Barlow Condensed webfonts, so the board needs no network font fetch. GitNexus MCP tools were not present in this session's toolset, so impact analysis before edits was done by direct code and caller reading rather than the gitnexus_impact tool - disclosed rather than fabricated. docs/setup.md's number 6 quickstart-runner CI trigger was left untouched since its deferral is an owner-level CI-maturity judgment out of this car's scope, though a real, verified quickstart now exists which may inform that decision. No honest-stop was required; no plan-versus-code contradiction blocked any task.
+abstract: Car 5 implemented plan tasks 5.1 through 5.5 (docs/plans/2026-07-23-yard-board-plan.md section 6) on branch car/board-car5, base bebfaefac06648e984998cdb13562754067f47f4 verified before editing, five commits ending at 4e5fb8a9ad9fe283406989629965b9a082e73833, nothing pushed. Delivered board/web/ as a vanilla-ESM, no-build-step browser view (compose.js's pure Rules 1 through 4 composition engine with an exhaustive three-axis matrix test; validate.js and ingest.js for wire-schema-validated discard-keeps-last-render with client-side seq ordering; lanes.js and render.js as a pure view-model builder verified directly against a real captured live snapshot fixture; sse-protocol.js as a heartbeat-aware disconnect watchdog; dom-writer.js painting into a hand-rolled minimal DOM shim for Node-level smoke testing; app.js, index.html, and board.css wiring it together) plus board/server changes to serve that view and the wire schema statically, replacing the prior placeholder route. Final state, all observed directly at HEAD: node --test 50 of 50 passed in board/web; go test 59 of 59 passed across all five board/ packages with go vet and gofmt -l both clean; Invoke-Pester on scripts/tests 242 of 242 passed; Car 1's probe-yard-snapshot.mjs printed PROBE RESULT PASS. The README quickstart (cd board then go run ./server) was verified end to end from a clean git clone, not only this worktree, including a real SSE frame and schema validation of the served snapshot. The server was run against this repo's real artifact store, confirmed rendering all five lanes with honest day-one and stale-data states, then killed, with port 4600 confirmed free afterward. The actual human browser observation and screenshot remain the conductor's handback, disclosed honestly rather than fabricated.
+```</result>
+<usage><subagent_tokens>318987</subagent_tokens><tool_uses>189</tool_uses><duration_ms>2201340</duration_ms></usage>
+</task-notification>
