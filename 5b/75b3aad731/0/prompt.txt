@@ -8054,3 +8054,7 @@ abstract: Adversarial sentence-check review of Car 5 (the view car) of the yard-
 ---
 
 ok lets do the retro now
+
+---
+
+from my end, today was exactly why we spent a whole day getting all the documentation and harnesses and contracts. I think the crowning moment is the that fucking legit self heal with the backlog generated on it's own.
