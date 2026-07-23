@@ -155,6 +155,7 @@
               "superseded": { "type": "array" },
               "elapsed_seconds": { "type": "integer" },
               "budget_seconds": { "type": "integer" },
+              "budget_source": { "type": "string", "description": "Car 4 fix, folded same-commit (docs/plans/2026-07-23-yard-board-plan.md task 4.2): board/fold's shop-default budget threading (spec Amendment 2, issue #22) added this field to fold.DispatchEntry AFTER this $def first landed (Car 2, task 2.2); this schema had no slot for it even though the fold has emitted it since Car 3. Present only alongside a non-null budget_seconds - 'record' or 'default', disclosing which patience produced the rendered state (never a phantom source for a null budget)." },
               "spend": {},
               "assigned": { "type": "boolean", "description": "Yard inventory (unassigned) renders loudly, never silently." }
             },
