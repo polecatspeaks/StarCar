@@ -445,6 +445,19 @@ the fresh reviewer finds a ruling unsound against evidence. New questions, real 
    (a migration touching the landed harness suite)? Neither is free; rule on which debt
    is cheaper to hold.
 
+## §12b - Spec-rung amendments (binding; supersede the named text above)
+
+**Amendment (2026-07-23, on spec approval - the spec's §7 obligation, conductor-landed):**
+
+1. **Role tokens split** `[spec YB-2]`: §5.5's illustrative single-token role
+   `gate:<name>` is SUPERSEDED by two member fields - `role` (recognition vocabulary
+   `schema/vocab/roles.json`: `car`/`reviewer`/`gate`) plus optional `gate` naming
+   which gate. Keeps the recognition vocabulary unparameterised; ruled a legitimate
+   spec-rung refinement at spec round 1.
+2. **`statePathDisplay` renamed `storePathDisplay`** `[spec §3 deviation]`: the rev 3
+   relic named the retired state file; the field displays the STORE path. The wire
+   schema (`schema/yard-snapshot.schema.json`) carries the authoritative name.
+
 ## §13 - Revision history
 
 - **Rev 1** (2026-07-21): REJECT, 9 Major. **Rev 2** (2026-07-22): REJECT, 8 Major -

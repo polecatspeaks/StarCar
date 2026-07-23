@@ -1,9 +1,14 @@
 # Spec: the yard board (v0 walking skeleton)
 
 Status: Open
-State: rev 2 - round 1 REJECT (4 Major, 5 Minor) folded with `[SB-n, folded]` markers,
-awaiting delta re-review round 2. Verdict:
-`artifacts/reviews/2026-07-23-board-spec-round1-REJECT.md`
+State: **rev 2 APPROVED at delta round 2 (0 Major, 0 Minor, zero drifted; convergence
+4→0 terminal) - proceeds to the PLAN rung.** Round 1 REJECT (4 Major, 5 Minor) folded
+with `[SB-n, folded]` markers. Verdicts:
+`artifacts/reviews/2026-07-23-board-spec-round1-REJECT.md`,
+`artifacts/reviews/2026-07-23-board-spec-round2-APPROVE.md` (carries the five-item
+plan-rung handoff: blocking validator tests, the Go pattern-compile probe the standing
+RE2 rule needs, YB-9's watched-to-fire condition, the car split, living-contract
+restatements)
 Issue: #1 (`area:view`)
 Ladder rung: spec (rung 2), inheriting `docs/design/2026-07-21-v0-yard-skeleton-design.md`
 rev 5, APPROVED at design round 4 (`artifacts/reviews/2026-07-23-design-v0-round4-APPROVE.md`).
