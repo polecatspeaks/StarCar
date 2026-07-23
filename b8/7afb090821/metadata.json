@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "b87afb090821",
+  "strategy": "manual-commit",
+  "branch": "dev",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "docs/plans/2026-07-23-yard-board-plan.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/b8/7afb090821/0/metadata.json",
+      "transcript": "/b8/7afb090821/0/full.jsonl",
+      "compact_transcript": "/b8/7afb090821/0/transcript.jsonl",
+      "content_hash": "/b8/7afb090821/0/content_hash.txt",
+      "prompt": "/b8/7afb090821/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 2517,
+    "cache_creation_tokens": 14737785,
+    "cache_read_tokens": 612253524,
+    "output_tokens": 1579522,
+    "api_call_count": 1259
+  }
+}
