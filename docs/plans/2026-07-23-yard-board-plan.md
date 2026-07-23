@@ -242,7 +242,11 @@ Consumes: the wire schema and `/api/*` only - never the store, never the fold.
   FAILURE on both legs (run 30015240304, Watch-CI exit 10, recorded
   `.ci-checks/f050d284d.json`); revert `8b60056` observed green both legs (run per
   `.ci-checks/8b60056*.json`). The board leg is proven in both directions live.
-  Car 3's YB-9 divergence injection at merge remains.
+- Car 3's YB-9 cross-verifier watched-to-fire: **DONE 2026-07-23** - deliberate
+  one-character vector divergence `fada66d` (`done`→`dane` in
+  `subject-partition.json`) observed FAILURE on both legs (run 30026486901, Watch-CI
+  exit 10, recorded `.ci-checks/fada66dd6.json`); revert `bef57f5` observed green
+  both legs. The D18 guard is proven live in both directions over the 17-vector set.
 - Index reconciles + Watch-CI after every merge (standing practice).
 - The stale-color register ruling (issue #1 comment, pending owner) folds into Car
   5's brief before it rolls - `stale` renders in the needs-attention color unless the
