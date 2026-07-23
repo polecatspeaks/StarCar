@@ -207,6 +207,22 @@ resolved at the rung that hit them):**
    `schema/starcar-manifest.schema.json` (YB-1's enforcement clause, previously
    stated but tasked nowhere) | schema car.
 
+**Amendment 2 (2026-07-23, Car 3 review round 1 C3R-1, owner-ratified - REVERSES half
+of Amendment 1's item 1):** the shop-default budget case was MISCLASSIFIED as
+environmental/pwsh-IO. Reading `config/harness-defaults.json` is IO; APPLYING its value
+to render `overdue` is a fold SEMANTIC - proven by the reviewer constructing the
+divergence (pwsh `overdue`/1800 vs Go `dispatched`/null on identical budget-less
+input, the only killed-dispatch surface). The false premise cost one REJECT round and
+is recorded as the success outcome it is. Superseding requirements (issue #22, owner's
+best-of-both ruling): (a) the vector `input` shape gains an optional shop-default
+field and a vector pins budget-less-past-default → `overdue`; (b) both fold bodies
+thread the default and emit `budget_source: record|default` provenance; (c) the
+PRODUCER stamps `budget` (estimated, brief-overridable, config default at write) on
+every new dispatched record, red-first in `Producer.Tests.ps1` - the promise freezes
+at departure, the fold-side default becomes the legacy/foreign tail. The other three
+carved-out cases (unreadable-vocab-dir, unreadable-defaults, tier) remain correctly
+carved - they are genuinely environmental.
+
 ## 8. Backfill (Q6 ruling folded)
 
 One coarse `train:pre-harness-era` manifest by default, grouping the migrated records
