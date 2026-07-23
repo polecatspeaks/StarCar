@@ -6075,3 +6075,7 @@ ok that land on what I liked too. I liked the actual "tracks" in 2b, but what I 
 <status>completed</status>
 <summary>Background command "Watch CI for the plan push" completed (exit code 0)</summary>
 </task-notification>
+
+---
+
+1. Ok so the Mocks are codified as design direction, never the contract. The mock is the track signal switch telling us to use this track and not the other. 2. let's leave it as is for now. Color choices are easy, wiring and plumbing is hard. 3. approved.
