@@ -1,0 +1,9 @@
+{
+  "$comment": "Recognition vocabulary for manifest member roles (spec 2026-07-23-yard-board S2; design rev 5 section 5.5). Same posture as kinds.json/outcomes.json: DATA, never a schema enum - an unrecognised role is a detector discovery, not a validation failure (Law 7). The gate NAME is a separate member field (manifest.members[].gate), so this vocabulary stays unparameterised.",
+  "values": [
+    "car",
+    "reviewer",
+    "gate",
+    "conductor"
+  ]
+}

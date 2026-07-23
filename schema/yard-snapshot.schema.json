@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starcar.dev/schema/yard-snapshot/1",
+  "title": "StarCar yard snapshot - the wire contract",
+  "description": "Spec 2026-07-23-yard-board S3: THE single owner of the server-to-browser wire shape (design rev 5 D15 - cross-language seam, schema-as-constructed-header). The Go server's structs and the browser's validator BOTH conform to this file; a hand-maintained mirror anywhere is a finding. Composition SEMANTICS (most-severe-wins, age quantisation) live in the spec and its vectors; this file owns SHAPE.",
+  "$defs": {
+    "sseEventName": {
+      "const": "yard",
+      "description": "The SSE event name, exported here so server writer and client subscriber share ONE definition (design rev 5 section 5.4 item 4 - the one-character-apart failure mode is cross-language now). Tests on both sides assert against this constant."
+    },
+    "register": {
+      "enum": ["nominal", "in-progress", "needs-attention"],
+      "description": "The ONLY closed taxonomy (design rev 5 section 5.2). Severity order: nominal < in-progress < needs-attention. Growing this set is a constitution-level decision."
+    },
+    "vocabDef": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "register": { "$ref": "#/$defs/register" }
+      },
+      "required": ["id", "label", "register"]
+    },
+    "freshness": {
+      "type": "object",
+      "description": "Closed by mechanism (design rev 5 section 5.2): an adapter is attached or not; if attached it has run or not; if run it succeeded or failed.",
+      "oneOf": [
+        { "properties": { "kind": { "const": "not-applicable" } }, "required": ["kind"] },
+        { "properties": { "kind": { "const": "never-polled" } }, "required": ["kind"] },
+        {
+          "properties": {
+            "kind": { "const": "fresh" },
+            "asOf": { "type": "string" }
+          },
+          "required": ["kind", "asOf"]
+        },
+        {
+          "properties": {
+            "kind": { "const": "stale" },
+            "asOf": { "type": "string" },
+            "ageBucketMs": { "type": "integer", "description": "QUANTISED server-issued age (design rule 3: the client never computes age). Included in change detection." }
+          },
+          "required": ["kind", "asOf", "ageBucketMs"]
+        },
+        {
+          "properties": {
+            "kind": { "const": "failed" },
+            "reason": {
+              "type": "object",
+              "properties": { "code": { "type": "string" }, "detail": { "type": "string" } },
+              "required": ["code", "detail"]
+            },
+            "lastGoodAsOf": { "type": "string" }
+          },
+          "required": ["kind", "reason"]
+        }
+      ]
+    },
+    "boardCondition": {
+      "type": "object",
+      "description": "A fault about the BOARD, rendered in chrome, distinct from yard status (design rev 5 section 6).",
+      "properties": {
+        "code": { "type": "string" },
+        "detail": { "type": "string" },
+        "register": { "$ref": "#/$defs/register" }
+      },
+      "required": ["code", "detail", "register"]
+    },
+    "lane": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "position": { "type": "string", "description": "A PositionDef id from vocabularies.positions - open vocabulary, registry-owned (D11)." },
+        "freshness": { "$ref": "#/$defs/freshness" },
+        "data": {
+          "description": "The lane payload. Shapes for the v0 lanes are pinned by the spec's payload contracts (S4) and their vectors; an unrecognised lane's payload is a free object the view meets with the no-renderer path, never a validation failure (Law 7)."
+        }
+      },
+      "required": ["id", "title", "position", "freshness"]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "seq": { "type": "integer", "description": "Monotonic, assigned AFTER change detection (design rev 5 section 5.6 carry of rev 3 rules). The client applies a snapshot only if seq exceeds the last applied." },
+    "asOf": {
+      "type": ["string", "null"],
+      "description": "Most recent SUCCESSFUL store scan; null only if none has ever succeeded."
+    },
+    "config": {
+      "type": "object",
+      "properties": {
+        "pollMs": { "type": "integer" },
+        "heartbeatMs": { "type": "integer", "description": "Travels here so the client never hardcodes it; two missed heartbeats flip the client to disconnected." },
+        "stalenessMs": { "type": "integer" },
+        "storePathDisplay": { "type": "string", "description": "CWD-relative or home-collapsed - NEVER a raw absolute path (normalisation law; this repo publishes screenshots)." },
+        "laneCount": { "type": "integer", "description": "Completeness guard 3: 'registry declares N lanes' renders in chrome." },
+        "demoMode": { "type": "boolean" }
+      },
+      "required": ["pollMs", "heartbeatMs", "stalenessMs", "storePathDisplay", "laneCount", "demoMode"]
+    },
+    "vocabularies": {
+      "type": "object",
+      "description": "Presentational defs travel on EVERY snapshot so the view never hardcodes one and no separately fetched copy can drift (Law 6). Recognition VALUES stay owned by schema/vocab/*.json; these defs add label+register presentation. A value with no def renders by raw id through the detector path.",
+      "properties": {
+        "positions": { "type": "array", "items": { "$ref": "#/$defs/vocabDef" } },
+        "outcomes": { "type": "array", "items": { "$ref": "#/$defs/vocabDef" } },
+        "roles": { "type": "array", "items": { "$ref": "#/$defs/vocabDef" } },
+        "liveness": { "type": "array", "items": { "$ref": "#/$defs/vocabDef" }, "description": "Defs for the fold's closed liveness states (dispatched/overdue/returned/presumed-lost) - the STATES are mechanism-closed; their presentation is still data." }
+      },
+      "required": ["positions", "outcomes", "roles", "liveness"]
+    },
+    "board": { "type": "array", "items": { "$ref": "#/$defs/boardCondition" } },
+    "lanes": { "type": "array", "items": { "$ref": "#/$defs/lane" } }
+  },
+  "required": ["seq", "asOf", "config", "vocabularies", "board", "lanes"]
+}
