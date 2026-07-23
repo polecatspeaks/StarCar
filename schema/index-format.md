@@ -63,6 +63,33 @@ artifact's path relative to the store root.
 | disp-2  | dispatched | 2026-07-22T11:00:00Z |         | disp-2/dispatched.json        |
 ```
 
+## Freshness-contract header (#20, owner-ratified 2026-07-23)
+
+The generator emits a mandatory header block before the table - the committed index is
+a product surface a stranger reads (the browsable dispatch ledger), and its CI
+staleness gate is scoped to PR-to-main and push-to-main (`.github/workflows/ci.yml`'s
+"Verify the artifact index is not stale" step), not every dev push - the producer hook
+writes a record on every dispatch, so gating every dev push turned ordinary conductor
+activity into mechanical CI red. Without a declared contract, an index that legitimately
+lags the store on dev would read as a lying surface (Law 1); this header is what makes
+the lag a documented refresh cadence instead.
+
+The header text is **static** - no timestamp, no generated-at stamp - because a
+run-varying header would break the byte-identical determinism contract
+(`ArtifactIndex.Tests.ps1`) a CI regenerate-and-diff gate depends on. Verbatim, followed
+by one blank line, then the table header row:
+
+```
+# Artifact index
+
+Derived from the store (artifacts/**/*.json) by scripts/New-ArtifactIndex.ps1 - regenerate,
+never hand-edit; the JSON records are the source of truth. Freshness contract (#20): this
+file is gated fresh at PR-to-main and push-to-main; on dev it may lag the store by a
+dispatch batch between regenerations.
+
+| subject | kind | at | outcome | file |
+```
+
 ## Path-normalisation substitution rule
 
 Mechanical classes, ported from `Land-Verdict.ps1`'s `ConvertTo-PortablePaths` precedent

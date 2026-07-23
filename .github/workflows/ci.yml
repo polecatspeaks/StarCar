@@ -24,6 +24,11 @@
 #   - the artifact-INDEX STALENESS gate (spec S5.2, S6): the committed index is a second
 #     copy of the store that can drift from it, so CI regenerates and diffs it. This is
 #     the gate the state ledger and gating-matrix rows arm in this same commit.
+#     SCOPED (#20, owner-ratified 2026-07-23) to PR-to-main and push-to-main only - a
+#     dev push deliberately skips this step, because the producer hook stales the index
+#     on every ordinary dispatch and gating every dev push turned that into mechanical
+#     CI red rather than a signal. dev's freshness is conductor hygiene, not a CI gate;
+#     the index's own header (schema/index-format.md) declares this refresh cadence.
 #   - the CHECKPOINT-BRANCH fetch (spec [m5]): non-fatal if the branch is absent, which
 #     it is on any fork (Law 7 - a stranger has no Entire checkpoint branch). This makes
 #     tier 2 CI-REACHABLE; tier-2 ENUMERATION itself stays deferred (R6v2).
@@ -161,6 +166,7 @@ jobs:
 
       - name: Verify the artifact index is not stale
         shell: pwsh
+        if: (github.event_name == 'pull_request' && github.base_ref == 'main') || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         run: |
           # The committed index (spec S5.2) is a second copy of the store that can drift
           # from it - Law 6 forbids an unowned second copy. Regenerate over the SAME
@@ -168,6 +174,14 @@ jobs:
           # difference (a record landed without a matching index regeneration) fails
           # the build. New-ArtifactIndex.ps1 is deterministic by construction
           # (ArtifactIndex.Tests.ps1), so a clean tree produces a clean diff.
+          #
+          # SCOPE (#20, owner-ratified 2026-07-23): gated only on PR-to-main and
+          # push-to-main - the quiescent moments correctness is actually asserted. The
+          # producer hook (Produce-Artifact.ps1) writes a new record on EVERY dispatch,
+          # so gating every dev push made this fire on ordinary conductor activity, not
+          # on a real staleness defect. dev's index now stays best-effort fresh
+          # (conductor hygiene, documented in the index's own freshness-contract header -
+          # schema/index-format.md), not CI-enforced.
           ./scripts/New-ArtifactIndex.ps1 -StoreRoot artifacts -OutFile artifacts/index.md
           git diff --exit-code artifacts/index.md
           if ($LASTEXITCODE -ne 0) {

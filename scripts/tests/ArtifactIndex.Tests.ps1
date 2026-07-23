@@ -162,7 +162,51 @@ Describe 'New-ArtifactIndex - cell escaping (F3)' {
         $out = Join-Path $TestDrive 'escape-index.md'
         & pwsh -NoProfile -File $script:Gen -StoreRoot $script:Store -OutFile $out
         $content = Get-Content $out -Raw
-        $expected = "| subject | kind | at | outcome | file |`n|---|---|---|---|---|`n| subj\|with\|pipe | returned | 2026-07-22T10:00:00Z | line-one line-two | rec.json |`n"
+        # #20: the generator now emits the static freshness-contract header block
+        # (schema/index-format.md) before the table - see the dedicated header Describe
+        # below for the header's own assertion. This fixture's expectation includes it
+        # because a byte-identical comparison covers the WHOLE file, header included.
+        $header = "# Artifact index`n`nDerived from the store (artifacts/**/*.json) by scripts/New-ArtifactIndex.ps1 - regenerate,`nnever hand-edit; the JSON records are the source of truth. Freshness contract (#20): this`nfile is gated fresh at PR-to-main and push-to-main; on dev it may lag the store by a`ndispatch batch between regenerations.`n`n"
+        $expected = $header + "| subject | kind | at | outcome | file |`n|---|---|---|---|---|`n| subj\|with\|pipe | returned | 2026-07-22T10:00:00Z | line-one line-two | rec.json |`n"
         $content | Should -Be $expected
+    }
+}
+
+Describe 'New-ArtifactIndex - freshness-contract header (#20)' {
+    <#
+      Owner ruling on #20 (2026-07-23): the committed index is a product surface a
+      stranger reads, and it may lag the store on dev between regenerations (the
+      staleness gate is scoped to PR-to-main/push-to-main - see ci.yml, #20). Without a
+      declared freshness contract, that lag would read as a lying surface (Law 1). The
+      header text is STATIC (no timestamp, no generated-at stamp) - schema/index-format.md
+      mandates this exact text so the byte-identical determinism test above stays valid;
+      a generated-at stamp would make every regeneration produce different bytes.
+    #>
+    BeforeAll {
+        $script:Root  = (git rev-parse --show-toplevel)
+        $script:Gen   = Join-Path $script:Root 'scripts/New-ArtifactIndex.ps1'
+        $script:Store = Join-Path $TestDrive 'header-store'
+        New-Item -ItemType Directory -Path $script:Store | Out-Null
+        $rec = @{
+            schema = 'starcar-artifact/1'; kind = 'dispatched'; subject = 'header-subj'
+            session_id = 's'; at = '2026-07-22T10:00:00Z'
+            normalisation = @(); integrity = 'sha256:0000000000000000000000000000000000000000000000000000000000000000'
+        } | ConvertTo-Json
+        [System.IO.File]::WriteAllText((Join-Path $script:Store 'header-subj.json'), $rec)
+    }
+
+    It 'begins with the exact static freshness-contract header block, then a blank line, then the table header' {
+        $out = Join-Path $TestDrive 'header-index.md'
+        & pwsh -NoProfile -File $script:Gen -StoreRoot $script:Store -OutFile $out
+        $content = Get-Content $out -Raw
+        $expectedHeader = "# Artifact index`n`nDerived from the store (artifacts/**/*.json) by scripts/New-ArtifactIndex.ps1 - regenerate,`nnever hand-edit; the JSON records are the source of truth. Freshness contract (#20): this`nfile is gated fresh at PR-to-main and push-to-main; on dev it may lag the store by a`ndispatch batch between regenerations.`n`n| subject | kind | at | outcome | file |`n"
+        $content.StartsWith($expectedHeader) | Should -BeTrue
+    }
+
+    It 'produces byte-identical output across two runs with the header present (determinism holds with the header)' {
+        $a = Join-Path $TestDrive 'header-a.md'; $b = Join-Path $TestDrive 'header-b.md'
+        & pwsh -NoProfile -File $script:Gen -StoreRoot $script:Store -OutFile $a
+        & pwsh -NoProfile -File $script:Gen -StoreRoot $script:Store -OutFile $b
+        (Get-FileHash $a -Algorithm SHA256).Hash | Should -Be (Get-FileHash $b -Algorithm SHA256).Hash
     }
 }
