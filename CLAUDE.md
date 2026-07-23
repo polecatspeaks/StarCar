@@ -25,6 +25,13 @@ rewriting a stratum in place: its law of change is **evidence-gated evolution**,
 every mutation traces to a scar or a measurement, and the change itself stays readable in
 the record forever.
 
+Second house phrase: **NIRTS** - *Need It Right This Second* (owner coinage, 2026-07-23) -
+the demand-side twin of YAGNI. YAGNI prunes what you will not need; NIRTS names what you
+must have now. Together they are a complete sizing instrument: build nothing YAGNI
+forbids, build everything NIRTS demands, and the gap between them is zero. A surface is
+"NIRTS-honored" when it delivers exactly what its reader needs at the second of reading -
+the Solari-board glance, the ticket number that already existed.
+
 **Right-sizing rule (read first):** the full ladder below is calibrated for consequential,
 multi-car work. Scale ceremony to stakes: a small, coverage-class change takes a car and
 one adversarial reviewer; only structural work (new subsystems, rewrites, cross-boundary
