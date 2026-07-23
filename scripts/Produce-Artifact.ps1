@@ -21,6 +21,20 @@
 #
 # stdin is read via $input, which is populated identically whether the hook pipes OS stdin
 # to `pwsh -File` or a caller pipes an object in-process (both measured).
+#
+# BUDGET STAMP (issue #22 item 1, owner's best-of-both ruling; C3R-1e, Car 3 fix cycle
+# round 2): every NEW dispatched record is stamped with `budget` - the shop default
+# (`config/harness-defaults.json`'s `dispatch_budget_seconds`, or `-DefaultsPath` when
+# overridden) as it stands AT DISPATCH TIME. The promise freezes into history at
+# departure: a later policy change to the shop default never rewrites an in-flight
+# dispatch's liveness verdict retroactively (the value is copied into the record, not
+# referenced). A brief-level ESTIMATED-patience override is deferred, disclosed rather
+# than invented brittle: the real PostToolUse:Task launch payload carries no
+# estimated-duration field in tool_input/tool_response to override from. A shop-default
+# read failure degrades the record (no `budget` field, a fault raised) rather than
+# blocking the write - the fold (`scripts/Detect-Dispatches.ps1`) applies its OWN default
+# at FOLD time regardless, the same fallback the 49 existing budget-less fossil records
+# already rely on (the legacy/foreign tail, untouched by this stamp).
 
 # NOTE: this is a SIMPLE script, deliberately NOT advanced - no [Parameter()],
 # [CmdletBinding()] or [ValidateSet()] attributes. Any of those turns the script into an
@@ -31,7 +45,8 @@
 param(
     [string]$Kind,
     [string]$StoreRoot = 'artifacts',
-    [string]$Now = ''
+    [string]$Now = '',
+    [string]$DefaultsPath = ''
 )
 
 # Capture stdin FIRST. $input is a live pipeline enumerator that any intervening command
@@ -187,6 +202,31 @@ try {
         # Law-7 class as `producer`). The board's model-mix rendering consumes it.
         $toolResponse = Get-Prop $payload 'tool_response'
         $model = Get-Prop $toolResponse 'resolvedModel'
+
+        # --- budget stamping (issue #22 item 1, owner's best-of-both ruling; C3R-1e) -------
+        # "WRITE TIME: Produce-Artifact.ps1 stamps budget on every NEW dispatched record -
+        # the ESTIMATED patience, brief-overridable, else config/harness-defaults.json's
+        # dispatch_budget_seconds as it stands at dispatch. The promise freezes into
+        # history at departure; a later policy change never rewrites in-flight liveness
+        # verdicts." A brief-level override is EXPLICITLY DEFERRED here (car's report,
+        # C3R-1e): the real PostToolUse:Task launch payload carries no estimated-duration
+        # field anywhere in tool_input/tool_response to override FROM, and inventing one
+        # (e.g. parsing the free-text prompt) would be exactly the brittle mechanism this
+        # fix cycle's brief warns against. A read failure degrades the record (no `budget`
+        # field written) rather than blocking the write - the fold applies its OWN default
+        # at fold time regardless (the legacy/foreign tail 49 existing budget-less fossil
+        # records already rely on), so a producer-side read failure never loses liveness
+        # information, only the WRITE-TIME freeze this stamp exists to add.
+        $budgetSeconds = $null
+        $defaultsPathForBudget = if ($DefaultsPath) { $DefaultsPath } else { Join-Path (Split-Path $PSScriptRoot -Parent) 'config/harness-defaults.json' }
+        try {
+            $parsedDefaults = Get-Content $defaultsPathForBudget -Raw -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json
+            if ($null -ne $parsedDefaults.dispatch_budget_seconds) {
+                $budgetSeconds = [double]$parsedDefaults.dispatch_budget_seconds
+            }
+        } catch {
+            Add-Fault -Message "could not read the shop default budget from '$defaultsPathForBudget' to stamp on the new dispatched record for $subject"
+        }
     }
 
     # --- normalisation applied to every string field, declared per what fired -----------
@@ -238,6 +278,10 @@ try {
         $record['abstract'] = $abstract
         if ($envFault) { $record['envelope'] = $envFault }
     }
+    # budget (canonical order, schema/index-format.md:17-20: right after envelope, before
+    # basis/cost/context_peak_tokens/producer) - issue #22 item 1, C3R-1e. Absent when the
+    # shop-default read failed; the fold applies its own default at fold time regardless.
+    if ($Kind -eq 'dispatched' -and $null -ne $budgetSeconds) { $record['budget'] = $budgetSeconds }
     if ($Kind -eq 'dispatched' -and $model) { $record['model'] = $model }
     $record['producer']      = 'starcar-hook/1'
     $record['normalisation'] = @($normalisation)

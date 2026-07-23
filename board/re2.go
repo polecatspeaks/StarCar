@@ -17,9 +17,17 @@ type patternFailure struct {
 }
 
 // findPatterns walks a decoded JSON document (the output of
-// json.Unmarshal(data, &any{})) and appends every string value found under a
-// "pattern" key, at any depth - schema "pattern" keywords can appear nested
-// under properties, $defs, if/then/allOf, and so on.
+// json.Unmarshal(data, &any{})) and appends every string that JSON Schema
+// compiles as a regular expression, at any depth: "pattern" keyword VALUES
+// (properties, $defs, if/then/allOf, and so on), and - task 3.R, rider [C1R-2]
+// from Car 1's review - "patternProperties" keyword KEYS (a patternProperties
+// object's keys are themselves regexes matched against property names, not
+// "pattern" values, so the k == "pattern" branch alone never sees them). A
+// "propertyNames" keyword is itself a (sub-)schema and most commonly carries
+// its own nested "pattern" key ({"propertyNames": {"pattern": "..."}}), which
+// the plain recursive descent below already visits and needs no special case;
+// it is named in the rider only so both call sites stay covered by name
+// rather than by accident (board/re2_test.go pins both).
 func findPatterns(v any, out *[]string) {
 	switch t := v.(type) {
 	case map[string]any:
@@ -27,6 +35,13 @@ func findPatterns(v any, out *[]string) {
 			if k == "pattern" {
 				if s, ok := val.(string); ok {
 					*out = append(*out, s)
+				}
+			}
+			if k == "patternProperties" {
+				if pp, ok := val.(map[string]any); ok {
+					for key := range pp {
+						*out = append(*out, key)
+					}
 				}
 			}
 			findPatterns(val, out)

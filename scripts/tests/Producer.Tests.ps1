@@ -60,14 +60,13 @@ Describe 'Produce-Artifact' {
         # terminating error. The try/catch below makes this harness match that real
         # subprocess exit-code semantics without paying a per-test subprocess-spawn cost.
         function Invoke-Producer {
-            param([string]$Payload, [string]$Kind, [string]$StoreRoot, [string]$Now)
+            param([string]$Payload, [string]$Kind, [string]$StoreRoot, [string]$Now, [string]$DefaultsPath)
             $exitCode = 0
             try {
-                if ($Now) {
-                    $out = $Payload | & $script:Script -Kind $Kind -StoreRoot $StoreRoot -Now $Now 2>&1
-                } else {
-                    $out = $Payload | & $script:Script -Kind $Kind -StoreRoot $StoreRoot 2>&1
-                }
+                $p = @{ Kind = $Kind; StoreRoot = $StoreRoot }
+                if ($Now) { $p['Now'] = $Now }
+                if ($DefaultsPath) { $p['DefaultsPath'] = $DefaultsPath }
+                $out = $Payload | & $script:Script @p 2>&1
                 $exitCode = $LASTEXITCODE
             } catch {
                 $out = $_.Exception.Message
@@ -125,6 +124,55 @@ Describe 'Produce-Artifact' {
         $disp.subject | Should -Be $ret.subject
         $disp.model | Should -Be 'claude-sonnet-5'
         (Test-StarcarArtifact -InputObject $disp -SchemaPath $script:SchemaPath).Valid | Should -BeTrue
+    }
+
+    # --- budget stamping (issue #22 item 1, owner's best-of-both ruling; C3R-1e fix cycle) ---
+    # "WRITE TIME: Produce-Artifact.ps1 stamps budget on every NEW dispatched record - the
+    # ESTIMATED patience, brief-overridable, else config/harness-defaults.json's
+    # dispatch_budget_seconds as it stands at dispatch. The promise freezes into history at
+    # departure; a later policy change never rewrites in-flight liveness verdicts." A
+    # brief-level override mechanism is EXPLICITLY DEFERRED (car's report, this fix cycle):
+    # the real PostToolUse:Task launch payload (scripts/tests/fixtures/payloads/launch-car.json)
+    # carries no estimated-duration/patience field anywhere in tool_input or tool_response, so
+    # there is no clean input to override from without inventing a brittle mechanism (e.g.
+    # parsing the free-text "prompt" for a duration) - exactly what this fix cycle's brief
+    # warns against inventing. Only the config-default half lands here.
+
+    It 'a launch payload stamps budget from an INJECTED shop-default defaults file (issue #22 item 1)' {
+        $repo = New-FixtureRepo
+        $store = Join-Path $repo 'artifacts'
+        $defaultsPath = Join-Path $repo 'scratch-defaults.json'
+        (@{ dispatch_budget_seconds = 4321 } | ConvertTo-Json) | Set-Content -Path $defaultsPath -Encoding utf8
+        $r = Invoke-Producer -Payload (Get-Payload 'launch-car.json') -Kind 'dispatched' -StoreRoot $store -Now '2026-07-22T10:00:00Z' -DefaultsPath $defaultsPath
+        $r.ExitCode | Should -Be 0
+        $disp = Get-Content (Join-Path $store 'a88e7dadda60940ac/dispatched-20260722T100000Z.json') -Raw | ConvertFrom-Json -DateKind String
+        $disp.budget | Should -Be 4321
+        (Test-StarcarArtifact -InputObject $disp -SchemaPath $script:SchemaPath).Valid | Should -BeTrue
+    }
+
+    It 'a launch payload stamps budget from the REAL config/harness-defaults.json when -DefaultsPath is not overridden' {
+        $repo = New-FixtureRepo
+        $store = Join-Path $repo 'artifacts'
+        $realDefault = (Get-Content (Join-Path $script:RepoRoot 'config/harness-defaults.json') -Raw | ConvertFrom-Json).dispatch_budget_seconds
+        $r = Invoke-Producer -Payload (Get-Payload 'launch-car.json') -Kind 'dispatched' -StoreRoot $store -Now '2026-07-22T10:00:00Z'
+        $r.ExitCode | Should -Be 0
+        $disp = Get-Content (Join-Path $store 'a88e7dadda60940ac/dispatched-20260722T100000Z.json') -Raw | ConvertFrom-Json -DateKind String
+        $disp.budget | Should -Be $realDefault
+    }
+
+    It 'a config-read failure for budget stamping still writes the record (no budget field) and raises a fault' {
+        $repo = New-FixtureRepo
+        $store = Join-Path $repo 'artifacts'
+        $missingDefaultsPath = Join-Path $repo 'no-such-defaults.json'
+        $r = Invoke-Producer -Payload (Get-Payload 'launch-car.json') -Kind 'dispatched' -StoreRoot $store -Now '2026-07-22T10:00:00Z' -DefaultsPath $missingDefaultsPath
+        $r.ExitCode | Should -Be 0 -Because 'a budget-stamping read failure must degrade the record, never block the write (the fossil-tail posture)'
+        $disp = Get-Content (Join-Path $store 'a88e7dadda60940ac/dispatched-20260722T100000Z.json') -Raw | ConvertFrom-Json -DateKind String
+        $disp.PSObject.Properties['budget'] | Should -Be $null -Because 'no shop default could be read; the fold applies its own default at fold time (the legacy/foreign tail)'
+        (Test-StarcarArtifact -InputObject $disp -SchemaPath $script:SchemaPath).Valid | Should -BeTrue
+
+        $faultsLog = Join-Path $store '_faults.log'
+        Test-Path $faultsLog | Should -BeTrue -Because 'Law 4: the read failure is raised, never dropped'
+        (Get-Content $faultsLog -Raw) | Should -Match 'budget' -Because 'the fault names the budget-stamping read failure'
     }
 
     It 'an envelope-absent transcript yields outcome error and envelope absent' {

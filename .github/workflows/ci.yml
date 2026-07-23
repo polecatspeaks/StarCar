@@ -44,6 +44,20 @@
 #     can exit 0 on a package with no test functions at all, so the exit code alone is
 #     not proof anything ran. The step parses `go test -json` output and counts distinct
 #     "run" actions; zero counted tests fails the build even if go test itself exited 0.
+#
+# Car 3 additions (yard-board plan task 3.4, spec YB-9/D18 - a DIFFERENT "Car 3" from the
+# harness-train "Car 3 additions" block above; the two trains happened to number their cars
+# the same way):
+#   - the D18 CROSS-VERIFIER step: runs both the pwsh vector-runner
+#     (Detector.Tests.ps1's fixture-driven Context) and the Go vector-runner
+#     (board/fold's TestFoldConformsToVectors) against every schema/vectors/fold/ vector,
+#     failing on either side's failure - a shared-oracle cross-verification (both
+#     implementations conforming to the same fixture transitively proves they conform to
+#     each other), with its own explicit zero-vector refusal.
+#   - not done when green (D10): the live watched-to-fire divergence injection is a
+#     conductor handback at merge, recorded in the train's closing report - this step's
+#     command logic was verified locally in both directions (green, and with an injected
+#     one-character divergence) via the CiWrapperSimulation technique before landing.
 
 name: CI
 
@@ -210,6 +224,59 @@ jobs:
           }
           if ($testCount -eq 0) {
             Write-Error "go test discovered ZERO tests in board/. A green run that asserted nothing is not a pass."
+            exit 1
+          }
+
+      - name: D18 cross-verifier - pwsh detector and Go fold conform to schema/vectors/fold/
+        shell: pwsh
+        run: |
+          # YB-9/D18 (yard-board plan task 3.4): schema/vectors/fold/ is the single
+          # language-neutral authority on fold semantics (schema/vectors/README.md). Both
+          # fold implementations - the landed pwsh detector (Detector.Tests.ps1's
+          # fixture-driven runner) and the Go port (board/fold's TestFoldConformsToVectors)
+          # - conform to the SAME fixtures; if both conform to the same fixture, they
+          # conform to each other (a shared-oracle cross-verification), so ANY divergence -
+          # either side failing a vector, or the vectors themselves vanishing - fails the
+          # build. This step is DELIBERATELY separate from "Run board tooling tests" and
+          # "Run board Go vet + tests" above (which already exercise these same test files
+          # as part of their own full suites): this step names the cross-language
+          # obligation explicitly, with its own zero-vector refusal, rather than leaving it
+          # an implicit side effect of two unrelated steps happening to both pass. It is
+          # not done when green (D10): the live watched-to-fire divergence injection (a
+          # one-character edit to a scratch vector copy, observed red, reverted) is a
+          # conductor handback at merge, recorded in the train's closing report.
+          $vectorFiles = Get-ChildItem -Path ./schema/vectors/fold -Filter '*.json' -File
+          Write-Host "schema/vectors/fold/ holds $($vectorFiles.Count) vector(s)"
+          if ($vectorFiles.Count -eq 0) {
+            Write-Error "D18 cross-verifier: zero vectors found under schema/vectors/fold/ - a run with nothing to compare is a refusal, not a pass."
+            exit 1
+          }
+
+          Write-Host "--- pwsh vector-runner (Detector.Tests.ps1) ---"
+          $pwshResult = Invoke-Pester -Path ./scripts/tests/Detector.Tests.ps1 -PassThru -Output Detailed
+          Write-Host "pwsh: Passed=$($pwshResult.PassedCount) Failed=$($pwshResult.FailedCount) Inconclusive=$($pwshResult.NotRunCount)"
+
+          Write-Host "--- Go vector-runner (board/fold, TestFoldConformsToVectors) ---"
+          Push-Location board
+          # -count=1 disables Go's test result cache - LOAD-BEARING, not decoration. This
+          # test reads schema/vectors/fold/*.json at RUNTIME via os.ReadFile; Go's cache
+          # keys on the package's own source/dependency inputs, which do not include a
+          # file read through a relative path at test execution time. Observed directly
+          # (this car's local D18 verification, injected-divergence direction): without
+          # -count=1, a vector mutated between two `go test` invocations still reported
+          # "(cached)" and PASS on the second run, silently hiding a real divergence -
+          # the exact failure mode this whole step exists to catch.
+          & go test ./fold/... -run TestFoldConformsToVectors -count=1 -v
+          $goExit = $LASTEXITCODE
+          Pop-Location
+          Write-Host "Go vector-runner exit code: $goExit"
+
+          if ($pwshResult.FailedCount -gt 0) {
+            Write-Error "D18 cross-verifier: the pwsh vector-runner failed $($pwshResult.FailedCount) case(s) - divergence from schema/vectors/fold/."
+            exit 1
+          }
+          if ($goExit -ne 0) {
+            Write-Error "D18 cross-verifier: the Go vector-runner (board/fold) failed - divergence from schema/vectors/fold/."
             exit 1
           }
 
