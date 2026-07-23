@@ -555,7 +555,11 @@ against work you would never ship proves nothing about work you would.*
 the calibration membrane, the owner rules - then rinse, lather, repeat.**
 
 1. The conductor opens the PR (dev to main, only from a known good state per the merge
-   north star). The body states the ASSERTION being made: counts, SHAs, gate history.
+   north star). Before opening, QUIESCE - regenerate the index
+   (`./scripts/New-ArtifactIndex.ps1 -StoreRoot artifacts -OutFile artifacts/index.md`),
+   commit and push it, and dispatch nothing until CI is terminal; the staleness gate is
+   scoped to PR-to-main (#20), so the PR is the moment index freshness is asserted. The
+   body states the ASSERTION being made: counts, SHAs, gate history.
 2. **GitHub Copilot review is requested - deliberately out-of-family.** Every internal
    reviewer shares Anthropic lineage and full doctrine immersion; that monoculture is
    blind to its own premises by construction. Copilot inherits none of them - the

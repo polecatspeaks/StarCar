@@ -225,6 +225,17 @@ Law 6 forbids by name.
 The generator is stateless; the *artifact* is derived state, and its freshness now has an
 owner. The append-only records themselves remain git's lifecycle, which is honest.
 
+**Amendment (2026-07-23, issue #20, owner-ratified):** the diff gate above is **scoped** to
+PR-to-main and push-to-main, not every push. The producer hook writes a new record on every
+dispatch, so gating every dev push turned ordinary conductor activity into mechanical CI
+red rather than a real staleness defect. On dev the index may lag the store between
+regenerations; this is now a declared cadence, not a silent gap - the index's own header
+(`schema/index-format.md`'s freshness-contract section) states it, so the lag is honest
+(Law 1) rather than a suppressed truth surface. The original "A stale index fails the
+build" statement above remains true at PR-to-main and push-to-main; this amendment
+supersedes only its unconditional scope, per `docs/contracts/gating-matrix.md`'s
+Artifact-index-staleness row and `docs/contracts/state-ledger.md`'s derived-artifact row.
+
 ## 6. Testing
 
 Cells: a `dispatched` at launch and a `returned` at stop produce two records for one subject;
