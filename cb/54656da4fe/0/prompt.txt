@@ -5320,3 +5320,23 @@ there we go, we're getting that good scar tissue down now. If it makes you feel 
 ---
 
 Pr Merged!
+
+---
+
+hell yeah buddy. Ok that's a good days work, let's wrap it up for now. Good night.
+
+---
+
+Good morning buddy. It's 0637 local time on Thursday 23 July 26. Lets hold our morning routines and stand up please
+
+---
+
+ok first of all, great catch on the bash*pswsh mangling. I approve that tooling. Ok walk me through #20 please, I'm still on my first cup of coffee
+
+---
+
+ok my read on this is that the gate only to pr to main is the right call. Let me explain why: the index.md is always in flux, like you said, and thats expected. It's an index and everytime the conductor sneezes it changes. I think having it "perfectly right and on time and up to date" matters more that the PR gate than every commit. Push back is positive reslt, what are your thoughts?
+
+---
+
+Yup those sit totally right with me and my pre coffeed brain.
