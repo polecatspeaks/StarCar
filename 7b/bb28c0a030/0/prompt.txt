@@ -1,0 +1,92 @@
+<task-notification>
+<task-id>aadb0a6abcbe764ed</task-id>
+<tool-use-id>toolu_01BGQasiLvKfssrcK9nsoLfi</tool-use-id>
+<output-file>C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\e92f5a0b-1b9e-4913-98b3-c319b4d5e90b\tasks\aadb0a6abcbe764ed.output</output-file>
+<status>completed</status>
+<summary>Agent "Car 33: Playwright computed-style guard" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>Everything is verified and committed. Here is my final report.
+
+## Summary
+
+**Base verified**: worktree at `b675062815fc1399edd3714588f5ed81f57a38d`, branch `car/33-playwright` — matched the brief exactly.
+
+**Final commit**: `7fabf8a9abe958e6e516b1e1683ccbcce7185dda` ("test(board): drive a real browser for issue #31's cascade defect class (#33)"), 8 files changed, tree clean afterward. No js/css files under `board/web/js/` or `board/web/css/` appear in the final diff against base (`git diff --stat b675062...HEAD`) — the two fault injections into `board/web/css/board.css` were reverted byte-identical before commit and confirmed with an empty `git diff --stat`.
+
+### Task 1 — probes (all quoted, none assumed)
+
+**(a) Playwright library from inside `node --test`**: confirmed. A throwaway `node --test` file launched `chromium` and read `getComputedStyle` — TAP output: `# OBSERVED computed color inside node --test: rgb(255, 0, 0)` / `1..1 # tests 1 # pass 1`.
+
+**(b) Starting/stopping the real server**: read `board/server/main.go:19-40`, `config.go:53-87` (env overrides exist only for Host/Port/PollMs/HeartbeatMs/StalenessMs/StorePath/DemoMode — never SchemaDir/WebDir), `reporoot.go:19-27` (repo root resolved from cwd or its parent by checking for sibling `artifacts/`+`schema/`). **Finding, measured**: `go run ./server` orphans a grandchild process on kill — killing the node-tracked parent left the actual listener alive, observed as `EADDRINUSE` on an immediate re-bind attempt. Building the binary once (`go build -o &lt;tmp&gt; ./server`) and spawning it directly does not: `child.kill()` (SIGTERM) was observed to terminate the process and free the port (re-bind succeeded) within ~2s. This finding is now a comment in `board/web/test/support/real-board-server.js:14-24`.
+
+**(c) Real board serves real CSS**: `GET /` → 200, body links `board.css`; `GET /css/board.css` → 200, 4792 bytes, contains `.register-nominal`; `GET /api/snapshot` → 200 with real store data once polled.
+
+### Task 2 — the red that matters
+
+`board/web/test/browser-register-cascade.test.js` drives the real server (via the shared `real-board-server.js` helper) against this worktree's own committed `artifacts/` store — the real records are all hours old relative to any wall clock, so `computeLiveFreshness` (`board/server/poll.go:311-337`) always resolves the live lanes `stale`→`needs-attention` (`compose.js:66-72`), guaranteeing the `#31` shape (a `register-nominal` `.solari-row` inside a `register-needs-attention` `.lane-dispatches`) without any synthetic data.
+
+- **Green baseline**: 2/2, confirmed on unmodified `board.css`.
+- **Fault injection 1** — removed `color: var(--nominal);` from `.register-nominal` (`board.css:128-131`): RED, quoted observed failure — `expected: 'rgb(217, 213, 201)', actual: 'rgb(255, 74, 58)'`, i.e. the nominal row rendered the lane's inherited needs-attention red. Restored byte-identical, `git diff --stat board/web/css/board.css` empty.
+- **Fault injection 2** — replaced with `color: inherit;`: `register-css.test.js` (the regex guard) stayed **GREEN 6/6** (its `/(?&lt;!-)\bcolor\s*:/` pattern matches the text "color: inherit" with no idea what a browser resolves it to — issue #35's finding, reproduced live), while my browser test went **RED** with the identical failure shape (`rgb(255, 74, 58)` vs `rgb(217, 213, 201)`). Restored byte-identical, confirmed empty diff again.
+- **Missing-browser proof** (feeds Task 4): with the browser binary absent, both tests fail with `failureType: 'hookFailed'`, `browserType.launch: Executable doesn't exist at ...` and `node --test`'s own exit code goes to 1 — the existing CI zero-test-refusal step's `if ($testExit -ne 0)` branch already catches this; no new guard code was needed, and I verified this directly rather than assuming it.
+
+### Task 3 — screenshot regeneration
+
+`board/web/regenerate-screenshot.mjs` reuses `real-board-server.js` (Law 6), takes no assertion, writes a dated candidate file, never overwrites automatically. Ran it once: the candidate correctly shows per-item nominal/needs-attention colors distinguished from lane-level color (the fix working). I compared it against `docs/screenshots/2026-07-23-first-light.png` and decided **not** to commit a replacement: that file is the historical evidence of the discovery of #31 itself (every row rendered red) and is cited elsewhere as that record — overwriting it would erase the artifact the NORTH STAR's "the record is what happened" protects. The scratch candidate was deleted, not committed.
+
+### Task 4 — CI
+
+Added `npm ci`, `actions/cache@v4` (OS-conditional path, keyed on `runner.os` + `hashFiles('board/web/package-lock.json')`), and `npx playwright install --with-deps --only-shell chromium` on **both** matrix legs (`.github/workflows/ci.yml:271-304`), reasoning disclosed inline (`ci.yml:72-96`): the whole point of the dual-OS matrix (#14) is catching per-OS rendering divergence, so a single-leg deferral would defeat its purpose, and the measured footprint didn't justify one anyway. `--only-shell` was chosen because `chromium.launch()` in headless mode launches `chrome-headless-shell` by default (observed via `DEBUG=pw:browser`), cutting the download from ~690 MiB to ~274 MiB (both measured directly, clean-room, by renaming `~/AppData/Local/ms-playwright` aside and reinstalling from scratch).
+
+### Documentation updated same-commit
+
+- `docs/setup.md:31` — amended per the owner's mid-dispatch binding ruling: framed as the **existing** D19 distinction ("binds the browser, never Node") extended to a new case, gate-triggered by #33/#31, with the shipped-runtime claim preserved as still true and footprint disclosed. Old text left in place, new sentence appended and marked `**Landed (Car 33, issue #33, 2026-07-23):**` — visible, not silent, matching this repo's own amendment convention.
+- `.github/workflows/ci.yml` — top-of-file "Car 33 additions" block plus the touched step's comment, both rewritten to state what changed and why, never silently.
+- `.gitignore` — `node_modules/` added with a comment citing the reason.
+- Grep swept for `no build step`/`no bundler`/`dependency-free`/`npm install`/`vendor` across `docs/`, `.github/`, `README.md`: `docs/design/2026-07-21-v0-yard-skeleton-design.md:133` (D19 itself), `README.md:84` (Quickstart), `docs/plans/2026-07-23-yard-board-plan.md:199` — all specifically describe the **shipped** `board/web/` runtime, which is untouched and still true; none needed amendment. `docs/doc-map.md` indexes documentation surfaces, not source files, so no new row was needed.
+
+### Observed counts at `7fabf8a9abe958e6e516b1e1683ccbcce7185dda`
+
+- `node --test` (board/web): **59/59** pass (baseline was 56; +2 genuine new assertions, +1 from the same pre-existing "a file under a directory literally named `test/` gets auto-discovered and counted as a trivially-passing zero-assertion file" pattern `minidom.js` already established in the 56 baseline — confirmed by TAP subtest names `ok 6 - test\minidom.js` (pre-existing) and `ok 11 - test\support\real-board-server.js` (new, same shape)).
+- `go vet ./...` + `go test ./... -count=1` (board/): **5/5** packages ok.
+- Pester `scripts/tests`: **250/250** pass.
+- Pester `scripts/probes`: **11/12** — the one failure is `The term 'sh' is not recognized...` from `post-task-probe.sh`, exactly as the brief predicted, not a regression from my work.
+
+### Findings / disclosed deviations
+
+1. **Brief citation did not check out**: the brief stated the `sh`-not-on-PATH probe gap is "a KNOWN environment gap logged in `docs/friction-log.md`." I grepped `docs/friction-log.md` and the rest of `docs/` for `sh`/shebang/POSIX-shell references and found no entry recording this specific gap. It is real and pre-existing (not caused by my work), but not currently logged where the brief claimed. I did not add a friction-log entry myself — that's a different, unrelated ticket's scope, and I flag it here rather than silently fix or silently ignore it.
+2. **Pester baseline mismatch**: the brief stated baseline 247; my own pre-change observation at base `b675062815fc1399edd3714588f5ed81f57a38d` was already 250/250 (confirmed identically before and after my changes), so my work introduces no Pester delta, but the brief's stated number doesn't match what I observed.
+3. **GitNexus mandate not actionable**: CLAUDE.md's "Always Do" section requires `gitnexus_impact`/`gitnexus_detect_changes` before editing symbols, but no GitNexus tool was exposed in my actual toolset for this dispatch (only Bash, PowerShell, Read, Edit, Write, Glob, Grep). I disclose this rather than silently skip it. The actual blast radius is minimal by construction: zero existing Go/JS symbols were net-modified (confirmed by the diff stat against base showing no touched files under `board/web/js/`, `board/web/css/`, or any `board/*.go` other than the two byte-identical-reverted CSS injections).
+4. **Commit granularity**: Task 3's script landed in the same commit as Tasks 1/2/4 rather than a separate one, because `git add` was run before I'd finalized the split; it reuses `real-board-server.js` from the same commit so the coupling is real, but a strict "one commit per task" reading would have separated it. Disclosed rather than silently folded in.
+
+No orphaned processes were left running (checked via `Get-NetTCPConnection`/`Get-Process` before finishing; one stray `server.exe` from an earlier manual probe run was found not listening on any port and was cleaned up).
+
+Relevant file paths (all absolute, in the car33 worktree):
+- `C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\e92f5a0b-1b9e-4913-98b3-c319b4d5e90b\scratchpad\car33\board\web\test\browser-register-cascade.test.js`
+- `C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\e92f5a0b-1b9e-4913-98b3-c319b4d5e90b\scratchpad\car33\board\web\test\support\real-board-server.js`
+- `C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\e92f5a0b-1b9e-4913-98b3-c319b4d5e90b\scratchpad\car33\board\web\regenerate-screenshot.mjs`
+- `C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\e92f5a0b-1b9e-4913-98b3-c319b4d5e90b\scratchpad\car33\board\web\package.json`
+- `C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\e92f5a0b-1b9e-4913-98b3-c319b4d5e90b\scratchpad\car33\board\web\package-lock.json`
+- `C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\e92f5a0b-1b9e-4913-98b3-c319b4d5e90b\scratchpad\car33\.github\workflows\ci.yml`
+- `C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\e92f5a0b-1b9e-4913-98b3-c319b4d5e90b\scratchpad\car33\docs\setup.md`
+- `C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\e92f5a0b-1b9e-4913-98b3-c319b4d5e90b\scratchpad\car33\.gitignore`
+
+```starcar-artifact
+outcome: done-with-findings
+findings:
+  - id: F1
+    severity: minor
+    text: "Brief claimed the scripts/probes 'sh not recognized' gap is logged in docs/friction-log.md; grep of docs/friction-log.md and docs/ found no such entry. Real, pre-existing, not caused by this car's work; not fixed here (out of #33's scope), only disclosed."
+  - id: F2
+    severity: minor
+    text: "Brief stated Pester scripts/tests baseline as 247; observed baseline at base commit b675062815fc1399edd3714588f5ed81f57a38d was 250/250, both before and after this car's changes, so this car introduces no Pester delta but the brief's stated number does not match observation."
+  - id: F3
+    severity: minor
+    text: "CLAUDE.md mandates gitnexus_impact/gitnexus_detect_changes before editing symbols; no GitNexus tool was present in this dispatch's actual toolset (only Bash, PowerShell, Read, Edit, Write, Glob, Grep). Disclosed rather than silently skipped. Actual blast radius verified independently: zero existing Go/JS symbols net-modified in the final diff against base (confirmed via git diff --stat b675062...HEAD showing only new files plus two doc/CI edits; the two CSS fault-injections were reverted byte-identical before commit)."
+  - id: F4
+    severity: minor
+    text: "Task 3's regenerate-screenshot.mjs landed in the same commit as Tasks 1/2/4 rather than a separate commit; it reuses Task 2's real-board-server.js so the coupling is genuine, but a strict one-commit-per-task reading would have split it."
+abstract: "Car 33 closes issue #33 on branch car/33-playwright at commit 7fabf8a9abe958e6e516b1e1683ccbcce7185dda (base b675062815fc1399edd3714588f5ed81f57a38d verified). Added board/web/test/browser-register-cascade.test.js, driving the playwright LIBRARY (never @playwright/test) inside plain node --test against the REAL board/server/ Go binary reading the REAL artifacts/ store, asserting only on getComputedStyle values (never pixel diffing), per the owner's binding amendment. Proved non-vacuity by two fault injections into board/web/css/board.css (missing color declaration, then color: inherit), both observed RED with quoted failure messages, both reverted byte-identical (confirmed empty git diff). The color: inherit injection demonstrates concretely that register-css.test.js's regex guard stays green while this new test goes red - issue #35's finding made live. Probed (not assumed) that `go run ./server` orphans a grandchild process on kill (measured EADDRINUSE) versus building-then-spawning a binary, which was measured deterministic. Added board/web/package.json + package-lock.json (first in the repo, playwright 1.61.1 pinned, ~18 MiB / 2 packages), gitignored node_modules/, wired CI to install --only-shell chromium (~274 MiB measured, versus ~690 MiB default) with --with-deps and actions/cache on both matrix legs, and proved directly that a missing browser fails loudly (hookFailed, exit 1) rather than silently skipping, needing no new CI guard beyond the existing zero-test-refusal step. Updated docs/setup.md's Node.js row and ci.yml's step comments in the same commit per the owner's mid-dispatch ruling: framed as the existing D19 distinction (shipped browser runtime versus Node/test-tooling) extended to Playwright, gate-triggered by #33, with the shipped-runtime-has-no-build-step claim preserved as still true. Added board/web/regenerate-screenshot.mjs (Task 3, reuses the same server helper, no assertions, not part of the automated suite); ran it once and deliberately did not overwrite the existing historical docs/screenshots/2026-07-23-first-light.png, since that file is itself the historical evidence of #31's discovery. Final observed counts at the landing commit: node --test (board/web) 59/59, go vet + go test (board/) 5/5 packages, Pester scripts/tests 250/250, Pester scripts/probes 11/12 (one pre-existing, unrelated environment gap, not a regression). Four minor findings disclosed: a brief citation to docs/friction-log.md that does not check out, a Pester baseline number mismatch against direct observation, GitNexus tooling mandated by CLAUDE.md but absent from this dispatch's toolset, and Task 3 landing in the same commit as Tasks 1/2/4 rather than separately."
+```</result>
+<usage><subagent_tokens>268983</subagent_tokens><tool_uses>154</tool_uses><duration_ms>1859172</duration_ms></usage>
+</task-notification>
