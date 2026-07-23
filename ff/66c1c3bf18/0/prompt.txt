@@ -6810,3 +6810,7 @@ abstract: Delta re-review round 2 (verify-the-fix, same-agent reuse, no rotation
 ---
 
 so while we wait, refresh your skills please and I think this might be a good time to start herding our documentation, system, dev, and user.
+
+---
+
+shape approved
