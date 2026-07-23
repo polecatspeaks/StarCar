@@ -793,7 +793,15 @@ a car and its review are one unit; never start a car whose review will not also 
 
 Every piece of work gets an issue - no untracked work. One area label per issue; a train
 is composed from ONE label's tickets (single coherent manifest). Check for duplicates
-before filing.
+before filing. **Every issue lands on the project board at birth** (owner catch,
+2026-07-23: eleven of sixteen open issues were invisible to the owner's board view -
+every conductor-created ticket had satisfied never-drop while silently bypassing the
+board, a lie of omission on exactly the surface StarCar exists to make honest). The
+MECHANISM is the project's built-in auto-add workflow (owner-configured); until and
+beside it, `gh project item-add 6 --owner polecatspeaks --url <issue-url>` at creation,
+and the audit is one line, run at session start or on suspicion:
+`gh project item-list 6 --owner polecatspeaks --format json --limit 100 --jq '[.items[]|select(.content.number!=null)|.content.number]|sort'`
+diffed against `gh issue list --state open`.
 
 ## Session starts: the tooling retro (STANDING ITEM)
 
@@ -859,7 +867,7 @@ landed, what is parked, what happens first tomorrow.
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **StarCar** (711 symbols, 713 relationships, 0 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **StarCar** (911 symbols, 914 relationships, 0 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
 
