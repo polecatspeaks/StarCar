@@ -64,8 +64,8 @@ Documents here sort along three axes, not one:
 
 | Document | Quadrant | Axis | What it is |
 |---|---|---|---|
-| `README.md` | explanation (+ future how-to) | LIVING | Honest by construction: describes only what exists. The quickstart arrives with the board train's view car, which kills the "no quickstart" line in the same commit that makes it false |
-| *(scheduled)* quickstart | tutorial | arrives with Car 5 | The stranger's runnable path |
+| `README.md` | explanation + how-to | LIVING | Honest by construction: describes only what exists. **Landed 2026-07-23 (Car 5, plan section 6, task 5.4):** the Quickstart section replaces the "no quickstart" line in the same commit that made it false - `git clone` + `cd board && go run ./server`, verified from a clean clone (root/`/api/snapshot`/`/js/app.js` all 200, snapshot validates against the wire schema) |
+| `README.md#quickstart` | tutorial | LIVING | The stranger's runnable path - now inline in `README.md` rather than a separate scheduled document; folded here rather than as its own row since it lives in the same file and the same LIVING contract governs it |
 | *(trigger-gated)* adapter-authoring guide | how-to | trigger: the second adapter | Deferred until there are two adapters to generalise from |
 | *(trigger-gated)* contributor how-to | how-to | trigger: first external contributor | Until then, `docs/setup.md` + `CLAUDE.md` carry it for the workforce that actually exists |
 

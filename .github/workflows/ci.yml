@@ -58,6 +58,16 @@
 #     conductor handback at merge, recorded in the train's closing report - this step's
 #     command logic was verified locally in both directions (green, and with an injected
 #     one-character divergence) via the CiWrapperSimulation technique before landing.
+#
+# Car 5 additions (yard-board plan task 5.1, spec YB-6):
+#   - `node --test` runs board/web/'s composition-matrix suite (compose.js's pure
+#     Rules 1-4 engine) in the SAME COMMIT as the first web test lands, per the plan's
+#     "the tests are never car-local-only" requirement.
+#   - its own zero-test refusal, same shape as the Pester and Go guards above: `node
+#     --test` was OBSERVED to exit 0 on a directory with no matching test files at all
+#     (an empty scratch directory produced "tests 0" and exit 0), so the TAP reporter's
+#     "# tests N" trailer line is parsed and a zero count fails the build even though
+#     the process itself exited cleanly.
 
 name: CI
 
@@ -224,6 +234,47 @@ jobs:
           }
           if ($testCount -eq 0) {
             Write-Error "go test discovered ZERO tests in board/. A green run that asserted nothing is not a pass."
+            exit 1
+          }
+
+      - name: Run board/web node --test suite (composition matrix, YB-6)
+        shell: pwsh
+        working-directory: board/web
+        run: |
+          # Plan task 5.1: the composition engine (compose.js) is a pure
+          # module, matrix-tested by Node's stdlib test runner - no
+          # framework, no build step, no browser (board/web/js runs
+          # unmodified in both Node and a plain <script type="module">
+          # browser context). GitHub-hosted runners preinstall Node
+          # (docs/setup.md's Node.js row, same disclosure shape as the
+          # Pester/ConvertFrom-Yaml rows above); a stranger's box may not.
+          Write-Host "node $(node --version)"
+
+          # Zero-test refusal, same shape as the Pester and Go guards above:
+          # `node --test` exits 0 on a directory with NO matching test files
+          # at all (OBSERVED: an empty scratch directory produced "tests 0"
+          # / "fail 0" and exit code 0 - the exact lying-instrument shape
+          # this repo rejects everywhere else). The TAP reporter's trailer
+          # line "# tests N" is the one stable, parseable count; the default
+          # "spec" reporter's "ℹ tests N" line is for humans, not this
+          # guard.
+          $tapLines = & node --test --test-reporter=tap 2>&1
+          $testExit = $LASTEXITCODE
+          $tapLines | ForEach-Object { Write-Host $_ }
+
+          $testCountLine = $tapLines | Where-Object { $_ -match '^# tests (\d+)' } | Select-Object -Last 1
+          $testCount = 0
+          if ($testCountLine -and ($testCountLine -match '^# tests (\d+)')) {
+            $testCount = [int]$Matches[1]
+          }
+          Write-Host "node --test discovered $testCount test(s) in board/web/"
+
+          if ($testExit -ne 0) {
+            Write-Error "node --test failed in board/web/ (exit $testExit)"
+            exit 1
+          }
+          if ($testCount -eq 0) {
+            Write-Error "node --test discovered ZERO tests in board/web/. A green run that asserted nothing is not a pass."
             exit 1
           }
 

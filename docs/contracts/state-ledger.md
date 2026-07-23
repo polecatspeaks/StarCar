@@ -112,6 +112,30 @@ successful scan | poll cycle, scan failure | client (SSE) connect/reconnect.
 is named here per design S6/S8 but is explicitly Car 5's to ledger - this server never
 reads or writes it; it is out of `board/server`'s process boundary entirely.
 
+## Question 3, added (2026-07-23, yard-board train Car 5, plan task 5.3) - the browser's own state
+
+**Landed, confirming the note above rather than trueing it away from - the note held.**
+`board/web/js/app.js` owns four in-memory fields, all VIEW-TRANSIENT (per-tab, never
+persisted, never sent anywhere): `ingestState.snapshot` (the last VALIDATED wire
+snapshot), `ingestState.lastAppliedSeq` (the seq-ordering row below), `ingestState.
+markedStale` + `ingestState.clientConditions` (task 5.2's discard-keeps-last-render
+mark), and `connected` (the disconnect watchdog's flip). This is a NEW process (a browser
+tab), not a row inside `board/server`'s own 9-field count above - the header arithmetic at
+the top of this file is unchanged by this addition, and is stated here as its own
+question per the template's Q1/Q2 shape rather than folded into Q1's count.
+
+| Field (owner) | Page load | Tab reconnect (network drop then restored) | Server restart mid-connection | Verdict | Evidence |
+|---|---|---|---|---|---|
+| `ingestState.snapshot` (`app.js`) | starts `null`; set on the FIRST payload that both parses and validates (`firstPaint`) | UNCHANGED across a transient drop - the last validated snapshot stays rendered, marked disconnected (never blanked) | UNCHANGED until a new valid, higher-seq snapshot arrives from the restarted server | SAFE | `board/web/test/ingest.test.js` (discard-keeps-last-render, seq ordering); `dom-writer.test.js`'s disconnected-still-shows-the-lane test |
+| `ingestState.lastAppliedSeq` (`app.js`) | starts `-1` (`initialIngestState`) | UNCHANGED by a drop itself; the server's OWN `seq` resets to 0 on its restart (this file's Q1 row above), so the client's stored value can be numerically ahead of a freshly restarted server's `seq` until that server's count climbs back past it - a deliberate consequence of seq being a per-process monotonic counter, not a global one; the wire's `asOf`/lane data are what a reconnecting client actually judges freshness by, never a raw seq comparison across a server restart | resets to `-1` only on a full PAGE reload, never on a mere stream reconnect | SAFE | `board/web/test/ingest.test.js`'s three seq-ordering tests (lower/equal seq is a no-op; higher seq applies) |
+| `ingestState.markedStale` / `clientConditions` (`app.js`) | starts `false` / `[]` | set by a validation failure (task 5.2), cleared by the next VALID payload | same | SAFE | `board/web/test/ingest.test.js` |
+| `connected` (`app.js`, driven by `sse-protocol.js`'s watchdog) | starts `false` until the stream's first frame | flips `false` after two missed heartbeat intervals (`10000ms` default), flips back `true` on the next observed frame | flips `false` when the fetch/read loop throws or stalls past the watchdog | SAFE | `board/web/test/sse-protocol.test.js`'s disconnect-watchdog tests |
+
+No lifecycle event here can produce a stale-looking "fine" - a dropped connection always
+renders `disconnected - showing last known` (never silently frozen with no chrome change),
+and a restarted server's lower `seq` cannot silently roll the view backward (seq ordering
+drops it as a no-op rather than un-rendering already-shown data).
+
 **A note on what is NOT a separate ledger row:** `Server.lastCompareBytes` (the stripped-
 for-comparison marshal of `lastGoodSnapshot`) is fully DERIVED from `lastGoodSnapshot`
 - recomputed every time that field changes (`mustMarshalStripped`, `poll.go`) - so it

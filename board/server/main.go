@@ -35,6 +35,9 @@ func main() {
 	if cfg.DefaultsPath == "" {
 		cfg.DefaultsPath = filepath.Join(repoRootDir, "config", "harness-defaults.json")
 	}
+	if cfg.WebDir == "" {
+		cfg.WebDir = filepath.Join(repoRootDir, "board", "web")
+	}
 
 	srv, err := NewServer(cfg)
 	if err != nil {
