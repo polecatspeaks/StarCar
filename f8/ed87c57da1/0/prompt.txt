@@ -1,0 +1,70 @@
+pick up where we left off
+
+---
+
+pick up where we left off
+
+---
+
+<task-notification>
+<task-id>addbb80a3b64cbf2e</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\e92f5a0b-1b9e-4913-98b3-c319b4d5e90b\tasks\addbb80a3b64cbf2e.output</output-file>
+<status>completed</status>
+<summary>Agent "Car 31: register CSS fix" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>## Report — Car 31: issue #31 (register CSS fix)
+
+**Base verified:** worktree HEAD was `38b67c8c0b9f75099aa334a5cf2af340c810920d` on branch `car/31-register-css` before any edit — matched the brief exactly.
+
+**Commit:** `9c4730acaa02ce7d75ab7481d4829d916b7ec890` on `car/31-register-css` — "fix(#31): register-nominal must declare color, not just border-left-color". Contains both the new red test and the one-line CSS fix, per house TDD convention.
+
+### Diagnosis confirmed against real code (all three brief citations checked and matched)
+- `board/web/js/compose.js:13` — `REGISTER_ORDER = ['nominal', 'in-progress', 'needs-attention']`, imported by the test rather than hardcoded.
+- `board/web/css/board.css:128-138` (pre-fix) — `.register-nominal` declared only `border-left-color`; `.register-in-progress` and `.register-needs-attention` declared both `border-left-color` and `color`.
+- `board/web/js/dom-writer.js:79` — `` `lane lane-${lane.id} ${registerClass(lane.register)}` `` puts the lane's register class on the lane container, confirming the cascade path; lines 164, 175, 203 confirmed `border-left: 4px|3px solid currentColor` on `.car-chip`, `.signal`, `.solari-row`.
+
+No mismatch found — no honest-stop needed on this task.
+
+### Red evidence
+`board/web/test/register-css.test.js`, isolated run before the fix (`node --test test/register-css.test.js`):
+```
+✖ .register-nominal is color-self-contained: declares BOTH border-left-color and color, so no register can inherit another's color (0.5145ms)
+  AssertionError [ERR_ASSERTION]: .register-nominal must declare its own color (not just border-left-color) - otherwise this register's elements inherit color from an ancestor running a different register (issue #31)
+      actual: '\n  border-left-color: var(--nominal);\n'
+      expected: /(?&lt;!-)\bcolor\s*:/
+```
+5 pass / 1 fail at that point — the sole failure is exactly the missing `color` declaration in `.register-nominal`, the stated reason. (`.register-nominal rule exists` and both `.register-in-progress`/`.register-needs-attention` color-self-contained checks passed, confirming the test isolates the defect correctly rather than failing broadly.)
+
+### Fix
+`board/web/css/board.css` — `.register-nominal` now reads:
+```css
+.register-nominal {
+  border-left-color: var(--nominal);
+  color: var(--nominal);
+}
+```
+
+### Green evidence
+- `node --test` from `board/web`: **56/56 passing, 0 failures** (50 baseline + 6 new: one "rule exists" + one "color-self-contained" test per register id, generated from `REGISTER_ORDER`).
+- `C:\Program Files\Go\bin\go.exe test ./...` from `board/`: **5/5 packages ok** (`board`, `board/assemble`, `board/fold`, `board/server`, `board/store`) — collateral check, confirms no Go regression from a diff that touches no Go files.
+- Pester suite: **deliberately skipped**, stated as a decision — this diff touches only `board/web/css/board.css` and `board/web/test/register-css.test.js`, never `scripts/`.
+
+### Documentation check
+- `board/web/css/board.css`'s own comment block (line 126: "the three registers, and NOTHING else colors an element") — still true: the fix adds `color: var(--nominal)`, reusing the existing nominal-register variable, not a fourth color. No edit needed.
+- `docs/design/2026-07-23-ui-mockup-brief.md:43-46` ("the one hard aesthetic law: three severity colors, total... no fourth color") — read in full; still honored, no edit needed.
+- Root `README.md` — grepped for `register`/`board.css`/`needs-attention`; zero matches. Confirmed untouched surface, no board-specific README exists under `board/web/`.
+
+### Deviations
+None. Scope held exactly to the brief: no edits to `dom-writer.js`, `render.js`, or freshness/IDLE behavior (#29, reserved for the owner).
+
+### Note (not a blocker)
+A PostToolUse hook flagged the GitNexus index as stale (last indexed `1182e09`) after the commit. This is a CSS/test-only change with no new/changed JS or Go symbols, so I did not run `gitnexus analyze` — flagging this as a disclosed decision rather than a silent skip, for the reviewer's awareness.
+
+```starcar-artifact
+outcome: done
+findings: none - diagnosis in the brief matched the real code exactly at every cited file:line (compose.js:13, board.css:128-138, dom-writer.js:79, and the currentColor border rules on .car-chip/.signal/.solari-row). No honest-stops, no scope deviations, no doc invalidations found.
+abstract: Fixed issue #31 (all-red first-light render) by adding "color: var(--nominal);" to the .register-nominal rule in board/web/css/board.css, which previously declared only border-left-color while the other two register rules declared both, letting a hot lane's inherited color cascade into nominal children via currentColor borders. Added board/web/test/register-css.test.js, a red-first test importing REGISTER_ORDER from compose.js (never hardcoded) that extracts each ".register-REGISTERID" rule block from board.css by plain regex and asserts both border-left-color and color are declared - observed red for the stated reason (.register-nominal missing color) before the fix, green after. Committed both together at 9c4730acaa02ce7d75ab7481d4829d916b7ec890 on car/31-register-css, base 38b67c8c0b9f75099aa334a5cf2af340c810920d verified before editing. node --test (board/web): 56/56 passing (50 baseline + 6 new). go test ./... (board/): 5/5 packages ok, collateral, no Go touched. Pester suite explicitly skipped as a stated decision (diff never touches scripts/). Checked board.css's own comment claim and the mockup brief's three-register law; both still hold after the fix, no doc edits needed; root README has zero register/CSS references, confirmed untouched.
+```</result>
+<usage><subagent_tokens>70251</subagent_tokens><tool_uses>21</tool_uses><duration_ms>150480</duration_ms></usage>
+</task-notification>
