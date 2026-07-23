@@ -6966,3 +6966,103 @@ abstract: Delta round-2 verify-the-fix review of docs/doc-map.md v2 at commit 3c
 <status>completed</status>
 <summary>Background command "Watch CI for the map-approval push" completed (exit code 0)</summary>
 </task-notification>
+
+---
+
+<task-notification>
+<task-id>a0ff9e48c78041347</task-id>
+<tool-use-id>toolu_0137hR5BDYcfhy7Pwh6avo5J</tool-use-id>
+<output-file>C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\f2abfa3b-6242-44cc-997f-b970da29a104\tasks\a0ff9e48c78041347.output</output-file>
+<status>completed</status>
+<summary>Agent "Car 3: fold port + vectors" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>All five commits landed cleanly, working tree clean, all verification items pass. Let me compile the final report.
+
+## Final Report
+
+**Base verified:** worktree at `car-board-3`, branch `car/board-car3`, base commit `896e10e817c7e131a239bdb2b9d93cea566a4817` — matched the brief exactly before any edit.
+
+**Commits (in mandated order, each its own commit):**
+
+| Task | SHA | Subject |
+|---|---|---|
+| 3.1 | `153eec3` | rehome rehomable `Detector.Tests.ps1` cases as fold vectors |
+| 3.2 | `1290275` | detector empty-vocab fix — one combined fault, zero fan-out |
+| 3.R | `a64e45f` | `re2.go`'s pattern walk now covers `patternProperties` keys |
+| 3.3 | `5b4cd96` | `board/fold` — the Go port, conforming to `schema/vectors/fold/` |
+| 3.4 | `330ddf9` | the cross-verifier CI step — pwsh and Go fold vs `schema/vectors/fold/` |
+
+### Task 3.1 — vector rehome (YB-10)
+`Detector.Tests.ps1` had 15 imperative `It` cases. 11 express pure fold semantics and were rehomed as declarative vectors; 1 new vector (`unrecognised-outcome-discovery-by-name`) was added for a semantic (`Detect-Dispatches.ps1:107-110`) no existing test pinned, per the plan's own rule ("add the vector, don't guess in Go"). 4 cases stay imperative exactly as named in the brief: unreadable-vocab-dir, unreadable-defaults, tier assertion, shop-default budget case.
+
+Arithmetic: 15 original = 11 rehomed + 4 carved-out (unchanged). File went from 15 → 19 `It`s (4 carved-out + 15 vector-driven: 12 new files + `subject-partition` + `manifest-supersession` + `empty-vocab-one-fault`-as-Inconclusive). Total suite: 213/213 → **216/216 + 1 Inconclusive** (217 total), 0 failed.
+
+A real Pester v5 discovery/run scope-boundary defect was found and fixed during this task: functions/variables defined at bare file top-level are invisible during `It` execution (only visible at discovery). First draft failed all 19 tests with `CommandNotFoundException` / null-path binding; fixed by moving all helpers into one shared `BeforeAll` and using Pester's `-ForEach` (not a raw `foreach` closure, which aliases to the same loop variable across iterations).
+
+`schema/vectors/README.md`'s vector table and migration note updated same-commit.
+
+### Task 3.2 — detector fix (YB-8, DR4-2)
+RED observed (marker removed, run, quoted): `Expected '"vocabulary: valid but empty: kinds.json, outcomes.json"'... But was: 'null'` — actual faults=[] (empty).
+
+Fix implemented in `scripts/Detect-Dispatches.ps1`. While red-pinning, found and fixed a genuine PowerShell defect (disclosed in commit): under `Set-StrictMode -Version Latest`, `$x = if (cond) { @() } else { @() }` yields `$null`, not an empty array — an if-expression's empty-array branch unrolls to zero pipeline objects. Fixed with an outer `@(...)` wrap. Also fixed the same class of bug in the test harness (`ConvertTo-Json` via pipe vs `-InputObject`).
+
+GREEN: `Detector.Tests.ps1` 19/19. Full suite 217/217, 0 inconclusive.
+
+**Real-store parity** (quoted): BEFORE (base `896e10e` detector) and AFTER (this fix), both against real `schema/vocab` + `config/harness-defaults.json`, `-Now 2026-07-23T12:00:00Z`: `faults=[]`, `discoveries=[]`, 49 dispatches, 1 intent — canonical JSON of all four fields **IDENTICAL** between runs.
+
+### Task 3.R — RE2 rider (C1R-2)
+RED observed: `TestRE2CompatiblePatterns_CatchesInjectedLookaheadAsPatternPropertiesKey` failed — `expected exactly 1 ... got 0: []` — a lookahead used as a `patternProperties` object key was invisible to the walk. The companion `propertyNames` case passed from the start (already covered via the existing recursive descent into nested `"pattern"` keys) — confirmed empirically, not assumed. Fixed `board/re2.go`'s `findPatterns` to also collect `patternProperties` object keys. Grep confirmed no current schema uses either keyword (a latent hole, not a live defect).
+
+GREEN: board Go suite 4/4 → 6/6. `go vet ./...` clean.
+
+### Task 3.3 — Go fold port (YB-7, D18)
+`board/fold` package: `Fold(records, vocab, now) Output`, matching the literal interface block. Ports precedence, within-kind latest-at supersession, intent partition, budget/overdue gradient, spend-from-cost-only, kind/outcome discovery, and the DR3-2/YB-8 empty-vocab fault (born fixed — no separate red/green needed on the Go side).
+
+`vectors_test.go` (`TestFoldConformsToVectors`) is the Go vector-runner: JSON round-trip both sides into `any`, `reflect.DeepEqual` (Go map comparison is order-independent, all JSON numbers become `float64`, so no manual canonicalization needed the way pwsh required).
+
+Non-vacuity proof (all 14 vectors passed on first attempt — no organic red): fault-injected precedence (`{"returned": 1, ..., "dispatched": 3}`), observed RED — 3/14 vectors failed exactly the precedence-dependent ones, e.g. `expected: [{...,"state":"returned"...}] actual: [{...,"state":"dispatched"...}]` — reverted, confirmed byte-restored via `go build`/`go vet`/`go test` all green again.
+
+Own-idiom env-fault tests added per the reviewer caution folded into this brief: `LoadVocab`/`LoadDefaultBudget` + `TestLoadVocab_UnreadableDirIsOneError` / `TestLoadDefaultBudget_UnreadablePathIsOneError` (own-idiom messages, not vector-pinned) plus a non-vacuity happy-path test.
+
+**Disclosed scope decision:** `Fold` takes no default-budget parameter (matches the plan's literal 3-arg interface). No vector exercises shop-default fallback (task 3.1 carved it out), so a record with no budget and no default renders `budget_seconds: null`, never promoted to `overdue` — documented in `fold.go`'s package doc.
+
+GREEN: `go vet` clean, board 6/6, board/fold 3 loader tests + 14 vector subtests. `gofmt -l .` reports nothing.
+
+### Task 3.4 — CI cross-verifier (YB-9, D18)
+New `.github/workflows/ci.yml` step (both matrix legs) runs both vector-runners against `schema/vectors/fold/`, with an explicit zero-vector refusal.
+
+Local verification via the `CiWrapperSimulation` technique (extracted the real step text via `ConvertFrom-Yaml`, executed as a real child pwsh process with GitHub's documented wrapper suffix):
+- **GREEN direction** (repo unmodified, Go added to PATH): step exit 0, pwsh 19/19, Go exit 0.
+- **Injected-divergence direction:** mutated `subject-partition.json`'s `expected.dispatches[0].outcome` from `"done"` to `"dane"` (one character, input records untouched). First attempt surfaced a **genuine defect**, disclosed and fixed in-commit: `go test` returned a stale cached PASS (`(cached)`) because Go's build cache doesn't track a JSON fixture read at runtime via `os.ReadFile` — the exact failure this step exists to catch would have gone undetected. Fixed with `-count=1`. Re-verified: pwsh Failed=1, Go exit 1 (confirmed non-cached), step exit 1.
+- **Restored byte-identical:** sha256 `cb7a1ddd798c393f6d1554e4bc6c20d1d3ec9e6df54e087c89e903d163e5609c` matches before/after; `git diff --stat` on the file empty.
+- Final re-verification (restored, fix in place): step exit 0.
+
+The **live** watched-to-fire CI divergence injection is explicitly the conductor's handback at merge (Q1's binding condition) — not claimed by this car.
+
+`ci.yml`'s header comment gains a disclosed "Car 3 additions (yard-board plan task 3.4...)" block, distinguished by name from the pre-existing harness-train "Car 3 additions" block (two different trains numbered a car the same way).
+
+### Final verification (all four items from the brief)
+- `Invoke-Pester ./scripts/tests`: **217/217 passed, 0 failed, 0 inconclusive** (baseline 213/213 at base).
+- `go test ./...` in `board/`: board package **6/6**; `board/fold` **3 loader tests + 14 vector subtests, all pass**. `go vet ./...` clean both times.
+- Real-store detector run: `tier=tier-1-only`, `faults=[]`, `discoveries=[]`, 49 dispatches, 1 intent.
+- `node board/web/probe-yard-snapshot.mjs`: **PASS** (schema compiles, sample validates, non-vacuity rejection confirmed).
+
+### Deviations / disclosures
+1. Non-vacuity fault injections (3.3's precedence flip, 3.4's vector mutation) performed and reverted, both confirmed byte/behavior-identical afterward.
+2. Go fold's `Fold` signature omits a default-budget parameter — disclosed scope decision, matches the plan's literal interface and the carved-out shop-default case.
+3. `ci.yml` header disambiguates two same-numbered "Car 3" blocks from different trains.
+4. No new mutable service state introduced by this car's work — nothing to ledger.
+
+### Honest stops
+None. No plan/spec-vs-code contradiction was hit; the plan and spec's file:line citations (Detector.Tests.ps1 line ranges, design S6/DR3-2, README runner contract) all checked out against the actual code.
+
+### Findings for the reviewer
+- The Pester discovery/run scope-boundary defect (3.1) and the Go test-cache staleness-blindness on runtime file reads (3.4) are both worth flagging as reusable substrate facts — the CI step's `-count=1` comment documents the second one in place; the first is documented in `Detector.Tests.ps1`'s own header note.
+
+```starcar-artifact
+outcome: done
+findings: none
+abstract: Car 3 (yard-board train) completed all five tasks (3.1, 3.2, 3.R, 3.3, 3.4) in the mandated order, one commit per task, on branch car/board-car3 from verified base 896e10e. Task 3.1 rehomed 11 of 15 Detector.Tests.ps1 imperative cases into schema/vectors/fold/ declarative fixtures plus one new semantic vector, converted the suite into a fixture-driven runner using Pester -ForEach (after diagnosing and fixing a real Pester v5 discovery/run scope-boundary defect), and kept the four named carved-out cases imperative. Task 3.2 fixed the empty-vocab detector bug red-first (quoted RED and GREEN), disclosing and fixing a genuine PowerShell if-expression array-unrolling defect found along the way, and proved real-store parity before and after. Task 3.R closed the patternProperties-key gap in board/re2.go, red-first, confirming propertyNames was already covered. Task 3.3 ported the fold to Go as board/fold, matching the literal Fold(records, vocab, now) interface, passing all vectors, with a deliberate non-vacuity fault-injection proof (since it passed green on first attempt) and own-idiom env-fault tests for the two carved-out cases. Task 3.4 added the D18 cross-verifier CI step and locally verified its command logic in both green and injected-divergence directions via the CiWrapperSimulation technique, catching and fixing a real Go test-cache staleness bug (missing -count=1) along the way. Final state: Pester 217/217 (0 inconclusive), board Go suite 6/6 + board/fold 3+14 tests all green, real-store detector output unchanged (faults=[], discoveries=[], 49 dispatches, 1 intent), probe-yard-snapshot.mjs PASS. Working tree is clean with no untracked files. The live CI-watched divergence injection remains an explicit conductor handback at merge, not claimed by this car.
+```</result>
+<usage><subagent_tokens>341576</subagent_tokens><tool_uses>160</tool_uses><duration_ms>2290161</duration_ms></usage>
+</task-notification>
