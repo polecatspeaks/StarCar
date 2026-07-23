@@ -6347,3 +6347,72 @@ abstract: APPROVE at plan gate round 2, delta verify-the-fix, same-agent reuse. 
 <status>completed</status>
 <summary>Background command "Watch CI for the manifest push" completed (exit code 0)</summary>
 </task-notification>
+
+---
+
+<task-notification>
+<task-id>a184e26ee16e704ae</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\f2abfa3b-6242-44cc-997f-b970da29a104\tasks\a184e26ee16e704ae.output</output-file>
+<status>completed</status>
+<summary>Agent "Car 1: Go toolchain + CI" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>Working tree is clean. All six tasks complete on `car/board-car1`, 5 commits (task 1.4 produced no diff by design — pure local verification).
+
+## Final report — Car 1 (yard-board plan, tasks 1.1–1.6)
+
+**Base verified:** `2051ffe20db992bdad9c1ff005f5ff018cae6884` (matches required `2051ffe...`), branch `car/board-car1`, before any edit.
+
+### Task 1.1 — Go module skeleton + pinned jsonschema/v6 dependency
+Commit `ce5c93f`. `board/go.mod` — module `github.com/polecatspeaks/StarCar/board`, `go 1.26`. `board/board.go` (placeholder), `board/board_test.go`, `board/testroot_test.go`.
+- Red observed: `go test ./...` → `.\board_test.go:13:9: undefined: Placeholder` (compile failure, stated reason: `Placeholder` didn't exist yet).
+- Green: `go test ./... -v` → `--- PASS: TestPlaceholder`, `--- PASS: TestPinnedJSONSchemaDependencyCompilesStoreSchema`, `PASS`.
+- The dependency-use test compiles `schema/starcar-artifact.schema.json` via `github.com/santhosh-tekuri/jsonschema/v6 v6.0.2` and validates a sample shaped like the landed `schema/vectors/valid-returned.json` vector.
+- `go vet ./...` clean.
+
+### Task 1.2 — CI leg: `go vet` + `go test`, both matrix legs, zero-test refusal
+Commit `a81b6d4`. New step "Run board Go vet + tests" in `.github/workflows/ci.yml`, using `actions/setup-go` driven by `board/go.mod`'s `go` directive, `working-directory: board`. Zero-test refusal parses `go test -json` output and counts distinct `(Package, Test)` "run" events — a `go test` exit 0 with zero discovered tests is still refused. Did not touch the `#20` artifact-index staleness step or its `if:` condition. Header comment updated in the same commit.
+
+### Task 1.3 — RE2 standing-rule probe, red-first
+Commit `591423e`. `board/re2.go` (`checkRE2CompatiblePatterns`) + `board/re2_test.go`.
+- Red observed: `go test ./...` → `.\re2_test.go:31:19: undefined: checkRE2CompatiblePatterns` (and line 56) before `re2.go` existed.
+- Non-vacuity proof: `TestRE2CompatiblePatterns_CatchesInjectedLookahead` writes a fixture with pattern `^(?!bad-train:).*$` into a `t.TempDir()` and asserts the checker names that exact pattern/file.
+- Green: all 4 tests pass, including `TestRE2CompatiblePatterns_RealSchemasAllCompile` (confirms the 3 real `schema/*.schema.json` files' patterns all compile under Go's RE2 today).
+- **Root-resolution choice (reviewer caution honored):** `repoRootSchemaPath` (`board/testroot_test.go`) uses `runtime.Caller(0)` to resolve the test file's own on-disk path at compile time, then walks up to the repo root — independent of both process cwd and `go test`'s per-package working directory, stated in the code comment.
+- **Location deviation from the round-2 handoff (scripts/probes/go/), DISCLOSED per plan text:** confirmed by inspection that `scripts/probes/go/json-facts/main.go` and `scripts/probes/go/sse-facts/main.go` are both bare `package main` with no `go.mod` anywhere under `scripts/probes/go/` — a probe placed there would inherit non-execution. `board/` is CI-run via 1.2, so the probe lives where it fires.
+
+### Task 1.4 — Watched-red for the CI leg, local only (no commit — pure verification)
+Three fault injections, each observed then cleanly reverted (`git status --short board/` empty after each):
+1. **Failing test:** added `TestDeliberateRedForWatchedRedProof` (`t.Fatal(...)`). `go test ./...` exit 1. Ran the exact CI step text (extracted from the committed `ci.yml` via `ConvertFrom-Yaml`, same technique `CiWrapperSimulation.Tests.ps1` uses) → `go test discovered 5 test(s) in board/`, `Write-Error: go test ./... failed in board/ (exit 1)`, **EXIT CODE: 1**.
+2. **Zero-test discovery:** moved all `_test.go` files aside. `go test ./...` → `[no test files]`, **exit 0** (the exit-code-alone gap the guard exists for). Ran the extracted CI step → `go test discovered 0 test(s) in board/`, `Write-Error: go test discovered ZERO tests in board/. A green run that asserted nothing is not a pass.`, **EXIT CODE: 1** — the guard fired even though `go test`'s own exit code was 0.
+3. **`go vet` failure:** added a file with `fmt.Sprintf("%d", "not a number")`. `go vet ./...` → named the Printf-verb mismatch, exit 1. Ran the extracted CI step → same error text, **EXIT CODE: 1**.
+All three reverted; final state confirmed green (`go test ./... -v` → 4/4 PASS, `go vet ./...` clean).
+
+### Task 1.5 — JS-validator probe
+Commit `f356c2d`. Candidate: `@cfworker/json-schema` v4.1.1 (MIT), selected because its `dist/esm/*.js` files use only relative `./file.js` imports (verified via `grep -n "^import" dist/esm/*.js` on the extracted tarball) with zero bare specifiers and zero Node built-ins — a genuine no-build-step property, not incidental. Vendored the 9 runtime `.js` files under `board/web/vendor/cfworker-json-schema/` with `VENDOR.md` recording upstream repo, version, tarball shasum (`4a2a3947ee9fa7b7c24be981422831b8674c3be6`), MIT license text, and the file inventory. `board/web/probe-yard-snapshot.mjs` resolves the repo root via `import.meta.url` (cwd-independent, verified by running from both `board/web/` and the repo root with identical output), compiles `schema/yard-snapshot.schema.json` under draft `2020-12` (the library's own default is `2019-09` — passed explicitly), validates one hand-built sample snapshot, and non-vacuity-checks itself by deleting the required `lanes` key and asserting rejection.
+- Observed (`node board/web/probe-yard-snapshot.mjs`, no `--experimental` flags, no `npm install`, no bundler): `PROBE schema-compiles: OK`, `PROBE draft: 2020-12`, `PROBE sample-validates: PASS`, `PROBE non-vacuity (missing required "lanes" must be REJECTED): PASS (rejected as expected)`, `PROBE RESULT: PASS`, exit 0.
+
+### Task 1.6 — setup.md: Go/Node rows; #3/#4 land-or-re-park
+Commit `6152524`. Added "Go toolchain" and "Node.js" rows to the "Ready now" table (Go version, PATH gap disclosed, pinned dependency, CI leg pointer; Node version, D19 scope note, probe usage). **Disposition ruling recorded:** #3/#4 **RE-PARKED** — task 1.2's CI touch was scoped to the Go leg only; building area-label or docs-review enforcement was out of this car's brief. Trigger refined (the old wording already fired today without landing them, proving it was too broad) to "the next CI touch whose own scope includes repo-policy enforcement." Found via the ASK-FOR-THE-PRIOR-ART check: `docs/templates/repo-policy-check-patterns.md` exists and was previously unreferenced in this row; its §1 pattern is already ported as `scripts/tests/DocPolicy.Tests.ps1` (Pester tier, not yet CI-native) — that file's own "Running them" section is now cited as the graduation trigger. #6 untouched.
+
+### Suite results (final, at commit `6152524`)
+- `Invoke-Pester ./scripts/tests`: **178/178 passed, 0 failed** (matches the stated baseline; re-run four times across the session, identical count each time).
+- `go test ./...` (in `board/`): **4/4 passed** (`TestPlaceholder`, `TestPinnedJSONSchemaDependencyCompilesStoreSchema`, `TestRE2CompatiblePatterns_CatchesInjectedLookahead`, `TestRE2CompatiblePatterns_RealSchemasAllCompile`).
+- `go vet ./...`: clean.
+- JS probe: `PROBE RESULT: PASS`.
+
+### Disclosures / honest stops
+- **No honest stops.** No plan citation or file:line contradicted observed code; the base was verified correct.
+- **No new mutable service state** was created by this car — a toolchain, CI, and doc change only, as instructed to state explicitly.
+- One tangential observation, not fixed (out of scope for this brief): `docs/templates/repo-policy-check-patterns.md` was absent from setup.md's "Ported prior art" row even though `scripts/tests/DocPolicy.Tests.ps1` already consumes it — noted in the 1.6 commit body as context for the #3/#4 ruling, not corrected as a separate edit since it isn't something my diff invalidated.
+- Deviation from plan-round-2 handoff item 2 (RE2 probe location) is disclosed above and in the 1.3 commit message, per the plan's own instruction to do so.
+
+Relevant paths (all under the car worktree, `C:/Users/Chris/AppData/Local/Temp/claude/C--Users-Chris-git-starcar/64c15364-0933-4d6d-9b2e-d1ddbc918f9f/scratchpad/car-board-1`): `board/go.mod`, `board/board.go`, `board/board_test.go`, `board/testroot_test.go`, `board/re2.go`, `board/re2_test.go`, `board/web/probe-yard-snapshot.mjs`, `board/web/vendor/cfworker-json-schema/*`, `.github/workflows/ci.yml`, `docs/setup.md`.
+
+```starcar-artifact
+outcome: done
+findings: No Majors or contradictions found against the plan or spec at base 2051ffe. One tangential documentation gap noted (docs/templates/repo-policy-check-patterns.md missing from setup.md's Ported-prior-art row) but left unfixed as out of this car's scope, disclosed in the 1.6 commit body instead. All three CI-leg failure branches (failing test, zero-test discovery, go vet failure) were fault-injected and watched to fire locally, then cleanly reverted, satisfying the watched-red requirement for task 1.4 without a code commit.
+abstract: Car 1 completed yard-board plan tasks 1.1 through 1.6 on branch car/board-car1, base 2051ffe. Landed the board Go module (go 1.26, pinned santhosh-tekuri/jsonschema/v6 v6.0.2), a CI leg running go vet and go test across both matrix legs with a zero-test refusal guard, a red-first RE2 standing-rule probe over schema pattern fields, a locally watched red-green cycle across three fault classes for the CI leg logic, a vendored bare-ESM draft-2020-12 JS schema validator probe (cfworker/json-schema v4.1.1) proving no-build-step loading and validation of the wire schema, and setup.md updates covering the Go and Node toolchain dependencies plus a recorded re-park ruling on issues 3 and 4. Five commits landed (ce5c93f, a81b6d4, 591423e, f356c2d, 6152524); task 1.4 required no commit since it is a pure local verification act. Final state: Pester 178/178, go test 4/4, go vet clean, JS probe PASS, working tree clean.
+```</result>
+<usage><subagent_tokens>181451</subagent_tokens><tool_uses>103</tool_uses><duration_ms>1044397</duration_ms></usage>
+</task-notification>
