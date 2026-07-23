@@ -7222,3 +7222,7 @@ abstract: Car 3 (the fold car) is REJECT on one Major. The Go fold port omits th
 ---
 
 ok lets think about this a bit differently, pull up a level. How did is it able to declare a budgetless manifest? More importantly, why is that even an option?
+
+---
+
+ok let's take your #2 idea and extend it a bit. We can have the best of both worlds. producer stamps, pre fold, est. budget, then at the fold the actual budget. We can do that right?
