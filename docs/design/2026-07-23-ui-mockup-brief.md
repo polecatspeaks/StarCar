@@ -1,7 +1,10 @@
 # StarCar yard board - UI mockup brief (v1)
 
 Status: Open
-State: v2 - round 1 REJECT folded (UIB-1..5), awaiting delta re-review
+State: v3 - APPROVED at delta round 2 (`artifacts/reviews/` - round 1 REJECT + round 2
+APPROVE); UIB2-1/UIB2-2 swept (stale footer removed; the `[UIB-1/2/5]` fold markers
+moved out of the paste zone - they lived at the sample-data paragraph, folded per round
+1, recorded here instead so the paste stays jargon-free)
 Review record: round 1 REJECT (1 Major, 4 Minor) -
 `artifacts/reviews/2026-07-23-ui-brief-round1-REJECT.md` - the Major: v1 presented an
 unbuilt train manifest as live-store data on a provenance document (Law 1). Folded below
@@ -68,8 +71,7 @@ NO secondary line at all - it will never have one, and "not yet read" would be a
   renders it hot, BY NAME, verbatim ("unrecognised state: 'quarantined'") - this board
   treats unknown vocabulary as a discovery to surface, never an error to hide.
 
-**Sample data to mock with** - two kinds, labeled honestly `[UIB-1, UIB-2, UIB-5,
-folded]`:
+**Sample data to mock with** - two kinds, labeled honestly:
 - **REAL, from the live store:** car `acc761f0add2b0af2` (outcome `done`) and car
   `ac7d81bda8f23f2a6` (outcome `APPROVE`) - both completed within the last hour of each
   other; gate records `design round 1: REJECT` and `design round 2: REJECT` (a healthy
@@ -95,4 +97,5 @@ proving it tells the truth.
 
 ---
 
-*Review record: pending round 1.*
+*Review record: round 1 REJECT (`2026-07-23-ui-brief-round1-REJECT.md`), delta round 2
+APPROVE - both verdicts landed verbatim in `artifacts/reviews/`.*
