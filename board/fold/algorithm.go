@@ -25,6 +25,16 @@ type subjectGroup struct {
 // like the four carved-out imperative cases, not expressible as a pure fold
 // vector - the pwsh detector's own handling is to throw loud, attributed to
 // the subject, which has no equivalent without an error return here).
+//
+// CARRIED OBLIGATION, not merely disclosed here (C3R-3, Minor, Car 3 review
+// round 1 - a package-doc-only note was ruled an insufficient carrier at
+// C3R-1's Major, so this one lands as tracked issue #24, not just this
+// comment): Car 4's StoreAdapter (plan task 4.1) MUST quarantine a record
+// whose "at" is malformed/unparseable/zoneless BEFORE it ever reaches Fold,
+// with its own red-first test - see
+// https://github.com/polecatspeaks/StarCar/issues/24. This function's silent
+// epoch-degrade is safe ONLY if that upstream quarantine actually exists;
+// today it is Car 4's task, not yet built.
 func parseInstant(r Record) time.Time {
 	at, ok := r.str("at")
 	if !ok {
