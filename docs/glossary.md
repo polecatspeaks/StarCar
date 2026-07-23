@@ -12,8 +12,9 @@ that notices.
 **Tense convention `[GL-1, folded]`:** plain present tense means the behavior RUNS
 today. Ratified-but-unbuilt behavior is marked `[RULED, in flight - ref]`; contracted
 design vocabulary for a surface not yet rendering (the board's lanes, registers,
-positions) is legitimate glossary content because a LANDED contract backs it, and its
-entries say which artifact does.
+positions) is legitimate glossary content because a LANDED contract backs it - the
+registers and freshness in `schema/yard-snapshot.schema.json`, the positions and lanes
+in design rev 5 §5.2 `[GL2-1, swept]`.
 
 ## House phrases (owner coinage or adoption)
 
@@ -93,8 +94,9 @@ entries say which artifact does.
   answers "is every dispatch accounted for" (tier 1: the records alone; tier 2: a
   second enumerable source, deferred).
 - **Discovery** - the fold's output for vocabulary it does not recognise: an unknown
-  kind, outcome, or state renders loudly BY NAME (a state nobody enumerated yet),
-  never coerced and never hidden.
+  kind or outcome renders loudly BY NAME (a value nobody enumerated yet), never
+  coerced and never hidden `[GL2-2, swept: folded states are computed, not read, so
+  there is no state-discovery axis]`.
 - **Producer** `[GL-3, folded]` - the hook (`scripts/Produce-Artifact.ps1`) that
   writes store records mechanically when a dispatch starts and stops, harvesting the
   envelope from the dispatch's own transcript. The reason nobody hand-writes history.
