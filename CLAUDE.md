@@ -67,7 +67,7 @@ change is itself a process failure (the autoimmune mode - see the Healing Loop's
 | ASK FOR THE PRIOR ART | It probably exists and was not ported; the question costs one sentence |
 | Build from wreckage | Only when no prior art exists; never for a rung never run |
 | GUIDE STAR | Blameless is not vague and not polite; REJECT and reversal are SUCCESS outcomes with a durable artifact |
-| Reality vs spec | When a written rule does not fit reality, the HUMAN adjudicates - sharpen or loosen, case by case, never inferred |
+| Reality vs spec | When a written rule does not fit reality, the HUMAN adjudicates - sharpen or loosen, case by case, never inferred. The escalation path is the PRESSURE RELEASE VALVE: a process with no legitimate way to bend gets bent silently |
 | Review calibration | Any Major = REJECT; reviewers run suites themselves; swirl triggers escalate; reviewer rotation is carrier-backed |
 | The sentence check | Cross-boundary values: trace every hop, file:line |
 | Branch topology | Never commit to main; merge only from a known good state; protection binds admins; the PR cycle: Copilot reviews out-of-family, triage calibrates, owner rules |
@@ -499,6 +499,24 @@ owner's seat:
 The tell that you are in this situation rather than an ordinary one: **you are about to
 explain why a written rule does not really apply here.** That sentence is the trigger.
 Stop and escalate on it.
+
+**This escalation path is the shop's PRESSURE RELEASE VALVE** (owner's name for it,
+2026-07-23): *we can't be so rigid we don't have a process to bend.* The valve is not a
+weakening of the rules - it is what keeps them honest. A process with no legitimate way to
+bend does not stay unbent; it gets bent anyway, silently, by whoever hits the wall first
+and has work to deliver. The pressure is real whether or not there is somewhere for it to
+go. Give it a named, visible outlet and the bend becomes a recorded ruling with reasoning
+attached; deny it one and the same bend happens off the record, as a quiet violation
+nobody can audit later. **Rigidity does not prevent exceptions. It only prevents you from
+seeing them.**
+
+This is exactly the constitution's own law of change, applied to a single decision instead
+of to a document: **METAMORPHISM under measured pressure, never rewriting a stratum in
+place.** Rock bends under load rather than shattering, and the bend stays legible in the
+record forever. Same here - the valve exists so the substrate can deform honestly. Which
+is why the ruling gets written down with its reasoning every time, and why "spirit met,
+not letter" is an argument for PRECISION in the amendment and never a licence for silence
+about it. A bend nobody can find later is not a bend; it is a crack.
 
 This is the same instinct as the standing vocabulary rule (PAUSE AND ASK, never infer),
 the honest stop (a car hitting a plan-vs-code contradiction), and the swirl-and-churn
