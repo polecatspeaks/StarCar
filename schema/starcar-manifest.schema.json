@@ -62,9 +62,12 @@
       }
     },
     {
+      "$comment": "SB-1 (spec review round 1, folded): formerly a negative-lookahead pattern, which .NET accepts but Go's RE2 regexp REJECTS at schema-load time (proven with this repo's toolchain) - a schema only one language can load breaks the one-schema-both-languages thesis (Law 6, D15). This lookahead-free form expresses the same rule - a record whose subject does NOT start with train: (or has none) must not carry a manifest - using only plain anchored patterns, RE2-safe.",
       "if": {
-        "properties": { "subject": { "type": "string", "pattern": "^(?!train:)" } },
-        "required": ["subject"]
+        "not": {
+          "properties": { "subject": { "type": "string", "pattern": "^train:" } },
+          "required": ["subject"]
+        }
       },
       "then": {
         "not": { "required": ["manifest"] }

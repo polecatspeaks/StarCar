@@ -95,7 +95,7 @@
         "stalenessMs": { "type": "integer" },
         "storePathDisplay": { "type": "string", "description": "CWD-relative or home-collapsed - NEVER a raw absolute path (normalisation law; this repo publishes screenshots)." },
         "laneCount": { "type": "integer", "description": "Completeness guard 3: 'registry declares N lanes' renders in chrome." },
-        "demoMode": { "type": "boolean" }
+        "demoMode": { "type": "boolean", "description": "True exactly when serving a demo fixture store (spec YB-15). Sole consumer: the view's persistent DEMO banner - a disclosure. No truth surface may branch on this field (gating-matrix; the design retired demo-mode suppression)." }
       },
       "required": ["pollMs", "heartbeatMs", "stalenessMs", "storePathDisplay", "laneCount", "demoMode"]
     },

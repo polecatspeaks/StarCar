@@ -1,6 +1,6 @@
 {
   "name": "empty-vocab-one-fault",
-  "description": "DR3-2 (design rev 5, section 6, Major at design round 3): a VALID-but-EMPTY vocabulary file is a vocabulary FAULT, never a fan-out - one fault per empty vocabulary file, ZERO per-record discoveries. Provenance: DESIGN-MANDATED. The landed detector at 3b04d45 is KNOWN-WRONG on this input (observed 2026-07-23: faults=[], discoveries=[kind: dispatched, kind: returned, outcome: done, kind: intent] - the N-wolf-cries cascade rev 2 MAJOR-3 rejected). This vector is the red-first pin for the DR4-2 scoped detector edit; it MUST fail against the unfixed detector for exactly that reason, and the fix makes both implementations pass it.",
+  "description": "DR3-2 (design rev 5, section 6, Major at design round 3): a VALID-but-EMPTY vocabulary file is a vocabulary FAULT, never a fan-out - ONE combined fault (identical in shape to the malformed-vocabulary fault) naming every empty file, ZERO per-record discoveries [SB-4, folded: the design says one fault identical to malformed; an earlier draft's per-file faults were an undisclosed deviation]. The pinned fault string is a CROSS-LANGUAGE CONTRACT surface: both fold implementations must emit it byte-identically for vector-covered cases (spec YB-8's disclosed posture [SB-6, folded]). Provenance: DESIGN-MANDATED. The landed detector at 3b04d45 is KNOWN-WRONG on this input (observed 2026-07-23: faults=[], discoveries=[kind: dispatched, kind: returned, outcome: done, kind: intent] - the N-wolf-cries cascade rev 2 MAJOR-3 rejected). This vector is the red-first pin for the DR4-2 scoped detector edit; it MUST fail against the unfixed detector for exactly that reason, and the fix makes both implementations pass it.",
   "input": {
     "records": [
       { "schema": "starcar-artifact/1", "kind": "dispatched", "subject": "abc123", "session_id": "s1", "at": "2026-07-23T10:00:00Z", "normalisation": [], "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000" },
@@ -15,8 +15,7 @@
   },
   "expected": {
     "faults": [
-      "vocabulary: kinds.json is valid but carries zero values",
-      "vocabulary: outcomes.json is valid but carries zero values"
+      "vocabulary: valid but empty: kinds.json, outcomes.json"
     ],
     "discoveries": [],
     "dispatches": [

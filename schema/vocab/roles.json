@@ -3,7 +3,6 @@
   "values": [
     "car",
     "reviewer",
-    "gate",
-    "conductor"
+    "gate"
   ]
 }
