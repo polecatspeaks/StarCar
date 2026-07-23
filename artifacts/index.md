@@ -94,3 +94,6 @@ dispatch batch between regenerations.
 | a3a95266490ba928d | returned | 2026-07-23T14:55:04Z | done | a3a95266490ba928d/returned-20260723T145504Z.json |
 | a21c8b80339f1c8fd | returned | 2026-07-23T14:58:10Z | APPROVE | a21c8b80339f1c8fd/returned-20260723T145810Z.json |
 | train:board-v0 | intent | 2026-07-23T14:58:55Z |  | train-board-v0/intent-20260723T145855Z.json |
+| a0ff9e48c78041347 | dispatched | 2026-07-23T15:00:36Z |  | a0ff9e48c78041347/dispatched-20260723T150036Z.json |
+| accbde6200eebcfc4 | dispatched | 2026-07-23T15:07:53Z |  | accbde6200eebcfc4/dispatched-20260723T150753Z.json |
+| accbde6200eebcfc4 | returned | 2026-07-23T15:11:58Z | REJECT | accbde6200eebcfc4/returned-20260723T151158Z.json |

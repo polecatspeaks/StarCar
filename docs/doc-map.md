@@ -38,8 +38,9 @@ Documents here sort along three axes, not one:
 | `docs/setup.md` | reference (trigger ledger) | LIVING | What is installed, what is deliberately deferred, and the trigger that un-defers each |
 | `docs/friction-log.md` | record | FOSSIL (append-only) | Raw material for session-start retros; instances logged as they happen |
 | `docs/retros/` | record | FOSSIL | Train retros - what a completed train taught, at the time it taught it |
-| `docs/templates/` (15 files) | reference + WORKED EXEMPLAR | LIVING | The rung artifacts: brief/design/spec/plan/ledger/matrix templates, each paired where possible with a worked-\* exemplar drawn from real wreckage. The template dedup question belongs to the session-start retro's bounded check |
+| `docs/templates/` (16 files) | reference + WORKED EXEMPLAR | LIVING | The rung artifacts: brief/design/spec/plan/ledger/matrix templates plus the two `*-patterns` docs, paired where possible with a worked-\* exemplar drawn from real wreckage (nine of those). The template dedup question belongs to the session-start retro's bounded check `[DM-1, fixed: the map's first committed count was 15, from memory; ls says 16 - the map's own reality-wins rule applied to itself one review later]` |
 | `.claude/agents/car.md` | reference | LIVING | The car agent definition - the toolset that structurally enforces no-nested-delegation |
+| `docs/doc-map.md` (this file) | reference (navigation) | LIVING | The map itself - a documentation surface like any other, subject to its own reality-wins rule |
 
 ## DEV family - building and reviewing this code
 
@@ -52,7 +53,7 @@ Documents here sort along three axes, not one:
 | `docs/contracts/state-ledger.md` | reference | LIVING | Every piece of mutable service state, old → delta → new |
 | `docs/probes/*` | record (measurements) | FOSSIL | Landed observations with coordinates; each layer's landed probes are the next layer's headers |
 | `artifacts/reviews/*` | record (verdicts) | FOSSIL (hash-sealed) | Every adversarial verdict, verbatim, integrity-hashed; the process's primary source |
-| `artifacts/index.md` | reference (derived) | LIVING (regenerated, gated at PR-to-main per #20) | The browsable store ledger; the JSON records are the source of truth |
+| `artifacts/index.md` | reference (derived) | LIVING (regenerated; gated at PR-to-main and push-to-main per #20) | The browsable store ledger; the JSON records are the source of truth |
 | `schema/index-format.md` | reference | LIVING | The index contract: columns, sort, normalisation, the verbatim-`at` integrity rule |
 | `schema/vectors/README.md` | reference | LIVING | The fold conformance-vector contract: shape, runner rules, provenance discipline |
 | `board/web/vendor/*/VENDOR.md` | reference | LIVING | Vendored-dependency provenance: version, shasum, licence |
