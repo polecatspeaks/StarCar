@@ -1,13 +1,19 @@
 # StarCar yard board - UI mockup brief (v1)
 
 Status: Open
-State: awaiting adversarial review round 1
+State: v2 - round 1 REJECT folded (UIB-1..5), awaiting delta re-review
+Review record: round 1 REJECT (1 Major, 4 Minor) -
+`artifacts/reviews/2026-07-23-ui-brief-round1-REJECT.md` - the Major: v1 presented an
+unbuilt train manifest as live-store data on a provenance document (Law 1). Folded below
+with `[UIB-n, folded]` markers.
 Purpose: the one-page brief handed to external design tools to produce layout mockups.
 This document is the PROVENANCE of the board's visual language: mockups produced from it
 are design INPUT to the view car (Car 5); the binding contracts live in
 `docs/design/2026-07-21-v0-yard-skeleton-design.md` (rev 5) and this brief restates them
 for a reader with zero repo context. If a mockup fights a rule below, that conflict is
-DESIGN FEEDBACK to capture, not a rule to quietly break.
+DESIGN FEEDBACK, and it LANDS as a comment on issue #1 (or, if it changes a contract, an
+amendment block on the design doc) - never a rule to quietly break, never captured
+nowhere `[UIB-4, folded]`.
 
 ---
 
@@ -27,8 +33,11 @@ the board is visually quiet; a single hot element should be findable in under a 
 
 **Layout: five horizontal lanes (tracks), all always present:**
 1. **TRAINS** - active work units. Each train is a labeled track holding its cars in
-   order. A car shows: a short title, its state word (e.g. `rolling`, `at inspection`,
-   `shopped x2` = rejected twice, `coupled` = merged, `held`), and its register color.
+   order. A car shows: a short title, a state word, and its register color. The state
+   words in the mockup below are ILLUSTRATIVE rail-metaphor visuals (`rolling`,
+   `at inspection`, `shopped x2` = rejected twice, `coupled`, `held`) - the real board
+   renders whatever state word its data source provides, VERBATIM, never a translation
+   of it. Design the shape of a car chip, not a fixed word list.
 2. **GATES** - review signals: small signal lights with a gate name and a verdict word
    rendered VERBATIM (`APPROVE`, `REJECT`, `CONFIRM`, `pending`). REJECTs are normal
    traffic here, not emergencies - this shop treats a caught defect as a success.
@@ -59,13 +68,20 @@ NO secondary line at all - it will never have one, and "not yet read" would be a
   renders it hot, BY NAME, verbatim ("unrecognised state: 'quarantined'") - this board
   treats unknown vocabulary as a discovery to surface, never an error to hide.
 
-**Sample real data to mock with** (from the live store): train `train:index-gate-scope`
-titled "Scope the index staleness gate (#20)" carrying car `acc761f0add2b0af2` ("Car:
-scope index gate", `coupled`) and car `ac7d81bda8f23f2a6` ("Review car-20", `returned`,
-verdict `APPROVE`); gates showing `design round 1: REJECT`, `design round 2: REJECT`,
-`design round 3: REJECT`, `car review: APPROVE` (a healthy shop with visible rejections);
-dispatches lane holding ~60 entries, two live within the last hour; freight dark; fuel
-bagged.
+**Sample data to mock with** - two kinds, labeled honestly `[UIB-1, UIB-2, UIB-5,
+folded]`:
+- **REAL, from the live store:** car `acc761f0add2b0af2` (outcome `done`) and car
+  `ac7d81bda8f23f2a6` (outcome `APPROVE`) - both completed within the last hour of each
+  other; gate records `design round 1: REJECT` and `design round 2: REJECT` (a healthy
+  shop with visible rejections); a dispatches lane folding to **~17** dispatch entries
+  from ~65 total store records.
+- **ILLUSTRATIVE, not yet in the store:** the train grouping itself. Group the two real
+  cars under a track labeled `train:index-gate-scope` ("Scope the index staleness gate")
+  to mock the trains lane - but know that train-manifest records are designed and not
+  yet written, so on day one the real board renders these cars in yard inventory and a
+  thin trains lane. Mock both states if you can: a populated track AND the honest
+  thin/empty track.
+Freight dark; fuel bagged, in every variant.
 
 **Vibe:** industrial rail-yard control room, not SaaS dashboard. Dense but calm.
 Dark-room friendly. Typography does the work; color is rationed to the three registers.
