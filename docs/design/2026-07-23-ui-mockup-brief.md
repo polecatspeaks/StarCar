@@ -9,6 +9,18 @@ Review record: round 1 REJECT (1 Major, 4 Minor) -
 `artifacts/reviews/2026-07-23-ui-brief-round1-REJECT.md` - the Major: v1 presented an
 unbuilt train manifest as live-store data on a provenance document (Law 1). Folded below
 with `[UIB-n, folded]` markers.
+**How this shop treats mocks (owner doctrine, ratified 2026-07-23):** mockups are
+DESIGN DIRECTION, never contract - "what could be," not "what will be." The owner's
+form: *the mock is the track signal switch telling us to use this track and not the
+other* - it routes the work; the rails it runs on are the reviewed contracts (laws →
+design → spec → this brief). The ranking is structural, not stylistic: a mock never
+passed a gate, so it cannot outrank artifacts that did - the same afternoon this
+doctrine was ratified, the mocks rendered `stale` in the wrong register, and because
+they are direction that error became feedback instead of law. Implementing cars build
+to the contracts, steer by the direction, note deviations-from-direction in their
+reports (a note, never an honest-stop), and route direction-vs-contract conflicts to
+issue #1 with contract winning meanwhile.
+
 Purpose: the one-page brief handed to external design tools to produce layout mockups.
 This document is the PROVENANCE of the board's visual language: mockups produced from it
 are design INPUT to the view car (Car 5); the binding contracts live in

@@ -192,6 +192,9 @@ Consumes: the wire schema and `/api/*` only - never the store, never the fold.
 | Car reviews | 5 (+ delta rounds as earned) | Opus |
 | Conductor handbacks | in-line | - |
 
+**Owner approval: GRANTED 2026-07-23 09:26 (in-session; recorded on issue #1's ruling
+comment). Cars roll on plan-review approval.**
+
 Size class: **large** (the largest train yet - it builds the product). Sequential
 consist means wall-clock is the sum of car+review units; with today's observed unit
 time (~25-40 min per car+review), first pixels tonight remains plausible if rounds
