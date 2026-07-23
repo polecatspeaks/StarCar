@@ -6548,3 +6548,66 @@ abstract: Adversarial round-1 review of yard-board Car 1 (first Go in the repo) 
 <status>completed</status>
 <summary>Background command "Watch CI for the handback-record push" completed (exit code 0)</summary>
 </task-notification>
+
+---
+
+<task-notification>
+<task-id>a3a95266490ba928d</task-id>
+<tool-use-id>toolu_01SPSvB7bfBcBQ84iGcS76x6</tool-use-id>
+<output-file>C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\f2abfa3b-6242-44cc-997f-b970da29a104\tasks\a3a95266490ba928d.output</output-file>
+<status>completed</status>
+<summary>Agent "Car 2: vocab + wire $defs" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>## Final report — Car 2, tasks 2.1-2.5
+
+**Base verified:** `git log -1` at start showed `395aa9fffef5a21d1ab142d9a4380912d54f90ec` (matches mandated `395aa9f...`), branch `car/board-car2`, clean tree. Proceeded.
+
+**Final state:** branch `car/board-car2`, HEAD `233133e1e2256490aa1901c028cc00fb600c25e2`, working tree clean, 5 commits made this session.
+
+### Task 2.1 — `schema/vocab/outcomes.json` += done/CONFIRM/done-with-findings (commit `6863480`)
+- File: `C:/Users/Chris/AppData/Local/Temp/claude/C--Users-Chris-git-starcar/64c15364-0933-4d6d-9b2e-d1ddbc918f9f/scratchpad/car-board-2/schema/vocab/outcomes.json`
+- Red: added a case to `scripts/tests/Detector.Tests.ps1` asserting no discovery fires for `done`/`CONFIRM`/`done-with-findings`. Ran alone before the vocab change: **14 passed, 1 failed** — `Expected 'outcome: done' to not be found in collection @('outcome: CONFIRM', 'outcome: done', 'outcome: done-with-findings'), but it was found.`
+- Green after fix: **15/15** in the file.
+- Live-store detector before/after (`./scripts/Detect-Dispatches.ps1 -StoreRoot artifacts`): before, discoveries = `outcome: done`, `outcome: CONFIRM`; after, discoveries = (empty). Faults empty both times.
+- Full suite after: **185/185**.
+
+### Tasks 2.2-2.3 — wire payload `$defs` + Go/JS re-validation (commit `9d53b9c`)
+- File: `schema/yard-snapshot.schema.json` (+ new `scripts/tests/WirePayload.Tests.ps1`).
+- Red: ran the new 7-case file before the schema edit — **0 passed, 7 failed**, each with the named reason `schema/yard-snapshot.schema.json has no $defs.&lt;name&gt; yet` (a helper that throws by name rather than silently passing on a typo).
+- Green after adding `$defs.trainsPayload`, `$defs.gatesPayload`, `$defs.dispatchesPayload` (self-contained, no `$ref`) and a `$comment` on `$defs.lane.data` pointing at them: **7/7**.
+- 2.3 verification (no new code): `go test -count=1 ./...` in `board/` stays **4/4** (`TestRE2CompatiblePatterns_RealSchemasAllCompile` re-walks all `schema/*.schema.json` including the extended wire schema — no `pattern` keys were added, so nothing new to break RE2 compatibility). `node board/web/probe-yard-snapshot.mjs` stays `PROBE RESULT: PASS`.
+- Full suite after: **192/192**.
+
+### Task 2.4 — `schema/vocab/board-defs.json` (commits `ae83af3`, tightened by `233133e`)
+- Files: `schema/vocab/board-defs.json` (new), `scripts/tests/BoardDefs.Tests.ps1` (new).
+- Register table copied **verbatim** from the plan, not re-derived (positions: live/bagged/dark→nominal, under-construction→in-progress; liveness: returned→nominal, dispatched→in-progress, overdue/presumed-lost→needs-attention; outcomes: APPROVE/APPROVE-WITH-REBASE-LIST/REJECT/CONFIRM/done/honest-stop→nominal, done-with-findings→in-progress, error→needs-attention; roles: all→nominal).
+- Red: ran the 11-case file before the JSON file existed — **0 passed, 11 failed**, all tracing to `Cannot find path '...board-defs.json' because it does not exist`.
+- Green after authoring the file: **11/11**, including the MANDATORY non-vacuity case: a fault-injected `$TestDrive` copy (written to disk, then read back) with REJECT's register flipped to `needs-attention` was caught, and the mismatch text matched `outcomes\.REJECT` specifically (verified with `-Match`, not a generic pass/fail). The real committed file was re-read fresh afterward and confirmed to still have zero pinned mismatches.
+- Full suite after: **203/203** (then **206/206** unchanged after the tightening commit).
+
+### Task 2.5 — `StoreIntegrity.Tests.ps1` layered manifest validation (commit `a33a3d1`)
+- File: `scripts/tests/StoreIntegrity.Tests.ps1`.
+- Non-vacuity proof (performed, then reverted before committing — never landed): temporarily pointed the new context's schema path at `schema/starcar-artifact.schema.json` (the base schema, which doesn't require `manifest`) instead of `schema/starcar-manifest.schema.json`. Ran the file alone: **84 passed, 1 failed** — `Expected $false, ... but got $true` on "a TestDrive train: intent WITHOUT a manifest key is CAUGHT", proving the test genuinely distinguishes correct wiring. Reverted to the correct schema path: **85/85**.
+- The real store's two `train:board-v0` records (`artifacts/train-board-v0/intent-20260723T134605Z.json`, `.../intent-20260723T141614Z.json`) both validate under this extension (the guard's real-store case asserts count &gt; 0 and passed against both).
+- Full suite after: **206/206**.
+
+### Final verification (post all 5 commits)
+- `Invoke-Pester ./scripts/tests -CI`: **206/206 passed, 0 failed** (baseline was 184/184; net +22 new cases across the 4 files touched).
+- `go test -count=1 ./...` in `board/`: **4/4 PASS** (`TestPlaceholder`, `TestPinnedJSONSchemaDependencyCompilesStoreSchema`, `TestRE2CompatiblePatterns_CatchesInjectedLookahead`, `TestRE2CompatiblePatterns_RealSchemasAllCompile`) — unchanged from Car 1's baseline.
+- `node board/web/probe-yard-snapshot.mjs`: `PROBE RESULT: PASS`.
+- `./scripts/Detect-Dispatches.ps1 -StoreRoot artifacts`: faults = (empty), discoveries = (empty).
+
+### Deviations / disclosures
+- Task 2.4's brief caution said "flip REJECT... in a TestDrive copy"; my first pass mutated an in-memory object only (functionally equivalent but not literally disk I/O). I caught this myself on review and issued a follow-up commit (`233133e`) writing the flipped fixture to an actual `$TestDrive` file and reading it back before asserting, matching the `StoreIntegrity.Tests.ps1` fault-injection idiom exactly. Disclosed rather than left silent.
+- New test files created rather than appended to a single existing file: `scripts/tests/WirePayload.Tests.ps1` and `scripts/tests/BoardDefs.Tests.ps1`. The plan said "new Pester cases in `scripts/tests/`" (2.2) and "a Pester test" (2.4, singular but multi-assertion) without naming a file; I followed this repo's existing one-topic-per-file convention (`Schema.Tests.ps1`, `Detector.Tests.ps1`, `StoreIntegrity.Tests.ps1`). Not a deviation from any pinned instruction, a reasonable filling of an unstated choice.
+- No new mutable service state was introduced by any of the 5 tasks — all changes are static schema/vocab JSON files and Pester test files.
+- No document was left invalidated by these changes: `outcomes.json`'s own `$comment` was updated in the same commit as its content change (task 2.1); `board-defs.json` carries its own provenance `$comment`; the wire schema's `$defs.lane.data` got the required `$comment` pointing at the new payload defs (task 2.2). The plan/spec documents (`docs/plans/2026-07-23-yard-board-plan.md`, `docs/specs/2026-07-23-yard-board-spec.md`) were read but not edited — their tables describe these tasks prospectively and remain accurate as written; I judged marking task-completion status in those shared, multi-car documents to be the conductor's roll-up, not mine to do mid-train (avoids merge collisions with Cars 3-5 editing the same files).
+- No honest-stops: every plan citation I checked (spec YB-3/YB-5/YB-1 line numbers, `docs/templates/car-brief.md:47-48`, design rev 5 position/liveness sets) matched the real files exactly.
+
+```starcar-artifact
+outcome: done
+findings: All five tasks (2.1-2.5) landed red-first with observed failures matching stated reasons, verified green after, full Pester suite 206 of 206 (up from 184 baseline), Go board suite 4 of 4 unchanged, JS validator probe PASS, detector run on the real store shows zero faults and zero discoveries. One self-caught and disclosed refinement: the task 2.4 flipped-REJECT non-vacuity proof initially mutated an in-memory object rather than writing an actual TestDrive file as the brief's caution specified; fixed in a follow-up commit before reporting. No new mutable service state. No honest-stops - every plan and spec citation checked against the real files matched exactly.
+abstract: Car 2 landed schema vocabulary truth (outcomes.json gains done, CONFIRM, done-with-findings), the wire snapshot schema's trainsPayload, gatesPayload, and dispatchesPayload defs (YB-5), the pinned presentational board-defs.json vocabulary (positions, outcomes, roles, liveness with plan-pinned registers), and wired train colon intent records into layered validation against the manifest schema in StoreIntegrity.Tests.ps1 - each task red-first with a quoted observed failure and a quoted green count, five commits on car slash board-car2 at 395aa9f base, HEAD 233133e.
+```</result>
+<usage><subagent_tokens>176018</subagent_tokens><tool_uses>88</tool_uses><duration_ms>1048685</duration_ms></usage>
+</task-notification>
