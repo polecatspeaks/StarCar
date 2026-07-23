@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "b58f3d209215",
+  "strategy": "manual-commit",
+  "branch": "dev",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "docs/specs/2026-07-23-yard-board-spec.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/b5/8f3d209215/0/metadata.json",
+      "transcript": "/b5/8f3d209215/0/full.jsonl",
+      "compact_transcript": "/b5/8f3d209215/0/transcript.jsonl",
+      "content_hash": "/b5/8f3d209215/0/content_hash.txt",
+      "prompt": "/b5/8f3d209215/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 2171,
+    "cache_creation_tokens": 13076482,
+    "cache_read_tokens": 496396399,
+    "output_tokens": 1437753,
+    "api_call_count": 1086
+  }
+}
