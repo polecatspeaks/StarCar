@@ -74,10 +74,95 @@
         "position": { "type": "string", "description": "A PositionDef id from vocabularies.positions - open vocabulary, registry-owned (D11)." },
         "freshness": { "$ref": "#/$defs/freshness" },
         "data": {
+          "$comment": "Shapes for the v0 lanes are pinned by $defs.trainsPayload, $defs.gatesPayload, and $defs.dispatchesPayload below (spec YB-5) - each landed red-first by the schema car (plan task 2.2). An unrecognised lane's payload is a free object the view meets with the no-renderer path, never a validation failure (Law 7); these three $defs are not $ref'd here because a lane's data shape is chosen by which lane it is, not by one closed schema union.",
           "description": "The lane payload. Shapes for the v0 lanes are pinned by the spec's payload contracts (S4) and their vectors; an unrecognised lane's payload is a free object the view meets with the no-renderer path, never a validation failure (Law 7)."
         }
       },
       "required": ["id", "title", "position", "freshness"]
+    },
+    "trainsPayload": {
+      "type": "object",
+      "description": "YB-5: the trains lane's data shape. Each car entry joins the WINNING manifest's member declaration with that subject's fold output; declaredNotObserved names members with no records (design S6).",
+      "properties": {
+        "trains": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "description": "The whole train: subject - the train identity (design DR3-3; never stripped of its prefix for meaning)." },
+              "title": { "type": "string" },
+              "cars": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "subject": { "type": "string" },
+                    "role": { "type": "string" },
+                    "gate": { "type": "string", "description": "Present when role is gate: names WHICH gate." },
+                    "state": { "type": "string" },
+                    "at": { "type": "string" },
+                    "outcome": { "type": "string" },
+                    "superseded": { "type": "array" }
+                  },
+                  "required": ["subject", "role", "state", "at"]
+                }
+              },
+              "declaredNotObserved": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Manifest members with no matching store records (design S6)."
+              }
+            },
+            "required": ["id", "title", "cars", "declaredNotObserved"]
+          }
+        }
+      },
+      "required": ["trains"]
+    },
+    "gatesPayload": {
+      "type": "object",
+      "description": "YB-5: the gates lane's data shape.",
+      "properties": {
+        "gates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "description": "From the member's gate/role declaration." },
+              "subject": { "type": "string" },
+              "outcome": { "type": "string", "description": "VERBATIM - the gate's raw recorded outcome, never re-derived." },
+              "at": { "type": "string" }
+            },
+            "required": ["name", "subject", "outcome", "at"]
+          }
+        }
+      },
+      "required": ["gates"]
+    },
+    "dispatchesPayload": {
+      "type": "object",
+      "description": "YB-5: the dispatches lane's data shape - mirrors the fold's dispatch entry shape (schema/vectors/fold/ owns that shape) plus assigned: boolean per entry (yard inventory = unassigned, rendered loudly).",
+      "properties": {
+        "dispatches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "subject": { "type": "string" },
+              "state": { "type": "string" },
+              "at": { "type": "string" },
+              "outcome": { "type": "string" },
+              "superseded": { "type": "array" },
+              "elapsed_seconds": { "type": "integer" },
+              "budget_seconds": { "type": "integer" },
+              "spend": {},
+              "assigned": { "type": "boolean", "description": "Yard inventory (unassigned) renders loudly, never silently." }
+            },
+            "required": ["subject", "state", "at", "assigned"]
+          }
+        }
+      },
+      "required": ["dispatches"]
     }
   },
   "type": "object",
