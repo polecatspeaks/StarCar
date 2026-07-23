@@ -24,6 +24,13 @@ later cars; do not touch their files.
 plan text, warnings from earlier cars' reviewers - verbatim, with file:line.>
 
 STANDING RULES binding every commit:
+- CITE YOUR TICKET IN THE CODE: every new file, and every new unit of consequence inside
+  an existing file, carries a comment naming the ticket that caused it, as bare `#N`. The
+  ticket is the deepest WHY available (incident, argument, rejected alternatives, verdict)
+  and this file already forbids comments that explain WHAT. EXCEPTION, and do not violate
+  it: a file that cannot carry a comment - a bare data fixture, an `.expect`, a `.json`
+  that is itself the artifact UNDER TEST - is NEVER edited to satisfy this; mutating a
+  fixture changes what it proves. Cite in the sibling README or the consuming test instead.
 - DOCUMENTATION RANKS EQUAL TO CODE: every document your change invalidates - <name the
   ones this task plausibly touches: spec, ledger, gating matrix, setup doc, README,
   comments> - is updated in the SAME commit. A stale doc left behind is a Major finding
@@ -63,6 +70,12 @@ THE SENTENCE CHECK: <any cross-boundary value in this diff> - trace producer to 
 consumer, every hop file:line, every hand-maintained mirror checked.
 ADJUDICATIONS: <each disclosed deviation, to be ruled on against real code>.
 RUN YOURSELF: <suites + expected counts>. Report observed.
+CITATION CHECK: does every new file, and every new unit of consequence, carry a comment
+naming its ticket as bare `#N`? Verify the cited number is the RIGHT one - a citation to
+the wrong ticket is worse than none, because it sends the next reader somewhere confidently
+false. Data fixtures that cannot hold a comment are exempt IN THE FILE and must be cited in
+a sibling README or the consuming test; a fixture edited to carry a citation is a finding,
+not compliance.
 DOC CHECK: <the documents this diff plausibly invalidates> - is each updated in the same
 commit? Open every file:line the diff's docs cite and confirm the citation is true. A
 stale document or a dead citation is a MAJOR finding; documents rank equal to code here.

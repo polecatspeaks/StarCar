@@ -77,7 +77,7 @@ change is itself a process failure (the autoimmune mode - see the Healing Loop's
 | Living contracts | State changes update the ledger in the same commit |
 | Rewrite vs extend | Optimize for least NEW code reviewed; rewrites lose encoded incident knowledge |
 | Cost discipline | Spend approved before dispatch; a car and its review are one unit |
-| Tracking | Every piece of work gets an issue; one area label |
+| Tracking | Every piece of work gets an issue; one area label; every new code addition cites its `#N` in a comment |
 | Session starts | The tooling retro; log friction as it happens; never drop a tooling request; doctrine dedup check |
 | Session ends | A decision point: triage in-flight work, checkpoint in writing, three closing sentences |
 
@@ -885,6 +885,43 @@ beside it, `gh project item-add 6 --owner polecatspeaks --url <issue-url>` at cr
 and the audit is one line, run at session start or on suspicion:
 `gh project item-list 6 --owner polecatspeaks --format json --limit 100 --jq '[.items[]|select(.content.number!=null)|.content.number]|sort'`
 diffed against `gh issue list --state open`.
+
+### CODE STANDARD: every new addition cites its ticket (owner, 2026-07-23)
+
+**Every new addition to the codebase - every new file, and every new unit of consequence
+inside an existing one - carries a comment citing the ticket number that caused it.**
+Format is bare `#N`, so it stays greppable and matches the convention every other surface
+already uses.
+
+This is the Tracking rule pointed the other way. Tracking guarantees every piece of WORK
+has a ticket; this guarantees every piece of CODE names its ticket, and together the trace
+runs in both directions. Without it, tickets can find their code only through commit
+archaeology - and a squashed merge, a `git mv`, or a rewrite severs even that.
+
+**What it buys, and it is the reason this outranks tidiness:** this file already requires
+that comments explain WHY and never WHAT. The ticket is the deepest WHY available - it
+carries the incident, the argument, the rejected alternatives, and the verdict, none of
+which fit in a comment. A reader who hits unfamiliar code gets one hop to all of it. In a
+shop where every worker is a new hire on day one, that hop is the difference between
+understanding a line and guessing at it.
+
+**The edge that would otherwise kill the rule on contact - files that cannot carry a
+comment.** A bare data fixture is the case: `schema/vectors/*.expect` is a single word,
+and a vector's `.json` is the artifact UNDER TEST, so adding a `$comment` to it mutates
+the thing being tested and can change what the vector proves. **Never edit a fixture to
+satisfy this rule.** The citation goes in the sibling `README.md` or in the consuming
+test - the nearest surface that can hold prose without altering the subject.
+
+**Exempt: machine-generated records.** Everything under `artifacts/` is written by the
+producer, not by a person, and is data rather than code. A generator citing a ticket in
+every record it stamps would be noise, and the record already carries its own provenance.
+
+*Mechanism, trigger-gated, and the prior art already exists in-repo so nobody invents it:
+`docs/templates/repo-policy-check-patterns.md` §1's gate pattern is already ported as
+`scripts/tests/DocPolicy.Tests.ps1`, which enforces the docs `Status:` line the same way.
+The citation check is that pattern aimed at new code files, and it lands with #3 and #4 on
+the next CI touch whose own scope includes repo-policy enforcement. Until then this is
+attention-tier and reviewers carry it, which is a real downgrade and is recorded as one.*
 
 ## Session starts: the tooling retro (STANDING ITEM)
 
