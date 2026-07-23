@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "acc25b07aa67ecf2c",
+  "session_id": "64c15364-0933-4d6d-9b2e-d1ddbc918f9f",
+  "at": "2026-07-23T12:41:43Z",
+  "outcome": "APPROVE",
+  "findings": "All five round-1 findings resolved and re-verified at 0327a92. UIB-1 (Major) RESOLVED - sample data split into REAL (car acc761f0 outcome done, car ac7d81bd outcome APPROVE, gate rounds 1-2, ~17 folded from ~65 records, all verified true against the store) and ILLUSTRATIVE (the train grouping, explicitly marked designed-and-not-yet-written with honest day-one yard-inventory rendering); the Law 1 provenance falsehood is gone. UIB-2 RESOLVED - round 3 dropped, only rounds 1-2 claimed as store gate records. UIB-3 RESOLVED - car state words marked illustrative with the verbatim-rendering rule stated in the same breath and the misleading coupled-equals-merged gloss removed. UIB-4 RESOLVED - feedback now lands as an issue #1 comment or a design-doc amendment block. UIB-5 RESOLVED - dispatches count corrected to ~17 folded from ~65 records. Round-1 verdict file cited correctly and its header matches. No leakage. Two new Minor regressions from the v2 edit, non-blocking: UIB2-1 the footer line still reads Review record pending round 1, stale against the updated header (living-document trueness); UIB2-2 internal finding-ID markers UIB-1 UIB-2 UIB-5 folded were left inside the paste-into-the-tool section where a zero-context tool cannot resolve them (they belong above the paste boundary like the UIB-4 marker). Note: paste section grew to 830 words, about 38 percent over the 600 guide, an acceptable cost of the honest split; trim if strict one-page is wanted.",
+  "abstract": "Delta re-review round 2 scoped to verify-the-fix on the UI mockup brief v2 at commit 0327a92, base verified after moving off the stale 3b04d45. All five round-1 findings including the Major are resolved and independently re-verified against the live store, not merely asserted. Verdict APPROVE. Two trivial Minor sweep-items introduced by the edit (a stale review-status footer and internal finding-ID markers leaked into the paste zone) are raised but do not block, since any Major is the only REJECT trigger and none remains. Status header, verdict citation, and leakage all pass.",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:a1f14e0d8bb077ffda4b49af4fd0896a264d4398b750400676d91f05a44a179b"
+}
