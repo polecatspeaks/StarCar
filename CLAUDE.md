@@ -528,7 +528,7 @@ owner's attention four rounds later on a worse document.*
 twice and a merged-that-day instrument was found crying wolf on 50 of 54 flags. All three
 catches were cheaper than any of the incidents they prevented.*
 
-## The sentence check (cross-boundary tracing)
+## The sentence check (cross-boundary tracing; owner's name: FULL SENTENCE FLOW)
 
 When a diff produces, threads, or consumes a value that crosses a process or serialization
 boundary, the reviewer MUST trace the full production path - every hop named with
