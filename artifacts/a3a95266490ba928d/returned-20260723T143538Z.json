@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a3a95266490ba928d",
+  "session_id": "64c15364-0933-4d6d-9b2e-d1ddbc918f9f",
+  "at": "2026-07-23T14:35:38Z",
+  "outcome": "done",
+  "findings": "All five tasks (2.1-2.5) landed red-first with observed failures matching stated reasons, verified green after, full Pester suite 206 of 206 (up from 184 baseline), Go board suite 4 of 4 unchanged, JS validator probe PASS, detector run on the real store shows zero faults and zero discoveries. One self-caught and disclosed refinement: the task 2.4 flipped-REJECT non-vacuity proof initially mutated an in-memory object rather than writing an actual TestDrive file as the brief's caution specified; fixed in a follow-up commit before reporting. No new mutable service state. No honest-stops - every plan and spec citation checked against the real files matched exactly.",
+  "abstract": "Car 2 landed schema vocabulary truth (outcomes.json gains done, CONFIRM, done-with-findings), the wire snapshot schema's trainsPayload, gatesPayload, and dispatchesPayload defs (YB-5), the pinned presentational board-defs.json vocabulary (positions, outcomes, roles, liveness with plan-pinned registers), and wired train colon intent records into layered validation against the manifest schema in StoreIntegrity.Tests.ps1 - each task red-first with a quoted observed failure and a quoted green count, five commits on car slash board-car2 at 395aa9f base, HEAD 233133e.",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:bbfae3c3d02ea76969de2b0ca9b6dcfc04933c98080de38bfef4435f81daf10b"
+}
