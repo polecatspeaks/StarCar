@@ -100,6 +100,16 @@ the GitNexus staleness marker stuck since morning (triage trigger: next session
 start). The 52-condition wall is the crying-wolf calibration made visible - #26/#30
 carry it.
 
+## Owner's perspective (appended in the retro session, 2026-07-23)
+
+Verbatim intent: *today was exactly why we spent a whole day getting all the
+documentation and harnesses and contracts.* The groundwork day was not overhead - it
+was the reason a zero-Go shop shipped a gated, first-lit product in one day. And the
+crowning moment: *the legit self-heal* - the board, in its first minute of life,
+generating its own backlog (#29/#30/#31), with hypotheses and coordinates, off real
+data. The Healing Loop stopped being a document and became an observed behavior of
+the system it governs.
+
 ## What the next train inherits
 
 The fix list (#29/#30/#31 + #26) as the natural first iteration - small,
