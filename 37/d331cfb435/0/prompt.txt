@@ -5308,3 +5308,7 @@ abstract: |
 ```</result>
 <usage><subagent_tokens>108875</subagent_tokens><tool_uses>32</tool_uses><duration_ms>635233</duration_ms></usage>
 </task-notification>
+
+---
+
+ok we have a class failure: our sop says that all github pr conves need to be resolved with evidence and  the commit has, looking at this PR, I see none of that.
