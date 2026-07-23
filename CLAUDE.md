@@ -575,6 +575,17 @@ the calibration membrane, the owner rules - then rinse, lather, repeat.**
    with the issue link. A resolve without a reply is a silent close - traceability is
    the reply, and the thread becomes the finding's provenance record.
 4. **The owner rules on the triage.** That is the human gate branch protection encodes.
+   **DEFINITION OF DONE, mechanically checked (scar, 2026-07-22): a PR is not mergeable
+   while ANY review thread is unresolved.** Every thread - EVERY round, including a
+   reviewer's SECOND pass - closes with its provenance reply before the merge ruling. The
+   check is one query, run before proposing a merge and never from memory:
+   `gh api graphql -f query='{repository(owner:"OWNER",name:"REPO"){pullRequest(number:N){reviewThreads(first:60){nodes{isResolved}}}}}' --jq '[.data.repository.pullRequest.reviewThreads.nodes[]|select(.isResolved|not)]|length'`
+   - a nonzero result means NOT DONE. *Scar: the conductor codified this very SOP mid-PR-18,
+   honored it on the first review round's 9 threads, then FIXED all 9 of the reviewer's
+   SECOND-pass findings IN CODE but never closed their threads - fixed the work, skipped the
+   record. The owner caught it by looking at the PR. Fixing the code is not closing the
+   thread; the SOP binds every round, and "done" is now the query above returning 0, not a
+   feeling that the work is finished.*
 5. **The calibration count is kept per PR**: comments / legit / dismissed / deferred.
    Copilot arrives uncalibrated and WILL cry wolf against ruled decisions; the triage
    membrane absorbs that safely, and three PRs in the count says whether it is a 5%- or
