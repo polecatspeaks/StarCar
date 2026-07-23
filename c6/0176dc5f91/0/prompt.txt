@@ -6900,3 +6900,59 @@ abstract: Adversarial fidelity review of docs/doc-map.md at HEAD b31154a. One Ma
 ```</result>
 <usage><subagent_tokens>62619</subagent_tokens><tool_uses>12</tool_uses><duration_ms>246405</duration_ms></usage>
 </task-notification>
+
+---
+
+<task-notification>
+<task-id>accbde6200eebcfc4</task-id>
+<tool-use-id>toolu_017neAWNbCctoBMJXKt3WbNC</tool-use-id>
+<output-file>C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\f2abfa3b-6242-44cc-997f-b970da29a104\tasks\accbde6200eebcfc4.output</output-file>
+<status>completed</status>
+<summary>Agent "Review the doc map" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result># Delta Re-Review Verdict (Round 2): docs/doc-map.md v2
+
+## VERDICT: APPROVE
+
+Base verified: HEAD at `3cd3d2b1aa1767b07e3a2ab694506e81ef5dff4a` (commit `3cd3d2b`), worktree fetched from origin/dev. Scoped to verify-the-fix on DM-1/DM-2/DM-3 plus a fresh-eyes pass on the diff `b31154a..3cd3d2b`.
+
+All three round-1 findings are correctly resolved, verified against disk (not the diff), and the fix broke nothing.
+
+---
+
+## Finding disposition
+
+### DM-1 (was Major) - RESOLVED
+- Row now reads ``docs/templates/` (16 files)`` (`doc-map.md:41`). **Counted from disk, not the diff:** `ls docs/templates/*.md` = **16**. Correct.
+- The inline breakdown is arithmetically true against disk: 5 rung-artifact templates (non-`worked`, non-`patterns`) + 2 `*-patterns` docs + 9 `worked-*` exemplars = 16. Each subcount confirmed independently (`worked-*` = 9, `*-patterns` = 2, remainder = 5). The parenthetical "(nine of those)" for worked exemplars is accurate.
+- The `[DM-1, fixed]` disclosure states "the map's first committed count was 15, from memory; ls says 16." Verified accurate: v1 at `b31154a` did read "(15 files)", and it was a memory count, not a disk count. The disclosure honestly attributes the original defect and cites the map's own reality-wins rule. No irony hazard - the fix did not re-introduce a wrong count.
+
+### DM-2 (was Minor) - RESOLVED
+Row now reads "gated at PR-to-main and push-to-main per #20" (`doc-map.md:56`). Matches the gating matrix (`gating-matrix.md:19`) and the index header (`artifacts/index.md:3-6`), which both name both legs. Complete.
+
+### DM-3 (was Minor/observation) - RESOLVED
+Self-row added (`doc-map.md:43`): ``docs/doc-map.md` (this file) | reference (navigation) | LIVING | The map itself - a documentation surface like any other, subject to its own reality-wins rule`. Placed in the SYSTEM family table, which is a defensible home for an institution-navigation doc. The map now classifies itself.
+
+---
+
+## Fresh-eyes on the diff (nothing broken)
+The diff touches only `docs/doc-map.md` (three lines changed, one row added). I checked for collateral damage:
+- **Table integrity:** the `[DM-1, fixed: ...]` marker sits inside the "What it is" cell with balanced backticks and brackets, no stray pipe - the row still parses as a single 4-column table row. The added self-row is well-formed with 4 cells.
+- **No count re-drift:** the only numeric claim changed (15→16) matches disk; `~42` on `:5` is untouched and remains deliberately approximate (tilde).
+- **Doc-policy gate:** `Invoke-Pester ./scripts/tests/DocPolicy.Tests.ps1` → **2 passed, 0 failed** at HEAD `3cd3d2b` (observed by this reviewer). The map still carries `Status: Current` and passes.
+- No round-1 TRUE claim was disturbed - the fixes are additive/corrective and leave every previously-verified row (classifications, reading paths, review counts) intact.
+
+## Constitution check
+- **Law 1 (Truth):** the confident-falsehood that made DM-1 Major is eliminated; the count is now true against disk and the correction is disclosed rather than silently overwritten (`showcase never edits the record` honored - the wrong count's history is preserved in the fold marker and in the round-1 verdict).
+- **Living-doc rule:** the invalidating correction landed in the same commit that made the claim true, exactly as the map's own `:93-95` demands.
+- **NORTH STAR (stranger wins):** the map is now self-complete and its gating claim is whole; a stranger auditing coverage gets a correct count.
+
+No new findings. Converged: round 1 = 1 Major + 2 Minor; round 2 = 0 Major, 0 Minor. Clean landing.
+
+```starcar-artifact
+outcome: APPROVE
+findings: All three round-1 findings resolved and verified from disk at commit 3cd3d2b. DM-1 (was Major): templates row now reads (16 files); ls docs/templates/*.md counts 16 independently; inline breakdown 5 templates + 2 patterns + 9 worked = 16 confirmed per-subcount from disk; the [DM-1, fixed] marker accurately discloses the original count was 15-from-memory. DM-2 (was Minor): index.md row now reads "PR-to-main and push-to-main per #20", matching gating-matrix.md:19 and artifacts/index.md:3-6. DM-3 (was Minor): self-row added at doc-map.md:43 in the SYSTEM family. Fresh-eyes diff b31154a..3cd3d2b touches only doc-map.md, table structure intact, no count re-drift, all round-1 TRUE claims undisturbed. DocPolicy.Tests.ps1 2/2 passed at 3cd3d2b (observed). No new findings. Convergence 1-Major-2-Minor to 0-0.
+abstract: Delta round-2 verify-the-fix review of docs/doc-map.md v2 at commit 3cd3d2b on dev. All three round-1 findings correctly folded: templates count corrected to 16 and re-verified from disk (not the diff) with an accurate breakdown and an honest [DM-1, fixed] disclosure of the original 15-from-memory defect; index.md gating claim completed to both PR-to-main and push-to-main; a self-row added so the map classifies itself. The fix broke nothing - table integrity preserved, no count re-drift, doc-policy gate 2/2 green. APPROVE. Read-only review, nothing committed or pushed.
+```</result>
+<usage><subagent_tokens>70237</subagent_tokens><tool_uses>3</tool_uses><duration_ms>74068</duration_ms></usage>
+</task-notification>
