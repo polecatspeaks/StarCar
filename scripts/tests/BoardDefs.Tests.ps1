@@ -157,20 +157,25 @@ Describe 'schema/vocab/board-defs.json - presentational vocabulary (plan 2.4)' {
 
         It 'MANDATORY: a REJECT def flipped to needs-attention is caught BY NAME (non-vacuity proof)' {
             # Regression-vault shape: the check above passes on arrival, which proves
-            # nothing about whether it is real. Fault-inject ONCE into a TestDrive copy
-            # (never the committed file), confirm the flip is caught and NAMED, then
-            # confirm the real file on disk is untouched (no revert needed - the flip
-            # never left TestDrive).
+            # nothing about whether it is real. Fault-inject ONCE into a TestDrive COPY
+            # written to disk (never the committed file), confirm the flip is caught
+            # and NAMED by reading that copy back, then confirm the real file on disk
+            # is untouched (no revert needed -- the corruption never left TestDrive).
             $originalBytes = Get-Content $script:BoardDefsPath -Raw -Encoding UTF8
             $flipped = $originalBytes | ConvertFrom-Json
             ($flipped.outcomes | Where-Object { $_.id -eq 'REJECT' }).register = 'needs-attention'
+            $fixturePath = Join-Path $TestDrive 'board-defs-flipped-reject.json'
+            ($flipped | ConvertTo-Json -Depth 20) | Set-Content -Path $fixturePath -Encoding utf8
 
-            $mismatches = Get-PinnedMismatches -BoardDefs $flipped
+            $flippedFromDisk = Get-Content $fixturePath -Raw -Encoding UTF8 | ConvertFrom-Json
+            $mismatches = Get-PinnedMismatches -BoardDefs $flippedFromDisk
             $mismatches | Should -Not -BeNullOrEmpty -Because 'the flipped REJECT assignment must be caught'
             ($mismatches -join '; ') | Should -Match 'outcomes\.REJECT' -Because 'the failure must name REJECT specifically, not merely report a generic mismatch'
 
-            # The real file is untouched - only the in-memory parsed copy was mutated.
+            # The real file is untouched -- the fixture copy was mutated, never the store.
             (Get-Content $script:BoardDefsPath -Raw -Encoding UTF8) | Should -Be $originalBytes
+            $realDefs = Get-Content $script:BoardDefsPath -Raw -Encoding UTF8 | ConvertFrom-Json
+            (Get-PinnedMismatches -BoardDefs $realDefs) | Should -BeNullOrEmpty -Because 'the real committed file was never touched by the fault injection'
         }
     }
 }
