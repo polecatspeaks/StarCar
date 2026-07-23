@@ -1,3 +1,10 @@
+# Artifact index
+
+Derived from the store (artifacts/**/*.json) by scripts/New-ArtifactIndex.ps1 - regenerate,
+never hand-edit; the JSON records are the source of truth. Freshness contract (#20): this
+file is gated fresh at PR-to-main and push-to-main; on dev it may lag the store by a
+dispatch batch between regenerations.
+
 | subject | kind | at | outcome | file |
 |---|---|---|---|---|
 | 2026-07-21-design-v0-round1-REJECT | returned | 2026-07-22T03:44:34-04:00 | REJECT | reviews/2026-07-21-design-v0-round1-REJECT.json |
