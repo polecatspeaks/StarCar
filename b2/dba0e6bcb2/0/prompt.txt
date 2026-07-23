@@ -7074,3 +7074,7 @@ awesome! So now I have another idea for us to land. Train Names. Not like the Su
 ---
 
 oh that's good pushback, and it made me think of something else that might be better in a NIRTS way. the train number becomes the fucking ticket number in github.
+
+---
+
+ah good call. NIRTS == Need It Right This Second. The other side of YAGNI
