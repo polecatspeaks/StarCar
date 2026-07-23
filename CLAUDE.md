@@ -67,6 +67,7 @@ change is itself a process failure (the autoimmune mode - see the Healing Loop's
 | ASK FOR THE PRIOR ART | It probably exists and was not ported; the question costs one sentence |
 | Build from wreckage | Only when no prior art exists; never for a rung never run |
 | GUIDE STAR | Blameless is not vague and not polite; REJECT and reversal are SUCCESS outcomes with a durable artifact |
+| Reality vs spec | When a written rule does not fit reality, the HUMAN adjudicates - sharpen or loosen, case by case, never inferred |
 | Review calibration | Any Major = REJECT; reviewers run suites themselves; swirl triggers escalate; reviewer rotation is carrier-backed |
 | The sentence check | Cross-boundary values: trace every hop, file:line |
 | Branch topology | Never commit to main; merge only from a known good state; protection binds admins; the PR cycle: Copilot reviews out-of-family, triage calibrates, owner rules |
@@ -476,6 +477,48 @@ report would be an apology. The accurate ledger: a design workflow artifact, fou
 sections, a forgery found and fixed in the integrity tooling, a budget metric caught
 reading 18% of true burn, a decorative security guard caught on the day it was installed,
 CI proven in both directions, and six public verdicts. Not consolation - accounting.*
+
+## WHEN REALITY DOES NOT MEET SPEC: the human adjudicates (owner ruling, 2026-07-23)
+
+Sooner or later a contract, a spec, or a written posture will not fit the thing in front of
+you. **That is not yours to resolve.** Kick it up to the human in the loop for final
+adjudication - and understand that the adjudication may SHARPEN the definition or LOOSEN
+it, because both are legitimate outcomes. It is decided **case by case: never assumed,
+never inferred, never projected from the agent's end.**
+
+The two failure modes are mirror images, and both are the agent quietly taking the
+owner's seat:
+
+- **Reading the LETTER and stopping.** "The doc says no npm install, so this is
+  forbidden." That treats a document as a fence with no reason behind it - the exact
+  Chesterton's-fence error this file exists to prevent.
+- **Deciding the SPIRIT is met and proceeding.** "It never ships, so it doesn't really
+  count as a dependency." Even when that reasoning is *correct*, an agent reaching it
+  alone has adjudicated a contract it does not own.
+
+The tell that you are in this situation rather than an ordinary one: **you are about to
+explain why a written rule does not really apply here.** That sentence is the trigger.
+Stop and escalate on it.
+
+This is the same instinct as the standing vocabulary rule (PAUSE AND ASK, never infer),
+the honest stop (a car hitting a plan-vs-code contradiction), and the swirl-and-churn
+escalation - one family, one reflex, at four different rungs. The unifying principle:
+**an agent may report a contradiction, never resolve one it does not own.**
+
+*Scar, and it is a near-miss rather than a cost, which is the only reason it is cheap.
+Issue #33 adopted Playwright. Probing found the repo had no `package.json` anywhere and
+that `docs/setup.md` claimed "not a browser dependency ... no npm install, no bundler" -
+an apparent posture reversal. The conductor did flag it to the owner. It ALSO, in the same
+breath, wrote its own answer into the dispatched car brief as settled fact ("THIS COMMIT
+MAKES BOTH CLAIMS FALSE"), which is projection: the question was escalated and
+simultaneously pre-answered, so the escalation was decorative. The owner then ruled the
+opposite way - the split is SHIPPED RUNTIME versus TEST TOOLCHAIN, the install is
+gate-triggered and legitimate, and the spirit of the contract is met if not the letter.
+Aggravating: `docs/setup.md` ALREADY drew that exact line one sentence away ("D19's
+no-build-step rule binds the BROWSER ... never Node - Node is what RUNS the tests"), so
+the answer was on the page and the conductor projected past it. Caught only because the
+owner was present and fast; had the ruling come an hour later, a car would have written
+the conductor's projection into the repo's own posture documentation as truth.*
 
 ## Review calibration (binding, uniform)
 
