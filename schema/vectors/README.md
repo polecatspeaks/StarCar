@@ -57,8 +57,25 @@ expected was neither observed nor design-traced is a defect.
 | `fold/subject-partition.json` | OBSERVED (2026-07-23, detector at `3b04d45`) | DR3-3: a `train:` intent and a dispatch subject land in their own fold outputs, no cross-contamination, zero discoveries under a complete vocab |
 | `fold/manifest-supersession.json` | OBSERVED (2026-07-23, detector at `3b04d45`) | DR3-1 join input-side: latest-`at` intent wins per subject; the superseded intent stays exposed with its `at` |
 | `fold/empty-vocab-one-fault.json` | DESIGN-MANDATED (rev 5 §6 `[DR3-2]`) - the landed detector FANS OUT on this input (observed: 4 false discoveries, 0 faults); this vector is the red-first pin for the DR4-2 detector edit | DR3-2: valid-but-empty vocabulary files yield ONE combined fault (identical in shape to malformed) naming every empty file, and ZERO per-record discoveries |
+| `fold/precedence-dispatched-then-returned.json` | OBSERVED (2026-07-23, detector at `896e10e`) | S3.1: precedence resolves dispatched+returned to returned, with the dispatched exposed in `superseded` (plan 3.1 rehome of `Detector.Tests.ps1`'s precedence case) |
+| `fold/two-returned-latest-at-supersession.json` | OBSERVED (2026-07-23, detector at `896e10e`) | S3.1: within one winning kind, latest-`at` wins and the earlier record is exposed in `superseded`, never dropped (plan 3.1 rehome) |
+| `fold/dispatched-past-budget-overdue.json` | OBSERVED (2026-07-23, detector at `896e10e`) | S3.3: the liveness gradient renders `overdue` with BOTH `elapsed_seconds` and `budget_seconds` (plan 3.1 rehome) |
+| `fold/dispatched-within-budget-stays-dispatched.json` | OBSERVED (2026-07-23, detector at `896e10e`) | S3.3: elapsed under budget must not tip the state to `overdue` - the gradient, not a cliff (plan 3.1 rehome) |
+| `fold/record-budget-overrides-shop-default.json` | OBSERVED (2026-07-23, detector at `896e10e`) | S3.3: a record's own `budget` wins even where the real shop default would have rendered `overdue`; self-contained (no default-fallback dependency) unlike the carved-out shop-default case (plan 3.1 rehome) |
+| `fold/later-intent-supersedes-earlier-hold.json` | OBSERVED (2026-07-23, detector at `896e10e`) | S3.1, Law 2: the intent-subject partition, parallel to `subject-partition.json`'s dispatch case - latest-`at` intent wins, the earlier hold is exposed in `superseded` (plan 3.1 rehome) |
+| `fold/spend-from-cost-only.json` | OBSERVED (2026-07-23, detector at `896e10e`) | S3.4: `spend` renders from `cost` only; a dark lane is the literal string `absent`, never borrowed from another field (plan 3.1 rehome) |
+| `fold/yb3-recognised-outcomes-no-discovery.json` | OBSERVED (2026-07-23, detector at `896e10e`) | YB-3: `done`, `CONFIRM`, `done-with-findings` are recognised outcome vocabulary and raise no discovery when present in `vocab.outcomes` (plan 3.1 rehome) |
+| `fold/unrecognised-kind-discovery-by-name.json` | OBSERVED (2026-07-23, detector at `896e10e`) | S3.2: a `kind` absent from `vocab.kinds` surfaces as a named discovery, never a validation failure, with no dispatch/intent entry for that subject (plan 3.1 rehome) |
+| `fold/unrecognised-outcome-discovery-by-name.json` | OBSERVED (2026-07-23, detector at `896e10e`) | S3.2: the outcome-side mirror of the kind-discovery case above (Detect-Dispatches.ps1:107-110) - a semantic the landed pwsh implements but `Detector.Tests.ps1` never pinned; added here per plan 3.1's rule that an uncovered semantic is rehomed as a vector, not guessed in Go |
+| `fold/f1-dispatch-chronological-not-lexical.json` | OBSERVED (2026-07-23, detector at `896e10e`) | F1 (`docs/plans/2026-07-22-pr18-correctness-fixes-plan.md`): within-kind latest-`at` winner resolves by parsed instant, never lexical string, across mixed UTC offsets (plan 3.1 rehome) |
+| `fold/f1-intent-chronological-not-lexical.json` | OBSERVED (2026-07-23, detector at `896e10e`) | F1: intent supersession resolves by parsed instant, never lexical string, across mixed UTC offsets (plan 3.1 rehome) |
 
-**Migration note (Q8 ruling, plan-rung task):** the existing `Detector.Tests.ps1` cases
-migrate INTO this directory as fixtures, red-first, proven by the existing Pester
-assertions passing green against the same cases rehomed - its own reviewed task, never
-smuggled into the Go-port car.
+**Migration note (Q8 ruling, plan-rung task) - DONE (plan task 3.1, 2026-07-23):** the
+`Detector.Tests.ps1` cases expressible as pure fold semantics (records + vocab + now ->
+outputs) migrated into this directory as the twelve fixtures listed above, red-first,
+proven by the existing Pester assertions passing green against the same cases rehomed
+(`scripts/tests/Detector.Tests.ps1`'s fixture-driven runner). Four cases stayed imperative
+per the plan-round-1 amendment (spec 7b.1) - unreadable-vocab-dir, unreadable-defaults, the
+`tier` assertion (a field this contract excludes from comparison), and the shop-default
+budget case (depends on the real `config/harness-defaults.json`, which the runner contract
+never injects) - each named in `Detector.Tests.ps1`'s own header comment.
