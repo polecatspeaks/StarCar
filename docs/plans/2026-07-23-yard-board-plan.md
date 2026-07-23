@@ -154,6 +154,12 @@ Four tasks, four commits, strictly in order (each is the next one's substrate):
   green, including empty-vocab (the Go fold is born with the fix). The fold package's
   public API is the interface car 4 consumes: fold(records, vocab, now) → the vector
   contract's output shape.
+- **3.R (rider from Car 1's review, `[C1R-2]`)** Extend `board/re2.go`'s pattern walk
+  to also cover regexes appearing as `patternProperties` KEYS and under
+  `propertyNames` - a latent hole (no current schema uses them; the guard is not
+  wrong today, it is incomplete tomorrow). Red-first: a fixture schema using a
+  lookahead in a `patternProperties` key must be caught. Small, rides with this
+  car's board/ work.
 - **3.4 (YB-9/Q1)** The D18 cross-verifier CI step: runs the pwsh runner AND the Go
   runner over every fold vector; ANY divergence (either side red, or outputs
   disagreeing with expected) fails the build. Watched-to-fire is a CONDUCTOR HANDBACK

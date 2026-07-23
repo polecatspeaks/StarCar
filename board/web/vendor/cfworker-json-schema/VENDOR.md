@@ -39,7 +39,7 @@ no-build-step browser validator probe.
   2019-09, and 2020-12, validated against the json-schema-test-suite. The
   `Validator` constructor's default draft parameter is `'2019-09'`
   (`validator.js`) - callers MUST pass `'2020-12'` explicitly. The probe
-  script (`board/web/vendor/probe-yard-snapshot.mjs`) does this.
+  script (`board/web/probe-yard-snapshot.mjs`) does this.
 - **Retirement trigger (spec YB-11(b), gating matrix):** this probe's job is
   done once car 5 lands the true browser observation (`board/web/`'s live
   validator wiring, task 5.2). Nothing here is product code; car 5 may reuse
