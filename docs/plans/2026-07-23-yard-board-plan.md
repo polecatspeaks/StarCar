@@ -238,8 +238,11 @@ Consumes: the wire schema and `/api/*` only - never the store, never the fold.
 - The `train:board-v0` manifest intent record - written when THIS train's cars start
   rolling (the board's first real train data is the train building the board).
 - The `train:pre-harness-era` coarse backfill manifest (spec §8, Q6 ruling).
-- Car 1's live CI watched-red + car 3's YB-9 divergence injection at merge (run URLs
-  recorded in the train's closing report).
+- Car 1's live CI watched-red: **DONE 2026-07-23** - deliberate red `f050d28` observed
+  FAILURE on both legs (run 30015240304, Watch-CI exit 10, recorded
+  `.ci-checks/f050d284d.json`); revert `8b60056` observed green both legs (run per
+  `.ci-checks/8b60056*.json`). The board leg is proven in both directions live.
+  Car 3's YB-9 divergence injection at merge remains.
 - Index reconciles + Watch-CI after every merge (standing practice).
 - The stale-color register ruling (issue #1 comment, pending owner) folds into Car
   5's brief before it rolls - `stale` renders in the needs-attention color unless the
