@@ -1,9 +1,12 @@
 # Plan: the yard board train (v0 walking skeleton)
 
 Status: Open
-State: rev 2 - round 1 REJECT (4 Major, 3 Minor) folded with `[PB-n, folded]` markers,
-awaiting delta re-review round 2. Verdict:
-`artifacts/reviews/2026-07-23-board-plan-round1-REJECT.md`
+State: **rev 2 APPROVED at delta round 2 (0 Major, 0 Minor; convergence 4→0/3→0
+terminal) - CARS MAY ROLL** (owner spend granted §9; the verdict issues per-car
+brief cautions the conductor folds into each brief, sharpest: Car 3's brief lifts
+the Go env-fault own-idiom equivalents explicitly into 3.3's deliverables).
+Verdicts: `artifacts/reviews/2026-07-23-board-plan-round1-REJECT.md`,
+`artifacts/reviews/2026-07-23-board-plan-round2-APPROVE.md`
 Issue: #1 (`area:view`)
 Ladder rung: plan (rung 3), inheriting `docs/specs/2026-07-23-yard-board-spec.md` rev 2
 (APPROVED at delta round 2, `artifacts/reviews/2026-07-23-board-spec-round2-APPROVE.md`)
