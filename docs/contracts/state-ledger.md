@@ -9,7 +9,9 @@ committed artifacts - per spec `docs/specs/2026-07-22-dispatch-harness-spec.md` 
 
 ## Header (keep arithmetic current)
 
-Process state fields: 0. Derived committed artifact rows: 1 (instance live at
+Process state fields: 9 (0 dispatch-harness + 9 yard-board `board/server`, added
+2026-07-23 by Car 4, plan task 4.4 - verdict totals: SAFE 8, DELIBERATE_CARRY 1,
+LATENT_BUG 0). Derived committed artifact rows: 1 (instance live at
 `artifacts/index.md`).
 
 (2026-07-22, dispatch harness Car 1, task A.5): ledger created. Process 0 -> 0 (none to
@@ -75,3 +77,44 @@ C.2) - see `docs/contracts/gating-matrix.md`'s own already-ARMED row for that st
 C.2's own commit invalidated this row and did not true it, a living-contracts miss its
 own reviewer also missed (the same class the plan folds as F7). Trued here, in the
 commit that caught it.
+
+## Question 1, amended (2026-07-23, yard-board train Car 4, plan task 4.4)
+
+**The dispatch-harness claim above stays true for the harness's OWN components** (the
+producer, the detector, the index generator remain stateless script invocations - nothing
+in this amendment touches them). What changes is that a NEW, DIFFERENT long-lived process
+now exists in this repo: `board/server` (design rev 5, plan task 4.3), the Go server that
+polls the artifact store and serves the yard board. Unlike the harness's scripts, this is
+a persistent process with an in-memory poll loop, and it introduces this repo's FIRST real
+mutable process state. Process state fields: 0 -> 9 (arithmetic: seq, lastGoodSnapshot,
+lastPollAt, pollInFlight, the poll timer, per-live-lane lastGoodAsOf, connectedClients,
+the lane-id set, and the once-loaded recognition-vocabulary/shop-default-budget pair).
+Derived committed
+artifact rows: 1 -> 1 (unchanged - the board server never writes to or commits into the
+artifact store; it is a pure reader, per design D13 "the store is the SOLE adapter").
+
+**Lifecycle events** (design S5.1/S6, spec section 6): process restart | poll cycle,
+successful scan | poll cycle, scan failure | client (SSE) connect/reconnect.
+
+| Field (owner class) | Process restart | Poll cycle (success) | Poll cycle (scan failure) | Client reconnect | Verdict | Evidence (test name) |
+|---|---|---|---|---|---|---|
+| `seq` (`board/server.Server`) | RESET to 0 | INCREMENT, but ONLY if the change-detection comparison (seq/asOf excluded, freshness.kind/ageBucketMs included) finds a real difference - never on the bare passage of time | UNCHANGED unless the failure itself is the first-observed change (e.g. the first scan ever to fail) | UNCHANGED (a connecting client reads the CURRENT seq, never resets it) | SAFE | `TestPollOnceChangeDetectionExcludesSeqAsOfIncludesFreshnessKind`, `TestStatelessRestartableSameContentDifferentInstance` |
+| `lastGoodSnapshot` (`Server.lastSnapshot`) | RESET (rebuilt fresh: the pre-first-poll shape, all live lanes `never-polled`) | REPLACED with the new candidate whenever seq bumps | CARRIED - the previous good lane DATA stays current; only `freshness.kind` flips to `failed` with `lastGoodAsOf` marked (honest-unreachable, never an empty yard rendered as truth) | UNCHANGED (a connecting client's first SSE frame is exactly this value) | SAFE | `TestPollOnceScanFailureIsFailedWithLastGood`, `TestStatelessRestartableSameContentDifferentInstance` |
+| `lastPollAt` (`Server.lastPollAt`) | RESET to `nil` | SET to the poll's injected `now` | SET to the poll's injected `now` (an ATTEMPT is recorded regardless of the scan's outcome - distinct from `lastGoodSnapshot`'s `asOf`, which only advances on success) | UNCHANGED | SAFE | `TestLastPollAtLedgerField` |
+| `pollInFlight` (`Server.pollInFlight`, atomic) | RESET to `false` | `TryBeginPoll` sets true, `EndPoll` (deferred) resets false around each poll attempt | same guard, unconditionally of outcome | UNCHANGED | SAFE | `TestSkipNotQueueGuard`, `TestRestartMidPollIsEquivalentToNeverStarted` (a hard kill mid-poll leaves nothing for the NEXT process to inherit, since nothing persists across processes) |
+| poll timer (`time.Ticker`, `RunPollLoop`, `poll.go`) | RESET - `RunPollLoop` constructs a brand-new `time.Ticker` every process start; no phase/interval state survives a restart | fires every `cfg.PollMs`; a tick that finds `pollInFlight` already true is SKIPPED (never queued - the same guard row above), so the timer itself never accumulates backlog | same - a tick during a failing scan still fires and still attempts a poll | UNCHANGED (the timer is process-global, not per-client) | SAFE | `TestSkipNotQueueGuard` (the guard the timer relies on); the ticker's OWN firing is production-loop behaviour with no dedicated unit test in this car (real timers are flake-prone; `PollOnce` is what every other test calls directly) - disclosed here rather than silently assumed |
+| `lastGoodAsOf["live"]` (`Server.lastGoodAsOf`) | RESET (empty map) | UPDATED to the poll's `now` | CARRIED at its last successful value - this map IS the mechanism behind the `failed` freshness variant's `lastGoodAsOf` field | UNCHANGED | SAFE | `TestPollOnceScanFailureIsFailedWithLastGood` |
+| `connectedClients` (`sse.go`'s `subscriberRegistry`) | RESET to 0 | UNCHANGED by polling itself | UNCHANGED by polling itself | INCREMENT on `/api/stream` connect, DECREMENT on disconnect (request context done) | SAFE | `TestConnectedClientsLedger` |
+| lane-id set (`laneRegistry`, `laneregistry.go`) | UNCHANGED - compiled-in Go data, not runtime state; a restart cannot alter it | UNCHANGED | UNCHANGED | UNCHANGED | SAFE (immutable by construction - v0 has no adapter-plugin system yet, design D11) | `TestLaneRegistryPin` (fault-injected: shrinking the registry by one entry was OBSERVED to fail this test, then reverted byte-identical), `TestNewServerPreFirstPollIsNeverPolled` (all five lanes present even pre-first-poll) |
+| recognition vocabulary + shop-default budget (`Server.vocab`, `Server.defaultBudget`) | RE-READ from disk at construction (a restart picks up an on-disk edit) | UNCHANGED - loaded ONCE at `NewServer`, never refreshed mid-process | UNCHANGED | UNCHANGED | **DELIBERATE_CARRY** - a mid-process edit to `schema/vocab/kinds.json`/`outcomes.json` or `config/harness-defaults.json` is picked up only on the NEXT restart, never mid-run; this matches `board/fold`'s own loaders (`LoadVocab`/`LoadDefaultBudget`, one-shot by design) and is documented here so it is never mistaken for a bug | `board/fold/loaders_test.go` (existing); this car's `NewServer` construction path |
+
+**Browser-side bounded state** (rendered snapshot, connection status, last-applied `seq`)
+is named here per design S6/S8 but is explicitly Car 5's to ledger - this server never
+reads or writes it; it is out of `board/server`'s process boundary entirely.
+
+**A note on what is NOT a separate ledger row:** `Server.lastCompareBytes` (the stripped-
+for-comparison marshal of `lastGoodSnapshot`) is fully DERIVED from `lastGoodSnapshot`
+- recomputed every time that field changes (`mustMarshalStripped`, `poll.go`) - so it
+carries no independent state and is not ledgered separately (Law 6: a second copy that
+cannot drift, because it is recomputed from the one owner every time, is not the second
+copy the law forbids).
