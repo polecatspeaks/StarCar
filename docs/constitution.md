@@ -1,6 +1,7 @@
 # The StarCar Constitution
 
-Status: **RATIFIED by the owner, 2026-07-21** - the founding day, before any code.
+Status: Current
+Ratified: 2026-07-21 by the owner - the founding day, before any code.
 Derived from the meta-principles of a sibling project's constitution (eight ordered laws
 governing a race-strategy system); the SHAPE ports, the content is re-derived for what
 StarCar is: a visualizer that renders the truth of a multi-agent process to the human

@@ -1,0 +1,8 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "dispatched",
+  "subject": "disp-8",
+  "session_id": "session-vwx",
+  "at": "2026-07-22T18:00:00Z",
+  "normalisation": []
+}

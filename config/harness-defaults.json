@@ -1,0 +1,4 @@
+{
+  "$comment": "Shop-local harness defaults (conductor ruling R5v2). This is CONFIG, not the stranger-deployable contract: it lives in config/ and NOT in schema/, because a stranger cloning the schema/ contract must not inherit this shop's numbers (schema/starcar-artifact.schema.json:45-46 says the budget default 'is the detector's to apply, never the schema's'). Contract and config have different owners (Law 6) in different directories (Law 7). The detector applies dispatch_budget_seconds at FOLD time when a record carries no budget of its own; absent never means infinite (spec S3.3).",
+  "dispatch_budget_seconds": 1800
+}

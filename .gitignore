@@ -1,0 +1,4 @@
+.claude/probe-logs/
+testResults.xml
+__pycache__/
+.ci-checks/

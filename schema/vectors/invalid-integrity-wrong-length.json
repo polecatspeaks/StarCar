@@ -1,0 +1,9 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "dispatched",
+  "subject": "disp-wrong-length",
+  "session_id": "session-wronglen",
+  "at": "2026-07-22T10:00:00Z",
+  "normalisation": [],
+  "integrity": "sha256:444444444444444444444444444444444444444444444444444444444444444"
+}

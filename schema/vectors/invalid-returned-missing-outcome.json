@@ -1,0 +1,11 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "disp-5",
+  "session_id": "session-mno",
+  "at": "2026-07-22T15:00:00Z",
+  "findings": "none",
+  "abstract": "missing outcome, should fail",
+  "normalisation": [],
+  "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+}

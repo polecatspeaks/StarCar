@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "2026-07-22-car3-plan-review-round1",
+  "session_id": "pre-harness-migration",
+  "at": "2026-07-22T13:18:44-04:00",
+  "outcome": "REJECT",
+  "findings": "5 Major, 4 Minor, 2 Notes. M1 (proven) R7 migration-record shape is schema-invalid, missing session_id, findings, and the schema const; C.1 Step 1's validate assertion is unsatisfiable. M2 (proven) R9's default-to-artifacts plus -Recurse makes the bare verifier glob artifacts/index.md, which has no integrity header, so the migration commit exits 1 and turns CI red, the exact atomicity failure the one-commit rule prevents. M3 living-contracts violation, C.1 commits the first index instance and C.2 arms the staleness gate but the plan defers both the state-ledger and gating-matrix flips to C.4, out of the invalidating commit. M4 Handback 3 claims producer records merge cleanly, but the producer never regenerates index.md, so the merged HEAD fails C.2's own staleness gate and the regenerate-before-PR step is unstated, violating MERGE NORTH STAR. M5 the migration deletes docs/reviews and repoints the verifier to artifacts, but Land-Verdict still lands verdict md bodies to docs/reviews, so future verdicts risk landing silently unverified, R9's empty-then-deleted premise is unguarded. Minors: R9 cites line 24 for the default that lives at line 27; R7 outcome-parse ambiguity yields 22 unrecognised-outcome discoveries; README adapter edit risks a premature board-consumption claim; ubuntu-leg suite portability unproven with scope-creep risk. Notes: isAsync 6/6 evidence is gitignored but the finding lands durably; R7 integrity canonicalisation for the pointer record is unspecified and untested. One-commit reading is blessed in principle but currently unmet due to M2. R8 sound. DocPolicy and detector confirmed clean post-migration.",
+  "abstract": "Plan adversary REJECT of the dispatch-harness Car 3 plan rev 1 at base c595fb9. Two empirically proven Majors are each independently sufficient: the R7 migration record shape fails the landed schema validator, and the R9 verifier repoint plus recurse chokes on the headerless index.md and turns the migration commit CI-red. Three further Majors cover deferred living-contract flips, a false merge-clean handback claim that trips the plan's own staleness gate, and an unguarded verification gap for future verdicts. Coverage mapping is complete; the defects are omissions and unsound rulings, not structure. Re-review as a delta to the same reviewer.",
+  "body_file": "reviews/2026-07-22-car3-plan-review-round1.md",
+  "normalisation": [],
+  "integrity": "sha256:0bbed33b33282191f8f2aa7cc70b0c8fcf873c2b69470866f9dd821a1581af7e"
+}

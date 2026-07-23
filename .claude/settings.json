@@ -10,6 +10,14 @@
           {
             "type": "command",
             "command": "sh -c 'if ! command -v entire >/dev/null 2>&1; then exit 0; fi; exec entire hooks claude-code post-task'"
+          },
+          {
+            "type": "command",
+            "command": "sh .claude/hooks/post-task-probe.sh"
+          },
+          {
+            "type": "command",
+            "command": "sh .claude/hooks/starcar-producer-launch.sh"
           }
         ]
       },
@@ -55,6 +63,14 @@
           },
           {
             "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start-ci-baseline.sh"
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start-retro.sh"
+          },
+          {
+            "type": "command",
             "command": "sh -c 'if ! command -v entire >/dev/null 2>&1; then printf \"%s\\n\" \"{\\\"systemMessage\\\":\\\"\\\\n\\\\nEntire CLI is enabled but not installed or not on PATH.\\\\nInstallation guide: https://docs.entire.io/cli/installation#installation-methods\\\"}\"; exit 0; fi; exec entire hooks claude-code session-start'"
           }
         ]
@@ -78,6 +94,21 @@
           {
             "type": "command",
             "command": "sh -c 'if ! command -v entire >/dev/null 2>&1; then exit 0; fi; exec entire hooks claude-code user-prompt-submit'"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh .claude/hooks/subagent-stop-probe.sh"
+          },
+          {
+            "type": "command",
+            "command": "sh .claude/hooks/starcar-producer-stop.sh"
           }
         ]
       }

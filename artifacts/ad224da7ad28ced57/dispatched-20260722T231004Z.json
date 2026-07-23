@@ -1,0 +1,11 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "dispatched",
+  "subject": "ad224da7ad28ced57",
+  "session_id": "64c15364-0933-4d6d-9b2e-d1ddbc918f9f",
+  "at": "2026-07-22T23:10:04Z",
+  "model": "claude-opus-4-8",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:268980dd0ff4da74aecd2c9c58cb3b98e5d2015d758ea16b29e9e6e115ec37ee"
+}

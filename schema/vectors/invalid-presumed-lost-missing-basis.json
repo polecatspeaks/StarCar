@@ -1,0 +1,9 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "presumed-lost",
+  "subject": "disp-7",
+  "session_id": "session-stu",
+  "at": "2026-07-22T17:00:00Z",
+  "normalisation": [],
+  "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+}

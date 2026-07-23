@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "aefe2954995877480",
+  "session_id": "64c15364-0933-4d6d-9b2e-d1ddbc918f9f",
+  "at": "2026-07-22T20:45:22Z",
+  "outcome": "APPROVE",
+  "findings": "All four Copilot-triaged fixes applied red-first with confirmed non-vacuity; final counts Pester 88/88, probes 12/12, Verify-Verdict.ps1 exit 0 (25/25) at commit 0478afa62efd0cce1beae77e819906dc96a208ca; two undocumented 61-hex placeholders found beyond the brief's named citation (ArtifactIndex.Tests.ps1 lines 62 and 67, fixed alongside the named line 57).",
+  "abstract": "|\n  Fixed the four Copilot round-1 findings in the isolated worktree, base-verified at 091efe6cb95d7aa7c01c8e871ef0cd814179ebe2 before any edit. FIX 1 (vocab-files-parse assertion) and FIX 2 (outcome de-enum assertion) both landed in schema/tests/Schema.Tests.ps1 with observed fault-injection RED quotes and byte-identical restores, confirmed via git diff showing zero residual delta. FIX 3 (integrity length pinning) followed the full red-first shape: created schema/vectors/invalid-integrity-wrong-length.json at exactly 63 hex chars, observed the conformance suite RED (Expected false, but got true) proving the unanchored pattern accepted it, tightened the schema pattern to {64}, then fixed every placeholder this broke - the four valid-* vectors (61 hex each), Artifact.Tests.ps1:29, Detector.Tests.ps1:28 (both sha256:0), and ArtifactIndex.Tests.ps1:57/62/67 (the brief named only line 57; lines 62 and 67 in the same fixture block were also 61-hex and are reported here as additionally found). Migration.Tests.ps1 and Producer.Tests.ps1 use real computed hashes via Get-Sha256Hex, not placeholders, and were correctly left untouched. Two migrated review records were spot-validated Valid=True under the tightened pattern. FIX 4 added an 18-line non-code header to scripts/canonicalise-demo.py marking it as preserved wreckage from the dispatch-harness design round 3 forgery, with git diff confirming pure insertion and zero change to the existing code/comments below. One commit, 0478afa62efd0cce1beae77e819906dc96a208ca, 12 files (10 modified, 2 created), never pushed.\nnormalisation: []\nintegrity: sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:6719649c829eba46d18a33cd9941d2ef02a2742f2343098ed3c134c9c9dc38a3"
+}

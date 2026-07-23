@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "aefe2954995877480",
+  "session_id": "64c15364-0933-4d6d-9b2e-d1ddbc918f9f",
+  "at": "2026-07-22T21:06:54Z",
+  "outcome": "APPROVE",
+  "findings": "Both reviewer findings fixed and proven; four isolation flips observed and quoted (Valid=False baseline to Valid=True after in-memory field restoration, zero tree writes during proof, confirmed by git status); final counts Pester 90/90, probes 12/12, Verify-Verdict.ps1 exit 0 (25/25) at commit a4031937e6c12ad6a22f3933d89a51112b80ac93.",
+  "abstract": "|\n  Fixed the reviewer's REJECT findings on the earlier Copilot commit (0478afa), base-verified clean at b10c1520844fffe29161d0ddbb77be1628a3db33. MAJOR-1: the four negative conformance vectors that guard single required/conditional-field rules (missing kind, missing presumed-lost basis, missing returned abstract, missing returned outcome) had been double-invalidated by the earlier {64} integrity-length tightening, since each still carried a 61-hex placeholder - meaning each vector was invalid for TWO reasons at once, silently vacating its guard (a future removal of the intended required-field rule would no longer flip it to valid, and nobody would notice). Fixed each to a full 64-hex placeholder, then proved isolation restored per the reviewer's own method: for each vector, loaded it into memory, restored its one intended missing field without touching the file on disk, and confirmed Test-StarcarArtifact flipped Valid=False to Valid=True - all four flips observed and quoted, with git status confirming zero tree writes occurred during the proof. MINOR-1: the wreckage header in canonicalise-demo.py cited a line number ('Line 27') for the sweep = dict(hook) forgery that my own prior 19-line header addition had already shifted to line 46, re-arming the exact trap the repo's own name-anchor lesson warns against; replaced with a name-anchored citation carrying no line number at all. One commit, a4031937e6c12ad6a22f3933d89a51112b80ac93, 5 files modified, never pushed - stated by the coordinator to be the branch's final commit before merge.\nnormalisation: []\nintegrity: sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:58c1be1c296988d7c3ed95544050e85de199494c9518097bc20a7747a38bdf40"
+}

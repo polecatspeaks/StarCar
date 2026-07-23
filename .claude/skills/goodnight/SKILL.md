@@ -39,6 +39,16 @@ Issue tracker synced to reality; new tickets have a status.
 Green, or pending-with-note. Red-and-deterministic is NOT a goodnight - it is a blocker
 to surface before closing.
 
+## 5b. Artifact-store sweep
+
+Check the dispatch-harness store before closing (spec #7): read `artifacts/_faults.log`
+and surface any entry (a producer write or commit that RAISED rather than dropped - Law 4),
+and run `scripts/Detect-Dispatches.ps1 -StoreRoot artifacts` to see un-landed dispatches -
+anything `overdue` or `unaccounted-for` is visible debt that must be named in the
+checkpoint (a killed dispatch fires no stop hook, so the budget gradient is the only thing
+that surfaces it). An un-backfilled gap is a first-class state, not an omission: close it
+with a `presumed-lost` record or carry it forward explicitly, never silently.
+
 ## 6. The yard-status close
 
 Three sentences, written to memory AND said to the owner: what landed, what is parked,

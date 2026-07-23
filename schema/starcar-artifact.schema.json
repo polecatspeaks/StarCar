@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starcar.dev/schema/starcar-artifact/1",
+  "title": "StarCar dispatch-lifecycle artifact",
+  "description": "Spec S3 preamble: the schema owns six contracts - field names, types, ordering, identity, the index format, and the path-normalisation substitution rule. This file governs fields and types (plus the conditional-requirement shape); ordering, the index format, and the normalisation rule are declared in schema/index-format.md, which this file does not duplicate (Law 6).",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": "starcar-artifact/1"
+    },
+    "kind": {
+      "type": "string",
+      "description": "Recognition vocabulary lives in schema/vocab/kinds.json as DATA, never as a schema enum here (spec S3.2: an unrecognised kind must be a discovery, not a validation failure)."
+    },
+    "subject": {
+      "type": "string",
+      "description": "THE identity key (ruling R2). For the three dispatch kinds (dispatched, returned, presumed-lost) its value IS the dispatch id. There is no separate dispatch_id field."
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 UTC. Latest-at wins on supersession (spec S3.1)."
+    },
+    "outcome": {
+      "type": "string",
+      "description": "Recognition vocabulary lives in schema/vocab/outcomes.json as DATA, never as a schema enum here, for the same reason as kind."
+    },
+    "findings": {
+      "type": "string"
+    },
+    "abstract": {
+      "type": "string",
+      "description": "The third envelope payload field (spec S2.3), alongside outcome and findings - the human-readable summary a board renders."
+    },
+    "envelope": {
+      "type": "string",
+      "enum": ["absent", "malformed"],
+      "description": "Records the envelope fault class. Only meaningful on kind=returned. Absent and malformed are different faults (spec S2.3); both land with the body intact. This is a closed, schema-owned fault-class enum, not a recognition vocabulary, so it is exempt from the vocabularies-as-data rule."
+    },
+    "budget": {
+      "type": "number",
+      "description": "Seconds. Optional - the shop default applies at FOLD time, never infinite. The default is the detector's to apply, never the schema's."
+    },
+    "basis": {
+      "type": "object",
+      "description": "Required when kind=presumed-lost (spec S3.3).",
+      "properties": {
+        "observed": {},
+        "by": {},
+        "against_budget": {}
+      },
+      "required": ["observed", "by", "against_budget"]
+    },
+    "cost": {
+      "type": "object",
+      "description": "Optional - producer-optional by Law 7 (spec S3.4)."
+    },
+    "context_peak_tokens": {
+      "type": "number"
+    },
+    "producer": {
+      "type": "string",
+      "description": "Optional. Not spec-mandated (S3.4 governs cost/context optionality and names no such field). Basis: Law 7 metadata naming the emitting adapter, optional exactly as cost is."
+    },
+    "normalisation": {
+      "type": "array",
+      "description": "Declared in each landed artifact. Empty array means nothing was substituted.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "from_class": { "type": "string" },
+          "to": { "type": "string" }
+        },
+        "required": ["from_class", "to"]
+      }
+    },
+    "integrity": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "sha256:<hex> over the canonical body."
+    }
+  },
+  "required": ["schema", "kind", "subject", "session_id", "at", "normalisation", "integrity"],
+  "allOf": [
+    {
+      "if": {
+        "properties": { "kind": { "const": "returned" } },
+        "required": ["kind"]
+      },
+      "then": {
+        "required": ["outcome", "findings", "abstract"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "kind": { "const": "presumed-lost" } },
+        "required": ["kind"]
+      },
+      "then": {
+        "required": ["basis"]
+      }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "2026-07-22-car2-plan-review-round1",
+  "session_id": "pre-harness-migration",
+  "at": "2026-07-22T11:06:52-04:00",
+  "outcome": "REJECT",
+  "findings": "7 Major, 4 Minor. Majors: M1 envelope-mandate docs (CLAUDE.md, car-brief, car.md, goodnight; spec section 9, Car 2) dropped from every task file-list; M2 producer bare git commit entangles conductor-staged files, reproduced in scratch repo; M3 last_assistant_message is an unverified payload field deviating from the spec agent_transcript_path mechanism; M4 dispatched subject=agent_id unverified and evidence says launch payload has no body; M5 ruling R5 puts shop config in the portable schema contract against the schema's own text; M6 ruling R6 tier-2 enumerates checkpoints not dispatches (wolf-crying detector); M7 B.4 deletes the verdict-extraction function yet demands byte-identical re-landing. Reds valid at pwsh 7.6.3, baselines exact 43/8/16, ruling R4 sound.",
+  "abstract": "Car 2 plan rev 1 REJECTED at the plan gate. The mechanical spine is sound (reds run and fail for their stated reasons, baselines re-derived exactly, R4 store layout consistent with the landed index generator, self-referential baseline correctly floated), but the plan fails at the boundaries it consumes blind: it drops the load-bearing envelope-mandate documentation Car 2 owns, specifies a commit sequence that provably sweeps the conductor's staged files into harness commits, rests the producer outcome and identity paths on payload fields the ground-truth probes never recorded, and mis-homes a shop default into the stranger-deployable schema. Recommend DELTA re-review by the same plan-writer.",
+  "body_file": "reviews/2026-07-22-car2-plan-review-round1.md",
+  "normalisation": [],
+  "integrity": "sha256:9e2d98c932bdf4966d542d42f137498c64a4d2668ce314e35e3bfeb97bcfc088"
+}

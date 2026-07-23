@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "2026-07-22-harness-design-round4-REJECT-ESCALATED",
+  "session_id": "pre-harness-migration",
+  "at": "2026-07-22T05:44:06-04:00",
+  "outcome": "REJECT",
+  "findings": "migrated: see body_file",
+  "abstract": "Adversarial design review - dispatch harness, round 4 (ESCALATED)",
+  "body_file": "reviews/2026-07-22-harness-design-round4-REJECT-ESCALATED.md",
+  "normalisation": [],
+  "integrity": "sha256:5125f0be2496356e374e5e6b56d40f085ef0b20118240fb686ae7a3efea5c1b7"
+}

@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "ac99647694fc5795c",
+  "session_id": "64c15364-0933-4d6d-9b2e-d1ddbc918f9f",
+  "at": "2026-07-22T22:39:51Z",
+  "outcome": "APPROVE",
+  "findings": "none - all 7 fixes (F1-F7) landed red-first per docs/plans/2026-07-22-pr18-correctness-fixes-plan.md rev 2, in required order (F1 before F2). One unplanned ripple in F4 (LandVerdictRider.Tests.ps1's flood-injection fixture needed Artifact.psm1 copied alongside its patched Produce-Artifact.ps1 copy) was caught by the full-suite run and fixed same-commit, disclosed in the F4 commit message. No honest-stops; no scope deviations from the approved plan.",
+  "abstract": "Executed the PR-18 correctness-fix train (Copilot's 9 findings) on car/pr18-correctness-fixes from base 7cc453931da3456539334afe4ee3527ffca631cf. Seven commits: F1 38d8824 (offset-aware Get-AtInstant sort, Artifact.psm1/New-ArtifactIndex.ps1/Detect-Dispatches.ps1), F2 93d2b5f (index reconciled, 51 rows), F3 e077115 (pipe/newline cell escaping), F4 d3641e8 (StoreIntegrity.Tests.ps1, Get-Sha256Hex extracted to shared module), F5 0adc274 (producer transcript-read-failure no longer misclassified as envelope absent, error no longer dropped), F6 6e0a730 (README status trued), F7 add53f3 (state-ledger staleness owner flipped to ARMED). Every behavioural fix was red-first with the observed failure quoted. Final HEAD add53f3200440e2d221469b74e9e96e984602b6f: Pester tests 151/151, Pester probes 12/12, Verify-Verdict.ps1 exit 0 (27/27 verdicts), index regeneration confirmed no-op, working tree clean. Never pushed.",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:633083441d0ea1d0bdc6d62f1a1c1b70368bd30ca5a789bb9cb4b48c49206128"
+}

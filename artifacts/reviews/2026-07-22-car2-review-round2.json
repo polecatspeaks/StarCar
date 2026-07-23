@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "2026-07-22-car2-review-round2",
+  "session_id": "pre-harness-migration",
+  "at": "2026-07-22T12:38:59-04:00",
+  "outcome": "APPROVE",
+  "findings": "Round 2 delta re-review, zero findings. The round-1 Major (citation drift from B.4's minus-four line shift) is closed by mechanism. All five checks pass at HEAD 8826566. Check 1: diff is exactly four files, every changed line inside a comment or markdown block, no executable code touched. Check 2: the three re-anchors now reference targets by function name (Get-ResultBlockForTask last-wins return at Land-Verdict.ps1 line 111; ConvertTo-PortablePaths at line 114, cited from Produce-Artifact.ps1 and index-format.md) and each named function verifiably contains the claimed behavior at HEAD. Check 3: the fourth orphan the car self-swept is real - base citation lines 317 to 321 covered the BOM-free UTF8Encoding write at base, and the minus-four shift moved UTF8Encoding to line 316, outside the range; re-anchored to the WriteAllText with a BOM-free UTF8Encoding by name, which exists at Land-Verdict.ps1 lines 316 to 317. Check 4: my own git grep for Land-Verdict.ps1 colon-digit citations in live dirs returns none; all remaining hits are in frozen records (design, plans, specs, reviews), and the frozen-record exclusion is mandatory because landed verdicts are hash-verified historical records that must not be edited. Check 5: scripts tests 73 of 73, probes 8 of 8, Verify-Verdict exit 0 with 19 files - no count moved. The car exceeded my prescribed three re-anchors and closed a fourth orphan my round-1 review missed.",
+  "abstract": "APPROVE. The single mechanical citation-drift Major from round 1 is fully resolved by re-anchoring four code and prose citations to function names instead of fragile line numbers - the same remedy the spec process adopted at its round 4. The fix is comment-only across exactly four files, changes no executable line, moves no test count (73 tests, 8 probes, 19 verdicts all steady), and introduces no new finding. Convergence is clean: one Major to zero, no swirl, and the car self-swept an additional orphan the round-1 review had missed. Read-only worktree stayed clean throughout at base 8826566. The branch is clear for the whole-branch gate.",
+  "body_file": "reviews/2026-07-22-car2-review-round2.md",
+  "normalisation": [],
+  "integrity": "sha256:1b0e16dbb972927328558dbae8b74bdb2b844bdf58da5f58e79f2596f5c79389"
+}
