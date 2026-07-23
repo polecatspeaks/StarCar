@@ -190,7 +190,13 @@ foreach ($subject in ($bySubject.Keys | Sort-Object)) {
         # record shares the same offset. A bad 'at' throws loud, attributed to this
         # subject (the detector's records carry no file path - subject is its identity),
         # never a silent mis-sort.
-        $ranked = $dispatchRecords | Sort-Object `
+        # -Stable (C3R-2, Minor, Car 3 review round 1): PowerShell's Sort-Object does not
+        # DOCUMENT stability without this switch, so two records with the SAME (subject,
+        # kind, instant) but different outcome/cost/budget had an unpinned tie-break -
+        # matching the Go port's sort.SliceStable (input order) only by observed behaviour,
+        # never by contract. -Stable makes the pwsh side's ordering guarantee explicit and
+        # equal to Go's, rather than relying on undocumented current behaviour.
+        $ranked = $dispatchRecords | Sort-Object -Stable `
             @{ Expression = { $precedence[[string](Get-Prop $_ 'kind')] } ; Descending = $true }, `
             @{ Expression = {
                 try { Get-AtInstant -At ([string](Get-Prop $_ 'at')) }
@@ -269,7 +275,9 @@ foreach ($subject in ($bySubject.Keys | Sort-Object)) {
     if ($intentRecords.Count -gt 0) {
         # F1: latest-at intent-hold supersession must also compare the parsed instant -
         # a lexical sort here is the bug that lets a withdrawn hold win (plan F1).
-        $ordered = @($intentRecords | Sort-Object @{ Expression = {
+        # -Stable (C3R-2, Minor): same rationale as the dispatch-side sort above - two
+        # intent records with the SAME instant had an undocumented tie-break without this.
+        $ordered = @($intentRecords | Sort-Object -Stable @{ Expression = {
             try { Get-AtInstant -At ([string](Get-Prop $_ 'at')) }
             catch { throw "Detect-Dispatches: subject '$subject': $($_.Exception.Message)" }
         } ; Descending = $true })
