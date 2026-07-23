@@ -23,9 +23,12 @@ type vectorFile struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Input       struct {
-		Records []map[string]any    `json:"records"`
-		Vocab   map[string][]string `json:"vocab"`
-		Now     string              `json:"now"`
+		Records  []map[string]any    `json:"records"`
+		Vocab    map[string][]string `json:"vocab"`
+		Defaults *struct {
+			DispatchBudgetSeconds *float64 `json:"dispatch_budget_seconds"`
+		} `json:"defaults"`
+		Now string `json:"now"`
 	} `json:"input"`
 	Expected struct {
 		Faults      any `json:"faults"`
@@ -96,7 +99,17 @@ func TestFoldConformsToVectors(t *testing.T) {
 			}
 			vocab := Vocab{Kinds: v.Input.Vocab["kinds"], Outcomes: v.Input.Vocab["outcomes"]}
 
-			out := Fold(records, vocab, now)
+			// input.defaults (C3R-1a/1d, spec Amendment 2): OPTIONAL. When
+			// present, thread its dispatch_budget_seconds into Fold via
+			// WithDefaultBudgetSeconds - the runner contract's own
+			// language-neutral way to pin the shop-default fold semantic
+			// without depending on the real config/harness-defaults.json.
+			var opts []Option
+			if v.Input.Defaults != nil && v.Input.Defaults.DispatchBudgetSeconds != nil {
+				opts = append(opts, WithDefaultBudgetSeconds(*v.Input.Defaults.DispatchBudgetSeconds))
+			}
+
+			out := Fold(records, vocab, now, opts...)
 
 			assertVectorFieldEqual(t, v.Name, "faults", v.Expected.Faults, toAny(t, out.Faults))
 			assertVectorFieldEqual(t, v.Name, "discoveries", v.Expected.Discoveries, toAny(t, out.Discoveries))

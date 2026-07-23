@@ -24,6 +24,12 @@ func (d DispatchEntry) MarshalJSON() ([]byte, error) {
 	case "dispatched":
 		m["elapsed_seconds"] = d.ElapsedSeconds
 		m["budget_seconds"] = d.BudgetSeconds // nil marshals to JSON null, matching pwsh's explicit null
+		// budget_source (C3R-1d, spec Amendment 2 item (b)): present ONLY
+		// alongside a non-null budget_seconds - never a phantom source for a
+		// null budget, kept minimal per the owner's ruling.
+		if d.BudgetSeconds != nil {
+			m["budget_source"] = d.BudgetSource
+		}
 	}
 	return json.Marshal(m)
 }

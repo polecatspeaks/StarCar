@@ -48,10 +48,13 @@ func readValuesFile(path string) ([]string, error) {
 // LoadDefaultBudget reads dispatch_budget_seconds from a defaults JSON file
 // (config/harness-defaults.json's shape). A read failure is ONE error - the
 // own-idiom counterpart to Detect-Dispatches.ps1's "unreadable defaults file"
-// case (also carved out at plan 3.1 for the same path-bearing-string reason).
-// This function exists for parity with the pwsh detector's own env-fault
-// surface; Fold itself never calls it (package doc's scope note: no vector
-// exercises shop-default fallback, so Fold takes no default-budget parameter).
+// case (also carved out at plan 3.1 for the same path-bearing-string reason,
+// and STILL correctly carved - reading the file is IO, spec Amendment 2 only
+// reclassified APPLYING its value). This function reads the value from disk;
+// a caller threads the result into Fold via WithDefaultBudgetSeconds
+// (algorithm.go) - the fold semantic itself (C3R-1d, spec Amendment 2, issue
+// #22), which supersedes this comment's prior claim that Fold never
+// consumes it.
 func LoadDefaultBudget(path string) (*float64, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {

@@ -37,10 +37,41 @@ func parseInstant(r Record) time.Time {
 	return t
 }
 
+// Option configures optional Fold behaviour via the functional-options idiom
+// (C3R-1d, spec Amendment 2, issue #22): Fold's positional signature stays
+// exactly Fold(records, vocab, now) - the literal interface plan task 3.3
+// named - with the shop-default budget threaded as a variadic option rather
+// than a fourth positional parameter, so a caller with no default (most
+// vectors) reads identically to before this fix cycle.
+type Option func(*foldOptions)
+
+type foldOptions struct {
+	defaultBudgetSeconds *float64
+}
+
+// WithDefaultBudgetSeconds supplies the shop-default budget
+// (config/harness-defaults.json's dispatch_budget_seconds) Fold applies to a
+// dispatched record that carries no budget of its own. Reversing the plan
+// 3.1 carve-out that misclassified this as environmental IO (spec Amendment
+// 2): the round-1 reviewer constructed a byte-identical budget-less
+// dispatched record on which the pwsh detector rendered overdue/1800 and this
+// package's Fold, with no way to receive a default, rendered dispatched/null
+// - a real divergence on the only killed-dispatch surface (design S3.3,
+// Probe 1). This option is how a caller (the vector-runner, and eventually
+// Car 4's assembler) supplies that same default so both fold bodies agree.
+func WithDefaultBudgetSeconds(seconds float64) Option {
+	return func(o *foldOptions) { o.defaultBudgetSeconds = &seconds }
+}
+
 // Fold is the pure fold (package doc, fold.go): given materialised records, a
 // recognition vocabulary, and an injected clock, it returns the same
 // faults/discoveries/dispatches/intents shape the pwsh detector emits.
-func Fold(records []Record, vocab Vocab, now time.Time) Output {
+func Fold(records []Record, vocab Vocab, now time.Time, opts ...Option) Output {
+	var o foldOptions
+	for _, opt := range opts {
+		opt(&o)
+	}
+
 	faults := []string{}
 	discoveries := []string{}
 
@@ -115,7 +146,7 @@ func Fold(records []Record, vocab Vocab, now time.Time) Output {
 		g := bySubject[subject]
 
 		if len(g.dispatch) > 0 {
-			dispatches = append(dispatches, foldDispatchSubject(subject, g.dispatch, now))
+			dispatches = append(dispatches, foldDispatchSubject(subject, g.dispatch, now, o.defaultBudgetSeconds))
 		}
 		if len(g.intent) > 0 {
 			intents = append(intents, foldIntentSubject(subject, g.intent))
@@ -134,8 +165,10 @@ func Fold(records []Record, vocab Vocab, now time.Time) Output {
 
 // foldDispatchSubject resolves one dispatch subject's winner (precedence,
 // then latest-at within precedence) and renders its conditional shape
-// (S3.1, S3.3, S3.4 - see output.go's DispatchEntry doc).
-func foldDispatchSubject(subject string, records []Record, now time.Time) DispatchEntry {
+// (S3.1, S3.3, S3.4 - see output.go's DispatchEntry doc). defaultBudget is
+// the shop-default budget threaded via WithDefaultBudgetSeconds, nil if the
+// caller supplied none (C3R-1d, spec Amendment 2).
+func foldDispatchSubject(subject string, records []Record, now time.Time, defaultBudget *float64) DispatchEntry {
 	ranked := append([]Record(nil), records...)
 	sort.SliceStable(ranked, func(i, j int) bool {
 		ki, _ := ranked[i].str("kind")
@@ -177,13 +210,23 @@ func foldDispatchSubject(subject string, records []Record, now time.Time) Dispat
 	case "dispatched":
 		elapsed := int64(math.Floor(now.Sub(parseInstant(winner)).Seconds()))
 		entry.ElapsedSeconds = elapsed
-		// No shop-default threading (package doc's scope note): budget renders
-		// from the record's own field only; absent stays JSON null, never
-		// promoted to overdue without a known budget.
-		if budget, ok := winner.number("budget"); ok {
-			b := budget
-			entry.BudgetSeconds = &b
-			if float64(elapsed) > budget {
+		// Budget: the record's own, else the threaded shop default (C3R-1d,
+		// spec Amendment 2) - budget_source discloses WHICH patience produced
+		// the rendered state, present only when a budget was actually applied.
+		var budget *float64
+		var budgetSource string
+		if b, ok := winner.number("budget"); ok {
+			budget = &b
+			budgetSource = "record"
+		} else if defaultBudget != nil {
+			b := *defaultBudget
+			budget = &b
+			budgetSource = "default"
+		}
+		if budget != nil {
+			entry.BudgetSeconds = budget
+			entry.BudgetSource = budgetSource
+			if float64(elapsed) > *budget {
 				entry.State = "overdue"
 			}
 		}

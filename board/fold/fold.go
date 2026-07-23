@@ -1,6 +1,6 @@
 // Package fold is the Go port of the pwsh detector's fold (plan task 3.3, spec
-// YB-7). Fold(records, vocab, now) is a PURE function conforming to the
-// language-neutral contract in schema/vectors/README.md: given a fully
+// YB-7). Fold(records, vocab, now, opts...) is a PURE function conforming to
+// the language-neutral contract in schema/vectors/README.md: given a fully
 // materialised set of records, a recognition vocabulary, and an injected
 // clock, it returns the same faults/discoveries/dispatches/intents shape the
 // pwsh detector (scripts/Detect-Dispatches.ps1) emits. The vector-runner in
@@ -8,19 +8,25 @@
 // schema/vectors/fold/ - the fold -> assembler interface block (plan §8)
 // names this package's API as the contract Car 4 consumes.
 //
-// Scope note (disclosed, plan 3.1's carve-out): the pwsh detector also applies
-// a SHOP-DEFAULT budget fallback (config/harness-defaults.json's
-// dispatch_budget_seconds) when a dispatched record carries no budget of its
-// own. No vector exercises this path - plan task 3.1 carved it out as an
-// environmental/pwsh-IO case with no in-vector-contract way to express it (the
-// runner contract never injects a defaults path) - and per the plan's literal
-// interface note ("Fold(records, vocab, now) -> the vector contract's output
-// shape"), this package's Fold takes no default-budget parameter. A record
-// with no budget and no default renders exactly as the pwsh detector does in
-// its own "no default available" branch: elapsed_seconds computed truthfully,
-// budget_seconds null, state never promoted to overdue. Threading a real shop
-// default through Fold (or pre-populating one before calling it) is a decision
-// for whichever caller needs it - out of scope here, since no vector pins it.
+// SHOP-DEFAULT BUDGET (C3R-1d, spec Amendment 2, issue #22 - supersedes the
+// prior scope note this replaces): applying config/harness-defaults.json's
+// dispatch_budget_seconds to a budget-less dispatched record is a FOLD
+// SEMANTIC (it changes the rendered state to "overdue"), never environmental
+// IO - the plan 3.1 carve-out that called it IO was a false premise, proven
+// when the Car 3 review round 1 reviewer (artifacts/reviews/2026-07-23-board-
+// car3-review-round1-REJECT.md, C3R-1, Major) constructed a byte-identical
+// budget-less dispatched record on which the pwsh detector rendered
+// overdue/1800 and this package's then-unthreaded Fold rendered
+// dispatched/null - a real divergence on the only killed-dispatch surface
+// (design S3.3, Probe 1), invisible to the D18 cross-verifier because no
+// vector exercised it. Fold now accepts the default via the variadic
+// WithDefaultBudgetSeconds option (algorithm.go), keeping its positional
+// signature exactly Fold(records, vocab, now) for every caller that supplies
+// no default. A dispatched entry that applies a budget - from the record or
+// the threaded default - carries BudgetSource ("record" or "default")
+// disclosing which; a record with neither carries no budget at all,
+// rendering elapsed_seconds truthfully with BudgetSeconds/BudgetSource both
+// absent, exactly as the pwsh detector's own "no default available" branch.
 package fold
 
 // Record is one decoded artifact-store record. It is a generic string-keyed
@@ -107,9 +113,13 @@ type DispatchEntry struct {
 
 	ElapsedSeconds int64
 	// BudgetSeconds is nil exactly when no budget is known (no record budget
-	// and, per this package's scope note above, no default threaded in) -
-	// the pwsh detector emits an explicit JSON null in that case, never an
-	// omitted key, so MarshalJSON below always includes the key on a
-	// "dispatched" winner regardless of whether BudgetSeconds is nil.
+	// and no default threaded via WithDefaultBudgetSeconds) - the pwsh
+	// detector emits an explicit JSON null in that case, never an omitted
+	// key, so MarshalJSON below always includes the key on a "dispatched"
+	// winner regardless of whether BudgetSeconds is nil.
 	BudgetSeconds *float64
+	// BudgetSource is "record" or "default" (C3R-1d, spec Amendment 2) and is
+	// present ONLY when BudgetSeconds is non-nil - never a phantom source for
+	// a null budget (owner ruling, issue #22 item (b): kept minimal).
+	BudgetSource string
 }
