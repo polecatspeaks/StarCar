@@ -1,673 +1,351 @@
 # Design: v0 yard skeleton
 
 Status: Open
-State: PARKED at rev 3, DELIBERATELY UNREVIEWED - superseded in part, awaiting rev 4
-
-> **Why this was never reviewed, stated so nobody assumes it passed a gate.** Rev 3 was
-> committed and round 3 was about to be dispatched when the owner ruled that the dispatch
-> harness is core product: every dispatch emits a structured artifact, and the yard
-> adapter reads those artifacts rather than a hand-maintained state file. That rewrites
-> D3, D5, §5.4 and the StateWriter car, so reviewing rev 3 would have spent an adversarial
-> dispatch on a moving target and produced findings against contracts already changing.
->
-> Parked on purpose, not forgotten. The harness design goes through the ladder first
-> (issue #7); this document returns as rev 4 written against the harness contract, and is
-> reviewed once, properly. Rev 3's unreviewed defects are a known, accepted risk: some
-> will be inherited into rev 4 and must be caught there.
->
-> Rounds 1 and 2 verdicts are landed verbatim in `docs/reviews/`.
+State: **rev 4 - the harness re-cut** - awaiting design review round 3
 Issue: #1 (`area:view`)
-Date: 2026-07-21 (rev 3: 2026-07-22)
+Date: 2026-07-21 (rev 3: 2026-07-22; rev 4: 2026-07-23)
 Ladder rung: design (rung 1 of: design → spec → plan → cars)
-History: rev 1 REJECT (9 Major), rev 2 REJECT (8 Major). See §13.
+History: rev 1 REJECT (9 Major), rev 2 REJECT (8 Major), rev 3 PARKED UNREVIEWED
+(superseded by the harness ruling before its round dispatched). See §13.
 
-## 1. What this train delivers
+> **What rev 4 is.** Rev 3 was parked when the owner ruled the dispatch harness core
+> product: every dispatch emits a structured artifact, and the yard adapter reads those
+> artifacts rather than a hand-maintained state file. The harness has since shipped
+> through the full ladder and is merged to `main` (PR #18, `1246f87`) - the store is
+> real, self-recording, hash-verified, and CI-gated. Rev 4 rewrites this design against
+> that contract, plus three owner rulings made at this rung's opening (2026-07-23):
+> **Go** for the server half (#14), **train identity as conductor-declared intent
+> records** in the store, and the walking-skeleton frame reaffirmed.
+>
+> **Inherited-risk disclosure (Law 1):** rev 3 was never reviewed. Sections carried
+> forward from it - the lane contract (§5.2-5.6 shapes), wire-safety reasoning, server
+> rules - get their FIRST adversarial review in this round. Carried is not cleared.
 
-A running StarCar: a local server process that reads a conductor-maintained state file
-and renders the yard live in a browser, with every declared lane present from the first
-commit - whether or not it has data yet.
+## §0 - Instrument check
 
-A lane is a **socket with a declared position on a build-out**, not a payload that is
-either present or absent. The socket exists before the data does; going live later is
-plugging in, not rebuilding.
+**Answer: BOTH.** The behavioural half - which component owns what, how lanes compose,
+how failures surface - is prose, reviewable by reading, and is this document. The
+precision half is FOUR format contracts, and prose cannot hold them; each is a pointer
+to an executable artifact (existing or to be produced at the spec rung, red-first):
 
-## 2. The epistemic constraint
-
-We cannot enumerate the states this board needs, because **running the yard is what
-generates them**. Rev 1 declared four lane states; its review found a fifth; the owner
-found three more and split one of those into three again.
-
-Law 7 (`constitution.md:54-55`) already ruled: *"pluggable adapters, no hardcoded board
-schemas or label taxonomies."*
-
-**The rule: close what MECHANISM determines, open what the SHOP names.**
-
-- A poll either has no adapter, or has never run, or last succeeded, or last failed. That
-  set is closed by mechanism and provably complete, so it is a compile-time union.
-- What a lane is *called*, what a car's state is *called*, what a gate's aspect is
-  *called* - these are shop vocabulary. Open sets, therefore **data**.
-
-**The unrecognised-value path is the detector, not an error path.** When the board meets a
-vocabulary value it does not know, it renders that fact loudly and by name: Law 1 and Law 4
-doing their jobs, and simultaneously the instrument that tells us we observed a state
-nobody enumerated. You do not resolve an observation-dependent state space by guessing
-harder. You build the detector and open the box.
-
-**Therefore v0's job is discovery.** Ship the minimum vocabulary we have genuinely
-observed, plus the path that surfaces the rest.
-
-## 3. Decisions
-
-| # | Decision | Reason |
+| Format contract | Executable owner | Status |
 |---|---|---|
-| D1 | Live server + browser | A wall display glanced at, not a page refreshed. |
-| D2 | TypeScript on Node, **with runtime validation at every boundary** | Sharing a type declaration does NOT make a wire safe. §6. |
-| D3 | Conductor state file is the first adapter | Only source that *knows* a REJECT happened; git records no verdicts. |
-| D4 | Every declared lane present in every snapshot | Law 4. Guarded per §5.5. |
-| D5 | A writer ships in this train | Hand-editing JSON mid-train is hand-maintained state at a process boundary. |
-| D6 | Poll by mtime; do not `fs.watch` | Atomic rename swaps the inode; `fs.watch` handles that poorly, worse on Windows. |
-| D7 | Data-staleness (server, per-lane) and connection-loss (client, whole-board) are separate truths, simultaneously displayable | They fail independently, live at different scopes, and imply different actions. |
-| D8 | Registers closed; all other taxonomies open | §2. |
-| D9 | SSE over browser-side polling | Recorded rejected alternative: browser polling would delete §7's problem set. SSE wins the wall-board case; the price is the rules in §7, now specified. |
-| D10 | Toolchain + CI car runs FIRST | *"Verified means the pipeline that ships it went green."* Until CI exists no car can claim verification. |
-| D11 | **The lane registry is the SOLE owner of a lane's position** | Rev 2 implied two owners with no precedence rule. §5.4. |
+| Store record (fields, types, identity) | `schema/starcar-artifact.schema.json` + conformance vectors | **EXISTS** - harness #7, gated in CI |
+| Fold semantics (precedence, supersession, latest-`at`, overdue) | the detector conformance vectors (`scripts/tests/Detector.Tests.ps1` cases) | **EXISTS** - Car 2 of #7; rev 4 ports the implementation, the vectors stay the contract |
+| Train manifest (the intent-record payload) | schema addition + vectors, spec rung | TO PRODUCE |
+| Wire snapshot (`YardSnapshot` + vocabularies) | a JSON Schema file + vectors, spec rung | TO PRODUCE |
 
-## 4. The domain payload
+This document DESCRIBES those contracts and DEFINES none of them. A reviewer who finds a
+canonicalisation rule, a field list, or an ordering rule specified only in this prose has
+found a defect (the harness design's four-round scar, `docs/templates/design-doc.md` §0).
 
-Rev 2 specified the envelope exhaustively and never said what a lane carries. Rev 1 was
-more specific here; that was a regression and this section repairs it.
+## §1 - Constraints (before the mechanism)
 
-```ts
-type Yard = {
-  writtenAt: string          // ISO-8601, stamped by the writer. THE provenance of asOf.
-  trains: Train[]
-  gates:  Gate[]
-}
-
-type Train = { id: string; title: string; cars: Car[] }
-
-type Car = {
-  id: string
-  title: string
-  state: string              // OPEN vocabulary - a CarStateDef id
-  sha?: string
-  rejectRounds: number
-  reviewer?: string
-}
-
-type Gate = {
-  id: string
-  name: string
-  aspect: string             // OPEN vocabulary - a GateAspectDef id
-  at?: string
-}
-```
-
-`Car.state` and `Gate.aspect` get the same treatment as lane positions: open vocabularies
-shipped as data, carried on the wire, with the detector on unrecognised values.
-
-```ts
-type CarStateDef   = { id: string; label: string; register: Register }
-type GateAspectDef = { id: string; label: string; register: Register }
-```
-
-v0 ships only what we have observed, inherited from issue #1's founding enumeration:
-
-| Car state | Label | Register |
+| Source | What it forbids here | How this design satisfies it |
 |---|---|---|
-| `staged` | Staged | `nominal` |
-| `rolling` | Rolling | `in-progress` |
-| `at-inspection` | At inspection | `in-progress` |
-| `shopped` | Shopped (REJECT x N) | `needs-attention` |
-| `coupled` | Coupled | `nominal` |
-| `held` | HELD by dispatcher | `in-progress` |
-
-`held` exists because Law 2's own worked example is *"if a dispatcher marks a train held,
-the board renders held."* Rev 2 named the StateWriter as v0's embodiment of Law 2 while no
-`held` value existed anywhere, so the mechanism could not express the law's example.
-
-| Gate aspect | Label | Register |
-|---|---|---|
-| `pending` | Pending | `in-progress` |
-| `green` | Green | `nominal` |
-| `red` | RED | `needs-attention` |
-
-## 5. The lane contract
-
-### 5.1 Registers - the ONLY closed taxonomy
-
-```ts
-type Register = 'nominal' | 'in-progress' | 'needs-attention'
-// severity order, used by §5.6: nominal < in-progress < needs-attention
-```
-
-The glance-language. Law 3 lives here: a dispatcher resolves the board in one pass, and a
-visual vocabulary anyone may extend decays into mush. Growing this set is a
-constitution-level decision.
-
-### 5.2 Positions - OPEN, shipped as data
-
-```ts
-type PositionDef = {
-  id: string
-  label: string
-  register: Register
-  surfacesData: boolean
-}
-```
-
-| id | label | register | surfacesData |
-|---|---|---|---|
-| `live` | Live | `nominal` | true |
-| `bagged` | Data held, not surfaced | `nominal` | false |
-| `dark` | No equipment | `nominal` | false |
-| `under-construction` | Being built | `in-progress` | false |
-
-`bagged` is the railroad term for a signal that physically exists and is deliberately out
-of service, hooded so crews know not to obey it.
-
-### 5.3 Freshness - CLOSED, because mechanism determines it
-
-```ts
-type Freshness<T> =
-  | { kind: 'not-applicable' }                                    // no adapter attached
-  | { kind: 'never-polled' }                                      // adapter attached, not yet run
-  | { kind: 'fresh';  data: T; asOf: string }
-  | { kind: 'stale';  data: T; asOf: string; ageBucketMs: number }
-  | { kind: 'failed'; reason: FailureReason; lastGood?: T; lastGoodAsOf?: string }
-
-type FailureReason = { code: string; detail: string }
-```
-
-`not-applicable` is restored. Rev 1 had it as `no-adapter`; rev 2 dropped it while still
-carrying a "lane has no adapter" error row, which made the union unable to express a
-`dark` lane and made rev 2's own `never-polled` test unwritable.
-
-The union is closed by mechanism and provably complete: an adapter is attached or not; if
-attached it has run or not; if run it succeeded or failed.
-
-`ageBucketMs` rather than `ageMs` - see §7's change-detection rule.
-
-### 5.4 Lane, registry, and the single owner of position
-
-```ts
-type LaneDef = {                 // the REGISTRY entry - product build-out truth
-  id: string
-  title: string
-  position: string               // a PositionDef id
-  adapter: string | null         // null => Freshness is 'not-applicable'
-}
-
-type Lane = {                    // what ships on the wire
-  id: string
-  title: string
-  position: string
-  freshness: Freshness<unknown>
-}
-```
-
-**D11: the lane registry is the sole owner of `position`.** The state file has no position
-field and the schema forbids one. Rev 2 said the registry owned it in one section and that
-the state file could supply one in another; one of those was wrong and the design did not
-say which.
-
-Positions change on deploy, not at runtime, and that is honest: a lane going `bagged` →
-`live` genuinely IS a deploy, because it means a renderer shipped.
-
-Recorded for the future: when a second source of positions is introduced, Law 6 requires a
-precedence rule *and* a disagreement rendering. Not creating the second source is how v0
-avoids owing both.
-
-### 5.5 The Law 4 / Law 7 trade, and the completeness guard rev 2 lacked
-
-Rev 1 made lanes four required keys, so omission was a compile error. Rev 2 weakened this
-to a registry plus a test and claimed equivalence. **That claim was wrong**, and the
-review was right: the compiler guaranteed both that every snapshot contains every lane
-*and* that the lane set cannot shrink silently. The registry test covered only the first.
-Delete a line from the registry and the build passes, the test passes vacuously, and a
-lane vanishes with no trace - a lie of omission reintroduced by the fix.
-
-Three guards, together equivalent:
-
-1. **Every registered lane appears in every snapshot**, every code path, including before
-   the first poll. Red-first against a hand-constructed lanes object.
-2. **The expected lane-id set is pinned by a fixture-backed test.** Shrinking the registry
-   fails it. Growing it is a deliberate edit to both files, which is the point.
-3. **The board renders "registry declares N lanes" in chrome**, and the lane-id set is
-   ledgered with old → delta → new arithmetic. A shrink is visible on the surface it
-   damages.
-
-Rev 2 applied exactly the right suspicion to the state file ("a human, a bad merge or a
-rebase can produce garbage the writer never saw") and none of it to the registry, which is
-the same kind of hand-edited file with a larger blast radius.
-
-### 5.6 COMPOSITION - how three axes resolve into one glance
-
-*This section is rev 3's centre of gravity. Rev 2 specified the axes and never specified
-their composition, which produced six of its eight Major findings - including a `live`
-lane whose state file was deleted rendering calm.*
-
-Three independent facts describe a lane:
-
-| Axis | Owner | Question it answers |
-|---|---|---|
-| `position` | lane registry | What this lane IS on the build-out |
-| `freshness` | adapter | What its DATA is doing |
-| `capability` | the view, locally | Whether a renderer exists for this payload |
-
-`capability` is deliberately view-local and never on the wire: the server has no business
-asserting what a browser can render, and putting it on the wire would be a second copy of
-something that can drift.
-
-**Rule 1 - rendered register is the MOST SEVERE of the contributing registers.**
-
-```
-renderedRegister(lane) = max_severity(
-    positionRegister,        // from PositionDef, or needs-attention if unrecognised
-    freshnessRegister,       // per the table below
-    capabilityRegister )     // nominal, or needs-attention if a renderer is missing
-```
-
-| Freshness | Register | Why |
-|---|---|---|
-| `not-applicable` | `nominal` | No adapter is correct, not wrong. |
-| `never-polled` | `in-progress` | Something is happening and will resolve. |
-| `fresh` | `nominal` | |
-| `stale` | `needs-attention` | Law 5: a stale board that looks live is the disease. |
-| `failed` | `needs-attention` | |
-
-This is the fix for rev 2's worst finding. A `live` lane (`nominal`) whose state file is
-deleted (`failed` → `needs-attention`) now resolves to `needs-attention`. **The board goes
-hot when the data dies, in the one scenario this project exists to render.**
-
-**Rule 2 - rendered words: position speaks first, freshness speaks second.**
-
-- **Primary line** is always the position label. It says what the lane IS.
-- **Secondary line** is the freshness statement, **omitted entirely when
-  `not-applicable`** - a lane with no adapter must never say "not yet read", because it
-  will never be read, and `constitution.md:17` requires unknown to render as unknown
-  rather than as a plausible-sounding falsehood.
-- **When `position.surfacesData` is false**, the payload is not rendered even if freshness
-  is `fresh`, and the secondary line says so explicitly ("holding 3 gates, not surfaced").
-  Data held and not shown is disclosed, never silently dropped (Law 4).
-- **When capability is missing**, the board says "no renderer for this payload" rather
-  than rendering nothing.
-
-**Rule 3 - rendered age always comes from the server.** See §7's change-detection rule.
-The client never computes age from its own clock, because that is the UI computing its own
-state (Law 6) and it reintroduces browser-to-server skew that §8 works to control.
-
-**Rule 4 - the detector's register is `needs-attention`, deliberately**, against the
-general principle that nothing alarms unless something is wrong. Stated so a car does not
-resolve the tension the other way: an unrecognised vocabulary value genuinely requires
-human action (add the entry), and Law 1 requires unknown to render as unknown. It is the
-one alarm that is about the board rather than the yard.
-
-### 5.7 Snapshot
-
-```ts
-type YardSnapshot = {
-  seq: number                  // assigned AFTER change detection - see §7
-  asOf: string | null          // most recent SUCCESSFUL poll of any adapter; null if none ever
-  config: {
-    pollMs: number; heartbeatMs: number; stalenessMs: number
-    statePathDisplay: string   // CWD-relative or home-collapsed - NOT the raw absolute path
-    laneCount: number          // §5.5 guard 3
-    demoMode: boolean
-  }
-  vocabularies: {
-    positions: PositionDef[]
-    carStates: CarStateDef[]
-    gateAspects: GateAspectDef[]
-  }
-  board: BoardCondition[]      // board-level faults - see §9
-  lanes: Lane[]
-}
-```
-
-Vocabularies travel on every snapshot so the view never hardcodes one and no separately
-fetched copy can drift (Law 6, and adopted ruling Q2).
-
-### 5.8 `Adapter<T>` - the seam
-
-```ts
-type AdapterResult<T> =
-  | { ok: true;  data: T; asOf: string }
-  | { ok: false; reason: FailureReason }
-
-interface Adapter<T> { readonly name: string; poll(): Promise<AdapterResult<T>> }
-```
-
-Health is part of the return value, not a side channel: a lane cannot be rendered without
-carrying its own health, because the type will not let you separate them.
-
-## 6. Wire safety
-
-Rev 1 claimed sharing a TypeScript type reduced the sentence check to "confirm the type is
-shared." That was wrong three ways; the repairs are binding.
-
-1. **A duplicate type declaration is NOT a build failure.** TypeScript is structurally
-   typed; a second, divergent `YardSnapshot` compiles clean, especially where the value
-   arrives from `JSON.parse` and is cast. **Repair:** an ESLint `no-restricted-syntax` rule
-   banning declaration of these names outside `src/schema.ts`. Red against a two-definition
-   codebase. *Rev 2 also specified a source scan; it is pruned as redundant with the lint
-   rule, which runs in the editor and in CI.*
-2. **`JSON.parse` is an unchecked cast.** `ageBucketMs` becomes `null` if ever `Infinity`
-   or `NaN`; `JSON.stringify` drops `undefined` keys, losing the distinction between
-   explicitly-cleared and absent. **Repair:** the view runs the shared runtime validator on
-   every parsed payload.
-3. **The SSE event name is a hand-written string on both sides.** One character apart and
-   the listener never fires, the socket stays **open**, and the client reports itself
-   connected while displaying the first paint forever. **Repair:** an exported constant in
-   `schema`, with a test asserting the server writes what the client subscribes to.
-
-`/api/snapshot` and `/api/stream` are two producers of one payload - a hand-maintained
-mirror by another name. **Both serialise through one exported function, with a test
-asserting byte-identical output.**
-
-**The sentence, declared in full**, starting one process earlier than rev 2 declared it:
-CLI argv → writer validation → temp file → rename → file read → state-file validator →
-assembler → serialise → HTTP body / SSE frame → `JSON.parse` → wire validator → compose
-(§5.6) → DOM. Per-car reviewers trace every hop. The scar this repo carries is
-specifically about a process hop outside every review's declared scope.
-
-**The six validators**, enumerated because rev 2 said "both validators" while loading four
-more inputs: state-file, wire-snapshot, lane-registry, position-vocabulary,
-car-state-vocabulary, gate-aspect-vocabulary.
-
-**State-file validator strictness:** unknown keys are **preserved and disclosed**, never
-silently ignored and never fatal. The board raises a `BoardCondition` reading "state file
-carries N unrecognised fields". Ignoring them silently drops data (Law 4); rejecting the
-file blanks the board over a conductor's harmless addition (Law 1, harshly). Disclosure is
-the only option that loses nothing and lies about nothing.
-
-## 7. `Server`
-
-- `GET /`, static assets; `GET /api/snapshot` (first paint); `GET /api/stream` (SSE).
-- Poll loop at `pollMs`.
-
-**Change detection.** Emit when the canonical serialisation differs from the last emitted,
-**excluding `seq` and `asOf`**, and **including `freshness.kind` and `ageBucketMs`**.
-
-- `seq` is excluded and **assigned after** the comparison. Rev 2 left this ambiguous, and
-  under one reading every snapshot differed from the last, which would have falsified D9's
-  own justification that an idle yard costs nothing.
-- `ageBucketMs` is *quantised* age (1s buckets under a minute, 10s above). Including it
-  means **the age on screen is always a number the server issued**, updating about once a
-  second while anything is stale, and an all-fresh yard stays silent. This is the fix for
-  rev 2's frozen-age defect, where the board would have displayed "stale, 15s" for forty
-  minutes, or the client would have computed age locally in breach of Law 6.
-
-**Heartbeat.** An SSE comment every `heartbeatMs`; the client flips to disconnected after
-two missed. `heartbeatMs` travels in `config` so the client does not hardcode it. Without
-this, a half-open connection leaves `EventSource` in `readyState === OPEN` indefinitely
-with no error event.
-
-**Ordering.** `seq` is monotonic; the client applies a snapshot only if `seq` exceeds the
-last applied. Without it a first-paint fetch resolving after an early stream event
-overwrites newer state with older.
-
-**Poll concurrency.** `pollInFlight` guards; an overlapping tick is **skipped, not
-queued**. Two concurrent reads completing out of order would let an older read overwrite a
-newer snapshot.
-
-## 8. `SnapshotAssembler`, `StateWriter`, provenance
-
-```ts
-interface SnapshotAssembler {
-  assemble(input: {
-    registry: LaneDef[]
-    results: Map<string, AdapterResult<unknown>>   // keyed by adapter name
-    previous: YardSnapshot | null
-    now: () => number
-    stalenessMs: number
-  }): YardSnapshot
-}
-```
-
-Pure. Owns staleness classification; nothing else derives it (Law 6). `lastGood` is read
-from `previous`, so per-lane last-good and the server's last-good snapshot are **one copy**.
-Lanes are built by iterating `registry`, never by constructing keys by hand.
-
-**`StateWriter`** - a typed module plus a thin CLI (`starcar car set c2 rolling --sha
-abc1234`, `starcar car set c2 held`, `starcar gate set plan-review red`). The module holds
-the logic and is unit-tested; the CLI shell is **smoke-tested, meaning an automated
-end-to-end run against a temp directory** (this writer has no external service, so
-`board.ps1`'s policy - do not unit-test a wrapper whose only untested part is a live API -
-transfers only partly, and the automatable half is automated). The writer never commits; a
-human does.
-
-Three binding properties: one shared schema module; **atomic write (temp, then rename)**;
-and validation on write does not retire validation on read.
-
-**Contingency, stated before dispatch so a car does not honest-stop into a wall:** if
-`rename` over an open destination fails on Windows with `EPERM`/`EBUSY`, plan B is
-bounded retry-with-backoff on the *read* side, not abandoning atomic writes. Rev 2 made
-this a pass/fail test with nowhere to go.
-
-**`asOf` provenance** is the `writtenAt` field inside the state file, stamped by the
-writer - never filesystem mtime, because `git checkout` and `git clone` rewrite mtime to
-now, making a three-day-old fixture read as perfectly fresh. `snapshot.asOf` is the most
-recent successful poll across adapters, `null` only if none has ever succeeded.
-
-Guards, red-first: a **future-dated `writtenAt` is `failed`** with code
-`timestamp-in-future`, never `fresh` (hand-editing is anticipated, and a future timestamp
-yields a negative age that never crosses the threshold, pinning a lane to `fresh`
-forever); and a **clock step backwards** must not produce a negative or wild age -
-negative resolves to `failed`, never silently to zero.
-
-**Fixtures.** `fixtures/demo-state.json` is curated, git-tracked, owned by car 2, and used
-by tests and demo mode. The live state file is separate and also tracked (showcase
-thesis), stated as a decision rather than left to accident.
-
-**`demoMode` no longer suppresses anything.** Rev 2 had it suppress the staleness alarm so
-a checked-in fixture would not read as broken. That was an override of a truth surface,
-and `gating-matrix.md:23` - the template's single worked example, landed by this very
-train - already ruled on it: *staleness banner, suppressed when: never (truth surface),
-DELIBERATE, no override.* The rule was written before the question was asked. **Repair:**
-demo mode stamps `writtenAt` at fixture-load time, so the demo data is genuinely fresh and
-exercises the real freshness path instead of bypassing it. The persistent DEMO banner
-stays - it is an additional honest disclosure, not an override. A deliberately-stale demo,
-if ever wanted, is a second fixture.
-
-## 9. Error handling
-
-`BoardCondition` carries board-level faults in chrome, distinct from lane state:
-
-```ts
-type BoardCondition = { code: string; detail: string; register: Register }
-```
-
-| Failure | Behavior | Law |
-|---|---|---|
-| Adapter throws | Caught at the boundary → `failed`, coded reason → lane resolves `needs-attention` per §5.6. | 4 |
-| Malformed state file | `schema-violation` with detail. **No partial render.** | 1 |
-| File missing/unreadable | `file-missing` / `file-unreadable`, OS reason in detail. | 1, 4 |
-| `writtenAt` in the future | `timestamp-in-future`. Not `fresh`. | 1 |
-| Data aged past threshold | `stale`, shown, marked, `ageBucketMs` rendered. Register `needs-attention`. | 5 |
-| State file has unknown keys | Preserved; `BoardCondition` "N unrecognised fields". | 4 |
-| **Lane registry missing/malformed** | `BoardCondition` `registry-unreadable`, `needs-attention`, **and NO lanes are rendered as though they were the whole truth.** An empty yard is `constitution.md:36` verbatim: a missing lane reading as "no trains" is a lie of omission. | 4 |
-| **Vocabulary file missing/malformed** | `BoardCondition` `vocabulary-unreadable`, `needs-attention`. Lanes render their raw position id with a board-level notice. **The detector does NOT fire per-lane** - one config fault must not be misreported as N discoveries of new shop vocabulary. | 1, 4, 5 |
-| **One bad row inside a vocabulary** (e.g. `register: "critical"`) | That row is quarantined and reported as a `BoardCondition`; the remaining rows load. Not fatal to the snapshot. | 4 |
-| Unrecognised vocabulary value, vocabulary loaded OK | Detector fires: `needs-attention`, labelled `unrecognised position: '<id>'` (or car state / gate aspect) verbatim. **A discovery, not a bug.** | 1, 4 |
-| SSE heartbeat missed twice | Chrome shows disconnected; last-good stays on screen **visibly marked**. | 1, 5 |
-| Wire payload fails validation | Payload discarded; **the previous render stays, visibly marked**, plus a `BoardCondition`. Never a blank board. | 1 |
-| Lane has no adapter | `not-applicable`; position speaks, freshness is silent. `nominal`. Not an alarm. | 3, 4 |
-
-The distinction between the last two vocabulary rows is the fix for rev 2's cascade: **"the
-vocabulary is broken" and "this value is unknown" are different faults and must not be
-reported as each other.**
-
-## 10. Test strategy
-
-Red-first throughout.
-
-- **Fixture corpus**: valid, malformed, missing, truncated, future-dated, unknown-position,
-  unknown-car-state, unknown-keys, malformed-registry, malformed-vocabulary, bad-register-row.
-- **Law 4 / completeness:** every registered lane appears in every snapshot, in every code
-  path including pre-first-poll; plus the pinned lane-id set (§5.5 guard 2).
-- **Composition matrix (§5.6):** the register resolution table is exhaustively tested -
-  every position register x every freshness kind. The load-bearing case: **`live` +
-  `failed` resolves `needs-attention`**, red against a position-only implementation.
-- **`not-applicable` rendering:** a `dark` lane shows its position label and **no freshness
-  line at all** - never "not yet read". Red against a naive always-render.
-- **`never-polled`:** before the first poll, adapter-backed lanes report `never-polled` and
-  `asOf` is null; adapter-less lanes report `not-applicable`.
-- **Detector:** an unknown value renders `unrecognised <axis>: 'x'` verbatim, never coerced.
-- **Cascade guard:** a malformed vocabulary produces ONE `BoardCondition`, not N detector
-  firings.
-- **Registry-unreadable:** produces a board fault, never an empty yard.
-- **Staleness:** injected clock crosses `stalenessMs`; `fresh` → `stale`.
-- **Age liveness:** while a lane is stale, `ageBucketMs` changes on the wire at least once
-  per bucket; the client never computes age.
-- **Atomicity:** spy the fs module; the destination is never passed to any write or
-  truncate, and exactly one `rename(tmp, dest)` occurs. An in-place implementation calls
-  `writeFile(dest)` and never `rename`, so it fails for its stated reason. Plus: `rename`
-  over a destination **with an open read handle**, on Windows, because `EPERM`/`EBUSY` is
-  the realistic failure of this strategy on this platform. Interleaving loops are
-  non-gating soaks, never the red.
-- **Single definition:** the ESLint rule, red against a second declaration.
-- **Serialisation parity:** both endpoints emit byte-identical payloads.
-- **Event name:** server writes what the client subscribes to.
-- **Ordering:** a late first-paint fetch does not overwrite a newer streamed snapshot.
-- **Heartbeat:** two missed heartbeats flip to disconnected while last-good stays marked.
-- **Poll overlap:** a slow poll does not stack; an older result never overwrites a newer.
-
-## 11. Contracts, documentation, and cars
-
-**`docs/contracts/state-ledger.md`** - lifecycle events: server restart; adapter failure
-window; client reconnect; state file replaced or truncated; poll overlap; pre-first-poll
-window. Fields: `lastGoodSnapshot`, `lastPollAt`, `pollInFlight`, `seq`, timer handle,
-`connectedClients`, lane-id set.
-
-`connectedClients` **is** ledgered - "an implementation detail of the SSE layer" is
-verbatim the argument that produced ninety-nine latent bugs in this template's ancestor.
-A ledger's first entry sets its threshold forever; this one is set low.
-
-Browser state is **in scope, bounded** (adopted ruling Q3): rendered snapshot, connection
-status, last-applied `seq`. The bound is *state whose survival across a lifecycle event
-changes what the user sees* - not every variable in the view. Transient render caches and
-DOM handles are out.
-
-**`docs/contracts/gating-matrix.md`** - five gated surfaces: staleness banner, disconnect
-indicator, `failed` panel, unrecognised-value detector, board-condition chrome.
-
-**Documentation.** Every car updates every document its change invalidates, in the same
-commit; its reviewer treats a stale document as Major. Car 5 owns `README.md` and the
-quickstart (`README.md:8-11` currently promises no code, no server, no quickstart - this
-train falsifies that) and states "local-only, unauthenticated" there. Car 1 owns
-`docs/setup.md`'s firing trigger rows and either lands or explicitly re-parks the two other
-CI guards (#3 area-label check, #4 docs-review check). **The conductor lands each review
-verdict in `docs/reviews/` as it happens**, which `README.md:20-21` promises and rev 2 did
-not assign to anyone.
-
-| Car | Scope | Notes |
-|---|---|---|
-| 1 | Toolchain, CI, scaffolding; `docs/setup.md` triggers | **First.** Not done when CI is green - done when someone has WATCHED it go red (fault-inject, observe, revert, put the run URL in the report). A green light wired to nothing is worse than no light. |
-| 2 | `schema`, domain types, registries, vocabularies, `StateFileAdapter`, `SnapshotAssembler`, `fixtures/demo-state.json`, the ESLint single-definition rule | The lint rule lives here, not in car 1: its red requires a second declaration, which does not exist until this car. |
-| 3 | `StateWriter` + CLI | After car 2. |
-| 4 | `Server`, poll, SSE, heartbeat, ordering; **the state ledger**; gating matrix | The ledger lives here because all six ledgered fields are this car's state. Rev 2 assigned it to a car that owns a pure assembler and no state. |
-| 5 | `View`, composition, detector, chrome; README + quickstart | After 2 and 4. |
-
-Order: 1 → 2 → {3, 4} → 5. Cars 3 and 4 run in parallel; **car 4 owns the ledger file
-outright** and car 3 appends nothing (it holds no long-lived state), which removes rev 2's
-unowned shared-file hazard.
-
-**Toolchain:** Node 22 LTS; TypeScript compiled by `tsc` to native ES modules served
-directly, no bundler, so the browser imports the same emitted module the server does and
-the type is physically shared rather than re-declared; one `tsconfig.json`; vitest with
-jsdom; ESLint.
-
-**Configuration:** host `127.0.0.1`, port `4600`, `pollMs` 1000, `heartbeatMs` 5000,
-`stalenessMs` 15000, state path resolved from CWD. Flag and `STARCAR_*` env overrides read
-once at startup. `statePathDisplay` is CWD-relative or home-collapsed rather than a raw
-absolute path, because this repo publishes screenshots and an absolute path discloses the
-operator's directory layout for no Law 5 benefit a relative one does not also deliver.
-
-**Cost:** 5 cars + 5 reviewers + design/spec/plan with reviews ≈ **18-19 dispatches**,
-model mix Opus throughout (adversarial gates and cross-boundary contracts; no cheap tier
-on a founding contract), size class: **large**. Two REJECT rounds already spent are
-included. The owner approved this figure before dispatch.
-
-**Tracking:** cars 1, 3 and 4 are not `area:view` work. They need issues under
-`area:tooling`, `area:adapters` and `area:server`, or a recorded conductor ruling. **This
-must resolve before the plan**, not before the spec.
-
-## 12. Out of scope
-
-Git adapter. GitHub board adapter. Fuel adapter. Auth. Persistence beyond the state file.
-Frontend framework. Theming. History or event log - `Yard` is a current-state snapshot and
-a REJECT round is a counter. Multi-repo. Adapter-failure backoff (a local file poll does
-not need it; recorded so a later reviewer knows it was considered).
-
-**Law 2.** In v0 the dispatcher's override **is the StateWriter**: the human edits the
-source of truth and the board renders what it says. The `held` car state (§4) makes the
-law's own worked example expressible. A view-level override - marking a train held from
-the browser, against the data - is deliberately deferred and is the natural second use of
-the writer.
-
-**Lane-to-train linking.** A lane under construction is a lane with a *train on it*, so
-the board could render its own build-out with the machinery it renders everything else
-with. Deferred: it couples the registry to yard state and there is no real train to link
-to yet. `under-construction` ships as vocabulary now; the link comes when there is
-something to point at.
-
-## 13. Revision history
-
-**Rev 1 → rev 2** closed 6 of 9 Majors (verified by round 2's closure table); 3 partial.
-Rev 2's re-cut (§2's closed/open ruling) was assessed by its reviewer as "a real
-correction I would not want reverted."
-
-**Rev 2 → rev 3.** Round 2 returned 8 Majors and a root-cause note: six shared one class -
-*the axes were specified and their composition was not.* §5.6 is that composition.
-
-| Rev 2 finding | Disposition |
+| Law 1 (`constitution.md:17`) - "Unknown states render AS unknown, honestly" | A board that guesses: an unrecognised vocabulary value coerced to a known one; a lane with no adapter claiming "not yet read"; dev-lag presented as live | §5.6 Rule 2/4 carried; the detector renders unknowns by name; the snapshot carries `asOf` provenance |
+| Law 2 (`constitution.md:21-23`) - "never resists an override"; worked example: "if a dispatcher marks a train held, the board renders held" | A board the dispatcher cannot override without editing code | §5.5: the override IS a store write - an `intent` record (`held`), rendered because the store is the source of truth. No view-side override in v0 (§7) |
+| Law 3 - the board resolves in one glance | An open-ended visual vocabulary | §5.2 carried: `Register` is the ONLY closed taxonomy, three members, growth is constitution-level |
+| Law 4 (`constitution.md:32-36`) - "never silently dropped"; an empty yard where lanes should be is a lie of omission | Losing store data the view does not understand; hiding dispatches that belong to no train; `encoding/json`'s default silent field drop (**observed**: FACT1, `docs/probes/2026-07-23-go-substrate-probe-results.md`) | §5.4 double-decode preserve-and-disclose (FACT3); §5.3 the yard-inventory lane for unassigned dispatches; §5.6 completeness guards carried |
+| Law 5 - freshness always visible; "a stale board that looks live is the disease" | Rendering store data without its age; client-computed age | §5.6 Rule 3 carried: age is server-issued (`ageBucketMs`); staleness and disconnect are separate truths (D7) |
+| Law 6 (`constitution.md:48-49`) - "never maintains a second copy of anything that can drift" | A second fold implementation with its own semantics; a wire type declared twice; contract text in two owners | §4 D18: the conformance VECTORS own fold semantics, implementations conform (the pwsh detector becomes the cross-verifier, not a second authority); §5.4 the wire contract is schema-owned, both sides validate |
+| Law 7 (`constitution.md:54-55`) - "pluggable adapters, no hardcoded board schemas or label taxonomies" | Hardcoding this shop's kinds/outcomes/positions into the view; a board only this repo can use | §5.2 carried: open vocabularies as data on the wire; the store adapter is one adapter behind a seam (§5.3) |
+| Healing Loop - "validated facts must land as tests or gates, never only prose" | Specifying the four format contracts in this document | §0's split; every probe fact cited is landed at `docs/probes/2026-07-23-go-substrate-probe-results.md` with a pin-as-tests trigger |
+| `docs/contracts/gating-matrix.md` (staleness row) - a truth surface is "never suppressed, DELIBERATE, no override" | Any demo/config mode that mutes staleness, disconnect, or the detector | §5.6 carried (rev 3 §8 already removed `demoMode` suppression); no new suppression paths introduced |
+| Ancestor scar **#552** (ported 2026-07-23, sibling's answer, in-session) - a status board derives status from the watched thing's OWN counters, never a proxy | Any status derived from anything but the store's records | §5.3: the store is the SOLE adapter; liveness comes only from the fold; the manifest contributes MEMBERSHIP, never status |
+| Ancestor scar **#557** - render the source's own verdict, never re-infer it from a state diff | The board concluding "that was a REJECT" by diffing snapshots | §5.5: `outcome` is rendered verbatim from `returned` records; roles come from the manifest's declaration, never inferred from behaviour |
+| Ancestor scar **#559** - a status channel invisible to the operator's senses is no channel | A board nobody can glance at | D1 carried (live wall display); push-notification is a named future (§7), not silently absent |
+| Ancestor rule **honest-unreachable** - "unreachable - data unavailable", never a stale cached board presented as live | Last-good rendered without its provenance | §5.6/§6 carried: `failed` keeps `lastGood` VISIBLY MARKED with its age; disconnect flips chrome |
+| `schema/index-format.md` - `at` is a VERBATIM string for integrity purposes (M-A4-1, three recurrences) | The board re-serialising a record's `at` | §5.4: records' `at` strings pass through untouched; sorting uses parsed instants (FACT5/6 observed Go behaviour; the discipline binds regardless) |
+| Owner ruling #14 (issue comment, 2026-07-23) | Relitigating the server language | §4 D12: Go. Contradictions recorded in the ruling |
+| Owner ruling #20 + merge north star | Asserting board freshness anywhere but the assertion moment | §8: the board's own derived artifacts (if any are ever committed) inherit the #20 posture; v0 commits none |
+| Model topology (owner decision, 2026-07-22) | Silently changing the model mix | §9: cars Sonnet, gates Opus. Rev 3's "Opus throughout" line is SUPERSEDED by the ratified topology, stated here rather than silently |
+
+## §2 - Premises (what no constraint forced)
+
+| Premise | If false |
 |---|---|
-| MAJOR-1 position/freshness composition undefined; `never-polled` test unwritable | §5.6 Rules 1-2; `not-applicable` restored (§5.3); tests rewritten (§10). |
-| MAJOR-2 register from position only, so a failed `live` lane renders calm | §5.6 Rule 1 - most-severe-wins, with the exhaustive matrix test. |
-| MAJOR-3 registry/vocabulary load failure unhandled; detector cascades | §9, three new rows; "vocabulary broken" and "value unknown" separated. |
-| MAJOR-4 substitute Law 4 guard not equivalent, and asserted to be | §5.5, three guards; the overstated claim removed. |
-| MAJOR-5 domain payload undefined | §4 - `Yard`, `Train`, `Car`, `Gate`, plus car-state and gate-aspect vocabularies. |
-| MAJOR-6 two owners for position, no precedence | D11 and §5.4 - registry is sole owner; the state file has no position field. |
-| MAJOR-7 rendered age has no update path | §7 - quantised `ageBucketMs` included in change detection; server always issues the number. |
-| MAJOR-8 `demoMode` suppresses a truth surface | §8 - suppression removed; fixture `writtenAt` stamped at load. |
-| Minor-1 `asOf` aggregation | §5.7. |
-| Minor-2 `seq` in change detection | §7 - excluded, assigned after. |
-| Minor-3/4 ledger assigned to the wrong car; shared-file hazard | §11 - ledger is car 4's, owned outright. |
-| Minor-5 lint rule cannot be red in car 1 | §11 - moved to car 2. |
-| Minor-6 validator strictness | §6 - unknown keys preserved and disclosed. |
-| Minor-7 wire-validation failure rendering | §9 - previous render stays, marked. |
-| Minor-8 absolute path on the wire | §5.7, §11 - `statePathDisplay`. |
-| Minor-9 sentence stops a hop short | §6 - declared from CLI argv. |
-| Minor-10 cost line incomplete | §11 - count, model mix, size class. |
-| Minor-11 fixture unowned | §11 - car 2. |
-| Minor-12 no rename contingency | §8 - bounded read-side retry. |
-| Minor-13 verdicts not in-repo | §11 - conductor lands each verdict in `docs/reviews/`. |
-| Minor-14 other CI guards unaddressed | §11 - car 1 lands or re-parks #3 and #4. |
-| Minor-15 "both validators" unenumerated | §6 - six, named. |
-| Note-1 citation off by a line | Fixed - `constitution.md:54-55`. |
-| Note-3 doubled single-definition guard | §6 - source scan pruned; ESLint kept. |
-| Note-5 detector register tension unstated | §5.6 Rule 4. |
-| Rulings Q1-Q5 | All adopted: three registers kept; vocabularies on every snapshot; browser state ledgered but bounded; `demoMode` ruled a breach and removed; car 1 first, with the watched-it-go-red condition. |
+| P1. The store is sufficient truth for v0's live lanes (dispatch liveness + gate verdicts). No second live source is needed. | A second adapter enters, and with it Law 6's precedence-plus-disagreement obligations rev 3 §5.4 deliberately avoided. Most of §5.3 survives; the assembler grows |
+| P2. The conductor writes manifests reliably enough that orphan dispatches are the exception. | The board becomes mostly yard-inventory. Still honest (Law 4 renders orphans loudly) - degraded, not lying. This premise is SELF-MEASURING: the orphan count is on the board |
+| P3. One repo, one yard, the server reads the LOCAL CHECKOUT's `artifacts/` directory. | Remote/multi-repo yards need a fetch layer; the adapter seam (§5.3) is where it would land. Out of scope with trigger (§7) |
+| P4. The view stays framework-free (vanilla JS + `EventSource`), no build step for the browser half. | A bundler/toolchain enters Car 5; nothing upstream changes. Chosen for reviewability: the binding constraint is review attention |
+| P5. A zero-Go shop can ship sound Go through the gates (owner ruling #14's premise, restated so it can be attacked). | The showcase records where the institution failed to compensate - which is itself the product. The design mitigates: probes before claims, vectors as contracts, out-of-family review reads Go natively |
+| P6. Producer latency (~11-12s, #15) is an acceptable bound on "live" for v0. | "Live" needs re-definition or the producer needs the #15 work pulled forward. The board renders `asOf` honestly either way - latency is visible, not hidden |
 
-**A correction rev 3 owes on its own account.** Rev 2's §12 claimed rev 1's Minor-10 was
-fixed - "now vocabulary, not enum" - when no such vocabulary existed anywhere in the
-document. That was a false claim in a summary table, in a repo whose north star is
-documentation honesty, written by the author being reviewed. It is fixed in substance by
-§4, and recorded here rather than quietly corrected, because a closure table that can lie
-is worse than no closure table.
+## §2c - Probe list (what the desk cannot prove)
 
-## 14. Open questions for the design reviewer
+Nine facts are already OBSERVED and landed: `docs/probes/2026-07-23-go-substrate-probe-results.md`
+(FACT1-9: silent field drop, DisallowUnknownFields shape, RawMessage preservation, number
+precision, `time.Time` verbatim round-trip, offset-instant equality, marshal determinism,
+`http.Flusher`, incremental SSE). Still unprovable from the desk:
 
-1. `ageBucketMs` on the wire means the server emits roughly once a second while anything is
-   stale. Is that the right trade against a client-computed age (Law 6 breach) or a coarser
-   bucket that makes the number visibly laggy?
-2. §5.6 Rule 1 takes the maximum severity across three axes. Is max the right operator, or
-   does it hide a nominal-position lane's identity behind a transient data fault - e.g.
-   should `under-construction` + `failed` read as construction or as failure?
-3. `BoardCondition` is a new board-level channel. Is it earning its place, or should board
-   faults be a synthetic lane so there is exactly one rendering path?
-4. The state file forbids a `position` field (D11). Should the schema *reject* a state file
-   carrying one, or preserve-and-disclose it like any other unknown key (§6)?
-5. Five cars with an explicit order and one parallel pair. Is car 4 (server, SSE, ledger,
-   gating matrix) too large now that it owns both contract documents?
+| Claim | Why unverifiable here | What settles it |
+|---|---|---|
+| CI runners provide/accept Go (version, `actions/setup-go`) | No CI run of Go exists in this repo | Car 1's first CI run IS the probe |
+| Browser `EventSource` behaviour against the Go server (heartbeat timing, half-open detection) | No server exists to point a browser at | The walking skeleton's first live serve; rev 3 §7's heartbeat rules carry as design until observed |
+| A Go JSON-Schema validator library conforms to draft-2020-12 (the store schema's dialect, incl. `if/then`) | Library conformance is an empirical claim | BLOCKING TEST at the plan rung: candidate library validates the existing store schema + vectors, observed, before any car depends on it. Negative branch: the Go side validates structurally (typed decode + required-field checks) and full schema validation stays CI-side (pwsh `Test-Json`, already gated) - degraded but honest, recorded as a deviation |
+| Cross-compile single-binary claim (GOOS matrix) | Not attempted | Car 1: one build per target, recorded |
+| Fold-port equivalence at scale (store of 10x records) | Store holds 61 records today | Non-gating soak at Car 3; the vectors gate correctness, this probes performance only |
+
+## §3 - The problem
+
+The founding epic (#1): render an agentic dev pipeline the way a dispatcher watches a
+rail yard. Two days of groundwork built the instruments the board was always supposed to
+read - a self-recording dispatch store with hash-verified records, landed verdicts, and
+CI gates. What is missing is the window: nothing renders the store, so the yard's state
+lives in the conductor's context and the owner's trust. The owner's frame (2026-07-23):
+the store is the single source of truth, the Go binary is the one reader, the browser is
+the window into it.
+
+## §4 - Decisions
+
+Carried decisions keep rev 3 numbers; new ones continue the sequence. The last column is
+load-bearing (template §4).
+
+| # | Decision | Reason | Driven by |
+|---|---|---|---|
+| D1 | Live server + browser wall display | Glanced at, not refreshed | #559; Law 3 |
+| D4 | Every declared lane present in every snapshot | A missing lane is a lie of omission | Law 4 |
+| D7 | Data-staleness (per-lane) and connection-loss (whole-board) are separate, simultaneously displayable truths | They fail independently, imply different actions | Law 5; honest-unreachable |
+| D8 | Registers closed; every other taxonomy open, shipped as data | Running the yard generates states we cannot enumerate | Law 7; Law 3 (rev 3 §2's closed/open rule) |
+| D9 | SSE over browser polling | Wall-board case; **now proven trivial in Go stdlib** | FACT8/9; D1 |
+| D10 | Toolchain + CI car runs FIRST | "Verified means the pipeline that ships it went green" | Verification honesty |
+| D11 | The lane registry is the sole owner of a lane's `position` | Two owners need precedence + disagreement rendering; one owner needs neither | Law 6 |
+| **D12** | **Go server; browser JS view** | Owner ruling: strongest test of institution-over-fluency; single static binary; SRE fit. Contradictions recorded on #14 | Ruling #14; P5 |
+| **D13** | **The artifact store is the SOLE adapter** (supersedes D3: conductor state file) | The store is the pipeline's own instrument - the only #552-compliant source. It records what rev 3's state file existed to hand-record | #552; the harness ruling that parked rev 3 |
+| **D14** | **No StateWriter** (supersedes D5). Dispatcher overrides are `intent` records written to the store | Law 2's override renders because the source of truth says so - one write path, one store, provenance for free | Law 2; Law 6; #552 |
+| **D15** | **The wire contract is owned by a JSON Schema file**; Go structs and the browser validator both conform to it (supersedes D2's shared-TS-module repair) | Cross-language seam: no module can be physically shared. The schema-as-constructed-header pattern is already landed practice in this repo | Law 6; NO HEADERS HERE |
+| **D16** | **Train identity = conductor-declared manifest, as `intent` records in the store.** Membership from the manifest; status ONLY from the fold | The ban is on hand-maintained COPIES, not hand-declared ORIGINALS: train composition is born in the conductor's ruling on tickets and exists nowhere upstream to copy. A stale manifest SHOWS (orphan cars on the board); a stale status file LIED | Owner ruling 2026-07-23; #552; Law 4 |
+| **D17** | **Record reads are double-decoded**: typed struct + `map[string]json.RawMessage`; key-set diff → unknown fields preserved and disclosed as a board condition | Go's default silently drops unknown fields (FACT1, observed); `DisallowUnknownFields` blanks the board over harmless additions (FACT2) - reject-not-disclose, the Law 1 harm | Law 4; Law 1; FACT1/2/3 |
+| **D18** | **The fold is ported to Go; the existing conformance vectors REMAIN the contract; the pwsh detector remains as CI cross-verifier** | Two implementations, ONE authority: the vectors. Divergence = a red naming the divergent case. Retiring the pwsh detector is a separate later decision (§10 Q1) | Law 6; Healing Loop |
+| **D19** | View is framework-free vanilla JS + `EventSource`, no build step | Review attention is the binding constraint; every dependency line is a reviewed line | P4; cost discipline |
+
+## §5 - Mechanism
+
+### 5.1 The shape
+
+```
+artifacts/**/*.json  --(poll)-->  StoreAdapter  -->  Fold (Go port, vector-governed)
+                                        |                   |
+                                   raw records         dispatch liveness
+                                        |                   |
+                                        +--> Assembler <----+---- manifests (intent records)
+                                                |
+                                          YardSnapshot  (schema-owned wire contract)
+                                                |
+                                   GET /api/snapshot   GET /api/stream (SSE)
+                                                |
+                                        browser view (validates, composes, renders)
+```
+
+One process (the Go binary), stateless-restartable by construction: everything it serves
+is derived from the store on poll; killing and restarting it loses nothing (the owner's
+frame - truth in the store, not in the binary).
+
+### 5.2 The lane contract - CARRIED from rev 3, first review this round
+
+Carried verbatim in substance; restated compactly. Full shapes in rev 3's text (git
+history) and to be pinned by the wire schema at spec rung:
+
+- **Registers** (`nominal | in-progress | needs-attention`) - the ONLY closed taxonomy.
+- **Positions** (`live | bagged | dark | under-construction`) - open, data, registry-owned (D11).
+- **Freshness** - closed by mechanism: `not-applicable | never-polled | fresh | stale | failed`,
+  with `lastGood` carried on `failed`.
+- **Composition (rev 3 §5.6)** - rendered register = most severe of position/freshness/
+  capability; position speaks first, freshness second, `not-applicable` renders NO
+  freshness line; age is always server-issued (`ageBucketMs`, quantised, in change
+  detection); the detector's register is `needs-attention` deliberately.
+- **Completeness guards (rev 3 §5.5)** - every registered lane in every snapshot on every
+  code path; pinned lane-id set; lane count in chrome.
+
+v0's lane registry: `dispatches` (live), `gates` (live), `trains` (live), `freight`
+(dark - the ticket queue has no adapter yet), `fuel` (bagged - `cost` fields exist on
+some records, held but not surfaced until #11's cost ledger work). Positions per D11 are
+deploy-time registry truth.
+
+### 5.3 The store adapter and the four derived surfaces
+
+`StoreAdapter` scans `artifacts/**/*.json` under the configured repo checkout (P3) each
+poll. Per record: double-decode (D17), schema-shape check, quarantine-with-disclosure on
+failure (§6). It yields raw records; everything else is derivation, and each derivation
+has exactly one owner:
+
+| Surface | Derived by | From |
+|---|---|---|
+| Dispatch liveness (`dispatched`/`overdue`/`returned`/`presumed-lost`, supersession, elapsed-vs-budget) | the Fold (D18) | dispatch-kind records ONLY |
+| Gates | direct render | `returned` records' `outcome` verbatim (#557); round/gate identity from the manifest's declaration (§5.5) |
+| Trains (consists) | the Assembler | manifests (D16) joined to fold output by member subject |
+| Yard inventory | the Assembler | fold output MINUS manifest members - every unassigned dispatch, rendered loudly (Law 4) |
+
+The adapter seam (rev 3 §5.8's `Adapter` shape) survives: the store adapter is ONE
+adapter behind it, health-in-return-value and all. Law 7's stranger gets the seam;
+v0 ships one implementation of it.
+
+### 5.4 Wire safety, re-derived for the cross-language seam
+
+The rev 3 §6 hazard list was TS-shaped; the Go probe re-derived it (FACT rows):
+
+1. **Unknown-field loss** is now a DEFAULT hazard, not an edge case (FACT1). D17 is the
+   repair, and it applies to BOTH boundaries: store→server (records) and server→browser
+   (the browser validator checks the snapshot against the wire schema).
+2. **One wire contract, one owner** (D15): the JSON Schema file. Go structs conform
+   (field order = declaration order, deterministic - FACT7); the browser validates every
+   parsed payload against the same schema. The spec rung produces the schema + vectors;
+   a hand-maintained mirror of it anywhere is a finding.
+3. **`at` strings are verbatim pass-through.** Sorting/comparison uses parsed instants
+   (FACT6). Go happens to round-trip offsets verbatim (FACT5) - the discipline does not
+   rely on that kindness.
+4. **The SSE event name** is a constant in the wire schema artifact, tested on both
+   sides (rev 3 §6.3 carried - the one-character-apart failure mode is cross-language
+   now, which makes the shared-constant test MORE load-bearing, not less).
+5. **Serialisation parity**: `/api/snapshot` and `/api/stream` payloads are one
+   marshal path with a byte-identity test (rev 3 §6 carried).
+
+**The sentence, declared in full:** producer hook → record JSON → git checkout →
+StoreAdapter double-decode → fold/assembler → one marshal path → HTTP body / SSE frame →
+`JSON.parse` → wire-schema validation → compose → DOM. Per-car reviewers trace their
+hops; the whole-branch gate reads the whole sentence.
+
+### 5.5 The manifest (train identity) and the Law 2 path
+
+The manifest is an `intent`-kind record (existing vocabulary) whose payload declares:
+train id, title, ticket refs, and members - each member a dispatch subject plus a
+conductor-declared **role** (`car` / `reviewer` / `gate:<name>` - open vocabulary, data).
+Roles are DECLARED, never inferred from behaviour (#557: records do not carry "I am a
+reviewer"; the manifest is where the conductor's knowledge becomes store truth).
+Supersession: standard store semantics - a later manifest record for the same train
+subject supersedes, superseded records stay visible to the fold (nothing is edited in
+place; the store is append-only). Exact payload format: executable spec at the spec rung
+(§0). **Status never flows from the manifest** (D16): a manifest naming a dead dispatch
+changes nothing about the fold's verdict on it - the board would render a train with a
+`presumed-lost` car, which is exactly the truth.
+
+Law 2's override: `starcar` needs no writer subsystem - a `held` intent record IS the
+override, written by the conductor (by hand or a two-line helper - NOT a v0 deliverable),
+rendered because the store says so, superseded by a later intent when released. Rev 3's
+"a hold that could be set and never released" scar is answered by supersession plus the
+fold exposing the newest intent.
+
+### 5.6 The server
+
+Go stdlib only (FACT8/9): `GET /` static assets (embedded), `GET /api/snapshot`,
+`GET /api/stream` (SSE). Poll loop at `pollMs`; change detection excluding `seq`/`asOf`,
+including `freshness.kind` and `ageBucketMs`; `seq` assigned after comparison; heartbeat
+comments at `heartbeatMs` with client flip-to-disconnected after two missed; monotonic
+`seq` ordering client-side; `pollInFlight` skip-not-queue. All carried from rev 3 §7 -
+those rules were the round-2 findings' repairs and survive unchanged in Go terms.
+Configuration carried from rev 3 §11 (host 127.0.0.1, port 4600, `pollMs` 1000,
+`heartbeatMs` 5000, `stalenessMs` 15000, `STARCAR_*` env overrides, `statePathDisplay`
+home-collapsed - the absolute-path privacy rule is now also NORTH STAR normalisation law).
+
+**Staleness semantics change with the store:** rev 3 read one file's `writtenAt`; the
+store's freshness is per-poll success plus the NEWEST record `at` observed. `asOf` = last
+successful store scan; a scan that fails (directory missing, unreadable) is `failed` with
+`lastGood` - honest-unreachable, carried. The future-dated and backwards-clock guards
+(rev 3 §8) carry, applied to record `at` values at fold time.
+
+## §6 - Failure modes
+
+| Failure | Behaviour | Law |
+|---|---|---|
+| Store directory missing/unreadable | Lane `failed`, coded reason, `lastGood` visibly marked; NEVER an empty yard rendered as truth | 1, 4; honest-unreachable |
+| A record fails schema-shape validation | That RECORD quarantined + board condition naming the file; remaining records load. One bad record must not blank the board | 1, 4 |
+| A record carries unknown fields | Preserved and disclosed (D17): board condition "record X carries N unrecognised fields" | 4; FACT1/3 |
+| Unrecognised `kind`/`outcome`/`position`/role, vocabularies loaded | Detector fires: rendered loudly BY NAME, register `needs-attention` - a discovery, not a bug | 1, 7 |
+| Vocabulary file missing/malformed | ONE board condition; detector does NOT fire per-record (rev 3's cascade fix, carried) | 1, 4, 5 |
+| Manifest names a subject with no records | Member rendered `declared, not yet observed` - intent without observation is rendered as exactly that | 1 |
+| Dispatch belongs to no manifest | Yard-inventory lane, loudly. The self-measure of P2 | 4 |
+| Two manifests claim one dispatch | Both render, with a board condition naming the collision - disclosed, never resolved by silent precedence (no precedence rule exists; inventing one silently is the Law 6 trap) | 4, 6 |
+| Record `at` in the future / clock steps back | `failed`-class handling at fold time, never silently fresh (rev 3 §8 guards carried) | 1 |
+| SSE heartbeat missed twice | Chrome flips disconnected; last-good stays, visibly marked | 1, 5 |
+| Wire payload fails browser-side schema validation | Payload discarded; previous render stays, marked; board condition | 1 |
+| Envelope fault classes (`absent`/`malformed`) on a `returned` record | Rendered as the record states them - the store already distinguishes these; the board does not re-diagnose | 1; #557 |
+| Producer latency window (~11-12s) | `asOf` and per-lane age make the window visible; nothing pretends to be more live than the store | 5; P6 |
+
+## §7 - Out of scope (with triggers)
+
+Git adapter; GitHub board adapter (freight lane) - trigger: first train after v0 ships.
+Fuel gauge surfacing - trigger: #11 cost-ledger work. Auth - local-only, stated in README.
+View-side override UI - trigger: the second use of intent-record overrides (Law 2 is
+served by the store path in v0). History/event-log view - the snapshot is current-state;
+the store HOLDS history, rendering it is its own design. Multi-repo (P3). **#12 car
+health bar** (owner's spine idea - REJECT-round convergence per car): deliberately NOT in
+v0's scope; trigger: its own design rung, fed by this board's gates lane once real data
+flows through it. Push notification on `needs-attention` (#559's second half) - trigger:
+the board's first week of live use. Retirement of the pwsh detector (Q1). A manifest
+helper CLI - trigger: the third hand-written manifest, if it hurts (probe suite pattern:
+build tools from lived friction, not prediction).
+
+## §8 - Contracts touched
+
+| Document | Change | Owner |
+|---|---|---|
+| `docs/contracts/state-ledger.md` | New rows: server process state (`lastGoodSnapshot`, `lastPollAt`, `pollInFlight`, `seq`, timer, `connectedClients`, lane-id set) + bounded browser state (rendered snapshot, connection status, last-applied `seq`) - rev 3 §11's enumeration carries | Server car |
+| `docs/contracts/gating-matrix.md` | Five board truth surfaces: staleness, disconnect, failed-panel, detector, board conditions (rev 3 §11 carried) | Server car (matrix rows land with the mechanisms) |
+| `README.md` + quickstart | The board exists; local-only, unauthenticated; "no adapters ship yet" line dies | View car (doc sentence check applies at its review) |
+| `docs/setup.md` | Trigger rows: Go toolchain arrival, #3/#4 CI guards land-or-re-park (rev 3's Car 1 obligation carries) | Toolchain car |
+| `schema/vocab/kinds.json` etc. | Any vocabulary additions the manifest needs | Schema car |
+| This design | Any spec-rung deviation folds back with an amendment block | Conductor |
+
+## §9 - Cost
+
+Design rung (this document): 1 Opus adversarial review round, plus re-rounds as earned.
+The full train, proposed for owner approval AT PLAN RUNG, not now: spec + spec review,
+plan + plan review, ~5 cars + 5 reviews (toolchain/CI first per D10; schema+vectors;
+fold port + adapter; server; view + README). **Model mix per the ratified topology: cars
+Sonnet, gates Opus** (supersedes rev 3 §11's "Opus throughout", stated not silent).
+Size class: large. Rev 4 adds one NEW cost class rev 3 lacked: the owner's Go-learning
+time is real spend and is the point (P5).
+
+## §9b - Disposition of prior rounds
+
+Rounds 1-2 findings were dispositioned in rev 3's §13 table (kept in git history with
+rev 3's full text); those dispositions CARRY except where superseded below. Rev 3 itself
+received no verdict (parked), so this table dispositions rev 3's decisions against the
+rulings that parked it:
+
+| Prior item | Kind | Disposition | Where |
+|---|---|---|---|
+| D2 (TS on Node, shared type module) | rev 3 decision | **superseded** - owner ruling #14 (Go); the single-definition intent survives as schema-ownership | D12, D15 |
+| D3 (conductor state file is first adapter) | rev 3 decision | **superseded** - the harness ruling; the store is the instrument #552 demands | D13 |
+| D5 (a StateWriter ships) | rev 3 decision | **superseded** - intent records; Law 2 served by the store's own write path | D14 |
+| D6 (poll by mtime, not fs.watch) | rev 3 decision | **adapted** - the store is many small append-only files, not one swapped file; polling survives, mtime-of-one-file does not. Scan semantics to spec rung | §5.6 |
+| Rev 3 §5 lane contract, §5.6 composition, §7 server rules, §9 failure table | rev 3 sections | **carried, first review THIS round** - inherited-risk disclosure in the header | §5.2, §5.6, §6 |
+| Rev 3 §11 "Opus throughout" cost line | rev 3 decision | **superseded** by the ratified model topology, loudly | §9 |
+| Rounds 1-2: all other dispositions | findings | **carried** via rev 3 §13 (git history) | - |
+
+## §10 - Open questions for the reviewer
+
+1. **Q1 - the dual fold.** D18 keeps the pwsh detector as CI cross-verifier against the
+   shared vectors. Is dual maintenance a Law 6 wound waiting to reopen, or is
+   vectors-as-single-authority sufficient? Cost of "retire pwsh now": losing the only
+   fold implementation that runs without the Go toolchain, mid-transition.
+2. **Q2 - manifest collision row (§6).** Two manifests claiming one dispatch renders
+   both plus a condition, no precedence. Is disclosed-collision correct, or does
+   latest-`at` supersession (already store law for same-subject records) legitimately
+   extend to cross-manifest membership?
+3. **Q3 - gates as manifest-declared roles.** A review dispatch is only a "gate" because
+   the manifest says so (#557 compliance). The migrated pre-harness verdicts (29 records)
+   have no manifest - do they render as a historical gates lane via their subject-slug
+   convention (a read-side convention, flirting with inference), or stay in yard
+   inventory until backfill manifests are written? The backfill is cheap and honest;
+   the convention is free and smells.
+4. **Q4 - wire-schema validation depth in the browser.** Full JSON-Schema validation
+   client-side needs a JS validator dependency (P4 tension); a hand-rolled structural
+   check is a second copy of the schema's knowledge (Law 6 tension). Which loses less?
+5. **Q5 - the walking skeleton's first paint.** With five lanes and two live adapt-less
+   lanes (`freight` dark, `fuel` bagged), is the v0 board visually honest-but-thin, and
+   is that acceptable for the showcase's first screenshot, or does v0 owe the freight
+   lane a read-only issue-count adapter to earn the wall?
+
+## §13 - Revision history
+
+- **Rev 1** (2026-07-21): REJECT, 9 Major. **Rev 2** (2026-07-22): REJECT, 8 Major -
+  root cause: axes specified, composition unspecified. **Rev 3** (2026-07-22): composition
+  specified (§5.6); PARKED UNREVIEWED same day when the harness was ruled core product.
+  Full rev 3 text and its finding-disposition tables: git history of this file.
+- **Rev 4** (2026-07-23, this document): rewritten against the landed harness contract
+  (store as sole adapter), owner rulings #14 (Go), train-identity-by-intent, and the
+  ancestor prior art ported at this rung's opening (#552/#557/#559/honest-unreachable).
+  Instrument check, constraints, premises, and probe list added per
+  `docs/templates/design-doc.md` (the template postdates rev 3).
