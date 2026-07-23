@@ -5785,3 +5785,7 @@ showable is actually the best outcome. I expect it would be more "eh.. ok let's 
 ---
 
 maybe I should use claudes design tools to start working on a layout mockup?
+
+---
+
+yeah give me a one page brief that I can chuck at claude design. and you know what? put that brief through an adversarial review and document it, it's provence of where our UI comes from.
