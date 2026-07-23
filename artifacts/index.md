@@ -87,3 +87,10 @@ dispatch batch between regenerations.
 | a10f39e071e8e4b7b | dispatched | 2026-07-23T14:04:01Z |  | a10f39e071e8e4b7b/dispatched-20260723T140401Z.json |
 | a10f39e071e8e4b7b | returned | 2026-07-23T14:14:19Z | APPROVE | a10f39e071e8e4b7b/returned-20260723T141419Z.json |
 | train:board-v0 | intent | 2026-07-23T14:16:14Z |  | train-board-v0/intent-20260723T141614Z.json |
+| a3a95266490ba928d | dispatched | 2026-07-23T14:18:10Z |  | a3a95266490ba928d/dispatched-20260723T141810Z.json |
+| a3a95266490ba928d | returned | 2026-07-23T14:35:38Z | done | a3a95266490ba928d/returned-20260723T143538Z.json |
+| a21c8b80339f1c8fd | dispatched | 2026-07-23T14:36:39Z |  | a21c8b80339f1c8fd/dispatched-20260723T143639Z.json |
+| a21c8b80339f1c8fd | returned | 2026-07-23T14:51:00Z | REJECT | a21c8b80339f1c8fd/returned-20260723T145100Z.json |
+| a3a95266490ba928d | returned | 2026-07-23T14:55:04Z | done | a3a95266490ba928d/returned-20260723T145504Z.json |
+| a21c8b80339f1c8fd | returned | 2026-07-23T14:58:10Z | APPROVE | a21c8b80339f1c8fd/returned-20260723T145810Z.json |
+| train:board-v0 | intent | 2026-07-23T14:58:55Z |  | train-board-v0/intent-20260723T145855Z.json |
