@@ -1,0 +1,33 @@
+<system_notification>
+Shell command "Commit Q2 boundary ruling, push, watch CI" (shellId: 177) has completed successfully. Use read_powershell with shellId "177" to retrieve the output.
+</system_notification>
+
+---
+
+<system_notification>
+Shell command "Commit Q2 boundary ruling, push, watch CI" (shellId: 177) has completed successfully. Use read_powershell with shellId "177" to retrieve the output.
+</system_notification>
+
+---
+
+<system_notification>
+Agent "47-car-r1" (car) has finished processing and is now idle. Use read_agent with agent_id "47-car-r1" to read the results, or write_agent to send follow-up messages.
+</system_notification>
+
+---
+
+<system_notification>
+Agent "47-car-r1" (car) has finished processing and is now idle. Use read_agent with agent_id "47-car-r1" to read the results, or write_agent to send follow-up messages.
+</system_notification>
+
+---
+
+<system_notification>
+Agent "47-car-review-r1" (car) has finished processing and is now idle. Use read_agent with agent_id "47-car-review-r1" to read the results, or write_agent to send follow-up messages.
+</system_notification>
+
+---
+
+<system_notification>
+Agent "47-car-review-r1" (car) has finished processing and is now idle. Use read_agent with agent_id "47-car-review-r1" to read the results, or write_agent to send follow-up messages.
+</system_notification>

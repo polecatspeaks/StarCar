@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "19eba532e464",
+  "strategy": "manual-commit",
+  "branch": "dev",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "artifacts/reviews/2026-07-24-family-agnostic-car-review-round1-APPROVE.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/19/eba532e464/0/metadata.json",
+      "transcript": "/19/eba532e464/0/full.jsonl",
+      "compact_transcript": "/19/eba532e464/0/transcript.jsonl",
+      "content_hash": "/19/eba532e464/0/content_hash.txt",
+      "prompt": "/19/eba532e464/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 6598288,
+    "cache_creation_tokens": 512254,
+    "cache_read_tokens": 6079080,
+    "output_tokens": 62040,
+    "api_call_count": 59
+  }
+}
