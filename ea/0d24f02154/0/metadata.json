@@ -1,0 +1,52 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "ea0d24f02154",
+  "session_id": "e07fc822-e277-4d5d-898a-1b91eedea7b6",
+  "strategy": "manual-commit",
+  "created_at": "2026-07-24T12:53:01.7352251Z",
+  "branch": "dev",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "artifacts/reviews/2026-07-24-dual-runtime-design-review-round3-REJECT.md"
+  ],
+  "agent": "Copilot CLI",
+  "model": "claude-fable-5",
+  "turn_id": "c9980c5f56ab",
+  "checkpoint_transcript_start": 2432,
+  "transcript_lines_at_start": 2432,
+  "compact_transcript_start": 277,
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 23410,
+    "api_call_count": 9
+  },
+  "session_metrics": {
+    "turn_count": 6
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-07-24T12:53:01.5142282Z",
+    "agent_lines": 107,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 107,
+    "total_lines_changed": 107,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 27,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".claude/settings.local.json": 27
+      }
+    }
+  ]
+}
