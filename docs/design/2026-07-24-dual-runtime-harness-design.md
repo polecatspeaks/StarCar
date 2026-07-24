@@ -1,7 +1,7 @@
 # Dual-runtime harness design: one harness, two runtimes (Claude Code + Copilot CLI)
 
 Status: Open
-Stage: awaiting adversarial design review
+Stage: rev 2 - awaiting adversarial design review round 2
 Issue: #47
 Date: 2026-07-24
 
@@ -9,141 +9,180 @@ Date: 2026-07-24
 
 **Behavioural/architectural, with one precision edge.** This design is about which
 component owns hook execution under each runtime and how failures surface - prose holds
-that. The precision edge is the two runtimes' hook payload shapes (key names, field
-presence): that is a wire contract and lands as **executable probe tests pinning both
-shapes** (fixtures from real observed payloads), never as prose tables a reviewer must
-trust. This document points at those tests; it does not restate the shapes.
+that. The precision edge is the compat layer's delivered payload shape (key names, field
+presence, per hook type): that is a wire contract and lands as **executable probe tests
+pinning the shape** (fixtures from real captured payloads in `.claude/probe-logs/`),
+never as prose tables a reviewer must trust. This document points at those tests; it
+does not restate the shapes.
 
 ## §1 - Constraints
 
 | Source | What it forbids here | How this design satisfies it |
 |---|---|---|
-| Law 6 (`constitution.md`): "never maintains a second copy of anything that can drift" | Two copies of hook logic, one per runtime; two extractors that must agree | Manifests carry ONE thin invocation line each; all logic in shared scripts; one extractor used by both the hook path and manual backfill (D3, D5) |
-| Law 4 (`constitution.md`): "never silently dropped" | A dispatch record lost because a hook failed quietly | Producer keeps raise-never-drop (`artifacts/_faults.log`); unported surfaces degrade LOUDLY (D6); the known-silent state is disclosed in `docs/setup.md` until the port lands |
-| Law 1 (`constitution.md`): truth on every surface | Claiming the harness "works under both" from a read | Every "works" claim below is probed or listed in §2c; the §2c table names what is still unproven |
-| Law 7 (`constitution.md`): the stranger; no hardcoded operator paths | Baking `C:\Users\Chris\...` or this box's quirks into manifests | Scripts derive paths from payload/`$CLAUDE_PROJECT_DIR`/cwd; the `sh`-on-PATH requirement is documented as a box prerequisite in `docs/setup.md`, not assumed silently |
-| Healing Loop: "validated facts must land as tests or gates, never only prose" | Payload shapes and event names living only in this doc or #47 comments | Probe suite pins both runtimes' payload shapes + the events.jsonl `tool.execution_complete` shape; reds by name when a runtime moves (D4) |
-| Probe doctrine (CLAUDE.md, NO HEADERS HERE) | Designing against unobserved hook behaviour | The 2026-07-24 morning probes (events.jsonl + process logs, quoted on #47) supply the observed substrate; the rest is §2c |
-| Rewrite-vs-extend (CLAUDE.md) | Rewriting the producer because the runtime changed | `Produce-Artifact.ps1` is EXTENDED with a transcript-format branch; hooks/forwarders extended, not regenerated |
-| Right-sizing + NIRTS (CLAUDE.md) | A runtime-abstraction framework for two runtimes | No abstraction layer; the "seam" is a payload normalizer + a per-runtime transcript reader, and nothing else |
-| Producer spec S2.1/S2.3/S2.4 (#7) | Changing record semantics; a second writer | ONE writer preserved; only the payload intake and transcript-read grow a second format; spec gets an amendment block, not a rewrite |
-| Fail-closed `preToolUse` (probed 2026-07-24: Copilot denies the tool call when a preToolUse hook errors) | Wiring anything StarCar to `preToolUse` on either runtime | Nothing in this design touches preToolUse |
+| Law 6 (`constitution.md`): "never maintains a second copy of anything that can drift" | Two copies of hook logic, one per runtime; two extractors that must agree; two manifests carrying the same wiring | ONE manifest (`.claude/settings.json`) serves both runtimes in the intersection dialect (D1); ONE writer (`Produce-Artifact.ps1`) grows payload tolerance, no parallel producer (D2); ONE extractor home named with both call sites (D5, DR-3 fold) |
+| Law 4 (`constitution.md`): "never silently dropped" | A dispatch record lost because a hook failed quietly; an envelope silently absent | Producer keeps raise-never-drop (`artifacts/_faults.log`); the Copilot envelope-timing gap mints `envelope: absent` + a fault line, never nothing (D4); silent-exit filter paths gain a stderr line naming the skip reason (D2) |
+| Law 1 (`constitution.md`): truth on every surface | Claiming the harness "works under both" from a read | Every "works" claim below carries its probe evidence (probe-logs line, events.jsonl line, or process-log quote); §2c names what is still unproven |
+| Law 7 (`constitution.md`): the stranger; no hardcoded operator paths | Baking `C:\Users\Chris\...` or this box's quirks into manifests or scripts | Scripts derive paths from payload/cwd; the `sh`-on-PATH requirement is a documented box prerequisite in `docs/setup.md`, not a silent assumption |
+| Healing Loop: "validated facts must land as tests or gates, never only prose" | Payload shapes and compat behaviour living only in this doc or #47 comments | Probe suite pins the compat-delivered payload shape per hook type + the events.jsonl `tool.execution_complete` shape (D3); reds by name when either runtime moves |
+| Probe doctrine (CLAUDE.md, NO HEADERS HERE) | Designing against unobserved hook behaviour | Round 1's DR-1 was exactly this defect; rev 2's substrate section (§3b) quotes only OBSERVED behaviour, each fact with its source artifact |
+| Rewrite-vs-extend (CLAUDE.md) | Rewriting the producer because the runtime changed | `Produce-Artifact.ps1` is EXTENDED: filter tolerance + transcript-format branch; manifest lines edited in place; nothing regenerated |
+| Right-sizing + NIRTS (CLAUDE.md) | A runtime-abstraction framework for two runtimes | No abstraction layer, no new manifest, no normalizer (rev 1's D2/D3 are DELETED as unnecessary - the compat layer already does both jobs) |
+| Producer spec S2.1/S2.3/S2.4 (#7) | Changing record semantics; a second writer | ONE writer preserved; payload intake and transcript-read grow tolerance; spec gets an amendment block, not a rewrite |
+| Fail-closed `preToolUse` (probed: Copilot denies the tool call when a preToolUse hook errors) | Wiring anything StarCar to `preToolUse` on either runtime | Nothing in this design touches preToolUse |
 
 ## §2 - Premises
 
 | # | Premise | If false |
 |---|---|---|
-| P1 | Copilot keeps loading `.claude/settings.json` via its Claude-compat layer and executing those commands **via PowerShell** (observed: ParserError on `$CLAUDE_PROJECT_DIR/...`, quote-mangle on `sh -c '...'`) | The double-fire analysis in D2 changes; re-probe on every Copilot version bump (probe suite reds) |
-| P2 | `sh` resolves from PowerShell on every box that runs either runtime (machine-level PATH fix, this box) | Copilot-side hooks fail loudly with a known signature; documented prerequisite, not silent |
-| P3 | Hook config is session-cached on Copilot; every wiring change needs a CLI restart to test | Testing loop is slower/faster than planned; correctness unaffected |
-| P4 | Claude Code executes hook commands via a POSIX shell, so `sh .claude/hooks/x.sh` (relative path, cwd = project dir) behaves as today's `$CLAUDE_PROJECT_DIR`-prefixed form | Intersection dialect breaks Claude-side; cheap to verify on the next Claude Code session before relying on it |
-| P5 | The runtimes are distinguishable from inside a hook by payload shape alone (Claude: `session_id`/`agent_transcript_path` snake_case; Copilot: `sessionId`/`transcriptPath` camelCase - both observed) | Normalizer needs an explicit runtime flag passed by the manifest line instead (fallback named in D3) |
+| P1 | Copilot's compat layer keeps loading `.claude/settings.json`, executing commands via PowerShell, translating payloads to Claude snake_case, and mapping the `Task` matcher to its `Agent` tool (all OBSERVED, §3b) | The probe suite reds on the pinned shape; wiring re-examined then. This premise is now load-bearing FOR the design rather than against it - the compat layer IS the port |
+| P2 | `sh` resolves from PowerShell on every box that runs either runtime (machine-level PATH fix on this box) | Hooks fail loudly with a known signature ("sh not recognized"); documented prerequisite |
+| P3 | Hook config is session-cached on Copilot; every wiring change needs a CLI restart to test | Testing loop speed changes; correctness unaffected |
+| P4 | Claude Code executes hook commands via a POSIX shell, so `sh .claude/hooks/x.sh` (relative path, cwd = project dir) behaves as today's `$CLAUDE_PROJECT_DIR`-prefixed form | Intersection dialect breaks Claude-side; BLOCKING VERIFY on the next Claude Code session before the change is trusted (§2c-3) |
+| P5 | Background dispatch is the shop's standard mode, so the report-not-flushed-at-stop gap (§3b-6) is the COMMON case under Copilot, not an edge | If sync dispatch returns as standard, the gap shrinks and D4's absent-envelope path becomes rare; design unchanged either way |
 
 ## §2c - Probe list (what the desk cannot prove)
 
-| Claim | Why unverifiable from the desk | What would settle it |
-|---|---|---|
-| Copilot loads arbitrary `.github/hooks/*.json` files (not just `entire.json`) | Only one instance exists; never observed a second | Drop a `starcar.json` with one echo hook, restart, observe `hook.start` in events.jsonl. **BLOCKING for D2**; negative branch: append StarCar entries into `entire.json` with clear `comment` fields (worse - shared file with a generator - so probe first) |
-| At `subagentStop` fire time, the agent's final report is already flushed to the parent's events.jsonl | Timing observed only post-hoc, not at fire | Probe hook greps events.jsonl for the envelope AT fire time (same shape as the Claude-side SubagentStop probe that settled #7's Probe 5); negative branch: `returned` record lands `envelope: absent` + fault line, backfill remains the recovery path |
-| Claude Code still runs everything after this change (no Claude-side regression) | No Claude Code session available from this desk | First Claude Code session after landing runs the probe suite + one live dispatch; until then `docs/setup.md` marks Claude-side as "expected-unchanged, unverified since 0c3bfcb" |
-| Copilot's `postToolUse` payload for a `task` tool call carries enough to mint a `dispatched` record (agent id ↔ stop-side identity) | Payload logged but identity-join not yet traced end to end | One dispatched/returned pair examined for a shared key (candidate observed: `toolCallId` ↔ `agentStop.sessionId` for subagents); negative branch: `dispatched` record carries its own id and the join is by timestamp+agentName, disclosed in the record |
+| Claim | Why unverifiable from the desk | What would settle it | Blocking? |
+|---|---|---|---|
+| The intersection-dialect SessionStart lines execute under Copilot compat (the ParserError was the `$CLAUDE_PROJECT_DIR/` prefix, not the scripts) | Hook config is session-cached (P3); needs a restart | Next Copilot restart: `hook.end success=true` for the four guards in events.jsonl, and the guards' stdout visible | Yes - for landing, not for build |
+| The intersection-dialect lines still execute under Claude Code (P4) | No Claude Code session available from this desk | First Claude Code session after landing: guards fire, producer records land; until then `docs/setup.md` marks Claude-side "expected-unchanged, unverified" | Yes - for closing #47, not for landing |
+| A `postToolUse` matcher exists that catches `read_agent`-class completions (whose `tool_result` would carry the full report + envelope at exactly the moment it exists) | Only the `Task`→`Agent` matcher mapping is observed (44/44 entries are tool_name `Agent`); other Copilot tool names' matcher behaviour unobserved | One session with a wildcard-matcher diagnostic hook appended to the probe logger; read the captured tool_name set | No - settles D4's enrichment trigger (see negative branch there) |
+| The stop payload's missing agent id can be joined to a subject: nearest `subagent.started`/`agentStop` `toolCallId` in events.jsonl at stop time | Join observed once (round-1 reviewer re-derived it live); one observation is not a pin | Probe test over a captured events.jsonl fixture with two overlapping background agents; negative branch: subject = `agent_name + at`-derived id, DISCLOSED in the record as `subject_basis: name-time` | Yes - for D4's record identity |
 
 ## §3 - The problem
 
 The repo bounces between Claude Code and Copilot CLI (owner, 2026-07-24: "the minimum
 amount of work to ensure functionality between the two disparate model and environment
-families"). Today the entire StarCar hook harness - four SessionStart guards, two
-SubagentStop producer hooks, one PostToolUse producer hook, two probe hooks - is wired
-only in `.claude/settings.json` in a dialect (POSIX one-liners + `$CLAUDE_PROJECT_DIR`)
-that Copilot's compat layer executes via PowerShell, where every command fails with
-exit 1. Result: under Copilot, no session-start guard fires and no dispatch record
-lands. The morning's probes (#47) established the full substrate: Copilot fires the whole
-hook family, `subagentStop` carries `transcriptPath` → the parent's `events.jsonl`, and
-the agent's verbatim report (envelope included) is present there as a
-`tool.execution_complete` event.
+families"). Under Copilot today: the four SessionStart guards never execute (PowerShell
+ParserError on the `$CLAUDE_PROJECT_DIR/` prefix), and the producer emits no records -
+not because its hooks fail, but because they RUN and then filter themselves out on a
+payload-shape mismatch (§3b). Under Claude Code everything works. The fix must not trade
+one runtime for the other.
+
+## §3b - The observed substrate (all probed 2026-07-24, sources named)
+
+Rev 1 modeled the compat layer as broken; probes after round 1's DR-1 show it is mostly
+working, which deletes half of rev 1's mechanism. Each fact, with its source:
+
+1. **Compat executes `sh script.sh`-form hooks.** `.claude/probe-logs/subagent-stop.jsonl`
+   and `post-task.jsonl` carry entries stamped 11:31Z, 11:39Z, 12:11Z on 2026-07-24 -
+   all from Copilot session `e07fc822...` while the producer was believed "fully silent".
+   Only two command forms fail: bare `$CLAUDE_PROJECT_DIR/...` (ParserError, process
+   logs) and `sh -c '...'` one-liners (quote-mangle, events.jsonl hook.end stderr).
+2. **Compat translates payloads to Claude snake_case.** The same probe-log entries carry
+   `session_id`, `transcript_path`, `agent_name`, `hook_event_name` - Claude shape, from
+   a Copilot session. No normalizer is needed; rev 1's D3 is deleted.
+3. **The producer's silence is its own filter.** `Produce-Artifact.ps1:141-142` requires
+   `agent_type` in the stop payload; the compat stop payload carries `agent_name` instead
+   → silent `exit 0` ("internal subagent"). Launch side (`:146-147`) requires
+   `tool_input.subagent_type`; the compat launch payload carries `tool_input.agent_type`
+   (probe-log, tool_name `Agent`).
+4. **The `Task` matcher maps to Copilot's `Agent` tool.** 44/44 post-task probe entries
+   under Copilot have `tool_name: "Agent"` - the matcher translated, launches captured.
+5. **The stop payload carries no agent id.** Claude's stop payload joined launch→stop by
+   agent id (spec Probe 5). The compat stop payload has `agent_name`/`transcript_path`
+   only; the id lives in events.jsonl (`subagent.started.agentId` = launch
+   `toolCallId` = the empty-transcript `agentStop.sessionId`, re-derived live by the
+   round-1 reviewer).
+6. **For background dispatches, the report is NOT in the parent transcript at stop
+   time.** `subagentStop` fires when the agent idles; the report body (envelope included)
+   enters the parent's events.jsonl only when the conductor READS the agent
+   (`tool.execution_complete`, observed ~2.8s-to-minutes later). An extraction-at-stop
+   returns nothing by construction for background agents. This is the one genuinely new
+   mechanism problem, and D4 owns it.
+7. **`transcript_path` at stop points at the PARENT's events.jsonl**, not a per-agent
+   file (probe-log entries; also the `_probe_transcript_exists_at_fire: false` in every
+   Copilot entry is a probe-script key-name miss - it reads `agent_transcript_path` -
+   not a missing file; D6 fixes the probe).
 
 ## §4 - Decisions
 
 | # | Decision | Reason | Constraint/premise |
 |---|---|---|---|
-| D1 | Keep TWO manifests (`.claude/settings.json` for Claude Code, one Copilot-native hooks file), each carrying only thin invocation lines; ALL logic lives in the shared scripts they call | Manifest formats genuinely differ (schema, hook names, variant keys); logic duplication is what Law 6 forbids, manifest lines are addresses not logic | Law 6 |
-| D2 | Copilot carrier is a NEW `.github/hooks/starcar.json` (pending the §2c blocking probe), `powershell` variant lines of the form `$input \| sh .claude/hooks/x.sh` | Keeps StarCar wiring out of the generator-owned `entire.json`; keeps `.claude/settings.json` untouched for Claude Code. Double-fire is impossible while the compat-layer execution of `.claude/settings.json` keeps failing (P1) - and if a Copilot update FIXES the compat layer, the payload normalizer makes the hooks idempotent-safe to re-examine, and the probe suite reds (shape pin) so the change is seen, not suffered | Law 6, P1, §2c-1 |
-| D3 | One shared payload normalizer: each hook script passes stdin through a small python shim that maps Copilot camelCase keys to the Claude snake_case names the scripts already consume, detecting runtime by shape (P5). Fallback if P5 falsifies: the manifest line passes an explicit `-runtime` arg | Scripts stay single-source; the diff to each existing script is one line at the top | Law 6, P5 |
-| D4 | Probe suite `scripts/probes/RuntimePayload.Probes.Tests.ps1`: pins both runtimes' payload key sets (fixtures from observed payloads), the normalizer's mapping, and the events.jsonl `tool.execution_complete` shape the extractor depends on | The runtimes are unversioned substrate; when either moves, a probe reds BY NAME naming the consumer that just became suspect | Healing Loop, probe doctrine |
-| D5 | Graduate this morning's backfill adapter into `scripts/Extract-AgentReport.ps1` (or extend `Produce-Artifact.ps1`'s `Get-LastAssistantText` with an events.jsonl branch): ONE extractor, consumed by (a) the Copilot `subagentStop` producer path and (b) manual `Land-Verdict.ps1` backfill | The extractor exists and is proven (Car 46 round-2 landing); two extractors that must agree is a Law 6 defect | Law 6, rewrite-vs-extend |
-| D6 | Until each surface's port is probed green, its silent state stays DISCLOSED in `docs/setup.md` (the pattern MAJOR2 of #46 just ratified: "not yet armed on this box" rows) | An unported hook that looks wired is a lying canary; disclosure is the cheap honest interim | Law 1, Law 4 |
-| D7 | `dispatched`-record minting under Copilot is IN scope only if the §2c identity-join probe lands positive cheaply; otherwise deferred with trigger "first time a returned record lands with no matching dispatched record" | NIRTS: the returned record (verdict) is the load-bearing artifact; dispatched is bookkeeping that manual dispatch discipline currently covers | NIRTS, right-sizing |
+| D1 | ONE manifest. Fix the four SessionStart guard lines in `.claude/settings.json` to the intersection dialect (`sh .claude/hooks/x.sh`); add NO Copilot-side manifest for StarCar hooks. Rev 1's `starcar.json` is deleted from the design | §3b-1: the compat layer already runs this form; a second manifest would be the Law 6 second copy AND the double-fire source DR-1 warned about. Double-fire is now structurally impossible: one wiring, one execution path per runtime | Law 6, DR-1, P1 |
+| D2 | Extend `Produce-Artifact.ps1`'s filter to accept the compat shape: stop accepts `agent_type` OR `agent_name`; launch accepts `tool_input.subagent_type` OR `tool_input.agent_type`. Every filter `exit 0` gains one stderr line naming what was absent (silent-skip becomes visible-skip) | §3b-3 is the root cause of "producer silence"; the fix is tolerance in ONE writer, not a second path. The stderr line is Law 4 applied to the filter itself - today's three-hour "fully silent" misdiagnosis happened because exit-0 said nothing | Law 4, Law 6, rewrite-vs-extend |
+| D3 | Probe suite `scripts/probes/RuntimePayload.Probes.Tests.ps1`: pins the compat-delivered payload key sets per hook type (fixtures = sanitized real captures from `.claude/probe-logs/`), the two failing command forms (so a compat fix is SEEN), and the events.jsonl `tool.execution_complete`/`subagent.started` shapes D4-D5 consume | The runtimes are unversioned substrate; when either moves, a probe reds BY NAME naming the consumer that just became suspect | Healing Loop, probe doctrine |
+| D4 | Copilot `returned` records: mint at `subagentStop` with what the payload + events.jsonl hold AT THAT MOMENT. Subject = the events.jsonl id join (§2c-4); envelope = extracted if present, else `envelope: absent` + fault line + stderr notice naming the backfill command. The PROVEN backfill (`Land-Verdict.ps1` + the events.jsonl extractor) is the designed enrichment path for verdict-class dispatches, not a workaround | §3b-6: at stop time the report does not exist in the parent transcript for background dispatches. Minting an honest absent-envelope record preserves Law 4 (the dispatch happened, the record exists); the envelope arrives via the same one extractor when the conductor lands the verdict. NIRTS: verdict-class dispatches already get individually landed; an automatic post-read enrichment hook is NOT needed now - trigger to revisit: §2c-3's wildcard-matcher probe landing positive, or the first envelope-absent record that never got backfilled | Law 4, Law 1, NIRTS |
+| D5 | ONE extractor, one home: `Produce-Artifact.ps1`'s transcript reader (`Get-LastAssistantText`) grows an events.jsonl format branch (detect: first line parses as JSON with a `type` field vs Claude JSONL). Call sites: (a) the D4 stop-path, (b) `Land-Verdict.ps1`, which gains a `-TranscriptFormat copilot-events` path calling the SAME function (dot-sourced from a shared module file, `scripts/lib/TranscriptRead.ps1`, extracted by `git mv`-style refactor so history survives). The session-files adapter script is retired on landing | DR-3 fold: rev 1 named two different homes in D5 and §5.3. One function, two named call sites, zero copies | Law 6, DR-3 |
+| D6 | Fix `subagent-stop-probe.sh` to read `transcript_path` (falling back to `agent_transcript_path`), so `_probe_transcript_exists_at_fire` measures reality on both runtimes | §3b-7: the probe currently reports false on every Copilot firing because of a key-name miss - a lying instrument on exactly the surface this design depends on | Law 1, instrument-audit |
+| D7 | `dispatched` records under Copilot: IN scope (cheap now). The launch path already fires with `tool_input.agent_type` present (§3b-3/4); D2's filter fix alone makes launch records mint. Subject = launch `toolCallId` when derivable, else the record disclosing `subject_basis` | Rev 1 deferred this on cost; the probes showed the cost collapsed to the same filter fix D2 already makes. StoreIntegrity has no pairing assertion (round-1 reviewer ran it: 129/129, no dispatched↔returned coupling), so partial coverage during rollout breaks nothing | NIRTS (the cost fell), round-1 Q3 answer |
 
 ## §5 - Mechanism
 
-Small enough to state inline:
-
-1. `.github/hooks/starcar.json` (new): `sessionStart` → the four guard scripts;
-   `subagentStop` → probe + producer-stop forwarders; (conditional on D7)
-   `postToolUse` → producer-launch. Each entry: `powershell` variant
-   `$input | sh .claude/hooks/<script>.sh`, plus the equivalent `bash` variant, each
-   line with a `comment` citing #47.
-2. `.claude/hooks/normalize-payload` (new, python, single file): reads stdin JSON,
-   emits the same JSON with Copilot keys mapped to Claude names (`sessionId`→
-   `session_id`, `transcriptPath`→`agent_transcript_path`, `agentName`→`agent_name`,
-   `cwd` passthrough...). Existing hook scripts prepend it to their stdin read.
-   The mapping table lives THERE, once; the probe suite asserts it.
-3. `Produce-Artifact.ps1`: `Get-LastAssistantText` grows a format branch - if the
-   transcript file's lines are Copilot events (`"type":"tool.execution_complete"`),
-   extract the last matching agent report (the proven adapter logic); else the
-   existing Claude JSONL path. Red-first: fixture events.jsonl (sanitized real
-   capture) + failing test before the branch exists.
-4. `docs/setup.md`: hooks table gains a runtime column (fires under Claude / Copilot /
-   both, each cell probed-or-marked-unverified per D6).
-5. Spec #7 amendment block recording the second transcript format and the second
-   manifest (supersedes stale text, per worked-briefs pattern).
+1. `.claude/settings.json`: four SessionStart lines change from
+   `$CLAUDE_PROJECT_DIR/.claude/hooks/x.sh` to `sh .claude/hooks/x.sh`. The
+   `sh -c '...'` entire-CLI wrappers are left untouched: Claude-side they work,
+   Copilot-side entire is natively covered by `.github/hooks/entire.json`, and their
+   compat failure is fail-open noise pinned by a D3 probe (visible, harmless, known).
+2. `Produce-Artifact.ps1`: filter tolerance (D2), stderr skip-lines (D2), subject
+   join + absent-envelope minting (D4), transcript-format branch (D5). Red-first:
+   fixture payloads (real captures) + failing tests before each change.
+3. `scripts/lib/TranscriptRead.ps1`: extracted shared reader (D5), consumed by
+   `Produce-Artifact.ps1` and `Land-Verdict.ps1`.
+4. `subagent-stop-probe.sh`: key-name fix (D6).
+5. `scripts/probes/RuntimePayload.Probes.Tests.ps1`: shape pins (D3).
+6. `docs/setup.md`: hooks table gains per-runtime fired/probed status columns per this
+   design's probes; `sh`-on-PATH prerequisite row; the rev-1 "producer silent under
+   Copilot" claim is CORRECTED (it was a filter, not silence - Law 1 fix, cites §3b).
+7. Spec #7 amendment block: compat payload tolerance, second transcript format, the
+   D4 absent-envelope semantics, D7 subject-basis disclosure.
 
 ## §6 - Failure modes
 
 | Failure | Behaviour | Law |
 |---|---|---|
-| `sh` not on PATH (fresh box) | Copilot hook fails loudly with the known ParserError-free signature ("sh not recognized"); `docs/setup.md` prerequisite row names the fix; nothing is fail-closed because nothing is preToolUse | Law 5, Law 4 |
-| Report not yet flushed to events.jsonl at subagentStop | `returned` record lands `envelope: absent` + `_faults.log` line; manual backfill (proven path) recovers; §2c probe decides whether this is real | Law 4 |
-| Unknown payload shape (neither runtime's) | Normalizer emits the payload unchanged + a fault line naming the unrecognized keys - unknown renders AS unknown, never guessed into a shape | Law 1 |
-| Copilot compat layer starts succeeding on `.claude/settings.json` (P1 falsifies) | Probe suite reds on the next session-start retro; double-fire risk is examined then, with records' ids making duplicates visible rather than silent | Law 6, Law 5 |
-| Copilot ignores `.github/hooks/starcar.json` (§2c-1 negative) | Design falls back to entries in `entire.json` with owner sign-off; probe result recorded either way | - |
+| `sh` not on PATH (fresh box) | Hooks fail loudly, known signature; `docs/setup.md` prerequisite row names the fix; nothing preToolUse so nothing fail-closed | Law 5, Law 4 |
+| Report not in events.jsonl at stop (the P5 common case) | `returned` record mints with `envelope: absent` + fault line + stderr naming the backfill command; verdict lands via the one extractor at land-time | Law 4 |
+| Neither `agent_type` nor `agent_name` in a stop payload | Filter exit 0 WITH stderr line quoting the keys that were present - unknown shape renders as a visible skip, never a guessed record | Law 1 |
+| Subject join fails (no `toolCallId` derivable) | Record mints with `subject_basis: name-time` disclosed in the record body, never a fabricated id | Law 1 |
+| Compat layer changes on a Copilot update (P1 moves) | D3 probes red BY NAME (payload shape, command-form behaviour); the session-start retro sees it | Law 5, Healing Loop |
+| Claude Code regression from the intersection dialect (P4 false) | §2c-2 blocking verify on next Claude session; until verified, `docs/setup.md` carries the "expected-unchanged, unverified" row | Law 1 |
+| Duplicate records if a future compat fix runs a path twice | One manifest (D1) makes this structurally impossible today; if wiring ever grows a second path, record ids make duplicates visible in StoreIntegrity's per-record checks | Law 6 |
 
 ## §7 - Out of scope
 
-- Porting Entire mirroring (done, `entire.json`, working - agentStop success observed).
-- `dispatched` records under Copilot beyond D7's conditional.
-- Any preToolUse gating on either runtime.
-- The cosmetic entire defect (subagent agentStop with empty transcriptPath → "transcript
-  file not specified" noise): upstream's bug, note filed on #47, trigger = it ever
-  becomes more than noise.
-- A third runtime. The seam is two named formats, not an abstraction; a third format is
-  the trigger to reconsider.
+- Entire mirroring (done, working - `entire.json`, agentStop success observed).
+- Automatic post-read envelope enrichment (D4 names its two revisit triggers).
+- The upstream entire defect (subagent agentStop with empty transcriptPath → noise):
+  filed on #47, trigger = it ever becomes more than noise.
+- A third runtime (the seam is two named formats; a third is the trigger to reconsider).
+- Rewriting the `sh -c` entire wrappers in `.claude/settings.json` (working where they
+  matter, pinned where they fail).
 
 ## §8 - Contracts touched
 
 | Contract | Change | Owner |
 |---|---|---|
-| `docs/setup.md` hooks/mirroring rows | runtime column + prerequisite row + D6 disclosures | the car |
-| Spec #7 (producer) | amendment block: second transcript format, second manifest | the car |
-| `docs/templates/car-brief.md` | no change expected (envelope mandate is runtime-neutral) - verify, state so in the report | the car |
-| State ledger | no mutable service state touched - verify at review | reviewer |
+| `docs/setup.md` | runtime status columns, prerequisite row, rev-1 claim correction (§5.6) | the car |
+| Spec #7 (producer) | amendment block (§5.7) | the car |
+| `docs/templates/car-brief.md` | verified no change needed (envelope mandate is runtime-neutral) - car re-verifies and states so | the car |
+| State ledger | no mutable service state touched - reviewer verifies | reviewer |
+| `#47` open ends | items 2 (producer port) and 5 (compat-layer disposition) are RESOLVED by this design; conductor updates the issue on landing | conductor |
 
 ## §9 - Cost
 
-1 adversarial design review + 1 car + 1 delta/adversarial review = **3 dispatches**,
-Opus-class, medium size. Blocking §2c probes are conductor-run (cheap, this desk, no
-dispatch). Owner approval recorded before car dispatch.
+1 design re-review (delta, round 2) + 1 car + 1 adversarial review = **3 dispatches**,
+Opus-class, medium. The §2c restart-gated probe is conductor-run with one owner restart.
+Owner approval recorded before car dispatch.
+
+## §9b - Disposition of round 1 (verdict: `artifacts/reviews/2026-07-24-dual-runtime-design-review-round1-REJECT.md`)
+
+| Prior item | Kind | Disposition | Where |
+|---|---|---|---|
+| DR-1 (MAJOR): P1's evidence did not cover the producer's own `sh script.sh` lines; the normalizer could activate a duplicate compat path; no §2c probe | finding | **adopted, and the probe it demanded was run before this revision**: probe-logs prove the compat path executes and self-filters (§3b-1/3). Rev 2 deletes the second manifest and the normalizer entirely - the duplicate-path vector no longer exists (D1); the filter's silent exit becomes a visible skip (D2) | §3b, D1, D2 |
+| DR-2 (MINOR): §3 inventory miscount (9 vs 8, double-counted the SubagentStop probe) | finding | adopted - inventory restated correctly: 4 SessionStart guards + 2 producer forwarders (one stop, one launch) + 2 probe hooks = 8 | §3, §3b |
+| DR-3 (MINOR): D5 vs §5.3 named two homes for the "one extractor" | finding | adopted - one home (`scripts/lib/TranscriptRead.ps1` via `Get-LastAssistantText`), both call sites named, adapter retired | D5, §5.3 |
+| Round-1 answer to Q3 (StoreIntegrity has no pairing assertion; D7 deferral sound) | ruling | adopted, and it unlocked the OPPOSITE choice: with pairing unconstrained and the filter fix already paying for launch records, D7 flips from deferred to in-scope | D7 |
 
 ## §10 - Open questions for the reviewer
 
-1. **D2 double-fire posture**: is "impossible while P1 holds, probed-red when it stops
-   holding" honest enough, or does the normalizer need an explicit dedup key now?
-   (Cost of now: one more moving part; cost of later: one session of duplicate records,
-   visible by id.)
-2. **D3 shim language**: python is already a hook dependency (`post-task-probe.sh`)
-   with a `command -v` guard. Same guard here means a python-less box silently skips
-   normalization and Copilot payloads go unmapped - is a skip-with-stderr-line loud
-   enough (matches existing pattern), or does absence need to fail the hook?
-3. **D7 deferral**: is a returned record with no dispatched sibling acceptable
-   store-shape even short-term? (StoreIntegrity tests may already have an opinion -
-   reviewer, run them against a fixture of that shape.)
+1. **D4's absent-envelope record**: is minting `returned` with `envelope: absent` at stop
+   time better than minting nothing until backfill? (Design says yes per Law 4 - the
+   dispatch's return is a fact even when the report body is not yet readable. The
+   alternative leaves background dispatches recordless until a human lands the verdict.)
+2. **D5's format detection** (first-line JSON `type` field vs Claude JSONL): sufficient,
+   or does it need an explicit `-Format` parameter at both call sites? (Cost: one more
+   knob; benefit: no misdetection on a hand-fed file.)
+3. **D1 leaves the `sh -c` entire wrappers failing under compat as pinned noise.** Is
+   "pinned by a probe, disclosed in setup.md" the right disposition, or should they be
+   silenced (guard-wrapped) at the cost of touching generator-adjacent lines?
