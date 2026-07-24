@@ -32,6 +32,8 @@ Documents here sort along three axes, not one:
 
 | Document | Quadrant | Axis | What it is |
 |---|---|---|---|
+| `ONBOARDING.md` (repo root) | explanation (front door) | LIVING | The neutral, runtime-neutral entry point - the **USER/SYSTEM boundary**: a stranger's first surface AND the institution's arrival protocol. Owns the tiered reading path (Tier 1 mandatory / Tier 2 role-triggered / Tier 3 archaeology) and the compliance floor. Conductor/session-tier, trigger-gated (new family / new identity / post-compaction); cars stay brief-bound. EXTENDS the reading paths below rather than duplicating them (Law 6); per-family files (`CLAUDE.md`, `.github/copilot-instructions.md`) point here (#47, design D1) |
+| `.github/copilot-instructions.md` | reference (pointer) | LIVING | Copilot CLI's auto-load surface: a one-screen POINTER to `ONBOARDING.md` plus the one-line compliance floor, never a second copy of the doctrine (Law 6). The Claude-side equivalent is `CLAUDE.md`'s pointer line at its top (#47, design D1) |
 | `CLAUDE.md` | reference + explanation | LIVING | The statutes: every operating rule with its scar attached. Session-loaded; the institution's working memory |
 | `docs/constitution.md` | explanation | LIVING (amendment-only) | The seven-plus-one laws; bedrock; the evolution engine's immutable floor |
 | `docs/the-healing-loop.md` | explanation | LIVING | How the process improves itself: catches counted, instruments audited, prose demoted below mechanism |
@@ -70,6 +72,11 @@ Documents here sort along three axes, not one:
 | *(trigger-gated)* contributor how-to | how-to | trigger: first external contributor | Until then, `docs/setup.md` + `CLAUDE.md` carry it for the workforce that actually exists |
 
 ## Three reading paths
+
+The neutral front door, `ONBOARDING.md` (repo root), sits UPSTREAM of all three paths: it
+carries the tiered reading path and the compliance floor for any agent family, then hands off
+to the path that fits the reader's role. The three paths below are those hand-offs, unchanged;
+the front door names them rather than replacing them (#47, design D1).
 
 **The stranger's path** (evaluate or deploy, zero context):
 `README.md` → `docs/constitution.md` → one landed REJECT verdict in `artifacts/reviews/`
