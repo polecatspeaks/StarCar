@@ -55,7 +55,8 @@ func (r *subscriberRegistry) broadcast(snap Snapshot) {
 			// #51 C5: the channel is full (a slow reader has not drained
 			// its buffered frame). Drain the stale queued frame and
 			// enqueue the new one, under r.mu - the same lock unregister
-			// holds while it deletes ch from r.subs (unregister.go:
+			// holds while it deletes ch from r.subs (#52 C51R-3:
+			// subscriberRegistry.unregister, sse.go:31-35:
 			// r.mu.Lock(); delete(r.subs, ch); r.mu.Unlock(); THEN
 			// close(ch)), so a concurrent unregister cannot complete its
 			// delete while this broadcast (which holds r.mu for its
