@@ -1,0 +1,5 @@
+# go run/go build in board/ (and its subpackages, incl. server which is
+# package main) leave a binary named after the directory - observed here
+# (Car 4, plan task 4.3's live-serve check produced board/server.exe).
+*.exe
+/server/server

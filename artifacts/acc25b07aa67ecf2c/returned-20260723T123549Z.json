@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "acc25b07aa67ecf2c",
+  "session_id": "64c15364-0933-4d6d-9b2e-d1ddbc918f9f",
+  "at": "2026-07-23T12:35:49Z",
+  "outcome": "REJECT",
+  "findings": "UIB-1 (Major) the \"sample real data (from the live store)\" paragraph (brief lines 62-64) presents train:index-gate-scope, its title, and car-into-train membership as live-store content, but no manifest record exists at HEAD and the approved design section 5.5 / Q3 ruling (design lines 294-299, D16) states these manifests are not yet written (plan-rung backfill) - a Law 1 confident-falsehood on the board's own public provenance document; needs an illustrative marker separating the two real car records and the real gate verdicts from the not-yet-landed train scaffolding. UIB-2 (Minor) \"design round 3: REJECT\" is listed as live-store sample but only rounds 1-2 exist as JSON store records; round 3 is markdown-only, unreadable by the board. UIB-3 (Minor) car state-word examples (rolling, at inspection, shopped, coupled=merged) are rail-metaphor translations absent from the store/fold vocabulary and coupled=merged implies a merge signal v0 does not carry, inviting the #557 re-inference the gates section correctly forbids. UIB-4 (Minor) the design-feedback instruction (lines 9-10) names no landing site - vigilance-tier per never-drop. UIB-5 (Minor) \"dispatches lane holding ~60 entries\" conflates total records (65) with folded dispatch subjects (17 measured) per design section 5.3. Notes: DEMO banner not literally in the design but a faithful honesty extension; paste section 714 words, ~19 percent over the ~600 guide, still one dense page; no leakage (no absolute paths, user dirs, or secrets). Fidelity on the hard aesthetic law, five lanes, honesty chrome, yard inventory, and verbatim verdicts is verified correct.",
+  "abstract": "Adversarial fidelity-and-audience review of the one-page UI mockup brief against the approved rev-5 yard skeleton design, at base 3b04d45. Rule fidelity is strong and verified; leakage clean; stranger test passes. REJECT on one Major: the \"sample real data (from the live store)\" paragraph asserts a train manifest as store content that the design itself says is not yet written, verified against the store (no manifest record exists; only design rounds 1-2 and the two cited cars are real landed records). Four Minors and three Notes accompany. All fixes are markers plus one count correction; the core is otherwise sound and a fast re-turn.",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:06f528c79ef8dbf00e489494cb603a5fffbc9dc2ef83a1c870a28fa023f4bddf"
+}

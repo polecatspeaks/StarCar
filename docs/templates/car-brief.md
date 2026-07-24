@@ -5,6 +5,23 @@ Status: Current
 Every dispatch uses this shape. The framing rules are load-bearing: agents gradient
 toward success shapes, so truth-telling must BE a success shape.
 
+**Briefs state the QUESTION, never the ANSWER (#46).** Agreeableness points DOWNWARD as
+well as upward - a brief that names a suspected defect and asks the reviewer to "rule on"
+it hands the gate a conclusion to confirm, and reviewers gradient toward the dispatcher's
+framing exactly as they do toward an author's. When a brief raises a possible concern,
+phrase it as an open question grounded in file:line ("does any stylesheet-owned value
+appear duplicated in this test?"), never as an asserted defect ("this test hardcodes a
+second copy of a value owned by the stylesheet - rule on whether that's a Law 6
+problem"). *Scar (docs/friction-log.md, 2026-07-23 evening, last row): a conductor's
+reviewer brief for Car 33 did exactly the second thing - it called the new test's
+runtime `rgb()` values "a second copy of a value owned by the stylesheet" and instructed
+the reviewer to rule on a Law 6 violation. It was false: `grep` finds no colour literal
+in the test at all - both ground truths are derived at runtime from the live stylesheet,
+which is the Law 6-CORRECT construction. The `rgb()` values the conductor saw came from
+the car's REPORT (what it printed as observations), not from its code, and the conductor
+never opened the file before writing the brief. The reviewer disproved the premise and
+said so plainly; a weaker reviewer would have confirmed it.*
+
 ```
 You are Car <ID> on the <train> (repo: <repo>, <one-line project context>). You implement
 <exact task list> from <the plan doc>. Work ONLY in the worktree at <path> on branch
@@ -24,6 +41,13 @@ later cars; do not touch their files.
 plan text, warnings from earlier cars' reviewers - verbatim, with file:line.>
 
 STANDING RULES binding every commit:
+- CITE YOUR TICKET IN THE CODE: every new file, and every new unit of consequence inside
+  an existing file, carries a comment naming the ticket that caused it, as bare `#N`. The
+  ticket is the deepest WHY available (incident, argument, rejected alternatives, verdict)
+  and this file already forbids comments that explain WHAT. EXCEPTION, and do not violate
+  it: a file that cannot carry a comment - a bare data fixture, an `.expect`, a `.json`
+  that is itself the artifact UNDER TEST - is NEVER edited to satisfy this; mutating a
+  fixture changes what it proves. Cite in the sibling README or the consuming test instead.
 - DOCUMENTATION RANKS EQUAL TO CODE: every document your change invalidates - <name the
   ones this task plausibly touches: spec, ledger, gating matrix, setup doc, README,
   comments> - is updated in the SAME commit. A stale doc left behind is a Major finding
@@ -47,9 +71,18 @@ END YOUR REPORT WITH THE ARTIFACT ENVELOPE (mandatory - this is how your dispatc
 a fenced block, info string starcar-artifact, with three fields - outcome (done /
 done-with-findings / honest-stop), findings, abstract. NO ANGLE BRACKETS anywhere inside
 the envelope (they get HTML-escaped or filtered; the angle-bracket-free form lands clean).
+The envelope ALSO carries `task-id` echoing exactly the minted dispatch id this brief
+delivered to you - that is what pairs your `returned` record to its launch (#47).
 ```
 
 ## Reviewer brief addendum
+
+Reviewer half of the same rule (#46): treat anything this brief NAMES as a suspected
+defect - not just disclosed deviations - as a question to TEST against the real diff,
+never as a conclusion to confirm. Open the file before ruling on what it contains; a
+review that confirms the dispatcher's framing without checking has been steered, not
+convinced. The scar above is the reviewer-side proof it works: the Car 33 reviewer did
+exactly this and disproved the conductor's own premise.
 
 ```
 You are the adversarial sentence-check reviewer for Car <ID>. Binding REJECT authority:
@@ -62,7 +95,16 @@ VERIFY: <the specific claims from the car's report, each with how to check it>.
 THE SENTENCE CHECK: <any cross-boundary value in this diff> - trace producer to final
 consumer, every hop file:line, every hand-maintained mirror checked.
 ADJUDICATIONS: <each disclosed deviation, to be ruled on against real code>.
+PREMISE CHECK: any defect or concern this brief NAMES is a question to TEST against the
+real diff, never a conclusion to confirm - open the file before ruling on what it
+contains (#46; the brief's premise may itself be wrong).
 RUN YOURSELF: <suites + expected counts>. Report observed.
+CITATION CHECK: does every new file, and every new unit of consequence, carry a comment
+naming its ticket as bare `#N`? Verify the cited number is the RIGHT one - a citation to
+the wrong ticket is worse than none, because it sends the next reader somewhere confidently
+false. Data fixtures that cannot hold a comment are exempt IN THE FILE and must be cited in
+a sibling README or the consuming test; a fixture edited to carry a citation is a finding,
+not compliance.
 DOC CHECK: <the documents this diff plausibly invalidates> - is each updated in the same
 commit? Open every file:line the diff's docs cite and confirm the citation is true. A
 stale document or a dead citation is a MAJOR finding; documents rank equal to code here.
@@ -85,5 +127,7 @@ VERDICT: APPROVE or REJECT up top; findings by severity with file:line.
 
 END YOUR REPORT WITH THE ARTIFACT ENVELOPE (mandatory - your verdict is a `returned`
 dispatch too): a fenced block, info string starcar-artifact, fields outcome (APPROVE /
-REJECT / honest-stop), findings, abstract. NO ANGLE BRACKETS inside the envelope.
+REJECT / honest-stop), findings, abstract. NO ANGLE BRACKETS inside the envelope. The
+envelope ALSO carries `task-id` echoing exactly the minted dispatch id this brief
+delivered to you - that is what pairs your `returned` record to its launch (#47).
 ```

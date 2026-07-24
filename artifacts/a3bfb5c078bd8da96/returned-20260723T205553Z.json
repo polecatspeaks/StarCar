@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a3bfb5c078bd8da96",
+  "session_id": "e92f5a0b-1b9e-4913-98b3-c319b4d5e90b",
+  "at": "2026-07-23T20:55:53Z",
+  "outcome": "done",
+  "findings": "none - both tasks completed red-first with observed green, 52/56-to-0 empirical reconciliation verified against the real store, all suites at baseline or better, no stale documentation found after grep-verified checks",
+  "abstract": "Issue #26 closed both surfaces - board/store/store.go's typedRecord now declares model (dispatched-only, Produce-Artifact.ps1:285/204) and body_file (migrated returned verdicts, Migrate-Verdicts.ps1:152/22) as known producer fields, and schema/starcar-artifact.schema.json documents both with provenance-bearing descriptions, pinned red-first via the existing conformance-vector instrument. Empirically re-derived against the live artifacts store: 56 record-unrecognised-fields conditions before, 0 after. Full suite set green: Go 5/5 packages, Node 50/50, Pester 249/249 (scripts/tests) plus the pre-existing known sh-on-PATH probe gap (11/12, logged, not a regression).",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:db98870852d06d6ab6a705857be6eedbf7f155cf46ca2ac18c6c1b3c129604fd"
+}

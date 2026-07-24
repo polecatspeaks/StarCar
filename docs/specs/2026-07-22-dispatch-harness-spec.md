@@ -35,6 +35,49 @@ AMENDMENT A1**. Design review: 5 rounds, closed by recorded conductor ruling (de
 > corrected discipline is recorded as `worked-plan.md` Amendment 1: behavioural claims
 > are verified by RUNNING, structural claims by reading.
 
+> ## BINDING AMENDMENT S2 (#47, family-agnostic harness, 2026-07-24)
+>
+> Source: `docs/design/2026-07-24-family-agnostic-harness-design.md` (APPROVED at review
+> round 2, `artifacts/reviews/2026-07-24-family-agnostic-design-review-round2-APPROVE.md`;
+> round-1 REJECT `...-round1-REJECT.md` carries DR-8/DR-9/DR-10). This spec was written
+> when Claude Code was the sole runtime; the harness now runs under BOTH Claude Code and
+> GitHub Copilot CLI. The following supersede the single-runtime assumptions in §2's event
+> table and §3's subject/filter contracts:
+>
+> - **Adapter seam (D4).** `Produce-Artifact.ps1` stays the ONE writer, but its payload
+>   intake becomes a per-runtime normalisation step to ONE internal shape: Claude camelCase
+>   (`tool_input.subagent_type`, `agent_transcript_path`, `agent_type`) OR Copilot compat
+>   snake_case (`tool_input.agent_type`+`tool_input.name`, `transcript_path`, `agent_name`).
+>   Filter tolerance: `agent_type` OR `agent_name` on stop, `subagent_type` OR `agent_type`
+>   on launch. An unrecognisable payload is a VISIBLE skip - stderr names the present keys,
+>   NO record - never a silent `exit 0` (Law 4).
+>
+> - **Subject-from-mint, per mode (D2).** Subject is no longer always the Claude runtime
+>   `agentId`. Mode (a) (Copilot): subject = the minted dispatch id (launch `tool_input.name`;
+>   stop the envelope `task-id`). Mode (b) (Claude): subject = the runtime pairing id
+>   (launch `tool_response.agentId`; stop `agent_id`), disclosed by `subject_basis: runtime-id`,
+>   with the minted id carried as `task_id` from the envelope. A mixed-semantics store is
+>   acceptable by disclosure (round-2 Q1 ruling).
+>
+> - **Provenance enrichment (D2).** Runtime ids that are NOT the subject (e.g. a Copilot
+>   `agent_name`, a runtime pairing id) are recorded as an optional `provenance` field -
+>   enrichment, never an identity join key (`[DR-8, folded]`: runtime NAMEs never
+>   participate in identity).
+>
+> - **Refusal guard (D2/DR-9, Q2 ruling).** The producer REFUSES a second `dispatched`
+>   record whose subject already has an un-superseded `dispatched` record: loud fault,
+>   keep-first, never auto-disambiguation. Boundary: in-flight duplicates only - a
+>   same-id re-dispatch AFTER the first has returned is NOT refused (that residual is
+>   caught by the fold's superseded-exposure). The mint is the sole uniqueness authority;
+>   the runtime does not dedup (design §5, P1 SETTLED).
+>
+> - **Absent-envelope minting (D4).** A stop with no parseable envelope still mints a
+>   `returned` record with `envelope: absent` + a fault line, never silence.
+>
+> These are pinned executably by `schema/vectors/adapter/` (the adapter conformance
+> vectors) and `scripts/tests/Producer.Tests.ps1` (the stateful refusal guard); the
+> duplicate-subject fold EXPOSURE by `schema/vectors/fold/duplicate-subject-two-dispatched.json`.
+
 Owner decisions locked: the harness is **core product, not tooling**; **path normalisation is
 portability, not curation**; nothing reaches `main` except from a good known working state.
 
@@ -224,6 +267,17 @@ Law 6 forbids by name.
 **Ruling adopted: the index is regenerated-and-diffed by CI.** A stale index fails the build.
 The generator is stateless; the *artifact* is derived state, and its freshness now has an
 owner. The append-only records themselves remain git's lifecycle, which is honest.
+
+**Amendment (2026-07-23, issue #20, owner-ratified):** the diff gate above is **scoped** to
+PR-to-main and push-to-main, not every push. The producer hook writes a new record on every
+dispatch, so gating every dev push turned ordinary conductor activity into mechanical CI
+red rather than a real staleness defect. On dev the index may lag the store between
+regenerations; this is now a declared cadence, not a silent gap - the index's own header
+(`schema/index-format.md`'s freshness-contract section) states it, so the lag is honest
+(Law 1) rather than a suppressed truth surface. The original "A stale index fails the
+build" statement above remains true at PR-to-main and push-to-main; this amendment
+supersedes only its unconditional scope, per `docs/contracts/gating-matrix.md`'s
+Artifact-index-staleness row and `docs/contracts/state-ledger.md`'s derived-artifact row.
 
 ## 6. Testing
 

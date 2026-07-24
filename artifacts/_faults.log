@@ -1,0 +1,4 @@
+2026-07-24T17:26:17Z	returned	transcript read failure: no assistant message with text found in C:\Users\Chris\.copilot\session-state\70b173ed-7b83-485a-b71a-5adb0591db07\events.jsonl
+2026-07-24T17:26:17Z	returned	Copilot returned payload carries no envelope task-id to pair on (agent_name is a type, not a pairing key); no record written
+2026-07-24T17:38:33Z	returned	transcript read failure: no assistant message with text found in C:\Users\Chris\.copilot\session-state\70b173ed-7b83-485a-b71a-5adb0591db07\events.jsonl
+2026-07-24T17:38:33Z	returned	Copilot returned payload carries no envelope task-id to pair on (agent_name is a type, not a pairing key); no record written

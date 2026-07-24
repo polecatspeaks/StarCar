@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a5b5e3024cb48da0c",
+  "session_id": "64c15364-0933-4d6d-9b2e-d1ddbc918f9f",
+  "at": "2026-07-23T16:20:43Z",
+  "outcome": "REJECT",
+  "findings": "GL-1 (MAJOR) - the Patience/budget entry (glossary lines 69-74) states three unlanded mechanisms in unmarked simple present. budget_source is traced dead hop-by-hop (glossary prose to schema:157 has budget_seconds not budget_source, to Detect-Dispatches.ps1:174-192 emits no budget_source, repo-wide the token exists only in glossary + spec); \"frozen ... by the producer's stamp\" - Produce-Artifact.ps1 does not stamp budget; \"small/medium/large patience\" class appears nowhere but this line. Spec Amendment 2 (2026-07-23-yard-board-spec.md:210-224) proves both are Car 3's unmerged fix (items b and c). Exact UI-brief REJECT class plus Law 1 on a reference surface. Fix: rewrite to landed behavior (record budget else config default at fold, budget_seconds/overdue only) and mark ruled-but-in-flight parts explicitly. GL-2 (MINOR) - \"Detector/discovery\" entry mis-titles the discovery concept as \"detector\"; in the ratified design \"detector\" is the tiered liveness fold script, not the unknown-vocab instrument. GL-3 (MINOR) - \"producer\" used (line 71) but undefined. GL-4 (NOTE) - \"adapter\" undefined. Confirmed accurate: precedence, register enum+order, 4 positions, 5 record kinds, liveness states, envelope fields, 5 lanes, 4 house phrases, Held-via-intent - all match sources exactly. Doc-policy 2/2 passed at 43652d8; doc-map row same-commit.",
+  "abstract": "Adversarial fidelity review of docs/glossary.md at HEAD 43652d8 (verified). REJECT on one Major: the patience/budget entry presents budget_source disclosure, producer budget-stamping, and named patience classes as existing when all three are ruled-but-unmerged (spec Amendment 2 / issue #22, Car 3 fix not merged) or fabricated - Law 1 on a reference surface. All enumerated mechanics lists (precedence, register, positions, kinds, liveness, envelope, lanes) and all four house-phrase compressions verified exact against schema/scripts/design/CLAUDE.md. Two Minors (detector mis-definition, producer omission) and one Note (adapter omission). Doc-policy gate green 2/2; doc-map row landed same-commit.",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:c5fa9ccab503cd50c02b9359211be62aa5a4ed32bf5fb4630837961898f1931a"
+}

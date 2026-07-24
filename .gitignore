@@ -2,3 +2,7 @@
 testResults.xml
 __pycache__/
 .ci-checks/
+# board/web/package.json (issue #33): the Playwright TEST dependency,
+# never shipped - the board/web/ runtime itself still has no npm
+# dependency (docs/setup.md's Node.js row).
+node_modules/

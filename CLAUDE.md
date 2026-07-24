@@ -1,5 +1,7 @@
 # The StarCar Process Seed
 
+<!-- #47 (design D1): new here? The neutral front door is ONBOARDING.md (repo root) - it carries the tiered reading path and the compliance floor for every agent family. This file remains the Claude Code auto-load and the statute index; migration to a pointer-only surface is trigger-gated, so its content is otherwise unchanged. -->
+
 ## HARD INVARIANT: this repo is public, and so are its session transcripts
 
 Entire.io session mirroring is ENABLED (owner decision, 2026-07-21: "the full monty").
@@ -25,6 +27,28 @@ rewriting a stratum in place: its law of change is **evidence-gated evolution**,
 every mutation traces to a scar or a measurement, and the change itself stays readable in
 the record forever.
 
+Second house phrase: **NIRTS** - *Need It Right This Second* (owner coinage, 2026-07-23) -
+the demand-side twin of YAGNI. YAGNI prunes what you will not need; NIRTS names what you
+must have now. Together they are a complete sizing instrument: build nothing YAGNI
+forbids, build everything NIRTS demands, and the gap between them is zero. A surface is
+"NIRTS-honored" when it delivers exactly what its reader needs at the second of reading -
+the Solari-board glance, the ticket number that already existed.
+
+Third house phrase: **HAVAGLANCE** (owner adoption from military fiction, 2026-07-23) -
+*can I have a glance at it and understand everything it is trying to tell me in that
+glance.* The acceptance test for every information surface this shop builds, and the
+named form of Law 3's "a dispatcher resolves the board in one pass." The bar is TOTAL
+transmission in a single look: a surface can be glanceable and still fail HAVAGLANCE by
+delivering only half its story. The three-register color law, the verbatim state words,
+and the honesty chrome all exist to pass this test.
+
+**Standing interaction rule (owner, 2026-07-23):** the owner carries a large personal
+lexicon (NIRTS, HAVAGLANCE, more coming). When the owner uses a term or acronym the
+conductor does not know, PAUSE AND ASK - never infer. NIRTS proved the failure mode:
+the conductor's contextual inference was close-but-wrong, and close-but-wrong
+vocabulary compounds silently in a shop where conversation becomes doctrine. Once
+expanded, a term that does rule-work lands here; every term lands in conductor memory.
+
 **Right-sizing rule (read first):** the full ladder below is calibrated for consequential,
 multi-car work. Scale ceremony to stakes: a small, coverage-class change takes a car and
 one adversarial reviewer; only structural work (new subsystems, rewrites, cross-boundary
@@ -42,9 +66,10 @@ change is itself a process failure (the autoimmune mode - see the Healing Loop's
 | Match the instrument | Behavioural work gets prose; formats/protocols get an EXECUTABLE spec |
 | NO HEADERS HERE | Truth is constructed by probes; probes must LAND as durable artifacts |
 | LAW-FIRST design | Constraints and premises on the page BEFORE the mechanism |
-| ASK FOR THE PRIOR ART | It probably exists and was not ported; the question costs one sentence |
+| ASK FOR THE PRIOR ART | Check `docs/templates/` FIRST - the landed store adjudicates most of it; ask the owner for what has NOT landed; an empty search is a trigger, never an answer |
 | Build from wreckage | Only when no prior art exists; never for a rung never run |
 | GUIDE STAR | Blameless is not vague and not polite; REJECT and reversal are SUCCESS outcomes with a durable artifact |
+| Reality vs spec | When a written rule does not fit reality, the HUMAN adjudicates - sharpen or loosen, case by case, never inferred. The escalation path is the PRESSURE RELEASE VALVE: a process with no legitimate way to bend gets bent silently |
 | Review calibration | Any Major = REJECT; reviewers run suites themselves; swirl triggers escalate; reviewer rotation is carrier-backed |
 | The sentence check | Cross-boundary values: trace every hop, file:line |
 | Branch topology | Never commit to main; merge only from a known good state; protection binds admins; the PR cycle: Copilot reviews out-of-family, triage calibrates, owner rules |
@@ -54,7 +79,7 @@ change is itself a process failure (the autoimmune mode - see the Healing Loop's
 | Living contracts | State changes update the ledger in the same commit |
 | Rewrite vs extend | Optimize for least NEW code reviewed; rewrites lose encoded incident knowledge |
 | Cost discipline | Spend approved before dispatch; a car and its review are one unit |
-| Tracking | Every piece of work gets an issue; one area label |
+| Tracking | Every piece of work gets an issue; one area label; every new code addition cites its `#N` in a comment. Owner-ruling doctrine is CARVED OUT - it carries the why instead, and if you do not know the why, ask before committing |
 | Session starts | The tooling retro; log friction as it happens; never drop a tooling request; doctrine dedup check |
 | Session ends | A decision point: triage in-flight work, checkpoint in writing, three closing sentences |
 
@@ -321,10 +346,29 @@ round questioned it. That one was caught by the owner pulling back, not by any g
 
 ## ASK FOR THE PRIOR ART. It probably exists and was not ported.
 
-**Before building any workflow artifact, ask the owner whether prior art exists.** This
-repo's seed came from a working shop. The port was PARTIAL by necessity - rules came over,
-exemplars mostly did not - and **nothing prompts anyone to ask for the rest.** The owner is
-the bridge to it, and the question costs one sentence.
+**CHECK `docs/templates/` FIRST. It is the landed prior-art store, and it adjudicates most
+of this question without spending an owner turn (owner ruling, 2026-07-24).** The ported
+exemplars have accumulated into something searchable rather than a handful of files: rung
+artifacts (brief, design, spec, plan, ledger, gating matrix), the `*-patterns` docs for ops
+scripts and repo-policy gates, and a `worked-*` exemplar drawn from real wreckage paired
+with most of them. **`docs/doc-map.md` OWNS the enumeration and the count; do not restate
+either here** - a hardcoded file list in a second document is a defect generator this repo
+has already paid a Major for (DM-1: the map's own templates row shipped a count from
+memory and was stale on arrival). LIST THE DIRECTORY before concluding anything is
+missing, and OPEN the file before concluding it does not cover your case.
+
+**Then, and only when the templates do not answer, ask the owner.** This repo's seed came
+from a working shop. The port was PARTIAL by necessity - rules came over, exemplars mostly
+did not - and **nothing prompts anyone to ask for the rest.** The owner is the bridge to
+what has NOT landed, and the question costs one sentence.
+
+**THE GUARD, and it is why this stays TWO tiers rather than collapsing into one:** the
+templates answer *has it landed*, never *does it exist*. Absence from `docs/templates/` is
+not evidence of absence in the ancestor - that is this file's own absence-blindness class,
+one directory over. **An empty search is the trigger to ask, never the answer.** The tier
+that was added is a cheaper FIRST step, not a replacement for the escalation, and an agent
+that reports "no prior art exists" on the strength of a directory listing has made a
+confident falsehood (Law 1) about the one subject this section exists to protect.
 
 *Scar: five adversarial design rounds and roughly half a million tokens were spent
 rediscovering dispatch practice the ancestor shop already had written down. When
@@ -340,9 +384,23 @@ from the ancestor shop's `run-suites` / `watch-ci` patterns". Both were read in 
 ten minutes of the founding session and parsed as "build later" rather than "prior art
 exists - ask for it".*
 
-**So the standing questions, at the start of any rung and at every session-start retro:**
-what prior art exists for this, has it been ported, and what does `docs/setup.md` already
-say is waiting? A rung with no artifact is not necessarily a rung with no prior art.
+*Evidence for the two-tier amendment, from the morning it was ruled: the conductor was
+about to build a session-start reconciliation gate and went looking for prior art in the
+repo rather than asking. `docs/templates/worked-verification-reconciliation.md` Layer 3
+already named "fixed reconciliation cadences" as a standing shape, and the existing
+`.claude/hooks/session-start-ci-baseline.sh` turned out to be that pattern's FIRST
+instance, aimed at CI. The work reframed from an invention into the SECOND instance of an
+already-ported pattern, at a cost of one directory listing and two file reads, and the
+owner turn it would otherwise have consumed was never spent. Two probes in the same hour
+then killed the naive design (the checkpoint carries twenty SHA-shaped tokens, and
+`git log` fatals on an unknown revision), which is the probe doctrine and this rule doing
+adjacent jobs: the templates say what SHAPE is known, the probes say what is TRUE here.*
+
+**So the standing order, at the start of any rung and at every session-start retro:** list
+`docs/templates/` and open what looks close; check `docs/setup.md`'s trigger-gated table
+for what was deliberately deferred; and THEN ask the owner what exists that has not landed.
+A rung with no artifact is not necessarily a rung with no prior art, and a directory with
+no matching file is not a shop with no matching practice.
 
 ## When no prior art exists: build it from wreckage
 
@@ -455,6 +513,66 @@ sections, a forgery found and fixed in the integrity tooling, a budget metric ca
 reading 18% of true burn, a decorative security guard caught on the day it was installed,
 CI proven in both directions, and six public verdicts. Not consolation - accounting.*
 
+## WHEN REALITY DOES NOT MEET SPEC: the human adjudicates (owner ruling, 2026-07-23)
+
+Sooner or later a contract, a spec, or a written posture will not fit the thing in front of
+you. **That is not yours to resolve.** Kick it up to the human in the loop for final
+adjudication - and understand that the adjudication may SHARPEN the definition or LOOSEN
+it, because both are legitimate outcomes. It is decided **case by case: never assumed,
+never inferred, never projected from the agent's end.**
+
+The two failure modes are mirror images, and both are the agent quietly taking the
+owner's seat:
+
+- **Reading the LETTER and stopping.** "The doc says no npm install, so this is
+  forbidden." That treats a document as a fence with no reason behind it - the exact
+  Chesterton's-fence error this file exists to prevent.
+- **Deciding the SPIRIT is met and proceeding.** "It never ships, so it doesn't really
+  count as a dependency." Even when that reasoning is *correct*, an agent reaching it
+  alone has adjudicated a contract it does not own.
+
+The tell that you are in this situation rather than an ordinary one: **you are about to
+explain why a written rule does not really apply here.** That sentence is the trigger.
+Stop and escalate on it.
+
+**This escalation path is the shop's PRESSURE RELEASE VALVE** (owner's name for it,
+2026-07-23): *we can't be so rigid we don't have a process to bend.* The valve is not a
+weakening of the rules - it is what keeps them honest. A process with no legitimate way to
+bend does not stay unbent; it gets bent anyway, silently, by whoever hits the wall first
+and has work to deliver. The pressure is real whether or not there is somewhere for it to
+go. Give it a named, visible outlet and the bend becomes a recorded ruling with reasoning
+attached; deny it one and the same bend happens off the record, as a quiet violation
+nobody can audit later. **Rigidity does not prevent exceptions. It only prevents you from
+seeing them.**
+
+This is exactly the constitution's own law of change, applied to a single decision instead
+of to a document: **METAMORPHISM under measured pressure, never rewriting a stratum in
+place.** Rock bends under load rather than shattering, and the bend stays legible in the
+record forever. Same here - the valve exists so the substrate can deform honestly. Which
+is why the ruling gets written down with its reasoning every time, and why "spirit met,
+not letter" is an argument for PRECISION in the amendment and never a licence for silence
+about it. A bend nobody can find later is not a bend; it is a crack.
+
+This is the same instinct as the standing vocabulary rule (PAUSE AND ASK, never infer),
+the honest stop (a car hitting a plan-vs-code contradiction), and the swirl-and-churn
+escalation - one family, one reflex, at four different rungs. The unifying principle:
+**an agent may report a contradiction, never resolve one it does not own.**
+
+*Scar, and it is a near-miss rather than a cost, which is the only reason it is cheap.
+Issue #33 adopted Playwright. Probing found the repo had no `package.json` anywhere and
+that `docs/setup.md` claimed "not a browser dependency ... no npm install, no bundler" -
+an apparent posture reversal. The conductor did flag it to the owner. It ALSO, in the same
+breath, wrote its own answer into the dispatched car brief as settled fact ("THIS COMMIT
+MAKES BOTH CLAIMS FALSE"), which is projection: the question was escalated and
+simultaneously pre-answered, so the escalation was decorative. The owner then ruled the
+opposite way - the split is SHIPPED RUNTIME versus TEST TOOLCHAIN, the install is
+gate-triggered and legitimate, and the spirit of the contract is met if not the letter.
+Aggravating: `docs/setup.md` ALREADY drew that exact line one sentence away ("D19's
+no-build-step rule binds the BROWSER ... never Node - Node is what RUNS the tests"), so
+the answer was on the page and the conductor projected past it. Caught only because the
+owner was present and fast; had the ruling come an hour later, a car would have written
+the conductor's projection into the repo's own posture documentation as truth.*
+
 ## Review calibration (binding, uniform)
 
 - Every adversarial reviewer holds REJECT authority over its gate. **Any Major = REJECT.**
@@ -506,7 +624,7 @@ owner's attention four rounds later on a worse document.*
 twice and a merged-that-day instrument was found crying wolf on 50 of 54 flags. All three
 catches were cheaper than any of the incidents they prevented.*
 
-## The sentence check (cross-boundary tracing)
+## The sentence check (cross-boundary tracing; owner's name: FULL SENTENCE FLOW)
 
 When a diff produces, threads, or consumes a value that crosses a process or serialization
 boundary, the reviewer MUST trace the full production path - every hop named with
@@ -555,7 +673,11 @@ against work you would never ship proves nothing about work you would.*
 the calibration membrane, the owner rules - then rinse, lather, repeat.**
 
 1. The conductor opens the PR (dev to main, only from a known good state per the merge
-   north star). The body states the ASSERTION being made: counts, SHAs, gate history.
+   north star). Before opening, QUIESCE - regenerate the index
+   (`./scripts/New-ArtifactIndex.ps1 -StoreRoot artifacts -OutFile artifacts/index.md`),
+   commit and push it, and dispatch nothing until CI is terminal; the staleness gate is
+   scoped to PR-to-main (#20), so the PR is the moment index freshness is asserted. The
+   body states the ASSERTION being made: counts, SHAs, gate history.
 2. **GitHub Copilot review is requested - deliberately out-of-family.** Every internal
    reviewer shares Anthropic lineage and full doctrine immersion; that monoculture is
    blind to its own premises by construction. Copilot inherits none of them - the
@@ -789,7 +911,93 @@ a car and its review are one unit; never start a car whose review will not also 
 
 Every piece of work gets an issue - no untracked work. One area label per issue; a train
 is composed from ONE label's tickets (single coherent manifest). Check for duplicates
-before filing.
+before filing. **Every issue lands on the project board at birth** (owner catch,
+2026-07-23: eleven of sixteen open issues were invisible to the owner's board view -
+every conductor-created ticket had satisfied never-drop while silently bypassing the
+board, a lie of omission on exactly the surface StarCar exists to make honest). The
+MECHANISM is the project's built-in auto-add workflow (owner-configured); until and
+beside it, `gh project item-add 6 --owner polecatspeaks --url <issue-url>` at creation,
+and the audit is one line, run at session start or on suspicion:
+`gh project item-list 6 --owner polecatspeaks --format json --limit 100 --jq '[.items[]|select(.content.number!=null)|.content.number]|sort'`
+diffed against `gh issue list --state open`.
+
+**CARVE-OUT: owner-ruling doctrine commits are NOT ticketed (owner ruling, 2026-07-24).**
+Most of what lives in the NORTH STAR, the GUIDE STAR, and the process sections is not
+ticketable work; filing an issue for it is ceremony with no reader, minted after the fact
+to satisfy a rule. **The provenance is that it came from the HUMAN, for human reasons** -
+a different and stronger claim than a ticket number. A ticket records that work was
+tracked. A ruling records that a person decided something, and why.
+
+**The obligation this substitutes is NOT lighter than a ticket.** The commit must carry
+the SPIRIT AND INTENT, not just the mechanism - and **if you are unsure of the reasons,
+ASK FOR THE WHY BEFORE COMMITTING.** An agent that lands a rule it cannot explain has
+planted a Chesterton's fence with no story attached, and this file opens by saying a rule
+without its scar is exactly that: a fence awaiting pruning. The next agent WILL prune it,
+correctly, because nothing told it not to. Asking costs one sentence; a pruned rule costs
+whatever the rule was preventing. This is the same reflex as the standing vocabulary rule
+(PAUSE AND ASK, never infer) pointed at intent instead of at words.
+
+Scope, so the carve-out cannot spread: it covers doctrine landed on the OWNER's ruling.
+Work the conductor decides to do is ticketed like everything else, and a ruling that
+directs CODE still gets its issue - what is exempt is the doctrine commit itself, not the
+build it authorises.
+
+### CODE STANDARD: every new addition cites its ticket (owner, 2026-07-23)
+
+**Every new addition to the codebase - every new file, and every new unit of consequence
+inside an existing one - carries a comment citing the ticket number that caused it.**
+Format is bare `#N`, so it stays greppable and matches the convention every other surface
+already uses.
+
+This is the Tracking rule pointed the other way. Tracking guarantees every piece of WORK
+has a ticket; this guarantees every piece of CODE names its ticket, and together the trace
+runs in both directions. Without it, tickets can find their code only through commit
+archaeology - and a squashed merge, a `git mv`, or a rewrite severs even that.
+
+**What it buys, and it is the reason this outranks tidiness:** this file already requires
+that comments explain WHY and never WHAT. The ticket is the deepest WHY available - it
+carries the incident, the argument, the rejected alternatives, and the verdict, none of
+which fit in a comment. A reader who hits unfamiliar code gets one hop to all of it. In a
+shop where every worker is a new hire on day one, that hop is the difference between
+understanding a line and guessing at it.
+
+**The edge that would otherwise kill the rule on contact - files that cannot carry a
+comment.** A bare data fixture is the case: `schema/vectors/*.expect` is a single word,
+and a vector's `.json` is the artifact UNDER TEST, so adding a `$comment` to it mutates
+the thing being tested and can change what the vector proves. **Never edit a fixture to
+satisfy this rule.** The citation goes in the sibling `README.md` or in the consuming
+test - the nearest surface that can hold prose without altering the subject.
+
+**Exempt: machine-generated records.** Everything under `artifacts/` is written by the
+producer, not by a person, and is data rather than code. A generator citing a ticket in
+every record it stamps would be noise, and the record already carries its own provenance.
+
+*Mechanism, trigger-gated, and the prior art already exists in-repo so nobody invents it:
+`docs/templates/repo-policy-check-patterns.md` §1's gate pattern is already ported as
+`scripts/tests/DocPolicy.Tests.ps1`, which enforces the docs `Status:` line the same way.
+The citation check is that pattern aimed at new code files, and it lands with #3 and #4 on
+the next CI touch whose own scope includes repo-policy enforcement. Until then this is
+attention-tier and reviewers carry it, which is a real downgrade and is recorded as one.*
+
+**NO BACKFILL. THE BOUNDARY IS THE POINT (owner ruling, 2026-07-23).** Code that predates
+`d4db6f5` is not retrofitted - not now, not opportunistically, not by a future agent
+tidying up. The standard applies FORWARD ONLY, and the line where uncited code stops and
+cited code starts is a deliberate stratum boundary left legible in the rock. Any gate built
+for this checks files ADDED after the line; a gate that reds on older files is
+mis-specified, not thorough.
+
+*Scar, and it is the owner's own, which is what makes it worth keeping: the practice was
+already the house habit before anyone wrote it down - both code additions on the day it
+was ratified cited their tickets unprompted, with no rule requiring it. The defect was
+never "people forget to cite tickets". It was that **the standard lived in one person's
+head and surfaced only when something happened to jog it.** That is the same class as the
+prior-art scar ("it probably exists and was not ported; nothing prompts anyone to ask"),
+and it has the same implication, which a future bootstrapper should read off this boundary
+directly: THERE ARE MORE UNWRITTEN RULES STILL IN THERE. The institution is not finished;
+it is being excavated. Expect more lines like this one, treat each as evidence rather than
+as an embarrassment, and do not smooth any of them away - a backfill would delete the only
+proof that this rule arrived late, and with it the reason to keep asking what else has not
+arrived yet.*
 
 ## Session starts: the tooling retro (STANDING ITEM)
 
@@ -855,7 +1063,7 @@ landed, what is parked, what happens first tomorrow.
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **StarCar** (711 symbols, 713 relationships, 0 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **StarCar** (1961 symbols, 3035 relationships, 60 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
 

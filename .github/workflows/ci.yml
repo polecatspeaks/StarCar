@@ -24,11 +24,81 @@
 #   - the artifact-INDEX STALENESS gate (spec S5.2, S6): the committed index is a second
 #     copy of the store that can drift from it, so CI regenerates and diffs it. This is
 #     the gate the state ledger and gating-matrix rows arm in this same commit.
+#     SCOPED (#20, owner-ratified 2026-07-23) to PR-to-main and push-to-main only - a
+#     dev push deliberately skips this step, because the producer hook stales the index
+#     on every ordinary dispatch and gating every dev push turned that into mechanical
+#     CI red rather than a signal. dev's freshness is conductor hygiene, not a CI gate;
+#     the index's own header (schema/index-format.md) declares this refresh cadence.
 #   - the CHECKPOINT-BRANCH fetch (spec [m5]): non-fatal if the branch is absent, which
 #     it is on any fork (Law 7 - a stranger has no Entire checkpoint branch). This makes
 #     tier 2 CI-REACHABLE; tier-2 ENUMERATION itself stays deferred (R6v2).
 #   - the UBUNTU matrix leg (#14): the measured proof artifact for the portability claim
 #     the README's badge waits on. pwsh is preinstalled on both GitHub-hosted images.
+#
+# Car 1 additions (yard-board plan, docs/plans/2026-07-23-yard-board-plan.md task 1.2):
+#   - actions/setup-go, driven by board/go.mod's `go` directive (not a hardcoded version
+#     here - board/go.mod is the one place the Go version is pinned, Law 6).
+#   - `go vet ./...` then `go test ./...`, both run with board/ as the working directory,
+#     on BOTH matrix legs.
+#   - zero-test refusal, same shape as the two Pester zero-test guards above: `go test`
+#     can exit 0 on a package with no test functions at all, so the exit code alone is
+#     not proof anything ran. The step parses `go test -json` output and counts distinct
+#     "run" actions; zero counted tests fails the build even if go test itself exited 0.
+#
+# Car 3 additions (yard-board plan task 3.4, spec YB-9/D18 - a DIFFERENT "Car 3" from the
+# harness-train "Car 3 additions" block above; the two trains happened to number their cars
+# the same way):
+#   - the D18 CROSS-VERIFIER step: runs both the pwsh vector-runner
+#     (Detector.Tests.ps1's fixture-driven Context) and the Go vector-runner
+#     (board/fold's TestFoldConformsToVectors) against every schema/vectors/fold/ vector,
+#     failing on either side's failure - a shared-oracle cross-verification (both
+#     implementations conforming to the same fixture transitively proves they conform to
+#     each other), with its own explicit zero-vector refusal.
+#   - not done when green (D10): the live watched-to-fire divergence injection is a
+#     conductor handback at merge, recorded in the train's closing report - this step's
+#     command logic was verified locally in both directions (green, and with an injected
+#     one-character divergence) via the CiWrapperSimulation technique before landing.
+#
+# Car 5 additions (yard-board plan task 5.1, spec YB-6):
+#   - `node --test` runs board/web/'s composition-matrix suite (compose.js's pure
+#     Rules 1-4 engine) in the SAME COMMIT as the first web test lands, per the plan's
+#     "the tests are never car-local-only" requirement.
+#   - its own zero-test refusal, same shape as the Pester and Go guards above: `node
+#     --test` was OBSERVED to exit 0 on a directory with no matching test files at all
+#     (an empty scratch directory produced "tests 0" and exit 0), so the TAP reporter's
+#     "# tests N" trailer line is parsed and a zero count fails the build even though
+#     the process itself exited cleanly.
+#
+# Car 33 additions (issue #33, the #31 defect class): register-css.test.js (a regex over
+# board.css's TEXT) cannot see a computed-style/cascade defect - minidom.js has no CSS
+# engine, which is exactly how #31 (every row rendering in the needs-attention color)
+# passed all 50 node tests that existed the day it shipped. This car adds a REAL browser
+# to the SAME `node --test` suite (the playwright LIBRARY, never `@playwright/test` - one
+# test runner stays one test runner) driving the REAL board/server/ Go binary against the
+# REAL artifacts/ store (never a mock, never a static fixture page - owner's binding
+# amendment). Two new steps land before the node --test step: `npm ci` (board/web/'s
+# first package.json/package-lock.json, TEST-side only per docs/setup.md's Node.js row)
+# and `npx playwright install --with-deps --only-shell chromium` (--only-shell: headless
+# Chromium launches chrome-headless-shell by default - OBSERVED via DEBUG=pw:browser -
+# so installing only that variant was measured to cut the download from ~690 MiB to
+# ~274 MiB; --with-deps installs ubuntu-latest's system libraries, a no-op on
+# windows-latest). BOTH matrix legs run it (no reasoned single-leg deferral here: the
+# added footprint was measured small enough, and the whole point of this repo's
+# dual-OS matrix - #14's own portability proof - is that a browser/CSS defect could
+# plausibly render differently per OS, so skipping a leg would defeat the reason a
+# second leg exists). The browser download is CACHED (actions/cache@v4), keyed on
+# runner.os + a hash of board/web/package-lock.json: the chromium build Playwright
+# installs is pinned 1:1 to the playwright package version, so a lockfile-hash key is
+# sufficient invalidation (a version bump changes the hash and forces a fresh
+# download; nothing can "hit stale"). The cache PATH is OS-conditional
+# (`~/.cache/ms-playwright` on Linux, `~/AppData/Local/ms-playwright` on Windows -
+# Playwright's own documented default locations); including runner.os in the key means
+# the two legs' caches never collide. Failing loudly on a missing browser needed NO new
+# guard: OBSERVED directly (Car 33 report) -
+# with the browser binary absent, `chromium.launch()` throws inside the test's `before`
+# hook, both tests report `not ok`/`hookFailed`, `node --test`'s own exit code goes
+# non-zero, and the EXISTING zero-test-refusal step below already fails the build on
+# that exit code - a missing-browser CI run cannot read as a silent pass.
 
 name: CI
 
@@ -159,8 +229,193 @@ jobs:
             exit 1
           }
 
+      - name: Set up Go (board/)
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: board/go.mod
+
+      - name: Run board Go vet + tests
+        shell: pwsh
+        working-directory: board
+        run: |
+          go vet ./...
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "go vet ./... failed in board/"
+            exit 1
+          }
+
+          # Zero-test refusal (same shape as the two Pester guards above): `go test`
+          # can exit 0 on a package tree with no test functions at all, so the exit
+          # code alone does not prove anything ran. `go test -json` emits one "run"
+          # action per test function invocation; count DISTINCT (Package, Test) pairs
+          # rather than trusting the process exit code in isolation.
+          $jsonLines = & go test ./... -json 2>&1
+          $testExit = $LASTEXITCODE
+          $jsonLines | ForEach-Object { Write-Host $_ }
+
+          $runEvents = $jsonLines | Where-Object { $_ -is [string] -and $_.TrimStart().StartsWith('{') } | ForEach-Object {
+            try { $_ | ConvertFrom-Json } catch { $null }
+          } | Where-Object { $_ -and $_.Action -eq 'run' -and $_.Test }
+          $testCount = ($runEvents | ForEach-Object { "$($_.Package)/$($_.Test)" } | Select-Object -Unique).Count
+          Write-Host "go test discovered $testCount test(s) in board/"
+
+          if ($testExit -ne 0) {
+            Write-Error "go test ./... failed in board/ (exit $testExit)"
+            exit 1
+          }
+          if ($testCount -eq 0) {
+            Write-Error "go test discovered ZERO tests in board/. A green run that asserted nothing is not a pass."
+            exit 1
+          }
+
+      - name: Install board/web test dependencies (npm ci)
+        shell: pwsh
+        working-directory: board/web
+        run: |
+          # Issue #33: the FIRST package.json/package-lock.json in this
+          # repo, deliberately scoped to board/web/ (the only place with
+          # node tests) - a TEST-side dependency, gate-triggered by #33's
+          # own trigger (the #31 defect class: a computed-style/cascade bug
+          # that passed all 50 node tests because minidom.js has no CSS
+          # engine). The SHIPPED board/web/ runtime (js/, css/, index.html)
+          # still has no build step and no npm dependency - `npm ci` here
+          # installs nothing that ships (docs/setup.md's Node.js row).
+          npm ci
+
+      - name: Cache Playwright browser download
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.os == 'Windows' && '~\AppData\Local\ms-playwright' || '~/.cache/ms-playwright' }}
+          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('board/web/package-lock.json') }}
+
+      - name: Install Playwright chromium (headless shell only) for the real-browser test
+        shell: pwsh
+        working-directory: board/web
+        run: |
+          # --only-shell: `chromium.launch()` in headless mode (the only
+          # mode this suite uses) launches chrome-headless-shell, not full
+          # Chromium, by default - OBSERVED via DEBUG=pw:browser (Car 33
+          # report). Installing only the shell variant was measured to cut
+          # the download from ~690 MiB to ~274 MiB. --with-deps installs
+          # the Linux system libraries chrome-headless-shell needs
+          # (fontconfig, libnss3, etc.) on the ubuntu-latest leg; it is a
+          # harmless no-op on windows-latest (OBSERVED: this exact command
+          # exits cleanly on Windows with nothing extra to install).
+          npx playwright install --with-deps --only-shell chromium
+
+      - name: Run board/web node --test suite (composition matrix YB-6 + real-browser register regression, #33)
+        shell: pwsh
+        working-directory: board/web
+        run: |
+          # Plan task 5.1: the composition engine (compose.js) is a pure
+          # module, matrix-tested by Node's stdlib test runner - no
+          # framework, no build step for the SHIPPED view (board/web/js
+          # runs unmodified in both Node and a plain <script type="module">
+          # browser context; D19 still binds the browser runtime, never
+          # Node - docs/setup.md's Node.js row). GitHub-hosted runners
+          # preinstall Node (same disclosure shape as the Pester/
+          # ConvertFrom-Yaml rows above); a stranger's box may not.
+          #
+          # Issue #33 changes what this step ALSO does: one file in this
+          # suite (test/browser-register-cascade.test.js) drives a real
+          # Chromium (via the playwright LIBRARY, not @playwright/test -
+          # still one runner, one command) against the real board/server/
+          # Go binary (built on the fly via `go build`, using the `go`
+          # this job's earlier "Set up Go" step already put on PATH) reading
+          # the real artifacts/ store, because minidom.js's hand-rolled DOM
+          # shim has no CSS engine and cannot see a cascade/inheritance
+          # defect (issue #31, which passed all 50 tests that existed the
+          # day it shipped). The test asserts on getComputedStyle values
+          # ONLY, never a pixel diff (the owner's binding amendment on #33:
+          # windows-latest and ubuntu-latest rasterise fonts differently, so
+          # a pixel assertion would fail across legs for reasons unrelated
+          # to correctness).
+          Write-Host "node $(node --version)"
+
+          # Zero-test refusal, same shape as the Pester and Go guards above:
+          # `node --test` exits 0 on a directory with NO matching test files
+          # at all (OBSERVED: an empty scratch directory produced "tests 0"
+          # / "fail 0" and exit code 0 - the exact lying-instrument shape
+          # this repo rejects everywhere else). The TAP reporter's trailer
+          # line "# tests N" is the one stable, parseable count; the default
+          # "spec" reporter's "ℹ tests N" line is for humans, not this
+          # guard.
+          $tapLines = & node --test --test-reporter=tap 2>&1
+          $testExit = $LASTEXITCODE
+          $tapLines | ForEach-Object { Write-Host $_ }
+
+          $testCountLine = $tapLines | Where-Object { $_ -match '^# tests (\d+)' } | Select-Object -Last 1
+          $testCount = 0
+          if ($testCountLine -and ($testCountLine -match '^# tests (\d+)')) {
+            $testCount = [int]$Matches[1]
+          }
+          Write-Host "node --test discovered $testCount test(s) in board/web/"
+
+          if ($testExit -ne 0) {
+            Write-Error "node --test failed in board/web/ (exit $testExit)"
+            exit 1
+          }
+          if ($testCount -eq 0) {
+            Write-Error "node --test discovered ZERO tests in board/web/. A green run that asserted nothing is not a pass."
+            exit 1
+          }
+
+      - name: D18 cross-verifier - pwsh detector and Go fold conform to schema/vectors/fold/
+        shell: pwsh
+        run: |
+          # YB-9/D18 (yard-board plan task 3.4): schema/vectors/fold/ is the single
+          # language-neutral authority on fold semantics (schema/vectors/README.md). Both
+          # fold implementations - the landed pwsh detector (Detector.Tests.ps1's
+          # fixture-driven runner) and the Go port (board/fold's TestFoldConformsToVectors)
+          # - conform to the SAME fixtures; if both conform to the same fixture, they
+          # conform to each other (a shared-oracle cross-verification), so ANY divergence -
+          # either side failing a vector, or the vectors themselves vanishing - fails the
+          # build. This step is DELIBERATELY separate from "Run board tooling tests" and
+          # "Run board Go vet + tests" above (which already exercise these same test files
+          # as part of their own full suites): this step names the cross-language
+          # obligation explicitly, with its own zero-vector refusal, rather than leaving it
+          # an implicit side effect of two unrelated steps happening to both pass. It is
+          # not done when green (D10): the live watched-to-fire divergence injection (a
+          # one-character edit to a scratch vector copy, observed red, reverted) is a
+          # conductor handback at merge, recorded in the train's closing report.
+          $vectorFiles = Get-ChildItem -Path ./schema/vectors/fold -Filter '*.json' -File
+          Write-Host "schema/vectors/fold/ holds $($vectorFiles.Count) vector(s)"
+          if ($vectorFiles.Count -eq 0) {
+            Write-Error "D18 cross-verifier: zero vectors found under schema/vectors/fold/ - a run with nothing to compare is a refusal, not a pass."
+            exit 1
+          }
+
+          Write-Host "--- pwsh vector-runner (Detector.Tests.ps1) ---"
+          $pwshResult = Invoke-Pester -Path ./scripts/tests/Detector.Tests.ps1 -PassThru -Output Detailed
+          Write-Host "pwsh: Passed=$($pwshResult.PassedCount) Failed=$($pwshResult.FailedCount) Inconclusive=$($pwshResult.NotRunCount)"
+
+          Write-Host "--- Go vector-runner (board/fold, TestFoldConformsToVectors) ---"
+          Push-Location board
+          # -count=1 disables Go's test result cache - LOAD-BEARING, not decoration. This
+          # test reads schema/vectors/fold/*.json at RUNTIME via os.ReadFile; Go's cache
+          # keys on the package's own source/dependency inputs, which do not include a
+          # file read through a relative path at test execution time. Observed directly
+          # (this car's local D18 verification, injected-divergence direction): without
+          # -count=1, a vector mutated between two `go test` invocations still reported
+          # "(cached)" and PASS on the second run, silently hiding a real divergence -
+          # the exact failure mode this whole step exists to catch.
+          & go test ./fold/... -run TestFoldConformsToVectors -count=1 -v
+          $goExit = $LASTEXITCODE
+          Pop-Location
+          Write-Host "Go vector-runner exit code: $goExit"
+
+          if ($pwshResult.FailedCount -gt 0) {
+            Write-Error "D18 cross-verifier: the pwsh vector-runner failed $($pwshResult.FailedCount) case(s) - divergence from schema/vectors/fold/."
+            exit 1
+          }
+          if ($goExit -ne 0) {
+            Write-Error "D18 cross-verifier: the Go vector-runner (board/fold) failed - divergence from schema/vectors/fold/."
+            exit 1
+          }
+
       - name: Verify the artifact index is not stale
         shell: pwsh
+        if: (github.event_name == 'pull_request' && github.base_ref == 'main') || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         run: |
           # The committed index (spec S5.2) is a second copy of the store that can drift
           # from it - Law 6 forbids an unowned second copy. Regenerate over the SAME
@@ -168,6 +423,14 @@ jobs:
           # difference (a record landed without a matching index regeneration) fails
           # the build. New-ArtifactIndex.ps1 is deterministic by construction
           # (ArtifactIndex.Tests.ps1), so a clean tree produces a clean diff.
+          #
+          # SCOPE (#20, owner-ratified 2026-07-23): gated only on PR-to-main and
+          # push-to-main - the quiescent moments correctness is actually asserted. The
+          # producer hook (Produce-Artifact.ps1) writes a new record on EVERY dispatch,
+          # so gating every dev push made this fire on ordinary conductor activity, not
+          # on a real staleness defect. dev's index now stays best-effort fresh
+          # (conductor hygiene, documented in the index's own freshness-contract header -
+          # schema/index-format.md), not CI-enforced.
           ./scripts/New-ArtifactIndex.ps1 -StoreRoot artifacts -OutFile artifacts/index.md
           git diff --exit-code artifacts/index.md
           if ($LASTEXITCODE -ne 0) {

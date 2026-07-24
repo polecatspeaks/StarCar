@@ -1,0 +1,9 @@
+{
+  "name": "starcar-board-web",
+  "private": true,
+  "type": "module",
+  "description": "Test-side only. board/web's shipped runtime (js/, css/, index.html) has no build step and no npm dependency - this package.json exists solely so `node --test` can drive a real browser (issue #33, the #31 defect class: computed-style/cascade bugs a hand-rolled DOM shim cannot see).",
+  "devDependencies": {
+    "playwright": "1.61.1"
+  }
+}

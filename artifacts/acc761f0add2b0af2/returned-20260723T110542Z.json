@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "acc761f0add2b0af2",
+  "session_id": "64c15364-0933-4d6d-9b2e-d1ddbc918f9f",
+  "at": "2026-07-23T11:05:42Z",
+  "outcome": "done",
+  "findings": "none - all brief citations verified accurate at base 49e3eb4; F3 escaping test's fixture required updating to include the new header block (byte-identical comparison), disclosed explicitly as an expected consequence per the brief's own instruction; no other pre-existing test needed modification.",
+  "abstract": "Implemented the owner's #20 ruling across three red-first tasks on branch car/20-index-gate-scope, base 49e3eb4, three commits (b638794, f3db161, 565714d). Task 1 scoped ci.yml's index-staleness step with an if condition to PR-to-main/push-to-main, red-first via a new CiWrapperSimulation.Tests.ps1 test (observed failure: actual length 0, no if property). Task 2 added a static freshness-contract header to New-ArtifactIndex.ps1's output per schema/index-format.md's new contract section, red-first via ArtifactIndex.Tests.ps1 (observed failures: byte-mismatch on the F3 fixture and StartsWith false on the new header test), then regenerated and committed artifacts/index.md (57 rows, verified byte-identical across two runs). Task 3 trued four carriers - gating-matrix.md, state-ledger.md, the dispatch-harness spec's 5.2 (as a binding amendment, original text left visible), and CLAUDE.md's PR CYCLE step 1 - all in one commit. Final suites: scripts/probes 12/12, scripts/tests 161/161 (up from baseline 158, +3 new tests), both run with sh on PATH.",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:7f5c852d3ee6fdcf117c8206b55f331c48a24e7e8fba1610fb0326e3b7fa563d"
+}

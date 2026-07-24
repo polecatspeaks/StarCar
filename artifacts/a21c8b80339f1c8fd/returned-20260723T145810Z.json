@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a21c8b80339f1c8fd",
+  "session_id": "64c15364-0933-4d6d-9b2e-d1ddbc918f9f",
+  "at": "2026-07-23T14:58:10Z",
+  "outcome": "APPROVE",
+  "findings": "No new findings. C2R-1 (the round-1 Major) is correctly and durably resolved in commit b55fb17. Both stale line-number citations (schema/vocab/board-defs.json:2 and scripts/tests/BoardDefs.Tests.ps1 header) were replaced with section-anchored JSON-pointer citations (properties.vocabularies / properties.vocabularies description) that resolve correctly against the wire schema at HEAD and are rot-proof against future $defs insertions - the correct instrument choice, ruled sound, fixing the class not just the instance. Class-sweep confirmed: git diff 395aa9f..b55fb17 grep for yard-snapshot.schema.json:NUMBER returns zero; the remaining four mentions are bare file-path references not subject to the rot class. car-brief.md:47-48 opened and confirmed to carry the done/done-with-findings/honest-stop outcome set, so the outcomes.json contract-enumeration citation is accurate. Suites unchanged: BoardDefs 11/11, full Pester 206/206 at b55fb17, worktree clean. One non-blocking observation (not a finding): the test-file comment keeps a bare :187-197 inside a past-tense forensic note about the drift, accurate at HEAD and not a navigational citation, so acceptable as-is.",
+  "abstract": "Delta re-review round 2 (verify-the-fix, same-agent reuse, no rotation trigger) of Car 2's C2R-1 fix on the yard-board train, at worktree HEAD b55fb178503b6b5df0c7fc898bb731de6f02922b. The round-1 Major (stale file:line citations to the wire schema's vocabularies block, born stale because this train's own commit 9d53b9c inserted 85 $defs lines above the block before the citing files were authored) is fully resolved: the car re-anchored both citations to JSON-pointer structural paths (properties.vocabularies), which I verified resolve to exactly what they claim by parsing the schema, and which are durable against the recurrence of the exact insert-above failure mode - the correct, class-level fix. Independent class-sweep of the whole train diff finds zero remaining line-number citations; car-brief.md:47-48 reference verified accurate; BoardDefs 11/11 and full Pester 206/206 unchanged; worktree clean. APPROVE, merge is clear. This is a clean fix-cycle close: a REJECT caught a real citation-truth defect at round 1 and the same-agent delta confirmed the durable remedy at round 2.",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:c7e13049c9f2d51b697158bcac8612df11f949b340529a25d7d4a1a90e451d23"
+}

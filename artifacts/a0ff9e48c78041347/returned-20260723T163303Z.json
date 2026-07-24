@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a0ff9e48c78041347",
+  "session_id": "64c15364-0933-4d6d-9b2e-d1ddbc918f9f",
+  "at": "2026-07-23T16:33:03Z",
+  "outcome": "done",
+  "findings": "none",
+  "abstract": "Fix cycle round 2 addressed Car 3 review round 1's REJECT (one Major C3R-1, two Minors C3R-2/C3R-3) in five commits on car/board-car3 (fcc9949, 0c5eb40, e4b4b98, 194be70, 98e22c0), reversing spec 7b.1's false premise per Amendment 2/issue 22: applying the shop-default budget to render overdue is a fold semantic, not environmental IO. The vector shape gained optional input.defaults.dispatch_budget_seconds (README updated same-commit), a new vector pins the reviewer's exact constructed divergence (budget-less dispatched record, elapsed 259200s past an injected 1800s default, renders overdue with budget_source default), and both the pwsh detector and the Go fold (via a new WithDefaultBudgetSeconds functional option, keeping Fold's literal three-parameter signature) now thread the default and emit budget_source (record or default) identically, with three pre-existing budget vectors regenerated OBSERVED against the fixed detector after a natural red where their expected blocks lacked the new field. The producer now stamps budget on every new dispatched record at write time from the shop default, red-first in Producer.Tests.ps1, with the brief-overridable estimated-patience mechanism explicitly deferred as issue 23 since the real Task payload carries no clean input to override from. The two Minors closed with implementer decisions: Sort-Object gained -Stable for tie-breaking, pinned by a new cross-language vector confirming both implementations agree; and the malformed-at silent-degrade path was kept as-is but its previously-insufficient package-doc-only disclosure was replaced with a binding tracked carrier, issue 24, naming Car 4's store-adapter quarantine obligation explicitly per the brief's own warning that a comment is not a carrier. Final verification: Pester 222 of 222 passed 0 inconclusive (grew from 217), go test with count=1 in board green at 6 of 6 plus 3 loader tests plus 16 vector subtests, go vet clean, gofmt empty, real-store detector output unchanged at 0 faults 0 discoveries 49 dispatches 1 intent with budget_source appearing in zero of 49 entries today since no open dispatch currently lacks a successor, and the yard-snapshot probe passed. Working tree is clean with no untracked files.",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:8e4e34993bfd592108600a538f9335c139fd6b7885934f2d3e9e9bd70b10b7c0"
+}

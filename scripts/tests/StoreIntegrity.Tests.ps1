@@ -93,6 +93,72 @@ Describe 'Store integrity - every artifacts/**/*.json record (F4)' {
         (Test-RecordIntegrity -Path $anyRecord.FullName).IntegrityOk | Should -BeTrue -Because 'the real record was never touched by the fault injection'
     }
 
+    Context 'train: manifest layer (YB-1, spec S7b amendment 2 / plan 2.5, PB-3 folded)' {
+        # A train manifest is an intent record whose subject matches ^train: (design
+        # rev 5 DR3-3, spec S2 YB-1). schema/starcar-manifest.schema.json LAYERS over
+        # the base starcar-artifact/1 contract (Law 6 - neither restates the other):
+        # store validators run BOTH schemas against a matching record. This context
+        # was previously unwired (spec S7's table named the obligation but tasked it
+        # nowhere - the S7b amendment adds the carrier row this context fills).
+        BeforeAll {
+            $script:ManifestSchemaPath = Join-Path $script:RepoRoot 'schema/starcar-manifest.schema.json'
+            $script:ManifestSchemaJson = Get-Content $script:ManifestSchemaPath -Raw -Encoding UTF8
+        }
+
+        It 'every real store record whose subject matches ^train: also validates against schema/starcar-manifest.schema.json' {
+            $trainRecords = Get-ChildItem -Path (Join-Path $script:RepoRoot 'artifacts') -Filter *.json -Recurse -File |
+                ForEach-Object {
+                    $rec = Get-Content $_.FullName -Raw -Encoding UTF8 | ConvertFrom-Json -DateKind String
+                    $subjectProp = $rec.PSObject.Properties['subject']
+                    if ($subjectProp -and $subjectProp.Value -match '^train:') {
+                        [pscustomobject]@{ Path = $_.FullName; Record = $rec }
+                    }
+                }
+            @($trainRecords).Count | Should -BeGreaterThan 0 -Because 'the real store now holds train:board-v0 manifest records (conductor-landed, artifacts/train-board-v0/) - this guard needs at least one to be non-vacuous'
+            foreach ($tr in $trainRecords) {
+                $json = $tr.Record | ConvertTo-Json -Depth 20
+                $manifestErrors = $null
+                $valid = Test-Json -Json $json -Schema $script:ManifestSchemaJson -ErrorVariable manifestErrors -ErrorAction SilentlyContinue
+                $valid | Should -BeTrue -Because "$($tr.Path) matches ^train: and must validate against starcar-manifest.schema.json (errors: $($manifestErrors -join '; '))"
+            }
+        }
+
+        It 'a TestDrive train: intent WITHOUT a manifest key is CAUGHT' {
+            $fixture = [ordered]@{
+                schema        = 'starcar-artifact/1'
+                kind          = 'intent'
+                subject       = 'train:test-no-manifest'
+                session_id    = 's'
+                at            = '2026-07-23T10:00:00Z'
+                normalisation = @()
+                integrity     = 'sha256:' + ('0' * 64)
+            }
+            $json = $fixture | ConvertTo-Json -Depth 20
+            $valid = Test-Json -Json $json -Schema $script:ManifestSchemaJson -ErrorAction SilentlyContinue
+            $valid | Should -BeFalse -Because 'a train: intent without a manifest key must fail schema/starcar-manifest.schema.json (YB-1)'
+        }
+
+        It 'a TestDrive well-formed train: manifest fixture passes' {
+            $fixture = [ordered]@{
+                schema        = 'starcar-artifact/1'
+                kind          = 'intent'
+                subject       = 'train:test-well-formed'
+                session_id    = 's'
+                at            = '2026-07-23T10:00:00Z'
+                manifest      = [ordered]@{
+                    title   = 'Test train'
+                    tickets = @('#1')
+                    members = @(@{ subject = 'abc123'; role = 'car' })
+                }
+                normalisation = @()
+                integrity     = 'sha256:' + ('0' * 64)
+            }
+            $json = $fixture | ConvertTo-Json -Depth 20
+            $valid = Test-Json -Json $json -Schema $script:ManifestSchemaJson -ErrorAction SilentlyContinue
+            $valid | Should -BeTrue -Because 'a well-formed train: manifest fixture must pass schema/starcar-manifest.schema.json'
+        }
+    }
+
     It 'reads offset-form at as a VERBATIM string, never a coerced datetime (TZ-independent M-A4-1 guard)' {
         # The durable mechanism behind the CI-timezone catch (2026-07-22, hotfix 6c5165d8b's
         # post-hoc review recommendation): the recompute path must parse with -DateKind String

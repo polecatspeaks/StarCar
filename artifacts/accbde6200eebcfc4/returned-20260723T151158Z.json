@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "accbde6200eebcfc4",
+  "session_id": "64c15364-0933-4d6d-9b2e-d1ddbc918f9f",
+  "at": "2026-07-23T15:11:58Z",
+  "outcome": "REJECT",
+  "findings": "DM-1 (MAJOR) docs/doc-map.md:41 - the docs/templates/ class row claims \"(15 files)\" but the directory holds 16 .md files (verified by ls docs/templates/*.md); no reasonable subset yields 15; wrong exact count on a navigation surface, a defect by the map's own \"reality wins, the row is a defect\" rule and the exact class the UI brief was REJECTed for. DM-2 (MINOR) doc-map.md:55 - index.md gating stated as \"PR-to-main per #20\" but the gating matrix (gating-matrix.md:19) and index header (artifacts/index.md:3-6) gate on PR-to-main AND push-to-main; true-but-incomplete. DM-3 (MINOR/observation) - the map classifies neither itself (docs/doc-map.md) in any row or class. Everything else verified TRUE: all rows resolve, six deep classification spot-checks hold (CLAUDE reference+explanation, constitution amendment-only, friction-log append-only, board design rev5 APPROVED, board spec rev2 APPROVED binding Cars 1-5, reviews hash-sealed via Verify-Verdict.ps1), all three reading paths resolve with correct counts (5 harness-design REJECTs rounds 1-5, spec 4 rounds), stranger test passes, DocPolicy.Tests.ps1 2/2 passed at b31154a, ui-mockup-brief ruled covered by the docs/design/* class row.",
+  "abstract": "Adversarial fidelity review of docs/doc-map.md at HEAD b31154a. One Major (DM-1: templates class row says 15 files, actual 16 - a wrong count on a navigation surface, the map's own rule makes it a defect and the UI-brief precedent makes it REJECT-class) forces REJECT. Two Minors (incomplete index gating claim; map does not self-classify). The map is otherwise sound: every path resolves, classifications are honest, reading-path counts are true against artifacts/reviews filenames, the doc-policy gate passes, and no doctrine tension. A single off-by-one is the entire distance to APPROVE. Read-only review, nothing committed or pushed.",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:9796b38867e6dc2a4c4e0a9bc4b4706437a15ee2e7bcfa80214b2cbcf6f25c76"
+}

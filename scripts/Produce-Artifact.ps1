@@ -21,6 +21,20 @@
 #
 # stdin is read via $input, which is populated identically whether the hook pipes OS stdin
 # to `pwsh -File` or a caller pipes an object in-process (both measured).
+#
+# BUDGET STAMP (issue #22 item 1, owner's best-of-both ruling; C3R-1e, Car 3 fix cycle
+# round 2): every NEW dispatched record is stamped with `budget` - the shop default
+# (`config/harness-defaults.json`'s `dispatch_budget_seconds`, or `-DefaultsPath` when
+# overridden) as it stands AT DISPATCH TIME. The promise freezes into history at
+# departure: a later policy change to the shop default never rewrites an in-flight
+# dispatch's liveness verdict retroactively (the value is copied into the record, not
+# referenced). A brief-level ESTIMATED-patience override is deferred, disclosed rather
+# than invented brittle: the real PostToolUse:Task launch payload carries no
+# estimated-duration field in tool_input/tool_response to override from. A shop-default
+# read failure degrades the record (no `budget` field, a fault raised) rather than
+# blocking the write - the fold (`scripts/Detect-Dispatches.ps1`) applies its OWN default
+# at FOLD time regardless, the same fallback the 49 existing budget-less fossil records
+# already rely on (the legacy/foreign tail, untouched by this stamp).
 
 # NOTE: this is a SIMPLE script, deliberately NOT advanced - no [Parameter()],
 # [CmdletBinding()] or [ValidateSet()] attributes. Any of those turns the script into an
@@ -31,7 +45,8 @@
 param(
     [string]$Kind,
     [string]$StoreRoot = 'artifacts',
-    [string]$Now = ''
+    [string]$Now = '',
+    [string]$DefaultsPath = ''
 )
 
 # Capture stdin FIRST. $input is a live pipeline enumerator that any intervening command
@@ -60,6 +75,16 @@ function Get-Prop {
     $p = $Object.PSObject.Properties[$Name]
     if ($null -eq $p) { return $null }
     return $p.Value
+}
+
+function Write-VisibleSkip {
+    # #47 D3/D4 (Law 4, Law 1): an intake payload no adapter recognises is SKIPPED VISIBLY,
+    # never silently. The three-hour "fully silent producer" misdiagnosis (superseded design
+    # D2) happened because a filter miss exited 0 saying nothing. Naming the present keys on
+    # stderr turns an invisible skip into an observable one, and names NO guessed subject.
+    param([object]$Payload, [string]$Kind)
+    $keys = @($Payload.PSObject.Properties.Name) -join ', '
+    [Console]::Error.WriteLine("Produce-Artifact: $Kind payload not recognised by any adapter (no Claude agent_type/subagent_type, no Copilot compat agent_name/agent_type); NO record written. Keys present: $keys")
 }
 
 # Get-Sha256Hex is imported from Artifact.psm1 (F4, Law 6 - the one owner; was
@@ -121,29 +146,71 @@ try {
     if ([string]::IsNullOrWhiteSpace($raw)) { throw 'empty payload on stdin' }
     $payload = $raw | ConvertFrom-Json
 
-    # --- filter (spec S2.2): agent_type for stop, subagent_type for launch --------------
+    # --- family-agnostic intake adapter (#47 D2/D4) ------------------------------------
+    # ONE writer, per-runtime normalisation to one internal shape. Claude Code carries
+    # agent_type (stop) / tool_input.subagent_type (launch) and a camelCase
+    # tool_response.agentId; the Copilot CLI compat layer delivers snake_case with the
+    # Task matcher mapped to its Agent tool - agent_name at stop, tool_input.agent_type +
+    # tool_input.name at launch (superseded design section 3b, OBSERVED). `subject_basis`
+    # DISCLOSES which family rule produced the subject: runtime-id (mode b, Claude's stable
+    # pairing UUID) or minted-id (mode a, the shop id carried in the label/envelope).
+    $subjectBasis = $null
+    $runtime = $null
+    $provenance = $null
     if ($Kind -eq 'returned') {
-        $agentType = Get-Prop $payload 'agent_type'
-        if ([string]::IsNullOrWhiteSpace($agentType)) { exit 0 }   # internal subagent: no record
-        $subject = Get-Prop $payload 'agent_id'
+        $agentType = Get-Prop $payload 'agent_type'   # Claude stop
+        $agentName = Get-Prop $payload 'agent_name'   # Copilot compat stop
+        if (-not [string]::IsNullOrWhiteSpace($agentType)) {
+            $runtime = 'claude'; $subjectBasis = 'runtime-id'
+            $subject = Get-Prop $payload 'agent_id'   # mode (b): the runtime's stable pairing id
+        } elseif (-not [string]::IsNullOrWhiteSpace($agentName)) {
+            # Copilot mode (a): the compat stop payload carries no unique agent id (agent_name
+            # is the agent TYPE, not a pairing key - superseded design 3b-5). The subject is
+            # the shop-minted id, which arrives via the envelope task-id echo (#47 section
+            # 5.7), resolved after the transcript read below. agent_name is kept as provenance.
+            $runtime = 'copilot'; $subjectBasis = 'minted-id'
+            $provenance = [ordered]@{ runtime = 'copilot'; agent_name = [string]$agentName }
+            $subject = $null
+        } else {
+            Write-VisibleSkip -Payload $payload -Kind $Kind
+            exit 0
+        }
     } else {
         $toolInput = Get-Prop $payload 'tool_input'
-        $subagentType = Get-Prop $toolInput 'subagent_type'
-        if ([string]::IsNullOrWhiteSpace($subagentType)) { exit 0 } # internal subagent: no record
-        $toolResponse = Get-Prop $payload 'tool_response'
-        $subject = Get-Prop $toolResponse 'agentId'
+        $subagentType    = Get-Prop $toolInput 'subagent_type'   # Claude launch
+        $launchAgentType = Get-Prop $toolInput 'agent_type'      # Copilot compat launch
+        if (-not [string]::IsNullOrWhiteSpace($subagentType)) {
+            $runtime = 'claude'; $subjectBasis = 'runtime-id'
+            $toolResponse = Get-Prop $payload 'tool_response'
+            $subject = Get-Prop $toolResponse 'agentId'          # mode (b): runtime pairing id
+        } elseif (-not [string]::IsNullOrWhiteSpace($launchAgentType)) {
+            # Copilot mode (a): subject = the shop-minted id carried verbatim in
+            # tool_input.name (superseded design 3b-8), never scraped from a runtime internal.
+            $runtime = 'copilot'; $subjectBasis = 'minted-id'
+            $subject = Get-Prop $toolInput 'name'
+        } else {
+            Write-VisibleSkip -Payload $payload -Kind $Kind
+            exit 0
+        }
     }
 
-    if ([string]::IsNullOrWhiteSpace($subject)) { throw "no subject id in the $Kind payload" }
+    # subject is validated now for every path EXCEPT Copilot returned, whose subject is
+    # resolved from the envelope task-id after the transcript read (validated there).
+    if (-not ($runtime -eq 'copilot' -and $Kind -eq 'returned')) {
+        if ([string]::IsNullOrWhiteSpace($subject)) { throw "no subject id in the $Kind payload" }
+    }
     $sessionId = Get-Prop $payload 'session_id'
     if ([string]::IsNullOrWhiteSpace($sessionId)) { throw "no session_id in the $Kind payload" }
 
     $at = if ($Now) { $Now } else { (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') }
 
     # --- returned: obtain the outcome from the transcript envelope (spec S2.3) -----------
-    $outcome = $null; $findings = $null; $abstract = $null; $envFault = $null; $model = $null
+    $outcome = $null; $findings = $null; $abstract = $null; $envFault = $null; $model = $null; $taskId = $null
     if ($Kind -eq 'returned') {
+        # Claude carries agent_transcript_path; the Copilot compat stop payload carries
+        # transcript_path (superseded design 3b-2/3b-7). One writer, both keys tolerated.
         $transcriptPath = Get-Prop $payload 'agent_transcript_path'
+        if ([string]::IsNullOrWhiteSpace($transcriptPath)) { $transcriptPath = Get-Prop $payload 'transcript_path' }
         $rawText = $null
         $readErrors = @()
         if (-not [string]::IsNullOrWhiteSpace($transcriptPath)) {
@@ -168,8 +235,12 @@ try {
             foreach ($e in $readErrors) { Add-Fault -Message "transcript read failure: $e" }
         } else {
             $env = if ($rawText) { Get-StarcarEnvelope -Text $rawText } else {
-                [pscustomobject]@{ Found = $false; Outcome = $null; Findings = $null; Abstract = $null; Fault = 'absent' }
+                [pscustomobject]@{ Found = $false; Outcome = $null; Findings = $null; Abstract = $null; TaskId = $null; Fault = 'absent' }
             }
+            # #47 section 5.7: the envelope may echo the shop-minted dispatch id as task-id.
+            # OPTIONAL: its absence never faults the record (a car predating the echo mandate
+            # still lands cleanly; the minted id simply does not round-trip).
+            if ($env.PSObject.Properties['TaskId']) { $taskId = $env.TaskId }
             if ($env.Found) {
                 $outcome = $env.Outcome; $findings = $env.Findings; $abstract = $env.Abstract
             } else {
@@ -182,11 +253,45 @@ try {
                 $abstract = "envelope $envFault - raw report retained in findings"
             }
         }
+
+        # Copilot mode (a): the subject IS the minted id, which only the envelope task-id
+        # carries (the compat stop payload has no pairing key). Resolve it now, then validate.
+        if ($runtime -eq 'copilot' -and [string]::IsNullOrWhiteSpace($subject)) {
+            if ([string]::IsNullOrWhiteSpace($taskId)) {
+                throw "Copilot returned payload carries no envelope task-id to pair on (agent_name is a type, not a pairing key); no record written"
+            }
+            $subject = $taskId
+        }
     } else {
         # dispatched: producer-optional metadata under the schema's open posture (same
         # Law-7 class as `producer`). The board's model-mix rendering consumes it.
         $toolResponse = Get-Prop $payload 'tool_response'
         $model = Get-Prop $toolResponse 'resolvedModel'
+
+        # --- budget stamping (issue #22 item 1, owner's best-of-both ruling; C3R-1e) -------
+        # "WRITE TIME: Produce-Artifact.ps1 stamps budget on every NEW dispatched record -
+        # the ESTIMATED patience, brief-overridable, else config/harness-defaults.json's
+        # dispatch_budget_seconds as it stands at dispatch. The promise freezes into
+        # history at departure; a later policy change never rewrites in-flight liveness
+        # verdicts." A brief-level override is EXPLICITLY DEFERRED here (car's report,
+        # C3R-1e): the real PostToolUse:Task launch payload carries no estimated-duration
+        # field anywhere in tool_input/tool_response to override FROM, and inventing one
+        # (e.g. parsing the free-text prompt) would be exactly the brittle mechanism this
+        # fix cycle's brief warns against. A read failure degrades the record (no `budget`
+        # field written) rather than blocking the write - the fold applies its OWN default
+        # at fold time regardless (the legacy/foreign tail 49 existing budget-less fossil
+        # records already rely on), so a producer-side read failure never loses liveness
+        # information, only the WRITE-TIME freeze this stamp exists to add.
+        $budgetSeconds = $null
+        $defaultsPathForBudget = if ($DefaultsPath) { $DefaultsPath } else { Join-Path (Split-Path $PSScriptRoot -Parent) 'config/harness-defaults.json' }
+        try {
+            $parsedDefaults = Get-Content $defaultsPathForBudget -Raw -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json
+            if ($null -ne $parsedDefaults.dispatch_budget_seconds) {
+                $budgetSeconds = [double]$parsedDefaults.dispatch_budget_seconds
+            }
+        } catch {
+            Add-Fault -Message "could not read the shop default budget from '$defaultsPathForBudget' to stamp on the new dispatched record for $subject"
+        }
     }
 
     # --- normalisation applied to every string field, declared per what fired -----------
@@ -238,7 +343,19 @@ try {
         $record['abstract'] = $abstract
         if ($envFault) { $record['envelope'] = $envFault }
     }
+    # budget (canonical order, schema/index-format.md:17-20: right after envelope, before
+    # basis/cost/context_peak_tokens/producer) - issue #22 item 1, C3R-1e. Absent when the
+    # shop-default read failed; the fold applies its own default at fold time regardless.
+    if ($Kind -eq 'dispatched' -and $null -ne $budgetSeconds) { $record['budget'] = $budgetSeconds }
     if ($Kind -eq 'dispatched' -and $model) { $record['model'] = $model }
+    # #47 D2/D4 open-posture extras, same disclosed-deviation class as `model` (not in
+    # index-format.md's canonical order; placed with the producer-metadata cluster):
+    #   subject_basis - which family rule produced the subject (runtime-id | minted-id)
+    #   task_id       - the shop-minted id echoed back by the envelope (returned only, #47 5.7)
+    #   provenance    - runtime-internal ids kept as enrichment, never identity
+    if ($subjectBasis) { $record['subject_basis'] = $subjectBasis }
+    if ($Kind -eq 'returned' -and $taskId) { $record['task_id'] = $taskId }
+    if ($provenance) { $record['provenance'] = $provenance }
     $record['producer']      = 'starcar-hook/1'
     $record['normalisation'] = @($normalisation)
 
@@ -257,6 +374,24 @@ try {
     }
     $compactAt = $at -replace '[-:]', ''
     $subjectDir = Join-Path $storeAbs $subject
+
+    # --- duplicate-dispatch refusal guard (#47 D2/DR-9, Q2 keep-first) -------------------
+    # Uniqueness at the mint boundary is MECHANICAL, not dispatcher vigilance: the producer
+    # REFUSES a second `dispatched` record whose subject already has an UN-SUPERSEDED
+    # dispatched record (one on disk with no `returned` record yet). Keep-first (Q2 ruling):
+    # the already-in-flight dispatch's identity stays stable so its dispatched<->returned
+    # pair resolves; the refused second never enters the store. Boundary (round-2 reviewer):
+    # "un-superseded" means a same-id re-dispatch AFTER the first returned is NOT refused
+    # here - that post-return reuse is caught downstream by the fold's superseded-exposure
+    # (schema/vectors/fold/duplicate-subject-two-dispatched.json). Loud fault, no write.
+    if ($Kind -eq 'dispatched') {
+        $existingDisp = @(Get-ChildItem -Path $subjectDir -Filter 'dispatched-*.json' -File -ErrorAction SilentlyContinue)
+        $existingRet  = @(Get-ChildItem -Path $subjectDir -Filter 'returned-*.json'   -File -ErrorAction SilentlyContinue)
+        if ($existingDisp.Count -gt 0 -and $existingRet.Count -eq 0) {
+            throw "duplicate dispatch refused (#47 DR-9 guard, keep-first): subject '$subject' already has an un-superseded dispatched record; no second dispatched record written"
+        }
+    }
+
     if (-not (Test-Path $subjectDir)) { New-Item -ItemType Directory -Path $subjectDir -Force | Out-Null }
     $recordPath = Join-Path $subjectDir "$Kind-$compactAt.json"
 
