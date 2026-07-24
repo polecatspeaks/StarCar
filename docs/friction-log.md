@@ -154,3 +154,5 @@ overlap found.
 
 
 - 2026-07-24 (owner, mid-#47): PAUSE-AND-RETRO requested after the design-review train: 'some things happened outside my expectations and I want to look at them.' Standing item for the retro immediately after round-3 verdict lands; owner names the surprises.
+
+- 2026-07-24 (owner-classified, own drop, new class): NO ONBOARDING STEP FOR NEW-FAMILY AGENTS. The runtime switch put a new agent family to work with no documentation review; three design REJECT rounds followed, partly attributable to missing substrate context (the round-4 doc pass found the adapter doctrine, the vector prior art, and the AGENTS.md constraint - each would have changed rev 1). Owner proposal + conductor counter-proposal APPROVED: onboarding review is conductor/session-tier (cars stay brief-bound per the carrier rule), trigger-gated (new family, new agent identity, resume-after-compaction - never a daily ritual), and lands as the CONTENT of #47's neutral front door (tiered reading path extending doc-map's contributor path), not a parallel surface.
