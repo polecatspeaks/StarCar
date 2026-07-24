@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "09efc8cbc1b7",
+  "strategy": "manual-commit",
+  "branch": "dev",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "artifacts/_faults.log",
+    "artifacts/reviews/2026-07-24-issue53-guard-review-round1-APPROVE.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/09/efc8cbc1b7/0/metadata.json",
+      "transcript": "/09/efc8cbc1b7/0/full.jsonl",
+      "compact_transcript": "/09/efc8cbc1b7/0/transcript.jsonl",
+      "content_hash": "/09/efc8cbc1b7/0/content_hash.txt",
+      "prompt": "/09/efc8cbc1b7/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 256382,
+    "api_call_count": 440
+  }
+}
