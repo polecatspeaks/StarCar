@@ -1,72 +1,23 @@
-# Adversarial DESIGN review: dual-runtime harness design (#47), round 1
+DELTA RE-REVIEW, ROUND 2. Same design, revision 2 now committed to dev.
 
-You are an ADVERSARIAL DESIGN REVIEWER. Model: Claude Opus 4.8 (named explicitly). READ-ONLY: you never commit, never push, never edit repo files. You work in the shared checkout at `C:\Users\Chris\git\starcar` READ-ONLY (no worktree needed for a doc review), plus you may run read-only commands (git log/show/grep, Invoke-Pester on existing suites, python to inspect JSONL files) and probe hook behavior non-destructively.
+BASE VERIFICATION FIRST: in your worktree (or a fresh read of the shared checkout at C:\Users\Chris\git\starcar — READ ONLY, you never edit the shared checkout), run `git -C C:\Users\Chris\git\starcar log --oneline -3 dev` and confirm dev HEAD is da02ed7 with 3bcb751 beneath it. 3bcb751 is the rev-2 design; da02ed7 is your own round-1 verdict landed at artifacts/reviews/2026-07-24-dual-runtime-design-review-round1-REJECT.md. STOP and report if the SHAs do not match.
 
-## Target
+ROUND HISTORY (carrier): Round 1 = REJECT, 1 Major, 2 Minor.
+- DR-1 (MAJOR): P1's evidence (ParserError / quote-mangle) did not cover the producer's own `sh .claude/hooks/x.sh` lines, which you proved execute cleanly under PowerShell; rev 1's D3 normalizer could have activated that compat path into duplicate records; no §2c probe existed for it.
+- DR-2 (MINOR): §3 inventory miscount (9 stated vs 8 actual hooks).
+- DR-3 (MINOR): D5 vs §5.3 named two different homes for the "one extractor."
 
-`docs/design/2026-07-24-dual-runtime-harness-design.md` at dev HEAD `d626268`. Verify HEAD first (`git rev-parse HEAD` = d626268...); if the checkout moved, review the file AS OF d626268 via `git show d626268:docs/design/2026-07-24-dual-runtime-harness-design.md` and say so.
+WHAT HAPPENED AFTER YOUR VERDICT (author disclosure, verify it yourself): the probe DR-1 demanded was run and it overturned rev 1's premises. `.claude/probe-logs/subagent-stop.jsonl` and `post-task.jsonl` contain entries from TODAY's Copilot session — the compat layer HAS been executing the `sh script.sh` hooks all along, and payloads arrive already translated to Claude snake_case. The producer's silence root cause is its own filter: scripts/Produce-Artifact.ps1 lines ~141-147 require `agent_type` (stop) / `tool_input.subagent_type` (launch); compat sends `agent_name` / `tool_input.agent_type` → silent exit 0. Rev 2 therefore DELETES the second manifest and the normalizer entirely.
 
-## Context you must read first
+YOUR TASKS:
+1. Walk DR-1, DR-2, DR-3 through rev 2 (docs/design/2026-07-24-dual-runtime-harness-design.md at 3bcb751) as a table: Present / Absent / DRIFTED. §9b carries the author's claimed dispositions — verify each fold is substantive, not cosmetic.
+2. Re-derive the new evidence yourself: open .claude/probe-logs/subagent-stop.jsonl and post-task.jsonl, confirm today's-session entries and their snake_case keys; open scripts/Produce-Artifact.ps1 and confirm the filter lines say what the design claims (file:line in your verdict).
+3. Full adversarial pass on what CHANGED in rev 2 (git diff d626268..3bcb751 -- docs/design/ shows the delta): D1 intersection dialect, D2 filter tolerance + visible skips, D4 absent-envelope minting with backfill-as-enrichment, D5 one extractor home scripts/lib/TranscriptRead.ps1, D6 probe key fix, D7 flip to in-scope. Attack ambiguity, lifecycle holes, citation truth (open every file:line the design cites), and whether each §2c probe row would actually settle its question.
+4. Rule on CONVERGENCE as well as correctness: findings should be shrinking and moving, not holding station in one section.
+5. Answer §10's open questions where evidence permits, especially Q3 (leave the `sh -c` entire wrapper lines untouched as pinned noise, or fold them too?).
 
-1. The design doc itself, in full.
-2. `docs/templates/design-doc.md` — the template it must comply with, including the LAW-FIRST ordering and the worked exemplar's failure classes.
-3. `CLAUDE.md` sections: LAW-FIRST design, Match the instrument, NO HEADERS HERE (probe doctrine), Review calibration, GUIDE STAR. The design must satisfy these.
-4. `constitution.md` — open every law the design cites and quote the binding clause back when ruling.
-5. Issue #47 (`gh issue view 47 --comments`) — the probe evidence the design builds on. The design claims its substrate facts come from these probes; check the claims against the posted evidence.
-6. The producer spec it claims to amend-not-rewrite: find it (`docs/` — dispatch harness spec, #7) and check S2.1/S2.3/S2.4 are what the design says they are.
-7. `.claude/settings.json` and `.github/hooks/entire.json` — the current wiring the design describes. Verify every descriptive claim (e.g., "four SessionStart guards", "sh -c one-liners", "powershell variants succeed").
+CALIBRATION: any Major = REJECT. New Minors are findable without blocking if genuinely minor. Mint new IDs DR-4..n; never reuse.
 
-## Empirical claims you must RE-DERIVE, not read
+VERIFICATION HONESTY: every claim with suite, count, SHA, observer. Run the suites yourself at da02ed7 and report observed counts (derive your own baseline; do not trust any quoted count).
 
-The design rests on observed substrate. Re-derive what you can from this desk:
-
-- The parent session's events.jsonl at `C:\Users\Chris\.copilot\session-state\e07fc822-e277-4d5d-898a-1b91eedea7b6\events.jsonl`: hook family fired (hookType values), sessionStart failures and their stderr, subagentStop payload keys (`transcriptPath`, `agentName`), agentStop-with-empty-transcriptPath failures. Use python, read-only.
-- Copilot process logs at `~\.copilot\logs\process-*.log`: the PowerShell ParserError on `$CLAUDE_PROJECT_DIR/...` lines from "repo settings".
-- Whether `sh` resolves from PowerShell on this box.
-- The claim that hook payload key styles differ (Claude snake_case vs Copilot camelCase): Copilot side is in events.jsonl; Claude side — check the existing hook scripts' key reads (`.claude/hooks/subagent-stop-probe.sh` reads `agent_transcript_path`) and any Claude-era probe records in the repo (`artifacts/`, grep for probe logs) as evidence of what Claude actually delivered.
-
-Anything the design states as fact that you cannot re-derive: rule whether it is honestly placed in §2 (premise) or §2c (probe) instead of being smuggled into §5 as fact. A smuggled unverifiable claim is a finding.
-
-## What to attack (the design-review failure classes)
-
-- **§0 instrument choice**: is "behavioural with one precision edge landing as probe tests" the right call, or is more of this a wire contract that prose cannot hold?
-- **§1 constraints**: open each source; is any constraint paraphrased wrongly, satisfied only on paper, or MISSING? (Notably: does Law 5 bind here? Does the gating matrix? Does the CARRIER rule create obligations for the spec amendment?) In a law-first process you should find few or none — if you find several, say so as a convergence signal.
-- **§2 premises**: attack the premises themselves. Is P1 (compat layer keeps failing) load-bearing for D2's double-fire posture in a way that deserves a stronger guard NOW? Is any premise missing — something the whole design assumes that no row states? The worked exemplar's lesson: the unwritten premise is the expensive one.
-- **§2c probes**: are the blocking probes actually blocking the right decisions? Is the negative branch of each named and sane?
-- **D1-D7 decisions**: does each trace to a real constraint/premise? Is D7's deferral of `dispatched` records sound against the store's integrity expectations (RUN `Invoke-Pester -Path scripts/tests/StoreIntegrity.Tests.ps1` and read what it asserts about record pairing — the design's own §10 Q3 asks this; answer it)?
-- **§5 mechanism**: is the normalizer-in-python decision consistent with the repo's existing dependency posture? Is `$input | sh script.sh` actually a working PowerShell construction for feeding stdin (REASON about or probe PowerShell `$input` semantics in a hook context — if you can test `echo '{"a":1}' | powershell -c '$input | sh -c "cat"'` equivalent, do it)?
-- **§6 failure modes**: is the unknown-state row honest? Anything silently lost that the table misses?
-- **§8/§9**: contracts complete? cost line real?
-- **Doc-family fit**: does this design contradict anything in `docs/setup.md` or CLAUDE.md that would need a same-commit update when it lands (living-contracts rule)?
-
-## Verdict calibration
-
-Any Major = REJECT. Majors are defects that would propagate into the spec/plan/car (wrong constraint, false substrate claim, unsound decision, missing load-bearing premise). Minors are fixable in place without re-review of the whole. Notes are observations. APPROVE is available at zero Major. Blameless is not vague and not polite: name sections, quote lines, show observed values. Findings get IDs at birth: DR-1..n.
-
-## Report envelope (MANDATORY)
-
-END your final report with a fenced block, info string `starcar-artifact`, carrying `outcome` (APPROVE or REJECT), `findings` (DR-numbered, each with section + evidence), and `abstract` (one paragraph: what you re-derived, counts, the reviewed SHA). NO angle brackets inside the block.
-
----
-
-<system_notification>
-Shell command "Watch CI for design-doc push" (shellId: watchci-design) has completed successfully. Use read_powershell with shellId "watchci-design" to retrieve the output.
-</system_notification>
-
----
-
-<system_notification>
-Shell command "Watch CI for design-doc push" (shellId: watchci-design) has completed successfully. Use read_powershell with shellId "watchci-design" to retrieve the output.
-</system_notification>
-
----
-
-<system_notification>
-Agent "design-review-47" (car) has finished processing and is now idle. Use read_agent with agent_id "design-review-47" to read the results, or write_agent to send follow-up messages.
-</system_notification>
-
----
-
-<system_notification>
-Agent "design-review-47" (car) has finished processing and is now idle. Use read_agent with agent_id "design-review-47" to read the results, or write_agent to send follow-up messages.
-</system_notification>
+REPORT ENVELOPE (mandatory): end your report with a fenced block, info string starcar-artifact, carrying outcome (APPROVE or REJECT), findings (count by severity), abstract (2-3 sentences). NO angle brackets anywhere inside the fence.
