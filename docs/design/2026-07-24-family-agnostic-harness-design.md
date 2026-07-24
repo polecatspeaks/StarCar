@@ -1,7 +1,7 @@
 # Family-agnostic harness design: the repo defines the contract, runtimes adapt to the repo
 
 Status: Open
-Stage: rev 1 - awaiting adversarial design review round 1
+Stage: rev 2 - DR-8/DR-9/DR-10 folded, awaiting round-2 delta re-review
 Issue: #47
 Date: 2026-07-24
 Supersedes: `docs/design/2026-07-24-dual-runtime-harness-design.md` (retired by owner
@@ -30,8 +30,8 @@ repeat the instrument error.
 | Carrier rule (`CLAUDE.md`): "obligations cross rungs in documents with IDs, never by memory" | Dispatch identity reconstructed from runtime internals after the fact | D2 is this rule applied to a NEW boundary: identity crosses the runtime in the carriers the shop already controls (brief out, envelope back), never scraped from payloads |
 | Adapter doctrine (glossary, design rev 5 / #1): "health travels inside an adapter's return value, never beside it"; adapters own facts, one seam | A runtime integration whose failure mode is silence; N bespoke integrations with no shared contract | D4: each runtime intake is an adapter behind the producer's one seam, returning records-or-named-degradation; the contract (D3) is what makes a third family cheap |
 | `schema/vectors/README.md` (the proven executable-spec pattern) | Inventing a new conformance mechanism; pinning contract semantics in prose | D3 reuses the pattern verbatim: declarative fixtures, per-language runner contract, OBSERVED vs DESIGN-MANDATED provenance |
-| Healing Loop: "a structural impossibility beats them all" | Guarding identity collisions with review vigilance | D2: identity minted once by the dispatcher CANNOT collide with runtime internals because no runtime internal participates in it; uniqueness is enforced where the mint happens (one namespace, one owner) |
-| Rewrite-vs-extend (`CLAUDE.md`) | Rewriting `Produce-Artifact.ps1` or `Land-Verdict.ps1` because the POV changed | Both are EXTENDED: the producer's intake grows an adapter seam; the extractor stays the one home (`scripts/lib/TranscriptRead.ps1` per the superseded design's D5, which survives) |
+| Healing Loop: "a structural impossibility beats them all" | Guarding identity collisions with review vigilance | D2: runtime-internal collisions cannot reach identity because no runtime internal participates in it (structural). Mint-vs-mint collisions are NOT made structural by a naming convention alone - so D2 adds a mechanical guard: the producer REFUSES a `dispatched` record whose subject already has an un-superseded `dispatched` record, with a loud fault. Uniqueness is mechanical at the mint boundary, not dispatcher vigilance `[DR-9, folded]` |
+| Rewrite-vs-extend (`CLAUDE.md`) | Rewriting `Produce-Artifact.ps1` or `Land-Verdict.ps1` because the POV changed | Both are EXTENDED: the producer's intake grows an adapter seam; the extractor is EXTRACTED to one home (`scripts/lib/TranscriptRead.ps1` - a NEW file, pulled from the producer's inline reader at `Produce-Artifact.ps1:158+`; it does not exist at base. "Survives" means the superseded design's D5 DECISION survives as work to do, not that the file does) `[R1 note, folded]` |
 | Right-sizing + NIRTS (`CLAUDE.md`) | A runtime-abstraction framework; adapters for families not in use | Two adapters (the families in actual use); the CONTRACT is family-agnostic, the adapter count is demand-driven |
 | Fail-closed preToolUse (probed, `docs/setup.md`) | Wiring anything StarCar to preToolUse on any runtime | Nothing here touches preToolUse |
 | Onboarding fold (owner-approved counter-proposal, 2026-07-24, friction log 5b21bfd) | Onboarding as a parallel ritual; corpus-reading cars; an every-session re-read | D1: onboarding is the front door's CONTENT, conductor/session-tier, trigger-gated (new family / new identity / post-compaction); cars stay brief-bound |
@@ -40,18 +40,27 @@ repeat the instrument error.
 
 | # | Premise | If false |
 |---|---|---|
-| P1 | Every runtime in scope lets the conductor pass an operator-chosen label with each dispatch and returns it (or lets the brief carry it) - so shop-minted identity can round-trip without scraping runtime internals | D2 falls back to the brief/envelope carrier alone (the envelope's task-id already round-trips today - proven by three verdict landings this session); the hook-side record then joins on the envelope, later, instead of at stop |
+| P1 | Every runtime in scope lets the conductor pass an operator-chosen label with each dispatch and returns it (or lets the brief carry it) - so shop-minted identity can round-trip without scraping runtime internals | For that family, the adapter keeps the runtime's own stable pairing id as the launch-and-stop `subject` (Claude's launch/stop UUIDs are identical - `Produce-Artifact.ps1:7-10` - so pairing NEVER regresses), and the minted id still arrives on the `returned` record via the envelope's `task-id` echo (NEW work, §5.7 - see the correction note below). One dispatch is always ONE subject; the minted id joins the pair at return, not never `[DR-8, folded]` |
 | P2 | Each runtime family exposes SOME session-start surface (custom instruction, settings, config convention) that can carry one pointer line to the front door | The front door still works for any agent a human points at it (the stranger test's floor); per-family auto-load is enrichment, not foundation |
 | P3 | The families in actual use remain two (Claude Code, Copilot CLI); a third arrives eventually | D4 ships two adapters; D3's contract is what a third conforms to - the design survives P3 either way by construction (NIRTS) |
 | P4 | The compat-layer facts probed under the superseded design hold (compat executes `sh script.sh` hooks, translates to snake_case, `Task` maps to `Agent`) - inherited evidence, `.claude/probe-logs/` | The Copilot adapter's intake changes shape; D3's vectors red BY NAME and the adapter is re-derived; the contract and every other decision stand |
 | P5 | The doctrine can be pointed to from a neutral home without breaking the runtimes that auto-load `CLAUDE.md` today | If a runtime demands its family file carry full content, that family's pointer file carries a generated copy WITH a generation marker (the Law-6 cost is paid visibly, machine-maintained, like AGENTS.md's gitnexus blocks) - a disclosed fallback, not the plan |
+
+**Correction (DR-8, folded): what is proven today versus what is new work.** Rev 1
+claimed "the envelope's task-id already round-trips today - proven by three verdict
+landings." FALSE, and the round-1 reviewer caught it: what those landings proved is the
+RUNTIME's `<task-id>` task-notification tag, which `Land-Verdict.ps1:125` greps from the
+transcript - P1's runtime-label carrier, not the envelope. The starcar-artifact envelope
+carries outcome/findings/abstract only (`car.md:28`); the `task-id` echo is NEW work this
+design adds (§5.7), landed red-first with D3's vectors. Nothing in this design leans on
+the echo existing before the car builds it.
 
 ## §2c - Probe list (what the desk cannot prove)
 
 | Claim | Why unverifiable from the desk | What would settle it | Blocking? |
 |---|---|---|---|
 | P1 for Copilot: the dispatch tool's `name` argument is operator-controlled and lands verbatim in hook payload + events (`tool_input.name`, `execution_start.arguments.name`) | Observed 3/3 this session, but only with conductor-chosen unique names; never probed with a deliberate duplicate | One dispatch pair with an intentionally reused name; observe both payloads - settles whether the mint's uniqueness discipline is the ONLY guard (expected) or the runtime dedups | Yes - for D2's Copilot adapter |
-| P1 for Claude Code: the Task tool's dispatch carries an operator label the stop payload or transcript returns | No Claude Code session available from this desk | First Claude session after landing: dispatch one car with a shop-minted id; observe `agent_id`/payload | Yes - for closing #47; not for build (the envelope carrier works today on both, proven) |
+| P1 for Claude Code: the Task tool's dispatch carries an operator label the stop payload or transcript returns | No Claude Code session available from this desk | First Claude session after landing: dispatch one car with a shop-minted id; observe `agent_id`/payload | No - the Claude adapter ships in mode (b) (runtime-UUID subject, proven today); this probe gates its UPGRADE to mode (a), not the build `[DR-8, folded]` |
 | P2 per family: Copilot auto-loads `.github/copilot-instructions.md`; Claude auto-loads `CLAUDE.md`; each can carry the pointer | Copilot's load set observed indirectly (this session runs under it); never deliberately minimised | One session with the pointer-only file; confirm doctrine reachable | No - D1 works with a human-pointed front door as the floor |
 | The intersection-dialect SessionStart lines execute under both runtimes (inherited §2c row, still open) | Session-cached config; no Claude session | Next restart of each | Yes - for the guards' port, unchanged from the superseded design (the finding survives; the POV around it changed) |
 
@@ -77,10 +86,10 @@ store.
 | # | Decision | Reason | Constraint/premise |
 |---|---|---|---|
 | D1 | **Neutral front door = the onboarding protocol.** One runtime-neutral entry document owns arrival: what StarCar is, the tiered reading path (Tier 1 mandatory: constitution → healing loop → CLAUDE.md statute index → glossary → setup → doc-map; Tier 2 role-triggered: rung templates + contracts touched; Tier 3 archaeology on demand: verdicts, retros), and the compliance floor (envelope mandate, carrier rule, never-push, honest stop). Per-family files (`CLAUDE.md`, `.github/copilot-instructions.md`, a future family's equivalent) become one-pointer-line surfaces over time - EXISTING content migrates only when touched, never big-bang. Onboarding is conductor/session-tier, trigger-gated (new family / new agent identity / resume-after-compaction); cars stay brief-bound. HOME: a new `ONBOARDING.md` at repo root - NOT `AGENTS.md`, which is GitNexus-owned (doc-map: "tool-maintained, not hand-herded"; writing there hand-herds a machine surface) | The onboarding fold (owner-approved); Law 7 (the front door IS the stranger's first surface); Law 6 (one doctrine body, pointers not copies); doc-map's contributor path is the prior art this extends | Law 6, Law 7, P2, P5 |
-| D2 | **Dispatch identity is minted by the shop, carried by carriers, never scraped.** The conductor mints a unique dispatch id at dispatch time (convention: `<ticket>-<role>-r<round>`, e.g. `47-design-review-r3`; uniqueness is the dispatcher's discipline, enforced at the ONE place minting happens). The id travels OUT in the carriers the shop already owns - the runtime's dispatch label where P1 holds, and ALWAYS the brief (which mandates the envelope echo it back as `task-id`). It travels BACK in the envelope. The store record's `subject` IS the minted id. Runtime-internal ids (toolCallIds, agent session ids) may be RECORDED as provenance enrichment when an adapter can see them cheaply; they are never identity | This is the carrier rule pointed at a new boundary, and it structurally dissolves the superseded design's entire defect family: DR-4 (no subject in the payload - irrelevant, the subject is in the brief), DR-6 (name collisions - the mint owns uniqueness; no runtime internal participates). The store contract already keys by `subject` and never demanded runtime provenance (round-1 reviewer: StoreIntegrity has no pairing assertion; the schema is open) | Carrier rule, Healing Loop (structural beats vigilance), Law 1, P1 |
-| D3 | **The adapter contract is executable: `schema/vectors/adapter/` conformance fixtures** in the proven vector pattern (declarative input → expected records; OBSERVED vs DESIGN-MANDATED provenance; per-language runner contract). The contract pins: given a dispatch-start event carrying minted id X, a conforming adapter yields a `dispatched` record with `subject: X`; given a stop event whose report envelope carries `task-id: X`, a `returned` record with `subject: X`, outcome from the envelope; given a stop with NO envelope, a `returned` record with `envelope: absent` + fault line; given an unrecognisable payload, a visible skip (stderr naming present keys) and NO record. Identity semantics live HERE, not in this prose | §0's split: identity/join/dedup are format; the round-3 reviewer prescribed exactly this instrument; `schema/vectors/README.md` is the worked in-repo pattern (cross-verifier discipline proven at C3R-1) | §0, Law 6 (one authority), the vectors prior art |
+| D2 | **Dispatch identity is minted by the shop, carried by carriers, never scraped - and the launch-side carrier is specified PER FAMILY, honestly.** The conductor mints a unique dispatch id at dispatch time (convention: `<ticket>-<role>-r<round>`, e.g. `47-design-review-r3`). Uniqueness is MECHANICAL, not discipline: the producer refuses a `dispatched` record whose subject already has an un-superseded `dispatched` record, loud fault, pinned by a vector `[DR-9, folded]`. The id travels OUT in the brief (which mandates the envelope echo it back as `task-id` - NEW work, §5.7) and, where the family's dispatch label is proven to land in the launch payload, in that label too. It travels BACK in the envelope. **Subject rule, per adapter mode:** (a) *label-proven family* (Copilot: `tool_input.name` / `execution_start.arguments.name`, observed 3/3): subject = minted id at BOTH launch and stop. (b) *label-unproven family* (Claude, until §2c row 2 probes): subject = the runtime's own stable pairing id at BOTH launch and stop (launch/stop UUIDs identical today, `Produce-Artifact.ps1:7-10` - the working pairing is KEPT, never demoted `[DR-8, folded]`), with `subject_basis: runtime-id` disclosed and the minted id landing on the `returned` record as `task_id` from the envelope. One dispatch is ONE subject in either mode; a probe upgrades a family from (b) to (a), vector-gated. Runtime-internal ids may additionally be RECORDED as provenance enrichment; they are never identity in mode (a) | This is the carrier rule pointed at a new boundary. It dissolves DR-4 (no payload subject needed in mode (a); mode (b) needs nothing new) and DR-6's name-space axis (no runtime NAME participates in identity in either mode - mode (b)'s UUID is runtime-assigned and collision-free per launch, the very property names lacked). The pairing guarantee is not asserted beyond its evidence: mode (a) where probed, mode (b) where not | Carrier rule, Healing Loop (structural beats vigilance), Law 1, P1 |
+| D3 | **The adapter contract is executable: `schema/vectors/adapter/` conformance fixtures** in the proven vector pattern (declarative input → expected records; OBSERVED vs DESIGN-MANDATED provenance; per-language runner contract). The contract pins, per adapter mode (D2): given a dispatch-start event, a conforming adapter yields a `dispatched` record whose `subject` follows its mode's rule (minted id in mode (a); runtime pairing id + `subject_basis: runtime-id` in mode (b)); given a stop event whose report envelope carries `task-id: X`, a `returned` record pairing with its launch record (subject per mode, minted id as `task_id`), outcome from the envelope; given a stop with NO envelope, a `returned` record with `envelope: absent` + fault line; given an unrecognisable payload, a visible skip (stderr naming present keys) and NO record; given a `dispatched` whose subject already has an un-superseded `dispatched` record, a REFUSAL with a loud fault (the DR-9 mechanical guard). Identity semantics live HERE, not in this prose. The detector/board duplicate-subject EXPOSURE behaviour is fold-tier and stays pinned where it already is - the existing `schema/vectors/fold/` fixtures (`precedence-dispatched-then-returned.json`; `superseded` array, `Detect-Dispatches.ps1:210-214`) - plus one NEW duplicate-subject fold vector the car adds `[DR-10, folded]` | §0's split: identity/join/dedup are format; the round-3 reviewer prescribed exactly this instrument; `schema/vectors/README.md` is the worked in-repo pattern (cross-verifier discipline proven at C3R-1) | §0, Law 6 (one authority), the vectors prior art |
 | D4 | **Two thin runtime intake adapters behind the producer's one seam.** `Produce-Artifact.ps1` stays the ONE writer; its payload intake becomes a small per-runtime normalisation step (Claude shape; Copilot compat shape) conforming to D3's vectors. Health inside the return value: an adapter that cannot produce a record returns a named degradation (visible skip, fault line), never silence. The superseded design's surviving findings ride here as the Copilot adapter's content: filter tolerance (`agent_type` OR `agent_name`), visible skips, absent-envelope minting at stop, the one extractor home (`scripts/lib/TranscriptRead.ps1`), the probe key fix (`subagent-stop-probe.sh` reading `transcript_path`), the intersection-dialect SessionStart lines | Adapter doctrine (the board's own, applied to the harness); rewrite-vs-extend (the producer is extended at its seam); NIRTS (two adapters, contract makes the third cheap); every probed fact from the superseded design's §3b remains true and lands here | Adapter doctrine, Law 4, Law 6, P3, P4 |
-| D5 | **The superseded design's uncontested decisions survive, re-homed, with their finding history.** Carried verbatim into D4's scope: intersection dialect for the four SessionStart guards (one manifest), D6's probe key fix, D5's one-extractor home, the `sh -c` entire wrappers as pinned noise (round-2 reviewer ruling). Dropped: the events.jsonl three-hop identity join (DR-6's subject dies with the scraping premise - runtime ids are optional provenance now, and DR-7's live-file read hazard shrinks to an enrichment-path concern, disclosed in D3's absent-envelope vector) | Three rounds of reviewer work product is evidence, not waste; what died was the POV, not the probes. Findings that survive the reframe are carried with their IDs so the round-4 reviewer can verify nothing was laundered | Carrier rule, GUIDE STAR (the record stays) |
+| D5 | **The superseded design's uncontested decisions survive, re-homed, with their finding history.** Carried verbatim into D4's scope: intersection dialect for the four SessionStart guards (one manifest), D6's probe key fix, D5's one-extractor home, the `sh -c` entire wrappers as pinned noise (round-2 reviewer ruling). Dropped: the events.jsonl three-hop identity join (DR-6's subject dies with the scraping premise - runtime NAMEs never participate in identity, and runtime ids are either the disclosed mode-(b) pairing subject or optional provenance, never a scraped join key `[DR-8, folded]`; DR-7's live-file read hazard shrinks to an enrichment-path concern, disclosed in D3's absent-envelope vector) | Three rounds of reviewer work product is evidence, not waste; what died was the POV, not the probes. Findings that survive the reframe are carried with their IDs so the round-4 reviewer can verify nothing was laundered | Carrier rule, GUIDE STAR (the record stays) |
 
 ## §5 - Mechanism
 
@@ -96,16 +105,19 @@ store.
    no-envelope-at-stop vector and the unrecognisable-payload vector land RED against
    today's producer and drive D4.
 4. **`Produce-Artifact.ps1`** (D2+D4): intake adapter seam (per-runtime normalisation to
-   ONE internal payload shape), subject from the minted id (dispatch label where
-   present, envelope `task-id` at return), filter tolerance + visible skips,
-   absent-envelope minting, runtime ids recorded as optional `provenance` enrichment.
+   ONE internal payload shape), subject per adapter mode (Copilot: minted id from the
+   dispatch label; Claude: runtime pairing id, `subject_basis: runtime-id`, minted id as
+   `task_id` at return `[DR-8, folded]`), the duplicate-`dispatched` refusal guard
+   `[DR-9, folded]`, filter tolerance + visible skips, absent-envelope minting, runtime
+   ids recorded as optional `provenance` enrichment.
 5. **`scripts/lib/TranscriptRead.ps1`** (D5): the one extractor, events.jsonl branch,
    consumed by producer and `Land-Verdict.ps1`.
 6. **`.claude/settings.json`** (D5): four SessionStart lines to intersection dialect;
    `subagent-stop-probe.sh` key fix.
 7. **Templates** (D2): `docs/templates/car-brief.md` + `.claude/agents/car.md` envelope
    mandate gains the `task-id` echo line (the id the brief carries comes back in the
-   envelope - one sentence each).
+   envelope - one sentence each). NEW work: the envelope carries no task-id today
+   (`car.md:28`); this line is what makes the minted id round-trip `[DR-8, folded]`.
 8. **`docs/setup.md`**: runtime-status rows corrected (the superseded design's §5.6
    obligation survives verbatim); onboarding trigger rows added.
 
@@ -113,8 +125,8 @@ store.
 
 | Failure | Behaviour | Law |
 |---|---|---|
-| Conductor mints a duplicate id | The store shows two records sharing a subject with conflicting lifecycles; the fold's supersession exposes both (never merges silently); the mint convention (`ticket-role-round`) makes duplicates a discipline failure VISIBLE at the store, and D3's vectors pin the exposure behaviour | Law 4, Law 1 |
-| A runtime never returns the dispatch label (P1 false for that family) | The envelope carrier alone joins (task-id in the brief, echoed back); the `dispatched` record still mints at launch with the minted id from the label if present, else the adapter discloses `subject_basis: envelope-pending` | Law 1 |
+| Conductor mints a duplicate id | The producer REFUSES the second `dispatched` record at the mint boundary with a loud fault (mechanical guard, D2/D3 vector-pinned `[DR-9, folded]`); if a duplicate ever reaches the store anyway, the fold's supersession exposes both, never merges silently - fold-tier behaviour pinned by the existing `schema/vectors/fold/` fixtures plus the new duplicate-subject vector `[DR-10, folded]` | Law 4, Law 1 |
+| A runtime never returns the dispatch label (P1 false for that family) | That family runs in adapter mode (b): subject = runtime pairing id at both ends (pairing intact), `subject_basis: runtime-id` disclosed, minted id lands at return as `task_id` from the envelope echo. One dispatch is never rendered as two subjects `[DR-8, folded]` | Law 1 |
 | A report arrives with no envelope | `returned` mints with `envelope: absent` + fault line naming the backfill command (`Land-Verdict.ps1`) - inherited from the superseded design, unchanged | Law 4 |
 | An unknown family's payload arrives | Visible skip: stderr names the keys present, no record, no guess | Law 1 |
 | A family's pointer surface is not auto-loaded (P2 false) | The front door still works human-pointed; the stranger test never depended on auto-load | Law 7 |
@@ -124,7 +136,9 @@ store.
 ## §7 - Out of scope
 
 - Entire mirroring (working, dual-wired already).
-- Automatic post-read envelope enrichment (triggers unchanged from the superseded design).
+- Automatic post-read envelope enrichment (no longer load-bearing: mode (b) pairs by the
+  runtime id at both ends, so no record waits on a later join `[DR-8, folded]`; triggers
+  unchanged from the superseded design).
 - A third adapter (D3's contract is the preparation; NIRTS gates the build).
 - Big-bang migration of `CLAUDE.md` content into the neutral home (trigger: each section
   moves when next touched, or an owner ruling orders a batch).
@@ -156,19 +170,27 @@ dispatch pair) and 4 (owner restart). Owner approval recorded before car dispatc
 | Prior item | Kind | Disposition | Where |
 |---|---|---|---|
 | DR-1..5 folds (verified ABSENT by rounds 2-3) | findings | inherited as settled evidence; the probed substrate facts (§3b of the superseded design) remain true and D4 consumes them | D4, P4 |
-| DR-6 (MAJOR, round 3): name-space join key non-unique; detector + board collapse by subject | finding | **dissolved structurally, not patched**: identity is no longer derived from any runtime name-space - the mint owns uniqueness, the store's subject IS the minted id, and runtime ids are optional provenance. The collision the reviewer constructed (5 toolCallIds, one name) cannot reach the store because `arguments.name` no longer participates in identity. The detector/board pairing concern is now pinned by D3's vectors instead of prose | D2, D3 |
+| DR-6 (MAJOR, round 3): name-space join key non-unique; detector + board collapse by subject | finding | **name-space axis dissolved structurally; pairing axis specified per adapter mode, not overclaimed** `[DR-8 correction, folded]`: identity is never derived from any runtime NAME-space in either mode - the collision the reviewer constructed (5 toolCallIds, one name) cannot reach the store because `arguments.name` participates only where it carries the shop's OWN minted id (mode (a), Copilot, probed). Where the label carrier is unproven (Claude, mode (b)), the working runtime-UUID pairing is kept, disclosed, and probe-upgraded - never replaced by an unproven carrier. Duplicate-mint collisions are refused mechanically at the producer (DR-9 guard). The detector/board duplicate-subject exposure is pinned by the existing fold vectors plus one new duplicate-subject fold vector `[DR-10, folded]` | D2, D3 |
 | DR-7 (MINOR, round 3): live events.jsonl read discipline unstated | finding | shrunk by the reframe (the stop path no longer REQUIRES an events.jsonl read for identity) but not dismissed: the extractor's enrichment path still reads a live file, and D3's absent-envelope vector plus the runner contract state the torn-line discipline (skip unparseable trailing line, never throw) | D3, D4 |
 | Round-3 convergence ruling: pull the identity model into an executable spec before round 4 | ruling | adopted as §0's split and D3 | §0, D3 |
 | Round-3 §10 rulings (Q1: join blocking for D7 landing; Q2: the detector pairs by subject) | rulings | Q1 mooted (no join to block on); Q2 adopted - the detector is named as a pairing consumer and D3's vectors are its guard | D2, D3 |
 
+## §9c - Review record
+
+| Round | Verdict | Findings | Disposition |
+|---|---|---|---|
+| 1 (fresh reviewer, `design-review-47b`, base b3032b4) | REJECT (`artifacts/reviews/2026-07-24-family-agnostic-design-review-round1-REJECT.md`) | DR-8 MAJOR (pairing guarantee overclaimed: launch-side minted-id carrier unproven for Claude; P1-false fallback mispaired one dispatch into two subjects with its remedy §7-excluded; "envelope proven today" false - the proven carrier is the runtime `<task-id>` tag, `Land-Verdict.ps1:125`); DR-9 MINOR (structural-impossibility overclaim for dispatcher discipline); DR-10 MINOR (fold-vs-adapter vector-tier misattribution) | DR-8 folded: per-family adapter modes (a)/(b) in D2 - mode (b) keeps Claude's working UUID pairing, disclosed, probe-upgraded; the false "proven today" claims corrected (§2 correction note, §2c row 2, §5.7); §7's exclusion reconciled (no record waits on a later join). DR-9 folded: mechanical duplicate-`dispatched` refusal at the producer, vector-pinned (§1, D2, D3, §6). DR-10 folded: exposure attributed to the existing fold vectors + one new duplicate-subject fold vector (D3, §6, §9b). Reviewer's Q1 ruling adopted (doc-map row mandatory, §8); Q2 ruling adopted (the guard IS the fix); Q3 answered by mode (b) (no consumer demoted) |
+
 ## §10 - Open questions for the reviewer
 
-1. **D1's home** (`ONBOARDING.md` at root): right call versus `docs/onboarding.md`?
-   Root maximises stranger visibility; docs/ keeps root minimal. The design says root
-   (front doors belong at the front).
-2. **D2's mint convention** (`ticket-role-round`): sufficient as a discipline, or does
-   the round-1 reviewer see a case for a mechanical uniqueness guard at mint time
-   (e.g., the producer refusing a `dispatched` subject that already has an
-   un-superseded `dispatched` record)?
-3. **D5 drops the three-hop events.jsonl identity join.** Is any surviving consumer
-   harmed by runtime ids becoming optional provenance rather than identity?
+Round-1 rulings received and adopted: Q1 (root `ONBOARDING.md`, doc-map row mandatory),
+Q2 (mechanical guard warranted - now D2/D3 content), Q3 (yes, the producer was harmed -
+now mode (b)). Open for round 2:
+
+1. **The two-mode subject rule (D2)** trades one uniform subject semantics for per-family
+   honesty (mode (b) subjects are UUIDs, not minted ids, until probed). Is the disclosed
+   mixed-semantics store acceptable, or does the reviewer see a cheaper uniform
+   alternative that does not regress Claude's pairing or lean on unproven carriers?
+2. **The DR-9 refusal guard's failure surface**: refusing the SECOND `dispatched` record
+   leaves the first standing - is loud-refuse-and-keep-first the right precedence, or
+   should the guard mint a disambiguated subject (e.g. `-dup2`) and disclose it?
