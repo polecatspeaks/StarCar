@@ -1,7 +1,7 @@
 # Family-agnostic harness design: the repo defines the contract, runtimes adapt to the repo
 
 Status: Open
-Stage: rev 2 - DR-8/DR-9/DR-10 folded, awaiting round-2 delta re-review
+Stage: rev 2 - APPROVED at review round 2 (DR-11 Minor + Q2 boundary sentence carried to the spec/plan rung)
 Issue: #47
 Date: 2026-07-24
 Supersedes: `docs/design/2026-07-24-dual-runtime-harness-design.md` (retired by owner
