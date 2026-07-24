@@ -1,0 +1,5 @@
+ok let's think this through. This repo will bounce between copilot and claude code. We need to do the minimum amount of work to ensure functionality between the two disparte model and environment families. Does that make sense?
+
+---
+
+ok let's think this through. This repo will bounce between copilot and claude code. We need to do the minimum amount of work to ensure functionality between the two disparte model and environment families. Does that make sense?
