@@ -64,7 +64,7 @@ change is itself a process failure (the autoimmune mode - see the Healing Loop's
 | Match the instrument | Behavioural work gets prose; formats/protocols get an EXECUTABLE spec |
 | NO HEADERS HERE | Truth is constructed by probes; probes must LAND as durable artifacts |
 | LAW-FIRST design | Constraints and premises on the page BEFORE the mechanism |
-| ASK FOR THE PRIOR ART | It probably exists and was not ported; the question costs one sentence |
+| ASK FOR THE PRIOR ART | Check `docs/templates/` FIRST - the landed store adjudicates most of it; ask the owner for what has NOT landed; an empty search is a trigger, never an answer |
 | Build from wreckage | Only when no prior art exists; never for a rung never run |
 | GUIDE STAR | Blameless is not vague and not polite; REJECT and reversal are SUCCESS outcomes with a durable artifact |
 | Reality vs spec | When a written rule does not fit reality, the HUMAN adjudicates - sharpen or loosen, case by case, never inferred. The escalation path is the PRESSURE RELEASE VALVE: a process with no legitimate way to bend gets bent silently |
@@ -344,10 +344,29 @@ round questioned it. That one was caught by the owner pulling back, not by any g
 
 ## ASK FOR THE PRIOR ART. It probably exists and was not ported.
 
-**Before building any workflow artifact, ask the owner whether prior art exists.** This
-repo's seed came from a working shop. The port was PARTIAL by necessity - rules came over,
-exemplars mostly did not - and **nothing prompts anyone to ask for the rest.** The owner is
-the bridge to it, and the question costs one sentence.
+**CHECK `docs/templates/` FIRST. It is the landed prior-art store, and it adjudicates most
+of this question without spending an owner turn (owner ruling, 2026-07-24).** The ported
+exemplars have accumulated into something searchable rather than a handful of files: rung
+artifacts (brief, design, spec, plan, ledger, gating matrix), the `*-patterns` docs for ops
+scripts and repo-policy gates, and a `worked-*` exemplar drawn from real wreckage paired
+with most of them. **`docs/doc-map.md` OWNS the enumeration and the count; do not restate
+either here** - a hardcoded file list in a second document is a defect generator this repo
+has already paid a Major for (DM-1: the map's own templates row shipped a count from
+memory and was stale on arrival). LIST THE DIRECTORY before concluding anything is
+missing, and OPEN the file before concluding it does not cover your case.
+
+**Then, and only when the templates do not answer, ask the owner.** This repo's seed came
+from a working shop. The port was PARTIAL by necessity - rules came over, exemplars mostly
+did not - and **nothing prompts anyone to ask for the rest.** The owner is the bridge to
+what has NOT landed, and the question costs one sentence.
+
+**THE GUARD, and it is why this stays TWO tiers rather than collapsing into one:** the
+templates answer *has it landed*, never *does it exist*. Absence from `docs/templates/` is
+not evidence of absence in the ancestor - that is this file's own absence-blindness class,
+one directory over. **An empty search is the trigger to ask, never the answer.** The tier
+that was added is a cheaper FIRST step, not a replacement for the escalation, and an agent
+that reports "no prior art exists" on the strength of a directory listing has made a
+confident falsehood (Law 1) about the one subject this section exists to protect.
 
 *Scar: five adversarial design rounds and roughly half a million tokens were spent
 rediscovering dispatch practice the ancestor shop already had written down. When
@@ -363,9 +382,23 @@ from the ancestor shop's `run-suites` / `watch-ci` patterns". Both were read in 
 ten minutes of the founding session and parsed as "build later" rather than "prior art
 exists - ask for it".*
 
-**So the standing questions, at the start of any rung and at every session-start retro:**
-what prior art exists for this, has it been ported, and what does `docs/setup.md` already
-say is waiting? A rung with no artifact is not necessarily a rung with no prior art.
+*Evidence for the two-tier amendment, from the morning it was ruled: the conductor was
+about to build a session-start reconciliation gate and went looking for prior art in the
+repo rather than asking. `docs/templates/worked-verification-reconciliation.md` Layer 3
+already named "fixed reconciliation cadences" as a standing shape, and the existing
+`.claude/hooks/session-start-ci-baseline.sh` turned out to be that pattern's FIRST
+instance, aimed at CI. The work reframed from an invention into the SECOND instance of an
+already-ported pattern, at a cost of one directory listing and two file reads, and the
+owner turn it would otherwise have consumed was never spent. Two probes in the same hour
+then killed the naive design (the checkpoint carries twenty SHA-shaped tokens, and
+`git log` fatals on an unknown revision), which is the probe doctrine and this rule doing
+adjacent jobs: the templates say what SHAPE is known, the probes say what is TRUE here.*
+
+**So the standing order, at the start of any rung and at every session-start retro:** list
+`docs/templates/` and open what looks close; check `docs/setup.md`'s trigger-gated table
+for what was deliberately deferred; and THEN ask the owner what exists that has not landed.
+A rung with no artifact is not necessarily a rung with no prior art, and a directory with
+no matching file is not a shop with no matching practice.
 
 ## When no prior art exists: build it from wreckage
 
