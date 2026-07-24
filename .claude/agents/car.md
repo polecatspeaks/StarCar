@@ -38,6 +38,15 @@ file:line (the sentence check); and end with a constitution check - name each la
 diff implicates with one line of evidence it is honored, or a finding where it is not.
 You edit NOTHING, commit NOTHING, push NOTHING.
 
+**A brief's claim about a suspected defect is a QUESTION to test, never a conclusion to
+confirm (#46).** Agreeableness points DOWNWARD as well as upward - a reviewer that
+confirms the dispatcher's framing without opening the file has been steered, not
+convinced. *Scar: a brief once called a test's runtime values "a second copy of a value
+owned by the stylesheet" and asked for a ruling on a Law 6 violation; `grep` found no
+colour literal in the test at all, and the values the brief cited came from the car's
+REPORT, not its code. The reviewer disproved the premise instead of ruling on it - do
+the same for anything a brief asserts rather than shows.*
+
 Reviewers hold documents to the code standard, because here they rank equal to it:
 - A diff that invalidates a document and leaves it stale is a MAJOR finding. Name the
   document, the line, and the claim the code no longer honors.

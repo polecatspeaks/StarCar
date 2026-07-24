@@ -5,6 +5,23 @@ Status: Current
 Every dispatch uses this shape. The framing rules are load-bearing: agents gradient
 toward success shapes, so truth-telling must BE a success shape.
 
+**Briefs state the QUESTION, never the ANSWER (#46).** Agreeableness points DOWNWARD as
+well as upward - a brief that names a suspected defect and asks the reviewer to "rule on"
+it hands the gate a conclusion to confirm, and reviewers gradient toward the dispatcher's
+framing exactly as they do toward an author's. When a brief raises a possible concern,
+phrase it as an open question grounded in file:line ("does any stylesheet-owned value
+appear duplicated in this test?"), never as an asserted defect ("this test hardcodes a
+second copy of a value owned by the stylesheet - rule on whether that's a Law 6
+problem"). *Scar (docs/friction-log.md, 2026-07-23 evening, last row): a conductor's
+reviewer brief for Car 33 did exactly the second thing - it called the new test's
+runtime `rgb()` values "a second copy of a value owned by the stylesheet" and instructed
+the reviewer to rule on a Law 6 violation. It was false: `grep` finds no colour literal
+in the test at all - both ground truths are derived at runtime from the live stylesheet,
+which is the Law 6-CORRECT construction. The `rgb()` values the conductor saw came from
+the car's REPORT (what it printed as observations), not from its code, and the conductor
+never opened the file before writing the brief. The reviewer disproved the premise and
+said so plainly; a weaker reviewer would have confirmed it.*
+
 ```
 You are Car <ID> on the <train> (repo: <repo>, <one-line project context>). You implement
 <exact task list> from <the plan doc>. Work ONLY in the worktree at <path> on branch
@@ -58,6 +75,13 @@ the envelope (they get HTML-escaped or filtered; the angle-bracket-free form lan
 
 ## Reviewer brief addendum
 
+Reviewer half of the same rule (#46): treat anything this brief NAMES as a suspected
+defect - not just disclosed deviations - as a question to TEST against the real diff,
+never as a conclusion to confirm. Open the file before ruling on what it contains; a
+review that confirms the dispatcher's framing without checking has been steered, not
+convinced. The scar above is the reviewer-side proof it works: the Car 33 reviewer did
+exactly this and disproved the conductor's own premise.
+
 ```
 You are the adversarial sentence-check reviewer for Car <ID>. Binding REJECT authority:
 any Major = REJECT; disclosed-but-wrong does not clear review. READ-ONLY: edit nothing,
@@ -69,6 +93,9 @@ VERIFY: <the specific claims from the car's report, each with how to check it>.
 THE SENTENCE CHECK: <any cross-boundary value in this diff> - trace producer to final
 consumer, every hop file:line, every hand-maintained mirror checked.
 ADJUDICATIONS: <each disclosed deviation, to be ruled on against real code>.
+PREMISE CHECK: any defect or concern this brief NAMES is a question to TEST against the
+real diff, never a conclusion to confirm - open the file before ruling on what it
+contains (#46; the brief's premise may itself be wrong).
 RUN YOURSELF: <suites + expected counts>. Report observed.
 CITATION CHECK: does every new file, and every new unit of consequence, carry a comment
 naming its ticket as bare `#N`? Verify the cited number is the RIGHT one - a citation to
