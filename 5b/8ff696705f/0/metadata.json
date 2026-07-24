@@ -1,0 +1,52 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "5b8ff696705f",
+  "session_id": "e07fc822-e277-4d5d-898a-1b91eedea7b6",
+  "strategy": "manual-commit",
+  "created_at": "2026-07-24T15:57:55.4866889Z",
+  "branch": "dev",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "artifacts/reviews/2026-07-24-family-agnostic-car-review-round2-APPROVE.md"
+  ],
+  "agent": "Copilot CLI",
+  "model": "claude-fable-5",
+  "turn_id": "61a7a565b50e",
+  "checkpoint_transcript_start": 5134,
+  "transcript_lines_at_start": 5134,
+  "compact_transcript_start": 618,
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 40969,
+    "api_call_count": 37
+  },
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-07-24T15:57:55.0103216Z",
+    "agent_lines": 116,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 116,
+    "total_lines_changed": 116,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 27,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".claude/settings.local.json": 27
+      }
+    }
+  ]
+}
