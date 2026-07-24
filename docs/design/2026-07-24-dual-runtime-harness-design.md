@@ -1,7 +1,7 @@
 # Dual-runtime harness design: one harness, two runtimes (Claude Code + Copilot CLI)
 
-Status: Open
-Stage: rev 3 - awaiting adversarial design review round 3
+Status: Superseded
+Stage: RETIRED by owner arbitration 2026-07-24 after 3 REJECT rounds (swirl trigger met). Ruling: the problem was defined from the wrong POV - Claude-as-substrate with Copilot adapted to it. Successor design starts from a fresh, family-agnostic problem statement (Law 7 applied to agent families). Verdicts: rounds 1-3 in artifacts/reviews/.
 Issue: #47
 Date: 2026-07-24
 
