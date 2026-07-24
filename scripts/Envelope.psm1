@@ -14,11 +14,17 @@
 #   Get-LastAssistantText  -> { Text; Errors }
 #   Get-StarcarEnvelope    -> { Found; Outcome; Findings; Abstract; Fault }
 #
-# -Encoding UTF8 on every read is load-bearing, not decoration: pwsh's Get-Content is
-# UTF-8 by default on 7.x, but stating it keeps the intent explicit and survives a floor
-# change (the Land-Verdict.ps1 scar: an ANSI default silently mangled a transcript).
+# The UTF8 read and torn-line discipline live in the one home, scripts/lib/TranscriptRead.ps1
+# (#47, design D5). -Encoding UTF8 there is load-bearing, not decoration: pwsh's Get-Content is
+# UTF-8 by default on 7.x, but stating it keeps the intent explicit and survives a floor change
+# (the Land-Verdict.ps1 scar: an ANSI default silently mangled a transcript).
 
 Set-StrictMode -Version Latest
+
+# #47 (design D5): the UTF8 read + torn-line discipline now live in the one home,
+# scripts/lib/TranscriptRead.ps1. Dot-sourced here so Get-LastAssistantText's module scope
+# can call Read-JsonlObjects. $PSScriptRoot is scripts/, so lib/ is a sibling.
+. (Join-Path $PSScriptRoot 'lib/TranscriptRead.ps1')
 
 function Get-LastAssistantText {
     <#
@@ -32,24 +38,18 @@ function Get-LastAssistantText {
 
     $errors = New-Object System.Collections.Generic.List[string]
 
-    if (-not (Test-Path -LiteralPath $TranscriptPath)) {
-        $errors.Add("transcript not found: $TranscriptPath")
+    # #47 (D5): the one-home reader parses the jsonl with torn-line discipline and reports an
+    # absent/unreadable file via Ok/Error (never a throw). This function keeps its OWN
+    # one-fault-per-read contract: an absent file yields "not found", an unreadable file
+    # "unreadable: ... (msg)" - the exact messages the reader emits, so no test text shifts.
+    $read = Read-JsonlObjects -Path $TranscriptPath
+    if (-not $read.Ok) {
+        $errors.Add($read.Error)
         return [pscustomobject]@{ Text = $null; Errors = @($errors) }
     }
 
     $lastText = $null
-    try {
-        $lines = Get-Content -LiteralPath $TranscriptPath -Encoding UTF8 -ErrorAction Stop
-    } catch {
-        $errors.Add("transcript unreadable: $TranscriptPath ($($_.Exception.Message))")
-        return [pscustomobject]@{ Text = $null; Errors = @($errors) }
-    }
-
-    foreach ($line in $lines) {
-        if ([string]::IsNullOrWhiteSpace($line)) { continue }
-        $obj = $null
-        try { $obj = $line | ConvertFrom-Json } catch { continue }
-
+    foreach ($obj in $read.Objects) {
         $msgProp = $obj.PSObject.Properties['message']
         if (-not $msgProp) { continue }
         $msg = $msgProp.Value

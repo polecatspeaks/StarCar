@@ -227,6 +227,11 @@ Describe 'Producer agent_type filter NON-VACUITY (spec S6 M5 flood)' {
         # a second module dependency (Get-Sha256Hex, extracted to Artifact.psm1) -- the
         # patched copy needs it alongside it too, same as Envelope.psm1 above.
         Copy-Item (Join-Path $script:RepoRoot 'scripts/Artifact.psm1') (Join-Path $patchDir 'Artifact.psm1')
+        # #47 (design D5): Envelope.psm1 now dot-sources scripts/lib/TranscriptRead.ps1 (the one
+        # transcript-read home) relative to its OWN $PSScriptRoot -- so the patched copy needs
+        # lib/TranscriptRead.ps1 as a sibling too, same reasoning as Envelope/Artifact above.
+        New-Item -ItemType Directory -Path (Join-Path $patchDir 'lib') -Force | Out-Null
+        Copy-Item (Join-Path $script:RepoRoot 'scripts/lib/TranscriptRead.ps1') (Join-Path $patchDir 'lib/TranscriptRead.ps1')
         $src = Get-Content $script:Producer -Raw
         # #47: the agent_type filter was refactored into the family-agnostic intake adapter
         # (returned branch: `if (-not [string]::IsNullOrWhiteSpace($agentType)) { ... claude
