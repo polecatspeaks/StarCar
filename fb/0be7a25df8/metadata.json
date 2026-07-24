@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "fb0be7a25df8",
+  "strategy": "manual-commit",
+  "branch": "dev",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/friction-log.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/fb/0be7a25df8/0/metadata.json",
+      "transcript": "/fb/0be7a25df8/0/full.jsonl",
+      "compact_transcript": "/fb/0be7a25df8/0/transcript.jsonl",
+      "content_hash": "/fb/0be7a25df8/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 562,
+    "api_call_count": 1
+  }
+}
