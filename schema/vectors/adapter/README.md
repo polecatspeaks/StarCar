@@ -64,9 +64,10 @@ case and the vector lands red-first with the D4 fix.
 | Vector | Runtime / mode | Provenance | Pins |
 |---|---|---|---|
 | `claude-launch-runtime-id.json` | claude / b | DESIGN-MANDATED (subject=agentId is OBSERVED; the `subject_basis` disclosure is new #47 work) | A Claude launch yields `dispatched` with subject = the runtime pairing UUID + `subject_basis: runtime-id`. Claude launch shape OBSERVED from `scripts/tests/fixtures/payloads/launch-car.json`. |
-| `copilot-launch-minted-from-name.json` | copilot / a | DESIGN-MANDATED (the landed producer reads `tool_response.agentId`, absent from the compat launch payload, and throws) | A Copilot compat launch (Task->Agent, snake_case) yields `dispatched` with subject = the shop-minted id in `tool_input.name` + `subject_basis: minted-id`. Copilot launch keyset OBSERVED and quoted in `docs/design/2026-07-24-dual-runtime-harness-design.md` §3b-8 (the landed fossil of the measurement; the raw capture `.claude/probe-logs/post-task.jsonl` is gitignored runtime output, not in the tree). |
+| `copilot-launch-minted-from-name.json` | copilot / a | DESIGN-MANDATED (the landed base producer exits 0 silently at the `subagent_type` launch filter, writing no record) | A Copilot compat launch (Task->Agent, snake_case) yields `dispatched` with subject = the shop-minted id in `tool_input.name` + `subject_basis: minted-id`. The base producer never mints it: the compat payload carries `tool_input.agent_type`, not `tool_input.subagent_type`, so `if ([string]::IsNullOrWhiteSpace($subagentType)) { exit 0 }` fires before the `tool_response.agentId` read. Copilot launch keyset OBSERVED and quoted in `docs/design/2026-07-24-dual-runtime-harness-design.md` §3b-8 (the landed fossil of the measurement; the raw capture `.claude/probe-logs/post-task.jsonl` is gitignored runtime output, not in the tree). |
 | `claude-stop-envelope-taskid.json` | claude / b | DESIGN-MANDATED (the landed producer parses no `task-id` and writes no `task_id`/`subject_basis`) | A Claude stop whose report envelope carries `task-id: X` yields `returned` pairing by subject=agent_id AND recording X as `task_id` (the #47 §5.7 echo). |
 | `claude-stop-no-envelope-absent.json` | claude / b | OBSERVED (the landed producer already mints `envelope: absent` on a fenceless report) | A stop with no envelope yields `returned` with `envelope: absent`, `outcome: error`, raw report retained in findings (Law 4). |
+| `copilot-stop-envelope-taskid.json` | copilot / a | OBSERVED payload keys (`agent_name`, `transcript_path` - §3b-5/3b-7); DESIGN-MANDATED expected record (red-first: the base producer does not recognise `agent_name` and writes no record) | A Copilot compat stop whose report envelope carries `task-id: X` yields `returned` with subject = X + `subject_basis: minted-id` (the compat stop payload has no pairing key; the minted id arrives only via the envelope echo). Transcript read through the one-home reader (D5). |
 | `unrecognisable-payload-skip.json` | unknown / none | DESIGN-MANDATED (the landed producer exits 0 SILENTLY on a shape it does not recognise) | A payload with neither `agent_type` nor `agent_name` writes NO record and emits a VISIBLE skip on stderr naming the present keys. |
 
 ## Where the STATEFUL refusal guard is proven (DR-11, resolved by the car)
@@ -87,7 +88,10 @@ recorded in the design at §9c `[DR-11, resolved by car]`.
 
 The Copilot LAUNCH path (mode a) is pinned and green. The Copilot STOP path's subject comes
 from the envelope `task-id` (the compat stop payload's `agent_name` is the agent TYPE, not a
-pairing key - §3b-5), and the producer resolves it that way. A Copilot returned record whose
+pairing key - §3b-5), and the producer resolves it that way. **That with-envelope stop path is
+now pinned** by `copilot-stop-envelope-taskid.json` (OBSERVED payload keys `agent_name` +
+`transcript_path`; DESIGN-MANDATED expected record; red-first against the base producer, which
+does not recognise `agent_name` and writes no record). A Copilot returned record whose
 report carries NO envelope task-id at stop time cannot be paired from the stop payload alone;
 the superseded design's events.jsonl join (`toolCallId -> arguments.name`, §3b-8) is the
 enrichment path for that corner. That events.jsonl extraction branch is NOT pinned by a
