@@ -1,0 +1,26 @@
+{
+  "name": "copilot-launch-minted-from-name",
+  "description": "#47 D2/D3 mode (a): a Copilot CLI compat-layer launch payload (Task matcher -> Agent tool, snake_case) yields a `dispatched` record whose subject is the shop-MINTED id carried verbatim in tool_input.name, with subject_basis=minted-id. Provenance: DESIGN-MANDATED - the landed base producer (df4fb95) exits 0 silently at the subagent_type launch filter (`if ([string]::IsNullOrWhiteSpace($subagentType)) { exit 0 }`, scripts/Produce-Artifact.ps1), writing no record, because the compat launch payload carries tool_input.agent_type, not tool_input.subagent_type - so it never reaches the tool_response.agentId read; this vector lands red-first and drives the D4 adapter seam. Copilot launch keyset OBSERVED and quoted in the superseded design docs/design/2026-07-24-dual-runtime-harness-design.md section 3b item 8 (cwd, hook_event_name, session_id, timestamp, tool_input{name,agent_type}, tool_name Agent, tool_result). The probe-log capture the shape was measured from (.claude/probe-logs/post-task.jsonl) is gitignored runtime output and is not in the tree; section 3b-8 is the landed fossil of that measurement.",
+  "runtime": "copilot",
+  "mode": "a",
+  "kind": "dispatched",
+  "input": {
+    "payload": {
+      "cwd": "<repo>",
+      "hook_event_name": "PostToolUse",
+      "session_id": "e07fc822-copilot-1",
+      "timestamp": "2026-07-24T11:31:00Z",
+      "tool_name": "Agent",
+      "tool_input": { "name": "47-car-r1", "agent_type": "car", "prompt": "x" },
+      "tool_result": { "result_type": "async_launched", "text_result_for_llm": "Agent started in background with agent_id: 47-car-r1" }
+    }
+  },
+  "expected": {
+    "record": {
+      "kind": "dispatched",
+      "subject": "47-car-r1",
+      "session_id": "e07fc822-copilot-1",
+      "subject_basis": "minted-id"
+    }
+  }
+}

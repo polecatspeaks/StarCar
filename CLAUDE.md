@@ -1,5 +1,7 @@
 # The StarCar Process Seed
 
+<!-- #47 (design D1): new here? The neutral front door is ONBOARDING.md (repo root) - it carries the tiered reading path and the compliance floor for every agent family. This file remains the Claude Code auto-load and the statute index; migration to a pointer-only surface is trigger-gated, so its content is otherwise unchanged. -->
+
 ## HARD INVARIANT: this repo is public, and so are its session transcripts
 
 Entire.io session mirroring is ENABLED (owner decision, 2026-07-21: "the full monty").

@@ -73,6 +73,18 @@
       "type": "string",
       "description": "Optional, returned-only. Issue #26: an observed producer field with clear provenance, not spec-mandated - written by scripts/Migrate-Verdicts.ps1:152 on migrated verdict records, the store-root-relative path to the verdict's landed markdown body. That script's own header (scripts/Migrate-Verdicts.ps1:22) already calls it 'an open-posture extra'. Same open-posture-extra class as producer/cost. Not part of the canonical field order in schema/index-format.md (a disclosed producer deviation, not an omission)."
     },
+    "subject_basis": {
+      "type": "string",
+      "description": "Optional. Issue #47 (family-agnostic harness design D2/D4): DISCLOSES which per-family adapter rule produced the subject. 'runtime-id' = mode (b), the runtime's own stable pairing id (Claude's launch/stop UUID); 'minted-id' = mode (a), the shop-minted dispatch id carried in the launch label (Copilot tool_input.name) or the return envelope's task-id. Written by scripts/Produce-Artifact.ps1. Same open-posture-extra class as model/producer; not part of index-format.md's canonical field order (a disclosed producer deviation)."
+    },
+    "task_id": {
+      "type": "string",
+      "description": "Optional, returned-only. Issue #47 (design section 5.7): the shop-minted dispatch id echoed back by the report's starcar-artifact envelope (`task-id:` line). Lets the minted id join a mode-(b) returned record whose subject is a runtime UUID. Absent when the car emitted no task-id echo. Written by scripts/Produce-Artifact.ps1; same open-posture-extra class as model/producer."
+    },
+    "provenance": {
+      "type": "object",
+      "description": "Optional. Issue #47 (D2/D4): runtime-internal ids kept as ENRICHMENT, never identity (identity is the subject). E.g. a Copilot compat stop payload's agent_name, retained beside the minted-id subject. Open-posture extra; not part of index-format.md's canonical field order."
+    },
     "normalisation": {
       "type": "array",
       "description": "Declared in each landed artifact. Empty array means nothing was substituted.",

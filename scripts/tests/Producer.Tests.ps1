@@ -313,4 +313,39 @@ Describe 'Produce-Artifact' {
         # and the foreign file is still staged, uncommitted
         (git -C $repo diff --cached --name-only) | Should -Contain 'conductor-work.txt'
     }
+
+    # --- duplicate-dispatch refusal guard (#47 D2/DR-9; DR-11 gives it its store-state
+    #     home here, Q2 keep-first). The guard is STATEFUL - it reads the store - so it
+    #     cannot live in the stateless adapter vectors (schema/vectors/adapter/README.md
+    #     records this rehoming). ---------------------------------------------------------
+    It '#47 DR-9: a second in-flight dispatched for a subject that already has an un-superseded dispatched is REFUSED, keep-first' {
+        $repo = New-FixtureRepo
+        $store = Join-Path $repo 'artifacts'
+        $first = Invoke-Producer -Payload (Get-Payload 'launch-car.json') -Kind 'dispatched' -StoreRoot $store -Now '2026-07-22T10:00:00Z'
+        $first.ExitCode | Should -Be 0
+        # a SECOND dispatch of the same subject (same agentId), later at
+        $second = Invoke-Producer -Payload (Get-Payload 'launch-car.json') -Kind 'dispatched' -StoreRoot $store -Now '2026-07-22T10:01:00Z'
+        $second.ExitCode | Should -Not -Be 0 -Because 'the mint boundary is the single uniqueness authority; a duplicate in-flight dispatch is refused, never absorbed'
+        # keep-first: exactly ONE dispatched record survives, and it is the FIRST one
+        $disp = @(Get-ChildItem -Path (Join-Path $store 'a88e7dadda60940ac') -Filter 'dispatched-*.json' -File)
+        $disp.Count | Should -Be 1 -Because 'keep-first: the already-in-flight dispatch stays; the refused second never enters the store'
+        $disp[0].Name | Should -Be 'dispatched-20260722T100000Z.json'
+        # loud, never silent (Law 4)
+        $faultsLog = Join-Path $store '_faults.log'
+        Test-Path $faultsLog | Should -BeTrue
+        (Get-Content $faultsLog -Raw) | Should -Match 'duplicate dispatch refused'
+    }
+
+    It '#47 Q2 boundary: a re-dispatch AFTER the first has returned (dispatched superseded) is NOT refused' {
+        $repo = New-FixtureRepo
+        $store = Join-Path $repo 'artifacts'
+        Invoke-Producer -Payload (Get-Payload 'launch-car.json') -Kind 'dispatched' -StoreRoot $store -Now '2026-07-22T10:00:00Z' | Out-Null
+        # the dispatch returns - its dispatched record is now superseded by a returned record
+        Invoke-Producer -Payload (Get-Payload 'stop-car.json') -Kind 'returned' -StoreRoot $store -Now '2026-07-22T10:05:00Z' | Out-Null
+        # a same-id re-dispatch is now allowed (post-return reuse is a fold-tier concern, not this guard's)
+        $redispatch = Invoke-Producer -Payload (Get-Payload 'launch-car.json') -Kind 'dispatched' -StoreRoot $store -Now '2026-07-22T11:00:00Z'
+        $redispatch.ExitCode | Should -Be 0 -Because 'the guard scopes to un-superseded duplicates only; the returned record superseded the first dispatched'
+        $disp = @(Get-ChildItem -Path (Join-Path $store 'a88e7dadda60940ac') -Filter 'dispatched-*.json' -File)
+        $disp.Count | Should -Be 2 -Because 'the post-return re-dispatch lands; the fold exposes the duplicate-subject downstream'
+    }
 }

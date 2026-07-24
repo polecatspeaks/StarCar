@@ -50,6 +50,9 @@ plugin (brainstorming, writing-plans, TDD skills), the Claude-in-Chrome browser 
 | ~~Spec §7 probe 2~~ | ~~fired 2026-07-22 at cars 2-3 planning~~ | **ANSWERED: a slow SubagentStop hook BLOCKS the stop path for its full runtime (11.6s vs 2.8s baseline with a 10s sleep). Binding on Car 2's producer. All four §7 probes now answered - `docs/probes/2026-07-22-spec7-probe-results.md`.** |
 | CLAUDE.md restructure | A worker misses a rule AND the miss traces to LENGTH (not any miss, not preemptively) | The statute index and the retro's doctrine-dedup check are the growth guards until then. Scars stay attached to their rules (founding principle) - any restructure preserves that. |
 | Reviewer-rotation drill | Next multi-round review gate (cars 2-3 train) | Deliberately rotate to a FRESH reviewer mid-series with only the landed verdicts as carriers; agreement proves the verdict template carries everything, divergence is a template finding. See Review calibration in CLAUDE.md. |
+| Onboarding path (new family) | A **new agent family** is brought online (no pointer file for it yet) | Run the `ONBOARDING.md` tiered reading path (Tier 1 mandatory), then create that family's one-line pointer surface pointing back at `ONBOARDING.md` (the pattern `.github/copilot-instructions.md` and `CLAUDE.md`'s top line already follow). Conductor/session-tier; cars stay brief-bound (#47, design D1). |
+| Onboarding path (new identity) | A **new agent identity** is established (a role that has not run in this line) | Run the `ONBOARDING.md` Tier 1 path so the compliance floor is established before first work. Not an every-session ritual - the trigger list is closed. |
+| Onboarding path (post-compaction) | A session **resumes after compaction** (context summarised) | Re-run the `ONBOARDING.md` Tier 1 path to re-establish the floor; the session-start retro's dedup check owns watching this trigger does not go autoimmune. |
 
 ## Entire.io session mirroring: ENABLED (owner decision, 2026-07-21)
 
@@ -60,13 +63,33 @@ INVARIANT at the top of CLAUDE.md: StarCar sessions are StarCar-only; nothing fr
 other project is ever typed here. `entire search` is the entry point for decision
 archaeology.
 
-**Runtime switch (owner decision, 2026-07-24, tracked as #47):** the agent runtime moved
-from Claude Code to GitHub Copilot CLI. `entire enable --agent copilot-cli` installed
-native hooks at `.github/hooks/entire.json` (PowerShell variants added by hand - the
-generated file was bash-only, inoperable on this box); the old claude-code hooks remain
-in `.claude/settings.json` minus the PreToolUse entry, which Copilot's compat layer ran
-FAIL-CLOSED against a payload it could never satisfy ("tool_use_id is required"),
-denying every dispatch. The StarCar producer harness hooks in `.claude/hooks/` are
-UNVERIFIED under the new runtime - the first post-restart dispatch is the probe (#47
-item 2), and until it lands, dispatched/returned records and verbatim verdict
-extraction may need the manual backfill path (`Land-Verdict.ps1`).
+**Runtime: BOTH Claude Code and Copilot CLI, via a compat layer (owner decision,
+2026-07-24, tracked as #47).** The founding runtime was Claude Code; the box added GitHub
+Copilot CLI, and the harness is being made **family-agnostic** so neither family is the
+privileged one (design `docs/design/2026-07-24-family-agnostic-harness-design.md`, D4).
+`entire enable --agent copilot-cli` installed native hooks at `.github/hooks/entire.json`
+(PowerShell variants added by hand - the generated file was bash-only, inoperable on this
+box); the claude-code hooks remain in `.claude/settings.json` minus the PreToolUse entry,
+which Copilot's compat layer ran FAIL-CLOSED against a payload it could never satisfy
+("tool_use_id is required"), denying every dispatch.
+
+**Compat-layer reality (the shapes the two families emit).** Claude Code emits hook
+payloads in camelCase (`subagent_type`, `agent_transcript_path`, `agent_type` on stop);
+Copilot CLI's compat layer emits the SAME hook events in snake_case with different keys
+(dispatch `tool_input.agent_type` + `tool_input.name`; stop `agent_name`, `transcript_path`).
+A conductor probe on 2026-07-24 confirmed the Copilot dispatch label lands verbatim in the
+post-task payload (`tool_input.name`) and does NOT dedup (design §5, P1 row, "SETTLED").
+As of #47 (item 4) the producer carries per-runtime intake adapters behind its one seam
+(`scripts/Produce-Artifact.ps1`): each family's payload normalises to ONE internal shape,
+subject-per-mode (Copilot: minted id; Claude: runtime pairing id + `subject_basis: runtime-id`),
+an unrecognisable payload is a visible skip (stderr names the present keys), and a duplicate
+in-flight `dispatched` is refused. The stop-path/`events.jsonl` INTAKE for Copilot is proven
+for `post-task` only; the SubagentStop-side compat shape for a Copilot stop remains an
+honest boundary (its OBSERVED payload is not in-repo - see `schema/vectors/adapter/README.md`).
+
+**Still restart-gated (NOT claimed verified here).** The four SessionStart hook lines in
+`.claude/settings.json` were moved to an intersection dialect and `subagent-stop-probe.sh`'s
+key read corrected to `transcript_path` (#47 item 11); SessionStart config is session-cached,
+so this box cannot self-verify it mid-session (design §2c) - verification is gated on the next
+restart. Until a dispatch lands a record under Copilot, the manual backfill path
+(`Land-Verdict.ps1`) remains available.

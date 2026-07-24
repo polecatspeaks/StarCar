@@ -97,6 +97,10 @@ browser itself uses.
 
 ## Reading order
 
+Start at the neutral front door, [`ONBOARDING.md`](ONBOARDING.md) — it carries the tiered
+reading path and the compliance floor for every agent family, then hands off to the ordered
+list below (#47).
+
 1. [`docs/constitution.md`](docs/constitution.md) — what this project must be (RATIFIED
    2026-07-21, before any code).
 2. [`docs/the-healing-loop.md`](docs/the-healing-loop.md) — how the process that builds it
