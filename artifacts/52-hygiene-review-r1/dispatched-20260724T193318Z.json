@@ -1,0 +1,12 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "dispatched",
+  "subject": "52-hygiene-review-r1",
+  "session_id": "70b173ed-7b83-485a-b71a-5adb0591db07",
+  "at": "2026-07-24T19:33:18Z",
+  "budget": 1800.0,
+  "subject_basis": "minted-id",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:43acca3d739d4b3df0a86700b2465a7a6b63327e56e51eaaf065f971dbca6643"
+}
