@@ -1,0 +1,33 @@
+ok waht's the yard state?
+
+---
+
+session resumed.
+
+---
+
+session resumed.
+
+---
+
+<system_notification>
+Agent "car46-fix-cycle" (car) has finished processing and is now idle. Use read_agent with agent_id "car46-fix-cycle" to read the results, or write_agent to send follow-up messages.
+</system_notification>
+
+---
+
+<system_notification>
+Agent "car46-fix-cycle" (car) has finished processing and is now idle. Use read_agent with agent_id "car46-fix-cycle" to read the results, or write_agent to send follow-up messages.
+</system_notification>
+
+---
+
+<system_notification>
+Agent "car46-review-r2" (car) has finished processing and is now idle. Use read_agent with agent_id "car46-review-r2" to read the results, or write_agent to send follow-up messages.
+</system_notification>
+
+---
+
+<system_notification>
+Agent "car46-review-r2" (car) has finished processing and is now idle. Use read_agent with agent_id "car46-review-r2" to read the results, or write_agent to send follow-up messages.
+</system_notification>

@@ -1,0 +1,50 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "119681650804",
+  "session_id": "e07fc822-e277-4d5d-898a-1b91eedea7b6",
+  "strategy": "manual-commit",
+  "created_at": "2026-07-24T11:41:20.9478314Z",
+  "branch": "dev",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "artifacts/reviews/2026-07-24-car46-conductor-guard-review-round2-APPROVE.md"
+  ],
+  "agent": "Copilot CLI",
+  "model": "claude-fable-5",
+  "turn_id": "f1daaef8dc17",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 6598288,
+    "cache_creation_tokens": 512254,
+    "cache_read_tokens": 6079080,
+    "output_tokens": 62040,
+    "api_call_count": 59
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-07-24T11:41:20.8253988Z",
+    "agent_lines": 122,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 122,
+    "total_lines_changed": 122,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 27,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".claude/settings.local.json": 27
+      }
+    }
+  ]
+}
