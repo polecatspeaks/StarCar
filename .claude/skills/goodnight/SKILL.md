@@ -30,6 +30,27 @@ Update the working-state memory to a literal RESUME HERE shape: what landed (mer
 what is parked and why, the exact next step. The written system is the only system that
 survives the night.
 
+**Pin the base commit as a machine-readable marker, every time (#46).** Immediately after
+the frontmatter's closing `---`, write or update a line of the exact form:
+
+```
+<!-- checkpoint-base: <full 40-char sha of dev tip at write time> -->
+```
+
+Use the FULL 40-character SHA, not a short form - the checkpoint's own prose already
+carries 20+ other SHA-shaped tokens (CI run ids, session UUID fragments, dispatch task
+ids, a blob hash prefix), so only a uniquely-tagged, fixed-string-matchable line is safe
+to grep. **Never put this marker in the YAML frontmatter** - probed live during #46: this
+file's `modified` and `originSessionId` frontmatter fields change on their own between
+sessions with no edit performed, proving the frontmatter block is machine-managed and
+not a safe place to pin anything durable. An HTML comment in the body survives markdown
+rendering (passed through untouched, simply not displayed) and is invisible to a human
+reader while still readable by `.claude/hooks/session-start-checkpoint-reconcile.sh`,
+which reconciles this marker against live git history at the next session's start -
+silently, unless the checkpoint's claimed base has fallen behind current HEAD (the
+Retro #4 scar: reading a checkpoint against a contradicting friction-log entry and
+proceeding on the stale half anyway).
+
 ## 4. Board pass
 
 Issue tracker synced to reality; new tickets have a status.
