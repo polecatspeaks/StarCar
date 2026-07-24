@@ -40,6 +40,7 @@ type Server struct {
 	lastCompareBytes []byte
 	lastPollAt       *time.Time         // plan task 4.4 ledger row: set after EVERY PollOnce call, success or scan failure - distinct from lastGoodSnapshot's asOf, which only advances on a successful scan
 	lastGoodAsOf     map[string]*string // per live-lane-id, the most recent successful asOf (carried through a failed scan)
+	lastGoodLaneData map[string]any     // #51 C2: per live-lane-id, the most recent successful assembled payload (assemble.DispatchesPayload/GatesPayload/TrainsPayload) - what buildSnapshot assigns to lane.Data on a scan failure, so a failed lane keeps showing its last good content instead of degrading to "no renderer for this payload" (docs/design/2026-07-21-v0-yard-skeleton-design.md section 6 row 1; docs/contracts/state-ledger.md:102)
 
 	pollInFlight int32 // atomic; skip-not-queue guard (TryBeginPoll/EndPoll)
 
@@ -65,10 +66,11 @@ func NewServer(cfg Config) (*Server, error) {
 		return nil, err
 	}
 	s := &Server{
-		cfg:          cfg,
-		adapter:      adapter,
-		lastGoodAsOf: map[string]*string{},
-		subs:         newSubscriberRegistry(),
+		cfg:              cfg,
+		adapter:          adapter,
+		lastGoodAsOf:     map[string]*string{},
+		lastGoodLaneData: map[string]any{},
+		subs:             newSubscriberRegistry(),
 	}
 
 	vocabDir := cfg.SchemaDir
@@ -263,11 +265,22 @@ func (s *Server) buildSnapshot(scanResult *store.ScanResult, scanErr error, poll
 				switch spec.ID {
 				case "dispatches":
 					lane.Data = assembled.Dispatches
+					s.lastGoodLaneData[spec.ID] = assembled.Dispatches
 				case "gates":
 					lane.Data = assembled.Gates
+					s.lastGoodLaneData[spec.ID] = assembled.Gates
 				case "trains":
 					lane.Data = assembled.Trains
+					s.lastGoodLaneData[spec.ID] = assembled.Trains
 				}
+			} else if polled && scanErr != nil {
+				// #51 C2: a scan failure retains the LAST GOOD payload for
+				// this lane (nil if this is the first-ever poll and there is
+				// no prior good data to show - honest-empty, never
+				// fabricated) while freshness.kind stays "failed" with its
+				// coded reason and lastGoodAsOf (design S6 row 1: "Lane
+				// failed, coded reason, lastGood visibly marked").
+				lane.Data = s.lastGoodLaneData[spec.ID]
 			}
 		default:
 			lane.Freshness = Freshness{Kind: "not-applicable"}
