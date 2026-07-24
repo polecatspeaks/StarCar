@@ -1,0 +1,12 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "dispatched",
+  "subject": "51-fix-car-r1",
+  "session_id": "70b173ed-7b83-485a-b71a-5adb0591db07",
+  "at": "2026-07-24T17:10:20Z",
+  "budget": 1800.0,
+  "subject_basis": "minted-id",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:132b4f83992911d1f9d626c3d99aecd6e77f31248b82a28167a7d64871d928bf"
+}
