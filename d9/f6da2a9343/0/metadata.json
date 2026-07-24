@@ -1,0 +1,45 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "d9f6da2a9343",
+  "session_id": "70b173ed-7b83-485a-b71a-5adb0591db07",
+  "strategy": "manual-commit",
+  "created_at": "2026-07-24T19:33:22.0412051Z",
+  "branch": "dev",
+  "checkpoints_count": 1,
+  "save_step_count": 2,
+  "files_touched": [],
+  "agent": "Copilot CLI",
+  "model": "claude-fable-5",
+  "turn_id": "0a8cf924e2dd",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 214598,
+    "api_call_count": 374
+  },
+  "session_metrics": {
+    "turn_count": 6
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 29,
+      "user_lines_removed": 0,
+      "agent_lines_added": 6,
+      "agent_lines_removed": 4,
+      "user_added_per_file": {
+        ".claude/settings.local.json": 27,
+        "artifacts/_faults.log": 2
+      }
+    }
+  ]
+}
