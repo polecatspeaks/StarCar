@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "25710f427ece",
+  "strategy": "manual-commit",
+  "branch": "dev",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/design/2026-07-24-family-agnostic-harness-design.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/25/710f427ece/0/metadata.json",
+      "transcript": "/25/710f427ece/0/full.jsonl",
+      "compact_transcript": "/25/710f427ece/0/transcript.jsonl",
+      "content_hash": "/25/710f427ece/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 2823,
+    "api_call_count": 2
+  }
+}
