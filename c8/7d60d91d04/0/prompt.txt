@@ -1,35 +1,22 @@
-DELTA RE-REVIEW, ROUND 2. Same design, revision 2 now committed to dev.
+DELTA RE-REVIEW, ROUND 3. Revision 3 committed to dev.
 
-BASE VERIFICATION FIRST: in your worktree (or a fresh read of the shared checkout at C:\Users\Chris\git\starcar — READ ONLY, you never edit the shared checkout), run `git -C C:\Users\Chris\git\starcar log --oneline -3 dev` and confirm dev HEAD is da02ed7 with 3bcb751 beneath it. 3bcb751 is the rev-2 design; da02ed7 is your own round-1 verdict landed at artifacts/reviews/2026-07-24-dual-runtime-design-review-round1-REJECT.md. STOP and report if the SHAs do not match.
+BASE VERIFICATION FIRST: `git -C C:\Users\Chris\git\starcar log --oneline -4 dev` (READ ONLY on the shared checkout). Expect HEAD 35570e1 (friction-log line), then 60b7ca4 (rev-3 design), 6f605ce (your round-2 verdict landed at artifacts/reviews/2026-07-24-dual-runtime-design-review-round2-REJECT.md), da02ed7 beneath. STOP and report if mismatched. The design file to review is docs/design/2026-07-24-dual-runtime-harness-design.md at 60b7ca4.
 
-ROUND HISTORY (carrier): Round 1 = REJECT, 1 Major, 2 Minor.
-- DR-1 (MAJOR): P1's evidence (ParserError / quote-mangle) did not cover the producer's own `sh .claude/hooks/x.sh` lines, which you proved execute cleanly under PowerShell; rev 1's D3 normalizer could have activated that compat path into duplicate records; no §2c probe existed for it.
-- DR-2 (MINOR): §3 inventory miscount (9 stated vs 8 actual hooks).
-- DR-3 (MINOR): D5 vs §5.3 named two different homes for the "one extractor."
+ROUND HISTORY (carrier): Round 1 REJECT 1 Major/2 Minor (DR-1..3, all ruled ABSENT-resolved by you in round 2). Round 2 REJECT 1 Major/1 Minor:
+- DR-4 (MAJOR): "D2 filter fix alone makes launch records mint" was false — launch subject at Produce-Artifact.ps1:148 reads tool_response.agentId, absent from the compat launch payload (no toolCallId either); D7's named fallback did not exist in the payload; launch and stop identities shared no join key, dispatched/returned pairing unacknowledged.
+- DR-5 (MINOR): §3b-4 claimed 44/44 post-task entries "under Copilot"; only 3/44 are Copilot.
 
-WHAT HAPPENED AFTER YOUR VERDICT (author disclosure, verify it yourself): the probe DR-1 demanded was run and it overturned rev 1's premises. `.claude/probe-logs/subagent-stop.jsonl` and `post-task.jsonl` contain entries from TODAY's Copilot session — the compat layer HAS been executing the `sh script.sh` hooks all along, and payloads arrive already translated to Claude snake_case. The producer's silence root cause is its own filter: scripts/Produce-Artifact.ps1 lines ~141-147 require `agent_type` (stop) / `tool_input.subagent_type` (launch); compat sends `agent_name` / `tool_input.agent_type` → silent exit 0. Rev 2 therefore DELETES the second manifest and the normalizer entirely.
+AUTHOR DISCLOSURE (verify, don't trust): after your verdict, the conductor probed further. New evidence folded as §3b-8: the compat launch keyset quoted verbatim; the available launch subject is tool_input.name (= the agent id read_agent uses, confirmed by tool_result.text_result_for_llm prose); events.jsonl tool.execution_start maps toolCallId ↔ arguments.name (3/3 dispatches this session); in-flight-at-stop = subagent.started minus subagent.completed toolCallIds. D7 rewritten: filter fix + subject-extraction rewire (tool_response.agentId OR tool_input.name), stop-side join through execution_start into the SAME name-space, subject_basis: name-time disclosed on join failure; the "partial coverage breaks nothing" conflation is retracted (the yard board #1 pairs). DR-5 fix: §3b-4 restated as 3/3 Copilot entries. Round-2 dispositions in new §9c; your Q1-Q3 rulings adopted and closed; §10 now carries two new questions.
 
 YOUR TASKS:
-1. Walk DR-1, DR-2, DR-3 through rev 2 (docs/design/2026-07-24-dual-runtime-harness-design.md at 3bcb751) as a table: Present / Absent / DRIFTED. §9b carries the author's claimed dispositions — verify each fold is substantive, not cosmetic.
-2. Re-derive the new evidence yourself: open .claude/probe-logs/subagent-stop.jsonl and post-task.jsonl, confirm today's-session entries and their snake_case keys; open scripts/Produce-Artifact.ps1 and confirm the filter lines say what the design claims (file:line in your verdict).
-3. Full adversarial pass on what CHANGED in rev 2 (git diff d626268..3bcb751 -- docs/design/ shows the delta): D1 intersection dialect, D2 filter tolerance + visible skips, D4 absent-envelope minting with backfill-as-enrichment, D5 one extractor home scripts/lib/TranscriptRead.ps1, D6 probe key fix, D7 flip to in-scope. Attack ambiguity, lifecycle holes, citation truth (open every file:line the design cites), and whether each §2c probe row would actually settle its question.
-4. Rule on CONVERGENCE as well as correctness: findings should be shrinking and moving, not holding station in one section.
-5. Answer §10's open questions where evidence permits, especially Q3 (leave the `sh -c` entire wrapper lines untouched as pinned noise, or fold them too?).
+1. Walk DR-4 and DR-5 through rev 3 as Present/Absent/DRIFTED; verify each §9c fold is substantive.
+2. Re-derive §3b-8 yourself: dump a Copilot post-task.jsonl entry's keyset; confirm tool_input.name; open the parent events.jsonl (path in the probe-log entries) and confirm tool.execution_start carries arguments.name for the same toolCallId; confirm the started-minus-completed timing claim.
+3. Adversarial pass on the delta only (git diff 3bcb751..60b7ca4 -- docs/design/): the rewired D7, §3b-8's chain, §2c-4's reframed probe row, the new §10 questions. Attack: is the three-hop join actually implementable at stop time from inside a hook (the hook reads the parent events.jsonl WHILE the session is writing it — any file-locking or partial-line hazard)? Is name-space identity (agent friendly name) a sound subject when names can be reused across dispatches in one session?
+4. Rule on convergence: round trajectory is 3 findings → 2 → this round.
+5. Rule on the two §10 questions if evidence permits.
 
-CALIBRATION: any Major = REJECT. New Minors are findable without blocking if genuinely minor. Mint new IDs DR-4..n; never reuse.
+CALIBRATION: any Major = REJECT. Mint DR-6..n; never reuse. Note: per doctrine, round count 4 triggers reviewer rotation NEXT round — if you REJECT, say what the fresh round-4 reviewer needs carried.
 
-VERIFICATION HONESTY: every claim with suite, count, SHA, observer. Run the suites yourself at da02ed7 and report observed counts (derive your own baseline; do not trust any quoted count).
+VERIFICATION HONESTY: suite, count, SHA, observer on every claim; run the suites yourself at 35570e1, derive your own baseline.
 
-REPORT ENVELOPE (mandatory): end your report with a fenced block, info string starcar-artifact, carrying outcome (APPROVE or REJECT), findings (count by severity), abstract (2-3 sentences). NO angle brackets anywhere inside the fence.
-
----
-
-<system_notification>
-Agent "design-review-47" (car) has finished processing and is now idle. Use read_agent with agent_id "design-review-47" to read the results, or write_agent to send follow-up messages.
-</system_notification>
-
----
-
-<system_notification>
-Agent "design-review-47" (car) has finished processing and is now idle. Use read_agent with agent_id "design-review-47" to read the results, or write_agent to send follow-up messages.
-</system_notification>
+REPORT ENVELOPE (mandatory): end with a fenced block, info string starcar-artifact, carrying outcome, findings, abstract. NO angle brackets inside the fence.
