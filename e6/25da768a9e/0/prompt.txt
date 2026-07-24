@@ -1,0 +1,32 @@
+You are the adversarial sentence-check reviewer for Car 51-fix-car-r1 on the PR-51 fix train (repo: polecatspeaks/StarCar). Your minted dispatch id is: 51-fix-review-r1. You hold REJECT authority: ANY Major = REJECT. Effort is never a mitigating factor; disclosed-but-wrong does not clear review. You review the branch car/51-pr-fixes in the worktree at C:\Users\Chris\git\starcar-car51 - work ONLY there; NEVER touch the shared checkout at C:\Users\Chris\git\starcar. You may fault-inject locally to prove a guard fires, PROVIDED you revert byte-identical afterward. Commit NOTHING. NEVER push. NO NESTED DELEGATION.
+
+CONTEXT: PR #51 (dev to main) received an out-of-family GitHub Copilot review with 5 comments, all triaged legit by the conductor. The car implemented the five fixes as five commits on car/51-pr-fixes, base 797818da38367e91e5b037f498ab60834f5e2d2e. Expected commits (verify these are exactly what sits on the branch above base, and the tree is clean):
+- 3b6dd01 (C1): board/store/store.go typedRecord gains SubjectBasis/TaskID/Provenance so producer fields subject_basis/task_id/provenance (emitted by scripts/Produce-Artifact.ps1:356-358) no longer raise record-unrecognised-fields. Red: extended TestScanKnownProducerFieldsNotUnrecognised.
+- 5fb8e49 (C2): board/server/poll.go retains last-good lane data through a scan failure via new Server.lastGoodLaneData; freshness stays kind=failed with lastGoodAsOf. docs/contracts/state-ledger.md updated in the SAME commit (field count 0-to-10, new row). Red: extended TestPollOnceScanFailureIsFailedWithLastGood; also TestPollOnceFirstEverPollFailsKeepsDataNil pins the nothing-good-yet branch as nil.
+- 14ccfc3 (C3): board/server/handlers.go handleStream registers the SSE subscriber BEFORE sending the initial snapshot (was after - a broadcast in the gap was lost). Pinned via a test seam Server.testStreamOrderHook and TestHandleStreamRegistersBeforeInitialSend. The car claims duplicate frames are harmless per board/web/js/ingest.js:59 (seq less-than-or-equal lastAppliedSeq is a no-op) - VERIFY that claim yourself.
+- 2fc7b18 (C4): board/server/main.go extracts run(ctx, cfg, ready) and wires ctx.Done() to http.Server.Shutdown (5s grace); TestRunShutsDownOnContextCancel asserts run() returns within 2s of cancel AND a subsequent dial is refused. The car's red evidence came from an uncommitted scratch revert (main() had no seam before) - assess whether that red is non-vacuous.
+- d8001e0 (C5): board/server/sse.go broadcast's full-channel path drains the stale queued frame and enqueues the newest, under r.mu; the in-code comment that falsely claimed replace-behavior was deleted and replaced with a lock-ordering justification. Red: TestBroadcastReplacesStaleQueuedFrameWithNewest.
+
+CAR'S DISCLOSED FINDINGS (verify, do not take on faith): (1) node --test test/ fails MODULE_NOT_FOUND on Node v24.15.0; bare node --test used instead, 59/59 both baseline and final. (2) Task 1 test uses subject-based lookup because Windows path sort orders returned-subj2 before returned-subj. (3) -race unavailable in the sandbox (requires cgo); C4/C5 concurrency safety argued from source, not race-detector observed. (4) A pre-existing lock-free mutation of lastGoodAsOf/lastGoodLaneData in buildSnapshot outside s.mu was disclosed as out of scope, flagged not fixed - RULE on whether C2 ENLARGED this hazard (it added a second map mutated on the same path) and whether that enlargement is acceptable to carry as a tracked issue or is a Major in this diff.
+
+RUN YOURSELF at the branch tip, from the worktree: go build ./... and go test ./... from board/ (expect all 5 packages pass); Invoke-Pester -Path scripts/tests from worktree root (expect 276/276); Invoke-Pester -Path scripts/probes (expect 22/22); from board/web: npm ci then node --test (expect 59/59). Report OBSERVED counts, not the car's.
+
+SENTENCE CHECK (the review is not complete until someone reads the whole sentence): for each of the five fixes, trace the full production path of the value or behavior it changes, every hop with file:line. Specifically: C1 - the producer emit (Produce-Artifact.ps1:356-358) to store.go typedKeys to the unknown-fields diff at store.go:295 to the board condition; check hand-maintained mirrors: does schema/ declare these three fields (the record schema), does any vector fixture carry them, is there a wire sample or web-side consumer that should know them? C2 - buildSnapshot's failed branch to the Lane wire shape to the web compose/renderer path (does the web actually render data-with-failed-freshness as last-good-marked, or does something else suppress it?); does the state ledger row match the code as committed (arithmetic old-to-new)? C3 - the handler ordering to the client's seq-rejection line you verify yourself. C4 - the signal path from NotifyContext through run() to Shutdown; does anything else block exit? C5 - broadcast's full path under lock vs register/unregister lock ordering - confirm no close-vs-send race window, from the source.
+
+Also verify per the repo's standing rules: every new unit of consequence cites #51 in a comment (CODE STANDARD, forward-only); red-first evidence quality (would each red fail for its STATED reason - non-vacuity); no fixture was edited to satisfy citation; documentation invalidated by the change updated in the same commit; commits are clean (no stray files, no push).
+
+VERDICT: state APPROVE-FOR-MERGE or REJECT, with findings as C51R-1..n, each Major or Minor. Any Major = REJECT. Minors may be carried as tracked issues if you say so explicitly. Include the four verification coordinates for every claim you make (suite, observed count, SHA, you as observer).
+
+END YOUR REPORT WITH THE ARTIFACT ENVELOPE (mandatory): a fenced block, info string starcar-artifact, with fields - outcome (done / done-with-findings / honest-stop), findings, abstract, and task-id: 51-fix-review-r1 echoing exactly this minted dispatch id. NO ANGLE BRACKETS anywhere inside the envelope.
+
+---
+
+<system_notification>
+Agent "51-fix-review-r1" (car) has finished processing and is now idle. Use read_agent with agent_id "51-fix-review-r1" to read the results, or write_agent to send follow-up messages.
+</system_notification>
+
+---
+
+<system_notification>
+Agent "51-fix-review-r1" (car) has finished processing and is now idle. Use read_agent with agent_id "51-fix-review-r1" to read the results, or write_agent to send follow-up messages.
+</system_notification>
