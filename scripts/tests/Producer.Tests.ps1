@@ -348,4 +348,26 @@ Describe 'Produce-Artifact' {
         $disp = @(Get-ChildItem -Path (Join-Path $store 'a88e7dadda60940ac') -Filter 'dispatched-*.json' -File)
         $disp.Count | Should -Be 2 -Because 'the post-return re-dispatch lands; the fold exposes the duplicate-subject downstream'
     }
+
+    It '#53: a second dispatch AFTER a legitimate post-return re-dispatch is REFUSED (newest-dispatched not superseded by any returned)' {
+        # Sequence: dispatch -> return -> dispatch (allowed, DR-9 boundary) -> dispatch (must refuse).
+        # Before #53 the predicate was `$existingDisp.Count -gt 0 -and $existingRet.Count -eq 0`,
+        # which is permanently false once ANY returned-*.json exists for the subject - so the
+        # THIRD dispatch below was wrongly admitted at base (unbounded in-flight duplicates
+        # after the first-ever return). The fix compares newest-dispatched vs newest-returned.
+        $repo = New-FixtureRepo
+        $store = Join-Path $repo 'artifacts'
+        Invoke-Producer -Payload (Get-Payload 'launch-car.json') -Kind 'dispatched' -StoreRoot $store -Now '2026-07-22T10:00:00Z' | Out-Null
+        Invoke-Producer -Payload (Get-Payload 'stop-car.json') -Kind 'returned' -StoreRoot $store -Now '2026-07-22T10:05:00Z' | Out-Null
+        # legitimate re-dispatch, allowed by the Q2 boundary (newest-dispatched IS superseded)
+        $redispatch = Invoke-Producer -Payload (Get-Payload 'launch-car.json') -Kind 'dispatched' -StoreRoot $store -Now '2026-07-22T11:00:00Z'
+        $redispatch.ExitCode | Should -Be 0 -Because 'newest dispatched (10:00) is superseded by the 10:05 returned at the time of this dispatch'
+        # a further dispatch while the re-dispatch (11:00) is still in flight and un-superseded MUST refuse
+        $third = Invoke-Producer -Payload (Get-Payload 'launch-car.json') -Kind 'dispatched' -StoreRoot $store -Now '2026-07-22T11:01:00Z'
+        $third.ExitCode | Should -Not -Be 0 -Because 'newest dispatched (11:00) is NOT superseded by any returned record; unbounded in-flight duplicates must be refused (#53)'
+        $disp = @(Get-ChildItem -Path (Join-Path $store 'a88e7dadda60940ac') -Filter 'dispatched-*.json' -File)
+        $disp.Count | Should -Be 2 -Because 'keep-first at the newest-active layer: the refused third never enters the store'
+        $faultsLog = Join-Path $store '_faults.log'
+        (Get-Content $faultsLog -Raw) | Should -Match 'duplicate dispatch refused'
+    }
 }
