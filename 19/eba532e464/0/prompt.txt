@@ -1,33 +1,9 @@
-<system_notification>
-Shell command "Commit Q2 boundary ruling, push, watch CI" (shellId: 177) has completed successfully. Use read_powershell with shellId "177" to retrieve the output.
-</system_notification>
+Fix cycle: your work was APPROVED at review round 1 (verdict landed at artifacts/reviews/REDACTED.md on dev) with two MINOR findings to clear before merge. Same worktree (C:\Users\Chris\git\starcar-car47, branch car/47-family-agnostic, HEAD 0f3ae88 — verify first). Commit locally, never push. Your minted id for this cycle is still 47-car-r1.
 
----
+**CR-1 (MINOR):** `schema/vectors/adapter/copilot-launch-minted-from-name.json`'s provenance prose falsely claims the base producer "reads tool_response.agentId (absent from the compat launch payload) and throws 'no subject id'". The reviewer ran the base df4fb95 producer on the exact payload: it EXITS 0 SILENTLY at the `subagent_type` launch filter (`if ([string]::IsNullOrWhiteSpace($subagentType)) { exit 0 }`) and never reaches the agentId read. Fix the mechanism sentence to: exits 0 silently at the subagent_type launch filter, writing no record. (The vector itself still lands red-first — only the prose is wrong.)
 
-<system_notification>
-Shell command "Commit Q2 boundary ruling, push, watch CI" (shellId: 177) has completed successfully. Use read_powershell with shellId "177" to retrieve the output.
-</system_notification>
+**CR-2 (MINOR):** the Copilot stop-with-envelope path (Produce-Artifact.ps1 agent_name recognition :159-166, transcript_path fallback :230, subject=$taskId :260-262) ships with no adapter vector or unit test; the reviewer exercised it directly and confirmed it correct, so this is a coverage gap. Fix by the reviewer's first option: add a `copilot-stop-envelope-taskid` adapter vector built from the already-OBSERVED keys (agent_name, transcript_path — both in your probe evidence and the payload shapes you already used), following your existing fixture shape, wired into AdapterVectors.Tests.ps1. Label provenance truthfully (OBSERVED keys, DESIGN-MANDATED expected record). If any key in the fixture would have to be invented rather than observed, say so and fall back to the reviewer's second option (explicit scope-note disclosure) instead — never invent an OBSERVED shape.
 
----
+Also fold the reviewer's non-blocking NOTE if trivial: the adapter README's scope note should state the with-envelope Copilot stop path is now pinned (after CR-2's vector lands).
 
-<system_notification>
-Agent "47-car-r1" (car) has finished processing and is now idle. Use read_agent with agent_id "47-car-r1" to read the results, or write_agent to send follow-up messages.
-</system_notification>
-
----
-
-<system_notification>
-Agent "47-car-r1" (car) has finished processing and is now idle. Use read_agent with agent_id "47-car-r1" to read the results, or write_agent to send follow-up messages.
-</system_notification>
-
----
-
-<system_notification>
-Agent "47-car-review-r1" (car) has finished processing and is now idle. Use read_agent with agent_id "47-car-review-r1" to read the results, or write_agent to send follow-up messages.
-</system_notification>
-
----
-
-<system_notification>
-Agent "47-car-review-r1" (car) has finished processing and is now idle. Use read_agent with agent_id "47-car-review-r1" to read the results, or write_agent to send follow-up messages.
-</system_notification>
+Run both suites before your final commit (derive your own counts), state counts + final SHA. Report per finding: fixed (commit + evidence) or honest-stopped. END with the starcar-artifact fenced block (task-id: 47-car-r1, outcome, findings, abstract; no angle brackets).
