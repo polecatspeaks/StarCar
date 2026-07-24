@@ -1,0 +1,69 @@
+{
+  "hooks": {
+    "agentStop": [
+      {
+        "type": "command",
+        "bash": "sh -c 'if ! command -v entire >/dev/null 2>&1; then exit 0; fi; exec entire hooks copilot-cli agent-stop'",
+        "comment": "Entire CLI (copilot-cli runtime port, #47)",
+        "powershell": "if (Get-Command entire -ErrorAction SilentlyContinue) { $input | & entire hooks copilot-cli agent-stop }"
+      }
+    ],
+    "errorOccurred": [
+      {
+        "type": "command",
+        "bash": "sh -c 'if ! command -v entire >/dev/null 2>&1; then exit 0; fi; exec entire hooks copilot-cli error-occurred'",
+        "comment": "Entire CLI (copilot-cli runtime port, #47)",
+        "powershell": "if (Get-Command entire -ErrorAction SilentlyContinue) { $input | & entire hooks copilot-cli error-occurred }"
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "bash": "sh -c 'if ! command -v entire >/dev/null 2>&1; then exit 0; fi; exec entire hooks copilot-cli post-tool-use'",
+        "comment": "Entire CLI (copilot-cli runtime port, #47)",
+        "powershell": "if (Get-Command entire -ErrorAction SilentlyContinue) { $input | & entire hooks copilot-cli post-tool-use }"
+      }
+    ],
+    "preToolUse": [
+      {
+        "type": "command",
+        "bash": "sh -c 'if ! command -v entire >/dev/null 2>&1; then exit 0; fi; exec entire hooks copilot-cli pre-tool-use'",
+        "comment": "Entire CLI (copilot-cli runtime port, #47)",
+        "powershell": "if (Get-Command entire -ErrorAction SilentlyContinue) { $input | & entire hooks copilot-cli pre-tool-use }"
+      }
+    ],
+    "sessionEnd": [
+      {
+        "type": "command",
+        "bash": "sh -c 'if ! command -v entire >/dev/null 2>&1; then exit 0; fi; exec entire hooks copilot-cli session-end'",
+        "comment": "Entire CLI (copilot-cli runtime port, #47)",
+        "powershell": "if (Get-Command entire -ErrorAction SilentlyContinue) { $input | & entire hooks copilot-cli session-end }"
+      }
+    ],
+    "sessionStart": [
+      {
+        "type": "command",
+        "bash": "sh -c 'if ! command -v entire >/dev/null 2>&1; then exit 0; fi; exec entire hooks copilot-cli session-start'",
+        "comment": "Entire CLI (copilot-cli runtime port, #47)",
+        "powershell": "if (Get-Command entire -ErrorAction SilentlyContinue) { $input | & entire hooks copilot-cli session-start }"
+      }
+    ],
+    "subagentStop": [
+      {
+        "type": "command",
+        "bash": "sh -c 'if ! command -v entire >/dev/null 2>&1; then exit 0; fi; exec entire hooks copilot-cli subagent-stop'",
+        "comment": "Entire CLI (copilot-cli runtime port, #47)",
+        "powershell": "if (Get-Command entire -ErrorAction SilentlyContinue) { $input | & entire hooks copilot-cli subagent-stop }"
+      }
+    ],
+    "userPromptSubmitted": [
+      {
+        "type": "command",
+        "bash": "sh -c 'if ! command -v entire >/dev/null 2>&1; then exit 0; fi; exec entire hooks copilot-cli user-prompt-submitted'",
+        "comment": "Entire CLI (copilot-cli runtime port, #47)",
+        "powershell": "if (Get-Command entire -ErrorAction SilentlyContinue) { $input | & entire hooks copilot-cli user-prompt-submitted }"
+      }
+    ]
+  },
+  "version": 1
+}

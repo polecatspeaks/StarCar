@@ -56,6 +56,16 @@ Every agent-session transcript in this repo publishes to the public checkpoint b
 by design ("the full monty"): the development process is the showcase, radically
 transparent and verifiably real, half-thoughts included. The price of that is the HARD
 INVARIANT at the top of CLAUDE.md: StarCar sessions are StarCar-only; nothing from any
-other project is ever typed here. `entire enable` + `entire agent add claude-code` are
-done (hooks in `.claude/settings.json`, config in `.entire/`); `entire search` is the
-entry point for decision archaeology.
+other project is ever typed here. `entire search` is the entry point for decision
+archaeology.
+
+**Runtime switch (owner decision, 2026-07-24, tracked as #47):** the agent runtime moved
+from Claude Code to GitHub Copilot CLI. `entire enable --agent copilot-cli` installed
+native hooks at `.github/hooks/entire.json` (PowerShell variants added by hand - the
+generated file was bash-only, inoperable on this box); the old claude-code hooks remain
+in `.claude/settings.json` minus the PreToolUse entry, which Copilot's compat layer ran
+FAIL-CLOSED against a payload it could never satisfy ("tool_use_id is required"),
+denying every dispatch. The StarCar producer harness hooks in `.claude/hooks/` are
+UNVERIFIED under the new runtime - the first post-restart dispatch is the probe (#47
+item 2), and until it lands, dispatched/returned records and verbatim verdict
+extraction may need the manual backfill path (`Land-Verdict.ps1`).
