@@ -97,6 +97,13 @@ func NewAdapter(schemaDir string) (*Adapter, error) {
 // migrated returned verdicts), and the same epistemic rule that added
 // "manifest" applies here - an observed, provenanced producer field gets
 // DECLARED, not left to fire the unknown-field disclosure forever.
+//
+// #51: SubjectBasis, TaskID, and Provenance are the #47-era producer fields
+// (Produce-Artifact.ps1:356-358) - which family rule produced the subject
+// (runtime-id | minted-id), the shop-minted id the envelope echoes back
+// (returned-kind only), and runtime-internal ids kept as enrichment. Same
+// epistemic rule as #26/#22: an observed, provenanced producer field gets
+// DECLARED here, not left to fire record-unrecognised-fields forever.
 type typedRecord struct {
 	Schema            string          `json:"schema"`
 	Kind              string          `json:"kind"`
@@ -117,6 +124,9 @@ type typedRecord struct {
 	Normalisation     json.RawMessage `json:"normalisation"`
 	Integrity         string          `json:"integrity"`
 	Manifest          json.RawMessage `json:"manifest"`
+	SubjectBasis      string          `json:"subject_basis"`
+	TaskID            string          `json:"task_id"`
+	Provenance        json.RawMessage `json:"provenance"`
 }
 
 // typedKeys is computed ONCE (package init), by reflecting typedRecord's own
