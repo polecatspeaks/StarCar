@@ -18,9 +18,11 @@
 # SHAs, CI run ids, a session UUID fragment, dispatch task ids, a blob hash prefix) -
 # `grep -oE '\b[0-9a-f]{7,40}\b'` on it returns 23 distinct hits at time of writing. A
 # hook that greps for "a SHA" reads garbage; a uniquely-tagged marker line is required.
-# `git log --oneline deadbeef..HEAD` FATALS ("unknown revision", exit 128) - an
-# unvalidated base spews `fatal:` into every session start, so the SHA is validated with
-# `git cat-file -e` BEFORE it is ever used in a range.
+# `git log --oneline deadbeef..HEAD` exits 128 on an unresolvable base, but the range call
+# below redirects stderr - so an UNVALIDATED base does not "spew fatal" at all; worse, its
+# empty stdout is silently read as "in sync" (a FALSE NEGATIVE on the very instrument built
+# to prevent false confidence). The SHA is therefore validated with `git cat-file -e` BEFORE
+# the range, so an unresolvable base degrades to the honest could-not-observe branch instead.
 #
 # MARKER FORMAT AND WHY: `<!-- checkpoint-base: <full 40-char sha> -->`, an HTML comment
 # placed in the checkpoint's body (never its YAML frontmatter - PROBED live this session:
@@ -32,9 +34,12 @@
 # 40-char SHA removes any residual collision risk. Pinning instruction lives in
 # .claude/skills/goodnight/SKILL.md step 3.
 #
-# THREE DISTINCT OUTCOMES, deliberately (mirrors Watch-CI.ps1 keeping could-not-observe
-# distinct from red): SILENT when in sync or when the file/marker is absent (Law 7 - a
-# stranger's clone has neither, and a scar here reads 54 flags of which 50 were false);
+# FOUR DISTINCT OUTCOMES, deliberately (mirrors Watch-CI.ps1 keeping could-not-observe
+# distinct from red): SILENT when in sync or when the checkpoint FILE is absent (Law 7 - a
+# stranger's clone has neither file nor marker, and a scar here reads 54 flags of which 50
+# were false); a loud one-line UNARMED notice when the file is PRESENT but no marker is
+# pinned (owner box only - the arming signal, added #46: an un-armed guard was otherwise
+# indistinguishable from a healthy in-sync one, both silent);
 # an honest COULD-NOT-OBSERVE message when the pinned SHA is valid-format but unknown to
 # this repo (rebase/squash/prune - a real outcome, not a bug); and the full
 # reconciliation, commit subjects listed, when the base is genuinely behind HEAD.
@@ -55,13 +60,22 @@ command -v git >/dev/null 2>&1 || exit 0
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 
 line=$(grep -F "$MARKER" "$CHECKPOINT_FILE" 2>/dev/null | head -1)
-[ -z "$line" ] && exit 0
+if [ -z "$line" ]; then
+  # ARMING SIGNAL (#46): the file exists (so this is the owner's box, never a stranger's
+  # clone - Law 7's silence is owed the stranger, who has no file at all and exited above),
+  # but no marker is pinned yet. That un-armed state is otherwise indistinguishable from a
+  # healthy in-sync repo - both are silent - so say so, loudly, in one line. Still exit 0:
+  # the hook informs, never blocks (Law 2).
+  echo "[checkpoint] checkpoint present but UNARMED - no '$MARKER' marker pinned; run /goodnight step 3 to pin the base (guard emits nothing until then)."
+  exit 0
+fi
 
 base=$(printf '%s\n' "$line" | sed -n 's/.*checkpoint-base: *\([0-9a-f]\{7,40\}\).*/\1/p')
 [ -z "$base" ] && exit 0
 
-# Validate BEFORE using in a range - probed: `git log --oneline deadbeef..HEAD` fatals
-# ("unknown revision"), exit 128, if the SHA is not first confirmed to resolve.
+# Validate BEFORE the range (#46) - an unresolvable base makes `git log <base>..HEAD` exit
+# 128 with EMPTY stdout (stderr is redirected below), which the in-sync check would silently
+# read as "no commits behind" - a false negative. Validation routes it to could-not-observe.
 if ! git cat-file -e "$base" 2>/dev/null; then
   echo "[checkpoint] pinned base '$base' not found in this repo's history (rebase/squash/prune?)."
   echo "[checkpoint] Could not reconcile - treat the checkpoint's narrative as UNVERIFIED, not as in sync."

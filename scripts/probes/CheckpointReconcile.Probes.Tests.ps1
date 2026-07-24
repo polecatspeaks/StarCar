@@ -13,13 +13,17 @@
 #
 # PROBED FACTS this suite is built against (re-run any you doubt):
 #   - The real checkpoint ($HOME/.claude/projects/C--Users-Chris-git-starcar/memory/
-#     RESUME-HERE.md) carries 20+ SHA-shaped tokens (`grep -oE '\b[0-9a-f]{7,40}\b'`) --
-#     commit SHAs, CI run ids, a session UUID fragment, dispatch task ids, a blob hash
-#     prefix -- so a hook that greps for "a SHA" reads garbage. A uniquely-tagged marker
-#     line is required, not a bare SHA scan.
-#   - `git log --oneline deadbeef..HEAD` FATALS ("unknown revision"), exit 128 -- an
-#     unvalidated base SHA spews `fatal:` into every session start. The hook MUST
-#     validate with `git cat-file -e` before using the SHA in a range.
+#     RESUME-HERE.md) carried 32 SHA-shaped tokens, 17 distinct (`grep -oE
+#     '\b[0-9a-f]{7,40}\b'`), at time of writing (#46) -- a PERISHABLE count: the checkpoint
+#     is rewritten every session (the reviewer measured 14/11 one dispatch later). commit
+#     SHAs, CI run ids, a session UUID fragment, dispatch task ids, a blob hash prefix -- so
+#     a hook that greps for "a SHA" reads garbage regardless of the exact tally. A
+#     uniquely-tagged marker line is required, not a bare SHA scan.
+#   - `git log --oneline deadbeef..HEAD` exits 128 on an unresolvable base, but the hook
+#     redirects stderr on the range call -- so an UNVALIDATED base does not "spew fatal";
+#     worse, its empty stdout is silently read as "in sync", a FALSE NEGATIVE on the very
+#     instrument built to prevent false confidence. The hook MUST validate with
+#     `git cat-file -e` before the range so an unresolvable base degrades to could-not-observe.
 #   - `git cat-file -e <valid-format-but-unknown-sha>` also fails ("Not a valid object
 #     name") -- this is the honest "could not observe" case (rebase/prune), distinct from
 #     both "in sync" (silent) and "stale" (prints commits), mirroring Watch-CI.ps1 keeping
@@ -150,12 +154,30 @@ Describe 'Checkpoint reconciliation hook (#46) - fires on stale base, silent on 
         $result.Output | Should -BeNullOrEmpty
     }
 
-    It 'is SILENT and non-fatal when the checkpoint exists but carries no checkpoint-base marker line' {
+    It 'ARMING SIGNAL (#46): checkpoint present but UNARMED (no marker line) prints a loud ONE-line notice on the owner box, still exit 0 - distinct from the stranger''s silent no-file case (Law 2 informs, never blocks; Law 7 silence is only owed the stranger)' {
         $fixture = New-FixtureRepo -CommitSubjects @('seed', 'second commit')
         $ckpt = New-CheckpointFile -Dir $fixture.Path -BaseSha $fixture.Shas[0] -NoMarkerLine
         $result = Invoke-Hook -RepoDir $fixture.Path -CheckpointFile $ckpt
         $result.ExitCode | Should -Be 0
-        $result.Output | Should -BeNullOrEmpty
+        $result.Output | Should -Not -BeNullOrEmpty
+        $result.Output | Should -Match 'UNARMED'
+        # a loud one-liner, not a wall - the arming signal is cheap to read
+        (($result.Output -split "`n") | Where-Object { $_ -ne '' }).Count | Should -Be 1
+    }
+
+    It 'MARKER FORMAT SINGLE SOURCE (#46, Law 6): the docs quote the hook''s OWN MARKER string, derived from the hook - no hand-maintained fifth copy to drift' {
+        # Parse MARKER='...' straight out of the hook so this assertion can never become a
+        # fifth hand-kept copy. If the hook's marker changes and a doc is not updated in the
+        # SAME commit, this reds (fault-injection-proven both directions in the fix-cycle report).
+        $hookText = Get-Content $script:Hook -Raw
+        $hookText | Should -Match "MARKER='([^']+)'"
+        $marker = [regex]::Match($hookText, "MARKER='([^']+)'").Groups[1].Value
+        $marker | Should -Not -BeNullOrEmpty
+
+        $skill = Join-Path $script:RepoRoot '.claude/skills/goodnight/SKILL.md'
+        $setup = Join-Path $script:RepoRoot 'docs/setup.md'
+        (Get-Content $skill -Raw) | Should -BeLike "*$marker*"
+        (Get-Content $setup -Raw) | Should -BeLike "*$marker*"
     }
 
     It 'NON-VACUITY (the 20-token proof): extracts the MARKED base, not a decoy SHA-shaped token sitting elsewhere in the file' {
