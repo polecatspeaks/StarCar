@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "c87d60d91d04",
+  "strategy": "manual-commit",
+  "branch": "dev",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "artifacts/reviews/2026-07-24-dual-runtime-design-review-round2-REJECT.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/c8/7d60d91d04/0/metadata.json",
+      "transcript": "/c8/7d60d91d04/0/full.jsonl",
+      "compact_transcript": "/c8/7d60d91d04/0/transcript.jsonl",
+      "content_hash": "/c8/7d60d91d04/0/content_hash.txt",
+      "prompt": "/c8/7d60d91d04/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 24809,
+    "api_call_count": 20
+  }
+}
