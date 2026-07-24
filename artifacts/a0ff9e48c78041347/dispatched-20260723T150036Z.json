@@ -1,0 +1,11 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "dispatched",
+  "subject": "a0ff9e48c78041347",
+  "session_id": "64c15364-0933-4d6d-9b2e-d1ddbc918f9f",
+  "at": "2026-07-23T15:00:36Z",
+  "model": "claude-sonnet-5",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:9888bb8bcdbcbceac28dd861a7dd8a621f1bcdc487cb5a96e78592651596cc06"
+}

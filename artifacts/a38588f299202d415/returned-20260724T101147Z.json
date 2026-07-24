@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a38588f299202d415",
+  "session_id": "548526c8-f375-4cea-b3b9-3ea7f3a1f0b9",
+  "at": "2026-07-24T10:11:47Z",
+  "outcome": "done-with-findings",
+  "findings": "Genuine substrate finding (not a defect in the brief, which explicitly flagged this as an unprobed open question): RESUME-HERE.md's YAML frontmatter is machine-managed - modified/originSessionId changed between two reads 40 minutes apart with zero edits performed, originSessionId now reading this car's own session id. This ruled out frontmatter as the marker location; the checkpoint-base line lands in the document body as an HTML comment instead. Landed as a friction-log entry (commit c1b7131) plus commentary in the hook and SKILL.md. Secondary observation: the issue's probe quoted 20 SHA-shaped tokens in the checkpoint; re-derived today at 23 (file has grown since filing) - re-measured rather than trusted, per standing doctrine. No contradictions found between the brief and real code; no honest-stops required on any item.",
+  "abstract": "Part A lands the second Layer-3 reconciliation cadence: .claude/hooks/session-start-checkpoint-reconcile.sh reads a checkpoint-base marker, validates it with git cat-file -e before use (avoiding the fatal: crash an unvalidated SHA causes), and prints commits landed since that base - silent in sync, silent if the checkpoint/marker is absent (Law 7), a distinct could-not-observe message if the SHA is valid-format but unresolvable, truncation always disclosed. Pinned by scripts/probes/CheckpointReconcile.Probes.Tests.ps1, 9 tests, red (9/9 failed, hook absent) before implementation and green (9/9 passed) after, fault-injected both directions, plus a non-fixture replay against real repo history reproducing the issue's own cited base (1182e09) and control (804e6b57e). Wired into .claude/settings.json; pinning instructions land in the goodnight skill step 3; docs/setup.md gets a new row. Part B lands \"briefs state the question, never the answer\" plus its Car-33 rgb() scar in docs/templates/car-brief.md and .claude/agents/car.md, both author-facing and reviewer-facing halves, CLAUDE.md deliberately untouched per the brief's scope limit. Pester: 269/269 at base 804e6b57e, derived myself (not trusted), to 278/278 after (9 new, 0 regressed). Three commits: 34776f0 (Part A), d95b2f8 (Part B), c1b7131 (the frontmatter-discovery friction-log entry).",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:d242dedd3ec6e5e309f9e3ec8cf2f5ada8ae8db0d19b7e5d964e12fc0c1cda48"
+}

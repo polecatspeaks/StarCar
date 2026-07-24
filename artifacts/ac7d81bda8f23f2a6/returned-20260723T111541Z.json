@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "ac7d81bda8f23f2a6",
+  "session_id": "64c15364-0933-4d6d-9b2e-d1ddbc918f9f",
+  "at": "2026-07-23T11:15:41Z",
+  "outcome": "APPROVE",
+  "findings": ">\n  Zero Majors. All eight car claims verified by running, not reading. Both red-first\n  claims CONFIRMED by fault injection and restored byte-identical (Task 1: removing the\n  ci.yml if line yields Expected length 134 Actual length 0; Task 2: reverting the\n  generator yields F3 byte-mismatch 473 vs 149 and header StartsWith false). Full suites\n  observed at HEAD 565714d: scripts/tests 161 of 161, scripts/probes 12 of 12. The if\n  condition is byte-exact across ci.yml, the ConvertFrom-Yaml-parsed test pin, and the\n  brief; GitHub Actions semantics traced hop by hop (base_ref is the PR base short name,\n  ref is refs/heads/main on push, step-level if skips the step, explicit parens make\n  precedence unambiguous). Header text byte-identical across schema, generator, committed\n  index, and both test pins; UTF-8 no BOM, LF only. Committed index fresh (two\n  regenerations plus the committed copy all hash 78FAB548, 57 rows). F3 fixture change is\n  the anticipated header prepend and does not weaken the pipe/newline escaping assertion.\n  All cited files exist; spec amendment preserves the original ruling above it; five prose\n  surfaces agree with the YAML and each other; no other living-contract surface describes\n  the old scope. Guard proof half a (the static pin) is red-first proven; half b (live\n  skip on dev, fire on PR-to-main) is correctly deferred to conductor handback at PR time.\n  Constitution Law 1, 4, 6, 7 honored. Three non-blocking NOTES: same-commit doc\n  sequencing (carriers trued in a third commit 565714d, ruled not-Major because the\n  merged tip is consistent and no published surface carried the stale state); Law 6\n  emitter-vs-schema text has no mechanical gate (prose-tier, verified this round);\n  CLAUDE.md step 1 names PR-to-main only, contextually correct.",
+  "abstract": ">\n  Round 1 adversarial sentence-check review of the #20 index-gate-scope train. APPROVE.\n  The artifact-index staleness CI gate is correctly scoped to PR-to-main and push-to-main,\n  the index carries a static freshness-contract header emitted deterministically and\n  matching its schema owner verbatim, and every invalidated carrier is trued by the tip.\n  Red-first proven by fault injection on both tasks; all suites green; runtime gate firing\n  is the one deferred item for conductor observation at PR time.",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:dd2fc3b5592c52767fb68b229458f0e5427f0c3195f0e61d6721fb1c9a16e53e"
+}

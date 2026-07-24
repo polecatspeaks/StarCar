@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "accbde6200eebcfc4",
+  "session_id": "64c15364-0933-4d6d-9b2e-d1ddbc918f9f",
+  "at": "2026-07-23T15:14:39Z",
+  "outcome": "APPROVE",
+  "findings": "All three round-1 findings resolved and verified from disk at commit 3cd3d2b. DM-1 (was Major): templates row now reads (16 files); ls docs/templates/*.md counts 16 independently; inline breakdown 5 templates + 2 patterns + 9 worked = 16 confirmed per-subcount from disk; the [DM-1, fixed] marker accurately discloses the original count was 15-from-memory. DM-2 (was Minor): index.md row now reads \"PR-to-main and push-to-main per #20\", matching gating-matrix.md:19 and artifacts/index.md:3-6. DM-3 (was Minor): self-row added at doc-map.md:43 in the SYSTEM family. Fresh-eyes diff b31154a..3cd3d2b touches only doc-map.md, table structure intact, no count re-drift, all round-1 TRUE claims undisturbed. DocPolicy.Tests.ps1 2/2 passed at 3cd3d2b (observed). No new findings. Convergence 1-Major-2-Minor to 0-0.",
+  "abstract": "Delta round-2 verify-the-fix review of docs/doc-map.md v2 at commit 3cd3d2b on dev. All three round-1 findings correctly folded: templates count corrected to 16 and re-verified from disk (not the diff) with an accurate breakdown and an honest [DM-1, fixed] disclosure of the original 15-from-memory defect; index.md gating claim completed to both PR-to-main and push-to-main; a self-row added so the map classifies itself. The fix broke nothing - table integrity preserved, no count re-drift, doc-policy gate 2/2 green. APPROVE. Read-only review, nothing committed or pushed.",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:2a420161ae07f9ca22300152d504c863f93045ef50514d53a7f1b9a0f6e4cafe"
+}

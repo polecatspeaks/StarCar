@@ -64,6 +64,10 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+# #47 (design D5): the UTF8 transcript read lives in the one home now. Dot-sourced so
+# Get-TranscriptLines can call Read-TranscriptLines. $PSScriptRoot is scripts/.
+. (Join-Path $PSScriptRoot 'lib/TranscriptRead.ps1')
+
 # --- refuse to land into the retired docs/reviews/ (M-B guard, fix-cycle round 1) ----
 #
 # R10's whole claim (docs/setup.md's Verdict-landing row) is that nothing can land
@@ -87,12 +91,12 @@ if ($outForGuard -match '(^|/)docs/reviews(/|$)') {
 
 function Get-TranscriptLines {
     param([string]$Path)
-    # -Encoding UTF8 is load-bearing, not decoration. PowerShell 5.1's Get-Content
-    # defaults to the system ANSI codepage, which silently mangles every non-ASCII
-    # character in the transcript (a section sign becomes two characters). That makes
-    # the word VERBATIM in this file's own header false, quietly, in a way only the
-    # SHA-256 would ever expose. Caught on this script's first real run.
-    if ($Path -and (Test-Path $Path)) { return Get-Content $Path -Encoding UTF8 }
+    # #47 (D5): the UTF8 read (and its ANSI-mangling scar note) now lives in the one home,
+    # scripts/lib/TranscriptRead.ps1. This wrapper keeps Land-Verdict's OWN missing-file
+    # contract - it THROWS an operator-facing message rather than degrading - so callers and
+    # tests downstream see no change.
+    $read = Read-TranscriptLines -Path $Path
+    if ($read.Ok) { return $read.Lines }
     throw "No readable transcript. Pass -TranscriptPath, or land from an Entire checkpoint blob with: git show entire/checkpoints/v1:<path>/transcript.jsonl"
 }
 

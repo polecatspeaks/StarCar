@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starcar.dev/schema/starcar-manifest/1",
+  "title": "StarCar train manifest (intent-record payload)",
+  "description": "Spec 2026-07-23-yard-board S2: the manifest contract LAYERED over starcar-artifact/1 (Law 6 - this file does not restate the base record contract; validators run BOTH schemas against a record). A manifest is an intent-kind record whose subject carries the mandatory train: prefix (design rev 5 DR3-3 partition rule, Q7 ruling: the prefix is a disjointness guarantee, and the train id is the WHOLE subject string - no consumer ever strips the prefix for meaning). Membership and roles are conductor-DECLARED originals (D16); status never flows from a manifest.",
+  "type": "object",
+  "properties": {
+    "subject": {
+      "type": "string",
+      "description": "For manifests only: the train identity, whole-string. The train: prefix partitions the shared subject namespace away from producer-minted dispatch ids (design DR3-3; vector fold/subject-partition.json)."
+    },
+    "manifest": {
+      "type": "object",
+      "description": "The single new top-level key (design DR3-1 item 4: ONE key added to the wire schema and every typed decoder's known key-set, so D17's unknown-field disclosure never fires on a well-formed manifest).",
+      "properties": {
+        "title": { "type": "string" },
+        "tickets": {
+          "type": "array",
+          "description": "Issue refs establishing provenance (ticket -> approved train -> manifest).",
+          "items": { "type": "string" }
+        },
+        "members": {
+          "type": "array",
+          "description": "Declared consist, in order. Membership only - liveness/outcome stay the fold's (D16).",
+          "items": {
+            "type": "object",
+            "properties": {
+              "subject": {
+                "type": "string",
+                "description": "A dispatch subject (the dispatch id)."
+              },
+              "role": {
+                "type": "string",
+                "description": "Recognition vocabulary lives in schema/vocab/roles.json as DATA (Law 7). Unrecognised roles are detector discoveries, never validation failures."
+              },
+              "gate": {
+                "type": "string",
+                "description": "Present when role is gate: names WHICH gate (e.g. design-review round 3). Split from the role token so recognition vocab stays unparameterised (spec S2 deviation note - supersedes the design's illustrative gate:name single token)."
+              }
+            },
+            "required": ["subject", "role"]
+          }
+        }
+      },
+      "required": ["title", "members"]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": { "const": "intent" },
+          "subject": { "type": "string", "pattern": "^train:" }
+        },
+        "required": ["kind", "subject"]
+      },
+      "then": {
+        "required": ["manifest"],
+        "properties": {
+          "subject": { "pattern": "^train:[a-z0-9][a-z0-9-]*$" }
+        }
+      }
+    },
+    {
+      "$comment": "SB-1 (spec review round 1, folded): formerly a negative-lookahead pattern, which .NET accepts but Go's RE2 regexp REJECTS at schema-load time (proven with this repo's toolchain) - a schema only one language can load breaks the one-schema-both-languages thesis (Law 6, D15). This lookahead-free form expresses the same rule - a record whose subject does NOT start with train: (or has none) must not carry a manifest - using only plain anchored patterns, RE2-safe.",
+      "if": {
+        "not": {
+          "properties": { "subject": { "type": "string", "pattern": "^train:" } },
+          "required": ["subject"]
+        }
+      },
+      "then": {
+        "not": { "required": ["manifest"] }
+      }
+    }
+  ]
+}

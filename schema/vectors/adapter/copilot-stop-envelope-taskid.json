@@ -1,0 +1,30 @@
+{
+  "name": "copilot-stop-envelope-taskid",
+  "description": "#47 D2/D3/section 5.7 mode (a): a Copilot CLI compat-layer SubagentStop payload (agent_name present, NO agent_type; transcript_path snake_case) whose report transcript ends with a starcar-artifact envelope carrying `task-id: X` yields a `returned` record whose subject IS the shop-minted id X (subject_basis=minted-id), because the compat stop payload carries no unique pairing key (agent_name is the agent TYPE, not a pairing id - superseded design 3b-5). outcome/findings/abstract come from the envelope. Provenance: payload keys OBSERVED - agent_name and transcript_path are the compat stop shape quoted in docs/design/2026-07-24-dual-runtime-harness-design.md section 3b (3b-5 agent_name, 3b-2/3b-7 transcript_path); the raw capture .claude/probe-logs/subagent-stop.jsonl is gitignored runtime output, not in the tree. The transcript is read through the ONE-HOME reader (scripts/lib/TranscriptRead.ps1 via Get-LastAssistantText), whose Claude-jsonl assistant-message shape is OBSERVED in-repo from scripts/tests/fixtures/payloads/transcript-car.jsonl and is shared across runtimes by design D5; no fixture KEY is invented. Expected record is DESIGN-MANDATED (subject-from-envelope-task-id + subject_basis=minted-id are new #47 work; the base producer at df4fb95 does not recognise agent_name at all and exits 0 silently). NOTE: this pins the envelope-task-id subject path only - the separate events.jsonl toolCallId->arguments.name JOIN path (for a Copilot stop whose report carries NO task-id) stays an honest boundary, its OBSERVED events.jsonl shape being absent from the tree (see the scope note in this directory's README).",
+  "runtime": "copilot",
+  "mode": "a",
+  "kind": "returned",
+  "input": {
+    "payload": {
+      "agent_name": "car",
+      "transcript_path": "<transcript>",
+      "session_id": "sess-adapter-copilot-1",
+      "hook_event_name": "SubagentStop"
+    },
+    "transcript": [
+      "{\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"Do the task and end with the envelope.\"}]}}",
+      "{\"type\":\"assistant\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"Report body.\\n\\n```starcar-artifact\\ntask-id: 51-car-r1\\noutcome: done\\nfindings: none of note.\\nabstract: The Copilot adapter car finished the fixture task.\\n```\\n\"}]}}"
+    ]
+  },
+  "expected": {
+    "record": {
+      "kind": "returned",
+      "subject": "51-car-r1",
+      "session_id": "sess-adapter-copilot-1",
+      "subject_basis": "minted-id",
+      "task_id": "51-car-r1",
+      "outcome": "done",
+      "abstract": "The Copilot adapter car finished the fixture task."
+    }
+  }
+}

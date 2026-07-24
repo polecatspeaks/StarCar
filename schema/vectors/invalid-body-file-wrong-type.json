@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "returned-body-file-bad-type",
+  "session_id": "session-abc",
+  "at": "2026-07-22T10:00:00Z",
+  "outcome": "done",
+  "findings": "none",
+  "abstract": "migrated verdict",
+  "body_file": 12345,
+  "normalisation": [],
+  "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+}

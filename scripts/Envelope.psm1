@@ -14,11 +14,17 @@
 #   Get-LastAssistantText  -> { Text; Errors }
 #   Get-StarcarEnvelope    -> { Found; Outcome; Findings; Abstract; Fault }
 #
-# -Encoding UTF8 on every read is load-bearing, not decoration: pwsh's Get-Content is
-# UTF-8 by default on 7.x, but stating it keeps the intent explicit and survives a floor
-# change (the Land-Verdict.ps1 scar: an ANSI default silently mangled a transcript).
+# The UTF8 read and torn-line discipline live in the one home, scripts/lib/TranscriptRead.ps1
+# (#47, design D5). -Encoding UTF8 there is load-bearing, not decoration: pwsh's Get-Content is
+# UTF-8 by default on 7.x, but stating it keeps the intent explicit and survives a floor change
+# (the Land-Verdict.ps1 scar: an ANSI default silently mangled a transcript).
 
 Set-StrictMode -Version Latest
+
+# #47 (design D5): the UTF8 read + torn-line discipline now live in the one home,
+# scripts/lib/TranscriptRead.ps1. Dot-sourced here so Get-LastAssistantText's module scope
+# can call Read-JsonlObjects. $PSScriptRoot is scripts/, so lib/ is a sibling.
+. (Join-Path $PSScriptRoot 'lib/TranscriptRead.ps1')
 
 function Get-LastAssistantText {
     <#
@@ -32,24 +38,18 @@ function Get-LastAssistantText {
 
     $errors = New-Object System.Collections.Generic.List[string]
 
-    if (-not (Test-Path -LiteralPath $TranscriptPath)) {
-        $errors.Add("transcript not found: $TranscriptPath")
+    # #47 (D5): the one-home reader parses the jsonl with torn-line discipline and reports an
+    # absent/unreadable file via Ok/Error (never a throw). This function keeps its OWN
+    # one-fault-per-read contract: an absent file yields "not found", an unreadable file
+    # "unreadable: ... (msg)" - the exact messages the reader emits, so no test text shifts.
+    $read = Read-JsonlObjects -Path $TranscriptPath
+    if (-not $read.Ok) {
+        $errors.Add($read.Error)
         return [pscustomobject]@{ Text = $null; Errors = @($errors) }
     }
 
     $lastText = $null
-    try {
-        $lines = Get-Content -LiteralPath $TranscriptPath -Encoding UTF8 -ErrorAction Stop
-    } catch {
-        $errors.Add("transcript unreadable: $TranscriptPath ($($_.Exception.Message))")
-        return [pscustomobject]@{ Text = $null; Errors = @($errors) }
-    }
-
-    foreach ($line in $lines) {
-        if ([string]::IsNullOrWhiteSpace($line)) { continue }
-        $obj = $null
-        try { $obj = $line | ConvertFrom-Json } catch { continue }
-
+    foreach ($obj in $read.Objects) {
         $msgProp = $obj.PSObject.Properties['message']
         if (-not $msgProp) { continue }
         $msg = $msgProp.Value
@@ -86,12 +86,16 @@ function Get-LastAssistantText {
 function Get-StarcarEnvelope {
     <#
       Parse the report's outcome envelope: a fenced block, info string starcar-artifact,
-      carrying outcome, findings, abstract (spec S2.3). Faults, both landing with the body
-      intact (S2.3):
+      carrying outcome, findings, abstract (spec S2.3) and - since #47 (design section 5.7) -
+      an OPTIONAL `task-id` echoing the shop-minted dispatch id the brief carried. Faults,
+      both landing with the body intact (S2.3):
         Fault = 'absent'    -> no fence at all (a brief failure)
         Fault = 'malformed' -> a fence exists but a required field is missing (a producer
                                failure)
-        Fault = $null       -> Found, all three fields present
+        Fault = $null       -> Found, all three required fields present
+      task-id is NON-required: its absence never makes the envelope malformed (a car that
+      predates the #47 echo mandate still lands a clean returned record; the minted id just
+      does not round-trip on that record). TaskId is $null when the line is absent.
       LAST fence wins when a report carries more than one block (repeat-envelope
       precedent, Land-Verdict.ps1's Get-ResultBlockForTask last-wins return -- the later
       notification is the current one).
@@ -110,7 +114,7 @@ function Get-StarcarEnvelope {
 
     if ($matchList.Count -eq 0) {
         return [pscustomobject]@{
-            Found = $false; Outcome = $null; Findings = $null; Abstract = $null; Fault = 'absent'
+            Found = $false; Outcome = $null; Findings = $null; Abstract = $null; TaskId = $null; Fault = 'absent'
         }
     }
 
@@ -120,7 +124,7 @@ function Get-StarcarEnvelope {
     $fields = @{}
     $current = $null
     foreach ($line in ($body -split "`n")) {
-        if ($line -match '^(outcome|findings|abstract):[ ]?(.*)$') {
+        if ($line -match '^(task-id|outcome|findings|abstract):[ ]?(.*)$') {
             $current = $Matches[1]
             $fields[$current] = $Matches[2]
         } elseif ($current) {
@@ -131,9 +135,11 @@ function Get-StarcarEnvelope {
     $outcome  = if ($fields.ContainsKey('outcome'))  { $fields['outcome'].TrimEnd() }  else { $null }
     $findings = if ($fields.ContainsKey('findings')) { $fields['findings'].TrimEnd() } else { $null }
     $abstract = if ($fields.ContainsKey('abstract')) { $fields['abstract'].TrimEnd() } else { $null }
+    $taskId   = if ($fields.ContainsKey('task-id'))  { $fields['task-id'].TrimEnd() }  else { $null }
 
     # A fence with a missing (or empty) required field is malformed, not found: the body
-    # is present but does not carry the three payloads the record needs.
+    # is present but does not carry the three payloads the record needs. task-id is not in
+    # this completeness test (it is the #47 optional echo, not a required payload).
     $complete = -not (
         [string]::IsNullOrEmpty($outcome) -or
         [string]::IsNullOrEmpty($findings) -or
@@ -145,6 +151,7 @@ function Get-StarcarEnvelope {
         Outcome  = $outcome
         Findings = $findings
         Abstract = $abstract
+        TaskId   = if ([string]::IsNullOrEmpty($taskId)) { $null } else { $taskId }
         Fault    = if ($complete) { $null } else { 'malformed' }
     }
 }

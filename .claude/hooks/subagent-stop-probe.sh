@@ -17,7 +17,12 @@ mkdir -p .claude/probe-logs
 python -c "
 import sys, json, os, datetime
 d = json.load(sys.stdin)
-d['_probe_transcript_exists_at_fire'] = os.path.exists(d.get('agent_transcript_path',''))
+# #47 (design D6, superseded dual-runtime design 3b-7): the transcript path key differs by
+# runtime - Copilot's compat stop payload carries transcript_path (snake_case), Claude's
+# carries agent_transcript_path. Reading only the Claude key made the probe report False on
+# EVERY Copilot firing (a lying instrument on the surface this design depends on). Prefer the
+# Copilot key, fall back to the Claude key, so the probe measures reality on both runtimes.
+d['_probe_transcript_exists_at_fire'] = os.path.exists(d.get('transcript_path') or d.get('agent_transcript_path') or '')
 d['_probe_logged_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
 print(json.dumps(d))
 " >> .claude/probe-logs/subagent-stop.jsonl

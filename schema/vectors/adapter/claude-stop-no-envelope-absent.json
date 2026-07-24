@@ -1,0 +1,29 @@
+{
+  "name": "claude-stop-no-envelope-absent",
+  "description": "#47 D3 case (c): a stop payload whose report transcript carries NO starcar-artifact envelope yields a `returned` record with envelope=absent, outcome=error, and the raw report retained in findings (Law 4 - nothing dropped). Provenance: OBSERVED - the landed producer already mints envelope=absent on a fenceless report (scripts/Produce-Artifact.ps1 returned branch + Get-StarcarEnvelope Fault=absent); this vector pins that behaviour so the D4 seam preserves it. No task_id key: there is no envelope to echo one from.",
+  "runtime": "claude",
+  "mode": "b",
+  "kind": "returned",
+  "input": {
+    "payload": {
+      "agent_id": "b0b0b0b0b0b0b0b0b",
+      "agent_type": "car",
+      "agent_transcript_path": "<transcript>",
+      "session_id": "sess-adapter-2",
+      "hook_event_name": "SubagentStop"
+    },
+    "transcript": [
+      "{\"type\":\"assistant\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"I finished but forgot the envelope entirely.\"}]}}"
+    ]
+  },
+  "expected": {
+    "record": {
+      "kind": "returned",
+      "subject": "b0b0b0b0b0b0b0b0b",
+      "session_id": "sess-adapter-2",
+      "subject_basis": "runtime-id",
+      "outcome": "error",
+      "envelope": "absent"
+    }
+  }
+}

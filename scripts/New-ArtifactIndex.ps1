@@ -12,8 +12,11 @@
 # write would silently change.
 #
 # Stateless: spec S5.2 treats the committed index as derived state, with a CI
-# regenerate-and-diff gate landing in Car 3. This script only generates; it never reads
-# or compares against a previously committed copy.
+# regenerate-and-diff gate landing in Car 3, SCOPED to PR-to-main/push-to-main (#20,
+# owner-ratified 2026-07-23) rather than every push - dev's copy may lag the store
+# between regenerations, which is why the emitted header below declares that as a
+# freshness contract instead of leaving it an undocumented (Law 1) gap. This script
+# only generates; it never reads or compares against a previously committed copy.
 
 param(
     [Parameter(Mandatory)] [string]$StoreRoot,
@@ -88,6 +91,20 @@ function Format-IndexCell {
 }
 
 $lines = New-Object System.Collections.Generic.List[string]
+
+# Freshness-contract header (#20, schema/index-format.md): STATIC text, no
+# timestamp/generated-at stamp - a run-varying header would break the byte-identical
+# determinism contract (ArtifactIndex.Tests.ps1) that a CI regenerate-and-diff gate
+# depends on. This is what makes dev's between-regeneration lag a documented refresh
+# cadence rather than a lying surface (Law 1).
+$lines.Add('# Artifact index')
+$lines.Add('')
+$lines.Add('Derived from the store (artifacts/**/*.json) by scripts/New-ArtifactIndex.ps1 - regenerate,')
+$lines.Add('never hand-edit; the JSON records are the source of truth. Freshness contract (#20): this')
+$lines.Add('file is gated fresh at PR-to-main and push-to-main; on dev it may lag the store by a')
+$lines.Add('dispatch batch between regenerations.')
+$lines.Add('')
+
 $lines.Add('| subject | kind | at | outcome | file |')
 $lines.Add('|---|---|---|---|---|')
 foreach ($r in $sorted) {

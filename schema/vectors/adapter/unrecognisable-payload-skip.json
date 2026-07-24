@@ -1,0 +1,19 @@
+{
+  "name": "unrecognisable-payload-skip",
+  "description": "#47 D3 case (d): a stop payload that carries NEITHER agent_type (Claude) NOR agent_name (Copilot compat) is an unrecognised family shape. A conforming adapter writes NO record and emits a VISIBLE skip on stderr naming the keys that WERE present (never a guessed record). Provenance: DESIGN-MANDATED - the landed producer exits 0 SILENTLY on this input (scripts/Produce-Artifact.ps1 returned filter: empty agent_type -> exit 0 with no stderr); this vector lands red-first for the visible-skip requirement (the three-hour 'fully silent producer' misdiagnosis, superseded design D2).",
+  "runtime": "unknown",
+  "mode": "none",
+  "kind": "returned",
+  "input": {
+    "payload": {
+      "some_other_key": "value",
+      "session_id": "sess-adapter-3",
+      "hook_event_name": "SubagentStop"
+    }
+  },
+  "expected": {
+    "skip": {
+      "stderr_contains": ["some_other_key", "session_id", "hook_event_name"]
+    }
+  }
+}

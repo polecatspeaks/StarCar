@@ -1,0 +1,222 @@
+/* board.css - StarCar yard board (task 5.3). Industrial CTC-panel direction
+   (mockup brief + the owner's 2b/1b merge): dark background, dense
+   monospace typography, color rationed to exactly three registers.
+
+   Steering deviation, disclosed: the mockup direction names IBM Plex Mono /
+   Barlow Condensed specifically. This v0 pass uses system monospace /
+   condensed-sans font STACKS with no network font fetch (no Google Fonts
+   CDN), so the board is fully self-contained and renders offline/in CI
+   with no external dependency. Swapping in the named webfonts is a pure
+   CSS change whenever that's wanted - never a re-architecture.
+
+   The one hard aesthetic law (mockup brief): three severity colors, total.
+   Every other color in this file is background/structure/typography, never
+   a fourth "shade of alarm". */
+
+:root {
+  --bg: #14181d;
+  --panel: #1c2128;
+  --border: #2c333d;
+  --text: #d9d5c9; /* paper, mockup's nominal ink color */
+  --text-dim: #8a8f97;
+
+  --nominal: #d9d5c9;
+  --in-progress: #ffb454; /* amber, mockup's in-progress color */
+  --needs-attention: #ff4a3a; /* red, mockup's needs-attention color */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
+}
+
+#board-root {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* --- honesty chrome ------------------------------------------------- */
+
+.chrome {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 1rem;
+  font-family: 'Barlow Condensed', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.02em;
+}
+
+.demo-banner {
+  background: var(--in-progress);
+  color: #14181d;
+  font-weight: 700;
+  padding: 0.15rem 0.6rem;
+  border-radius: 2px;
+}
+
+.connection-disconnected {
+  color: var(--needs-attention);
+  font-weight: 700;
+}
+
+.connection-connected {
+  color: var(--text-dim);
+}
+
+.board-conditions {
+  list-style: none;
+  margin: 0.25rem 0 0 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.85rem;
+}
+
+.board-condition {
+  padding: 0.1rem 0.4rem;
+  border-left: 3px solid var(--border);
+}
+
+/* --- lanes ------------------------------------------------------------ */
+
+.lanes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.lane {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left-width: 6px;
+  border-radius: 3px;
+  padding: 0.6rem 0.9rem;
+}
+
+.lane-title {
+  font-family: 'Barlow Condensed', ui-sans-serif, system-ui, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 0.15rem 0;
+  font-size: 1rem;
+}
+
+.lane-primary {
+  font-weight: 600;
+}
+
+.lane-secondary {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  margin-bottom: 0.4rem;
+}
+
+/* --- the three registers, and NOTHING else colors an element ---------- */
+
+.register-nominal {
+  border-left-color: var(--nominal);
+  color: var(--nominal);
+}
+.register-in-progress {
+  border-left-color: var(--in-progress);
+  color: var(--in-progress);
+}
+.register-needs-attention {
+  border-left-color: var(--needs-attention);
+  color: var(--needs-attention);
+}
+
+/* --- TRAINS / GATES: track-schematic direction (mockup 2b) ------------- */
+
+.track {
+  border-top: 2px solid var(--border);
+  padding-top: 0.3rem;
+  margin-top: 0.3rem;
+}
+
+.track-title {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.track-cars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.car-chip {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-left: 4px solid currentColor;
+  padding: 0.15rem 0.5rem;
+  border-radius: 2px;
+  font-size: 0.85rem;
+}
+
+.signal {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-left: 4px solid currentColor;
+  padding: 0.2rem 0.6rem;
+  margin-top: 0.25rem;
+  border-radius: 2px;
+}
+
+/* --- DISPATCHES: Solari split-flap direction (mockup 1b) --------------- */
+
+.lane-body-dispatches {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+.yard-inventory-count {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  margin-bottom: 0.3rem;
+}
+
+.solari-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.solari-row {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.1rem 0.3rem;
+  border-left: 3px solid currentColor;
+}
+
+.solari-row.unassigned {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* --- dark/bagged dignity: never hidden, never faked -------------------- */
+
+.lane-body-dark,
+.lane-body-bagged {
+  color: var(--text-dim);
+  font-style: italic;
+  padding: 0.3rem 0;
+}
+
+.lane-body-no-renderer {
+  color: var(--needs-attention);
+}

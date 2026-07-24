@@ -91,3 +91,31 @@ Describe 'CI checkpoint-fetch step - GitHub Actions shell:pwsh wrapper simulatio
         $exit | Should -Be 0
     }
 }
+
+# Issue #20 (owner-ratified 2026-07-23): the index-staleness gate reads the whole store
+# on every push, so every conductor dispatch (which writes a record via the producer
+# hook) stales the committed index and reds CI on dev - a mechanical false positive, not
+# a real defect. The gate is scoped to the moments correctness is actually asserted:
+# a PR targeting main, or a push directly to main. This test reads the REAL step's `if`
+# condition from ci.yml (never a hand-copied duplicate) so a future edit cannot silently
+# widen or drop the scope.
+Describe 'CI artifact-index staleness step - scoped to PR-to-main / push-to-main (#20)' {
+    BeforeAll {
+        $script:RepoRoot = (git rev-parse --show-toplevel)
+        $script:CiYamlPath = Join-Path $script:RepoRoot '.github/workflows/ci.yml'
+        if (-not (Get-Command ConvertFrom-Yaml -ErrorAction SilentlyContinue)) {
+            throw ('ConvertFrom-Yaml unavailable: install the powershell-yaml module ' +
+                   '(ci.yml installs it with retry; on a local box: Install-Module powershell-yaml). ' +
+                   'This test parses the REAL ci.yml step text and cannot run without it.')
+        }
+        $parsed = Get-Content $script:CiYamlPath -Raw | ConvertFrom-Yaml
+        $script:Step = $parsed.jobs.verify.steps | Where-Object { $_.name -eq 'Verify the artifact index is not stale' }
+        if (-not $script:Step) { throw "ci.yml: the 'Verify the artifact index is not stale' step was not found - renamed or removed?" }
+    }
+
+    It 'carries an if condition scoping it to exactly PR-to-main OR push-to-main (#20)' {
+        $expected = "(github.event_name == 'pull_request' && github.base_ref == 'main') || (github.event_name == 'push' && github.ref == 'refs/heads/main')"
+        $actual = [string]$script:Step.if
+        $actual.Trim() | Should -Be $expected
+    }
+}

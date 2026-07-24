@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a184e26ee16e704ae",
+  "session_id": "64c15364-0933-4d6d-9b2e-d1ddbc918f9f",
+  "at": "2026-07-23T14:02:52Z",
+  "outcome": "done",
+  "findings": "No Majors or contradictions found against the plan or spec at base 2051ffe. One tangential documentation gap noted (docs/templates/repo-policy-check-patterns.md missing from setup.md's Ported-prior-art row) but left unfixed as out of this car's scope, disclosed in the 1.6 commit body instead. All three CI-leg failure branches (failing test, zero-test discovery, go vet failure) were fault-injected and watched to fire locally, then cleanly reverted, satisfying the watched-red requirement for task 1.4 without a code commit.",
+  "abstract": "Car 1 completed yard-board plan tasks 1.1 through 1.6 on branch car/board-car1, base 2051ffe. Landed the board Go module (go 1.26, pinned santhosh-tekuri/jsonschema/v6 v6.0.2), a CI leg running go vet and go test across both matrix legs with a zero-test refusal guard, a red-first RE2 standing-rule probe over schema pattern fields, a locally watched red-green cycle across three fault classes for the CI leg logic, a vendored bare-ESM draft-2020-12 JS schema validator probe (cfworker/json-schema v4.1.1) proving no-build-step loading and validation of the wire schema, and setup.md updates covering the Go and Node toolchain dependencies plus a recorded re-park ruling on issues 3 and 4. Five commits landed (ce5c93f, a81b6d4, 591423e, f356c2d, 6152524); task 1.4 required no commit since it is a pure local verification act. Final state: Pester 178/178, go test 4/4, go vet clean, JS probe PASS, working tree clean.",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:4866aef634ba56a42616e5bb1e33218c11734e9fdad14b6499bb0f7f9ffd5a15"
+}

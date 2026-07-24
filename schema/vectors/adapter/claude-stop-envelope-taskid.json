@@ -1,0 +1,31 @@
+{
+  "name": "claude-stop-envelope-taskid",
+  "description": "#47 D2/D3/section 5.7: a Claude SubagentStop payload whose report transcript ends with a starcar-artifact envelope carrying `task-id: X` yields a `returned` record that pairs with its launch by subject=agent_id (mode b, subject_basis=runtime-id) AND records the shop-minted id X as task_id (the NEW envelope echo). outcome/findings/abstract come from the envelope. Provenance: DESIGN-MANDATED - the landed producer parses outcome/findings/abstract only (scripts/Envelope.psm1 Get-StarcarEnvelope) and writes neither task_id nor subject_basis; this vector lands red-first for the echo. Claude stop + transcript shapes OBSERVED from scripts/tests/fixtures/payloads/stop-car.json + transcript-car.jsonl.",
+  "runtime": "claude",
+  "mode": "b",
+  "kind": "returned",
+  "input": {
+    "payload": {
+      "agent_id": "a1b2c3d4e5f6a7b8c",
+      "agent_type": "car",
+      "agent_transcript_path": "<transcript>",
+      "session_id": "sess-adapter-1",
+      "hook_event_name": "SubagentStop"
+    },
+    "transcript": [
+      "{\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"Do the task and end with the envelope.\"}]}}",
+      "{\"type\":\"assistant\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"Report body.\\n\\n```starcar-artifact\\ntask-id: 47-car-r1\\noutcome: done\\nfindings: none of note.\\nabstract: The adapter car finished the fixture task.\\n```\\n\"}]}}"
+    ]
+  },
+  "expected": {
+    "record": {
+      "kind": "returned",
+      "subject": "a1b2c3d4e5f6a7b8c",
+      "session_id": "sess-adapter-1",
+      "subject_basis": "runtime-id",
+      "task_id": "47-car-r1",
+      "outcome": "done",
+      "abstract": "The adapter car finished the fixture task."
+    }
+  }
+}

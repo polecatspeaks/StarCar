@@ -1,10 +1,13 @@
 {
-  "$comment": "Recognition vocabulary for the 'outcome' field (only meaningful when kind = 'returned'). Same posture as kinds.json: data, not a schema enum.",
+  "$comment": "Recognition vocabulary for the 'outcome' field (only meaningful when kind = 'returned'). Same posture as kinds.json: data, not a schema enum. YB-3 (spec 2026-07-23-yard-board S2): done and CONFIRM added on OBSERVATION (5 and 3 live-store records respectively, enumerated 2026-07-23 - the detector fired discoveries on both before this change); done-with-findings added on CONTRACT enumeration (docs/templates/car-brief.md:47-48's outcome set), not observation - the one exception the epistemic rule (design S2) names explicitly. Nothing else is added: unobserved, uncontracted values wait for the detector to discover them.",
   "values": [
     "APPROVE",
     "APPROVE-WITH-REBASE-LIST",
     "REJECT",
     "error",
-    "honest-stop"
+    "honest-stop",
+    "done",
+    "CONFIRM",
+    "done-with-findings"
   ]
 }

@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a3a95266490ba928d",
+  "session_id": "64c15364-0933-4d6d-9b2e-d1ddbc918f9f",
+  "at": "2026-07-23T14:55:04Z",
+  "outcome": "done",
+  "findings": "C2R-1 (Major) fixed in commit b55fb178503b6b5df0c7fc898bb731de6f02922b. Both stale line-number citations (schema/vocab/board-defs.json colon 2 and scripts/tests/BoardDefs.Tests.ps1 colon 4) replaced with durable JSON-pointer-style section citations after personally re-opening schema/yard-snapshot.schema.json and confirming vocabularies now opens at line 187, its description at line 189, positions through liveness at 191 through 194, matching the reviewer's measurement exactly. Class-sweep of the whole train's diff found no other stale file colon line citations; the two car-brief.md colon 47-48 citations point at a file none of my commits touched and were re-verified accurate. BoardDefs test file 11 of 11, full Pester suite 206 of 206, both unchanged as expected for a comment-only fix.",
+  "abstract": "Car 2 addressed fix-cycle round 2 for C2R-1, a citation-truth Major where task 2.4's board-defs.json and its test file cited line numbers in yard-snapshot.schema.json that task 2.2's own earlier commit in the same train had already shifted by 85 lines. Re-anchored both citations to a section-anchored JSON-pointer form immune to future line drift, verified the new coordinates directly against the file rather than trusting the reviewer or prior work, swept the whole train diff for the same citation-rot class and found no other instances, and confirmed the full 206 of 206 Pester suite is unchanged. One commit, b55fb178503b6b5df0c7fc898bb731de6f02922b, on car slash board-car2.",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:7ffdab59d38339335ee5ed4fa584bb36254841bb1dda8942e3744660500d8b26"
+}

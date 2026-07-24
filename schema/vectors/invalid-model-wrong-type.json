@@ -1,0 +1,10 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "dispatched",
+  "subject": "disp-model-bad-type",
+  "session_id": "session-abc",
+  "at": "2026-07-22T10:00:00Z",
+  "model": 12345,
+  "normalisation": [],
+  "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+}
