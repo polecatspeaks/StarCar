@@ -1,7 +1,7 @@
 # Dual-runtime harness design: one harness, two runtimes (Claude Code + Copilot CLI)
 
 Status: Open
-Stage: rev 2 - awaiting adversarial design review round 2
+Stage: rev 3 - awaiting adversarial design review round 3
 Issue: #47
 Date: 2026-07-24
 
@@ -47,7 +47,7 @@ does not restate the shapes.
 | The intersection-dialect SessionStart lines execute under Copilot compat (the ParserError was the `$CLAUDE_PROJECT_DIR/` prefix, not the scripts) | Hook config is session-cached (P3); needs a restart | Next Copilot restart: `hook.end success=true` for the four guards in events.jsonl, and the guards' stdout visible | Yes - for landing, not for build |
 | The intersection-dialect lines still execute under Claude Code (P4) | No Claude Code session available from this desk | First Claude Code session after landing: guards fire, producer records land; until then `docs/setup.md` marks Claude-side "expected-unchanged, unverified" | Yes - for closing #47, not for landing |
 | A `postToolUse` matcher exists that catches `read_agent`-class completions (whose `tool_result` would carry the full report + envelope at exactly the moment it exists) | Only the `Task`→`Agent` matcher mapping is observed (44/44 entries are tool_name `Agent`); other Copilot tool names' matcher behaviour unobserved | One session with a wildcard-matcher diagnostic hook appended to the probe logger; read the captured tool_name set | No - settles D4's enrichment trigger (see negative branch there) |
-| The stop payload's missing agent id can be joined to a subject: nearest `subagent.started`/`agentStop` `toolCallId` in events.jsonl at stop time | Join observed once (round-1 reviewer re-derived it live); one observation is not a pin | Probe test over a captured events.jsonl fixture with two overlapping background agents; negative branch: subject = `agent_name + at`-derived id, DISCLOSED in the record as `subject_basis: name-time` | Yes - for D4's record identity |
+| The stop-side name join (§3b-8: in-flight `toolCallId` → `tool.execution_start.arguments.name`) is unambiguous when two background agents overlap | The join chain is observed on serial dispatches only (3 pairs, this session); overlap never probed | Probe test over a captured events.jsonl fixture with two overlapping background agents; negative branch: subject = `agent_name + at`-derived id, DISCLOSED in the record as `subject_basis: name-time` | Yes - for D4/D7's record identity |
 
 ## §3 - The problem
 
@@ -77,8 +77,12 @@ working, which deletes half of rev 1's mechanism. Each fact, with its source:
    → silent `exit 0` ("internal subagent"). Launch side (`:146-147`) requires
    `tool_input.subagent_type`; the compat launch payload carries `tool_input.agent_type`
    (probe-log, tool_name `Agent`).
-4. **The `Task` matcher maps to Copilot's `Agent` tool.** 44/44 post-task probe entries
-   under Copilot have `tool_name: "Agent"` - the matcher translated, launches captured.
+4. **The `Task` matcher maps to Copilot's `Agent` tool.** Of 44 post-task probe entries,
+   **3 are from this Copilot session** (`session_id e07fc822...`) and all 3 carry
+   `tool_name: "Agent"` - the matcher translated, launches captured. The other 41 are
+   Claude Code sessions (transcript_path under `.claude\projects\`) and are evidence for
+   nothing Copilot-side. [DR-5, folded: rev 2 claimed 44/44 "under Copilot"; the
+   population was miscounted, the decision stands on the 3 real observations.]
 5. **The stop payload carries no agent id.** Claude's stop payload joined launch→stop by
    agent id (spec Probe 5). The compat stop payload has `agent_name`/`transcript_path`
    only; the id lives in events.jsonl (`subagent.started.agentId` = launch
@@ -94,6 +98,22 @@ working, which deletes half of rev 1's mechanism. Each fact, with its source:
    file (probe-log entries; also the `_probe_transcript_exists_at_fire: false` in every
    Copilot entry is a probe-script key-name miss - it reads `agent_transcript_path` -
    not a missing file; D6 fixes the probe).
+8. **The compat launch payload carries NO `tool_response`, NO `agentId`, NO
+   `toolCallId`.** [DR-4, folded - probed 2026-07-24 after the round-2 verdict.]
+   Verified keyset of a real Copilot post-task entry: `cwd, hook_event_name, session_id,
+   timestamp, tool_input, tool_name, tool_result, _probe_logged_at`; `tool_result` holds
+   only `result_type` + `text_result_for_llm` prose. So `Produce-Artifact.ps1:148`
+   (`tool_response.agentId`) throws "no subject id" (`:151`) even after D2's filter fix -
+   the filter fix ALONE does not mint launch records. What IS present: the launch subject
+   at **`tool_input.name`** (e.g. `car46-fix-cycle` - the same id `read_agent` uses, and
+   the id the `text_result_for_llm` prose confirms: "Agent started in background with
+   agent_id: car46-fix-cycle"). And the stop side CAN reach the same name-space:
+   events.jsonl `tool.execution_start` maps `toolCallId` ↔ `arguments.name` (probed: 3/3
+   dispatches this session), and the in-flight agent at stop time = `subagent.started`
+   toolCallIds minus `subagent.completed` toolCallIds (stop fires ~2s before its own
+   `completed` event lands). So launch and stop records SHARE a join key -
+   `tool_input.name` = `execution_start.arguments.name` - and dispatched↔returned pairing
+   survives under Copilot. Overlapping-agents ambiguity is §2c-4's probe.
 
 ## §4 - Decisions
 
@@ -105,7 +125,7 @@ working, which deletes half of rev 1's mechanism. Each fact, with its source:
 | D4 | Copilot `returned` records: mint at `subagentStop` with what the payload + events.jsonl hold AT THAT MOMENT. Subject = the events.jsonl id join (§2c-4); envelope = extracted if present, else `envelope: absent` + fault line + stderr notice naming the backfill command. The PROVEN backfill (`Land-Verdict.ps1` + the events.jsonl extractor) is the designed enrichment path for verdict-class dispatches, not a workaround | §3b-6: at stop time the report does not exist in the parent transcript for background dispatches. Minting an honest absent-envelope record preserves Law 4 (the dispatch happened, the record exists); the envelope arrives via the same one extractor when the conductor lands the verdict. NIRTS: verdict-class dispatches already get individually landed; an automatic post-read enrichment hook is NOT needed now - trigger to revisit: §2c-3's wildcard-matcher probe landing positive, or the first envelope-absent record that never got backfilled | Law 4, Law 1, NIRTS |
 | D5 | ONE extractor, one home: `Produce-Artifact.ps1`'s transcript reader (`Get-LastAssistantText`) grows an events.jsonl format branch (detect: first line parses as JSON with a `type` field vs Claude JSONL). Call sites: (a) the D4 stop-path, (b) `Land-Verdict.ps1`, which gains a `-TranscriptFormat copilot-events` path calling the SAME function (dot-sourced from a shared module file, `scripts/lib/TranscriptRead.ps1`, extracted by `git mv`-style refactor so history survives). The session-files adapter script is retired on landing | DR-3 fold: rev 1 named two different homes in D5 and §5.3. One function, two named call sites, zero copies | Law 6, DR-3 |
 | D6 | Fix `subagent-stop-probe.sh` to read `transcript_path` (falling back to `agent_transcript_path`), so `_probe_transcript_exists_at_fire` measures reality on both runtimes | §3b-7: the probe currently reports false on every Copilot firing because of a key-name miss - a lying instrument on exactly the surface this design depends on | Law 1, instrument-audit |
-| D7 | `dispatched` records under Copilot: IN scope (cheap now). The launch path already fires with `tool_input.agent_type` present (§3b-3/4); D2's filter fix alone makes launch records mint. Subject = launch `toolCallId` when derivable, else the record disclosing `subject_basis` | Rev 1 deferred this on cost; the probes showed the cost collapsed to the same filter fix D2 already makes. StoreIntegrity has no pairing assertion (round-1 reviewer ran it: 129/129, no dispatched↔returned coupling), so partial coverage during rollout breaks nothing | NIRTS (the cost fell), round-1 Q3 answer |
+| D7 | `dispatched` records under Copilot: IN scope, via TWO changes, not one. (a) D2's filter tolerance admits the payload; (b) the launch SUBJECT extraction is rewired: accept `tool_response.agentId` (Claude shape) OR `tool_input.name` (compat shape, §3b-8) - never throw on the compat payload. Stop-side subject: the §3b-8 join chain (in-flight `toolCallId` → `execution_start.arguments.name`), landing both record halves in the SAME name-space so dispatched↔returned pair under Copilot; when the join fails, the record discloses `subject_basis: name-time` [DR-4, folded] | Rev 2 claimed "D2's filter fix alone makes launch records mint" - false: `Produce-Artifact.ps1:148` reads `tool_response.agentId`, absent from the compat payload, and throws at `:151`. The rewire is small because the subject material exists (§3b-8, probed); pairing MATTERS even though StoreIntegrity doesn't assert it - the yard board (#1) joins these, so "partial coverage breaks nothing" was conflating two different consumers | Law 1, DR-4, NIRTS |
 
 ## §5 - Mechanism
 
@@ -114,9 +134,12 @@ working, which deletes half of rev 1's mechanism. Each fact, with its source:
    `sh -c '...'` entire-CLI wrappers are left untouched: Claude-side they work,
    Copilot-side entire is natively covered by `.github/hooks/entire.json`, and their
    compat failure is fail-open noise pinned by a D3 probe (visible, harmless, known).
-2. `Produce-Artifact.ps1`: filter tolerance (D2), stderr skip-lines (D2), subject
-   join + absent-envelope minting (D4), transcript-format branch (D5). Red-first:
-   fixture payloads (real captures) + failing tests before each change.
+2. `Produce-Artifact.ps1`: filter tolerance (D2), stderr skip-lines (D2), launch
+   subject-extraction rewire at `:148` - `tool_response.agentId` OR `tool_input.name`
+   (D7), stop-side subject join + absent-envelope minting (D4), transcript-format
+   branch (D5). Red-first: fixture payloads (real captures) + failing tests before
+   each change - including one red proving the compat launch payload currently throws
+   at `:151` [DR-4].
 3. `scripts/lib/TranscriptRead.ps1`: extracted shared reader (D5), consumed by
    `Produce-Artifact.ps1` and `Land-Verdict.ps1`.
 4. `subagent-stop-probe.sh`: key-name fix (D6).
@@ -134,7 +157,7 @@ working, which deletes half of rev 1's mechanism. Each fact, with its source:
 | `sh` not on PATH (fresh box) | Hooks fail loudly, known signature; `docs/setup.md` prerequisite row names the fix; nothing preToolUse so nothing fail-closed | Law 5, Law 4 |
 | Report not in events.jsonl at stop (the P5 common case) | `returned` record mints with `envelope: absent` + fault line + stderr naming the backfill command; verdict lands via the one extractor at land-time | Law 4 |
 | Neither `agent_type` nor `agent_name` in a stop payload | Filter exit 0 WITH stderr line quoting the keys that were present - unknown shape renders as a visible skip, never a guessed record | Law 1 |
-| Subject join fails (no `toolCallId` derivable) | Record mints with `subject_basis: name-time` disclosed in the record body, never a fabricated id | Law 1 |
+| Subject join fails (no `execution_start` match for the in-flight `toolCallId`) | Record mints with `subject_basis: name-time` disclosed in the record body, never a fabricated id; dispatched↔returned pairing degrades visibly for that pair, not silently | Law 1, Law 4 |
 | Compat layer changes on a Copilot update (P1 moves) | D3 probes red BY NAME (payload shape, command-form behaviour); the session-start retro sees it | Law 5, Healing Loop |
 | Claude Code regression from the intersection dialect (P4 false) | §2c-2 blocking verify on next Claude session; until verified, `docs/setup.md` carries the "expected-unchanged, unverified" row | Law 1 |
 | Duplicate records if a future compat fix runs a path twice | One manifest (D1) makes this structurally impossible today; if wiring ever grows a second path, record ids make duplicates visible in StoreIntegrity's per-record checks | Law 6 |
@@ -174,15 +197,21 @@ Owner approval recorded before car dispatch.
 | DR-3 (MINOR): D5 vs §5.3 named two homes for the "one extractor" | finding | adopted - one home (`scripts/lib/TranscriptRead.ps1` via `Get-LastAssistantText`), both call sites named, adapter retired | D5, §5.3 |
 | Round-1 answer to Q3 (StoreIntegrity has no pairing assertion; D7 deferral sound) | ruling | adopted, and it unlocked the OPPOSITE choice: with pairing unconstrained and the filter fix already paying for launch records, D7 flips from deferred to in-scope | D7 |
 
+## §9c - Disposition of round 2 (verdict: `artifacts/reviews/2026-07-24-dual-runtime-design-review-round2-REJECT.md`)
+
+| Prior item | Kind | Disposition | Where |
+|---|---|---|---|
+| DR-4 (MAJOR): "filter fix alone makes launch records mint" is false - `Produce-Artifact.ps1:148` reads `tool_response.agentId`, absent from the compat launch payload (no `toolCallId` either); D7's named fallback did not exist in the payload; launch and stop identities shared no join key, pairing unacknowledged | finding | **adopted, and the probe it demanded was run before this revision**: the compat launch keyset is now §3b-8 (verified, quoted); the subject that IS present is `tool_input.name`, and the stop side reaches the same name-space via `execution_start.arguments.name` (probed 3/3) - so D7 is rewritten as filter fix + subject rewire, pairing preserved in one name-space, `subject_basis` disclosed on join failure. The "partial coverage breaks nothing" conflation is retracted: the yard board (#1) is the consumer that pairs | §3b-8, D7, §5.2 |
+| DR-5 (MINOR): "44/44 post-task entries under Copilot" - only 3/44 are Copilot; false population count in the observed-substrate section | finding | adopted - §3b-4 restated: 3/3 Copilot entries carry `tool_name: Agent`; the 41 Claude Code entries are named as evidence for nothing Copilot-side | §3b-4 |
+| Round-2 rulings on Q1/Q2/Q3 (absent-envelope minting correct; format detection sufficient; `sh -c` wrappers stay pinned noise) | ruling | adopted as-is; Q1-Q3 are closed and removed from §10's asks | D4, D5, §5.1 |
+
 ## §10 - Open questions for the reviewer
 
-1. **D4's absent-envelope record**: is minting `returned` with `envelope: absent` at stop
-   time better than minting nothing until backfill? (Design says yes per Law 4 - the
-   dispatch's return is a fact even when the report body is not yet readable. The
-   alternative leaves background dispatches recordless until a human lands the verdict.)
-2. **D5's format detection** (first-line JSON `type` field vs Claude JSONL): sufficient,
-   or does it need an explicit `-Format` parameter at both call sites? (Cost: one more
-   knob; benefit: no misdetection on a hand-fed file.)
-3. **D1 leaves the `sh -c` entire wrappers failing under compat as pinned noise.** Is
-   "pinned by a probe, disclosed in setup.md" the right disposition, or should they be
-   silenced (guard-wrapped) at the cost of touching generator-adjacent lines?
+Rounds 1-2 answered the prior Q1-Q3 (dispositions in §9b/§9c). Remaining:
+
+1. **D7's stop-side join** runs three hops (in-flight set → `toolCallId` →
+   `execution_start.arguments.name`). Is the `subject_basis: name-time` negative branch
+   an acceptable floor while §2c-4's overlapping-agents probe is outstanding, or should
+   the join be considered blocking for D7's landing?
+2. **The retracted pairing conflation** (§9c): does any OTHER consumer beyond the yard
+   board (#1) join dispatched↔returned that this design should name?
