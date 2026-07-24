@@ -375,20 +375,48 @@ try {
     $compactAt = $at -replace '[-:]', ''
     $subjectDir = Join-Path $storeAbs $subject
 
-    # --- duplicate-dispatch refusal guard (#47 D2/DR-9, Q2 keep-first) -------------------
+    # --- duplicate-dispatch refusal guard (#47 D2/DR-9, Q2 keep-first; #53 fix) ----------
     # Uniqueness at the mint boundary is MECHANICAL, not dispatcher vigilance: the producer
     # REFUSES a second `dispatched` record whose subject already has an UN-SUPERSEDED
-    # dispatched record (one on disk with no `returned` record yet). Keep-first (Q2 ruling):
+    # dispatched record (one on disk with no LATER `returned` record). Keep-first (Q2 ruling):
     # the already-in-flight dispatch's identity stays stable so its dispatched<->returned
     # pair resolves; the refused second never enters the store. Boundary (round-2 reviewer):
     # "un-superseded" means a same-id re-dispatch AFTER the first returned is NOT refused
     # here - that post-return reuse is caught downstream by the fold's superseded-exposure
     # (schema/vectors/fold/duplicate-subject-two-dispatched.json). Loud fault, no write.
+    #
+    # #53: the ORIGINAL predicate (`$existingDisp.Count -gt 0 -and $existingRet.Count -eq 0`)
+    # only ever asked "has this subject EVER returned" - once true it stays true forever, so
+    # after the first-ever return the guard admitted unlimited concurrent in-flight dispatches
+    # for the same subject. "Un-superseded" must compare the NEWEST dispatched against the
+    # NEWEST returned, not "any dispatched" against "any returned". Filenames embed a compact
+    # UTC timestamp with second resolution and no separators (`dispatched-yyyyMMddTHHmmssZ.json`,
+    # produced a few lines above via `$at -replace '[-:]', ''`), so a plain lexical Sort-Object
+    # on the fixed-width name is chronological order - verified against real records under
+    # artifacts/ (e.g. dispatched-20260723T132029Z.json, dispatched-20260723T150036Z.json).
+    # Equal-timestamp edge case (dispatch and return minted in the same second): treated as
+    # returned-supersedes-dispatched (>= not >), i.e. a same-second return is enough to clear
+    # the guard - the producer never mints two records in the same call, so a real same-second
+    # collision only arises from an external clock/replay artifact, and DR-9's intent (loud
+    # refusal of genuinely concurrent in-flight duplicates) is about ordering, not the tie.
+    # Orphan case (a `returned` record with no prior `dispatched` at all) is UNCHANGED by this
+    # fix: this guard only runs `if ($Kind -eq 'dispatched')`, so writing an orphan `returned`
+    # record was never gated before and still is not gated now.
     if ($Kind -eq 'dispatched') {
-        $existingDisp = @(Get-ChildItem -Path $subjectDir -Filter 'dispatched-*.json' -File -ErrorAction SilentlyContinue)
-        $existingRet  = @(Get-ChildItem -Path $subjectDir -Filter 'returned-*.json'   -File -ErrorAction SilentlyContinue)
-        if ($existingDisp.Count -gt 0 -and $existingRet.Count -eq 0) {
-            throw "duplicate dispatch refused (#47 DR-9 guard, keep-first): subject '$subject' already has an un-superseded dispatched record; no second dispatched record written"
+        $existingDisp = @(Get-ChildItem -Path $subjectDir -Filter 'dispatched-*.json' -File -ErrorAction SilentlyContinue | Sort-Object Name)
+        $existingRet  = @(Get-ChildItem -Path $subjectDir -Filter 'returned-*.json'   -File -ErrorAction SilentlyContinue | Sort-Object Name)
+        if ($existingDisp.Count -gt 0) {
+            $newestDispName = $existingDisp[-1].Name
+            $newestRetName  = if ($existingRet.Count -gt 0) { $existingRet[-1].Name } else { $null }
+            # newest-dispatched is superseded only if a returned record exists with a
+            # timestamp portion equal to or later than it (extracted substring compare,
+            # both filenames share the same 'dispatched-'/'returned-' prefix length pattern).
+            $dispStamp = $newestDispName -replace '^dispatched-', ''
+            $retStamp  = if ($newestRetName) { $newestRetName -replace '^returned-', '' } else { $null }
+            $superseded = ($null -ne $retStamp) -and ($retStamp -ge $dispStamp)
+            if (-not $superseded) {
+                throw "duplicate dispatch refused (#47 DR-9 guard, keep-first, #53 newest-active fix): subject '$subject' already has an un-superseded dispatched record; no second dispatched record written"
+            }
         }
     }
 
