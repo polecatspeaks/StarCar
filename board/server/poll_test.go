@@ -376,19 +376,23 @@ func TestSkipNotQueueGuard(t *testing.T) {
 	srv.EndPoll()
 }
 
-// TestSkipNotQueueGuardConcurrentClaimIsExclusive pins #52 C51R-5: the
-// single-poll invariant that lastGoodAsOf/lastGoodLaneData (poll.go's
-// Server struct, declared just above pollInFlight) rely on instead of
-// s.mu - PollOnce is only ever safe to run unsynchronized because
-// RunPollLoop (poll.go:158-162) never launches a second one while the
-// first is still in flight. This test races N goroutines at
-// TryBeginPoll's CAS (poll.go:139-140) simultaneously - the same claim
-// RunPollLoop makes before spawning PollOnce - and pins that EXACTLY ONE
-// of them ever wins the claim, never zero, never more than one. If a
-// future change weakened the CAS (e.g. a non-atomic read-then-write, or a
-// guard that a second RunPollLoop could bypass), this test fails by
-// counting winners != 1, which a sequential test like TestSkipNotQueueGuard
-// above cannot observe.
+// TestSkipNotQueueGuardConcurrentClaimIsExclusive pins #52 C51R-5 (fix
+// cycle round 2, MAJOR-1): the single-poll invariant that
+// lastGoodAsOf/lastGoodLaneData (poll.go's Server struct, declared just
+// above pollInFlight) rely on instead of s.mu - PollOnce is only ever
+// safe to run unsynchronized because RunPollLoop never launches a second
+// one while the first is still in flight. This test races N goroutines
+// at TryBeginPoll's CAS simultaneously - the same claim RunPollLoop makes
+// before spawning PollOnce - and pins that EXACTLY ONE of them ever wins
+// the claim, never zero, never more than one. If a future change
+// weakened the CAS (e.g. a non-atomic read-then-write, or a guard that a
+// second RunPollLoop could bypass), this test fails by counting winners
+// != 1, which a sequential test like TestSkipNotQueueGuard above cannot
+// observe. For the authoritative file:line citations of RunPollLoop and
+// TryBeginPoll's CAS, see the invariant comment above pollInFlight in
+// poll.go - deferring here rather than keeping a second, driftable copy
+// of line numbers (a prior round of this comment cited the wrong lines
+// for both and was rejected for it).
 func TestSkipNotQueueGuardConcurrentClaimIsExclusive(t *testing.T) {
 	srv := newTestServer(t, t.TempDir())
 	const n = 50
