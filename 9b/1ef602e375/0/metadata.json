@@ -1,0 +1,52 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "9b1ef602e375",
+  "session_id": "e07fc822-e277-4d5d-898a-1b91eedea7b6",
+  "strategy": "manual-commit",
+  "created_at": "2026-07-24T13:17:20.7506701Z",
+  "branch": "dev",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/design/2026-07-24-dual-runtime-harness-design.md"
+  ],
+  "agent": "Copilot CLI",
+  "model": "claude-fable-5",
+  "turn_id": "1e7a6496cb6d",
+  "checkpoint_transcript_start": 2519,
+  "transcript_lines_at_start": 2519,
+  "compact_transcript_start": 287,
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 4699,
+    "api_call_count": 5
+  },
+  "session_metrics": {
+    "turn_count": 7
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-07-24T13:17:20.5311052Z",
+    "agent_lines": 2,
+    "agent_removed": 2,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 2,
+    "total_lines_changed": 4,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 27,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".claude/settings.local.json": 27
+      }
+    }
+  ]
+}

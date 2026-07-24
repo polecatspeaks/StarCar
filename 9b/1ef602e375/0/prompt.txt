@@ -1,0 +1,5 @@
+ok we're focusing a bit to much on the how, and not the why. So my expectation was that flipping from claude code to copilot should be pretty transparent, the repo should be set up in a way that it should be family (claude, copilot, gemini etc) agnostic. Any model from any family should be able to jump into the repo and start working with no friction, this is the stranger law we're violating right now.
+
+---
+
+ok we're focusing a bit to much on the how, and not the why. So my expectation was that flipping from claude code to copilot should be pretty transparent, the repo should be set up in a way that it should be family (claude, copilot, gemini etc) agnostic. Any model from any family should be able to jump into the repo and start working with no friction, this is the stranger law we're violating right now.
