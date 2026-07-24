@@ -65,6 +65,19 @@ in design rev 5 §5.2 `[GL2-1, swept]`.
   dispatch event under `artifacts/`, hash-sealed, never edited.
 - **Record** - one store file: `dispatched`, `returned`, `presumed-lost`, `intent`, or
   `ruling`, keyed by its **subject** (the identity - a dispatch id, or a `train:` name).
+- **Subject** - the identity a record is keyed by: the string that pairs a dispatch's
+  `returned` record to its `dispatched` launch. **Per-family (#47, D2):** for a
+  shop-minted family (Copilot mode (a)) the subject IS the minted dispatch id; for a
+  family whose runtime owns a pairing id (Claude mode (b)) the subject is that runtime
+  pairing id, disclosed by `subject_basis: runtime-id`, with the minted id carried
+  separately as `task_id`. A mixed-semantics store is acceptable BY DISCLOSURE (round-2
+  reviewer Q1 ruling) - every record says which basis its subject uses.
+- **Mint** - the conductor's act of assigning a dispatch its identity BEFORE it runs:
+  a `ticket-role-round` id (e.g. `47-car-r1`) minted into the brief. The mint is the
+  ONLY uniqueness authority - the runtime does not dedup, so a duplicate mint is caught
+  by the producer's refusal guard (in-flight) or exposed by the fold's supersession
+  (post-return) `[#47, D2/DR-9]`. The minted id round-trips home in the report envelope's
+  `task-id`.
 - **Fold** - the operation that turns the store's pile of records into one truthful
   statement per subject: precedence (`returned` beats `presumed-lost` beats
   `dispatched`), latest-at supersession with the losers exposed, and the liveness
@@ -103,7 +116,12 @@ in design rev 5 §5.2 `[GL2-1, swept]`.
 - **Adapter** `[GL-4, folded]` - a pluggable data source behind the board's one seam:
   something that can be polled for facts (the store is v0's sole adapter; the ticket
   queue and spend gauge await theirs). Health travels inside an adapter's return
-  value, never beside it.
+  value, never beside it. **Second sense (#47, the harness):** a per-runtime *intake*
+  adapter behind the producer's one seam - a thin normalisation step that turns one
+  agent family's hook payload (Claude camelCase; Copilot compat snake_case) into the
+  ONE internal record shape. Same doctrine both senses: one seam, many adapters, health
+  inside the return value (an intake adapter that cannot produce a record returns a
+  visible skip, never silence).
 - **Envelope** - the fenced `starcar-artifact` block ending every dispatch report:
   outcome, findings, abstract. How a `returned` record gets its outcome.
 - **Vector** - a conformance fixture: this pile of records in, exactly this fold truth
