@@ -130,3 +130,15 @@ Agent "52-hygiene-car-r1" (car) has finished processing and is now idle. Use rea
 <system_notification>
 Agent "52-hygiene-car-r1" (car) has finished processing and is now idle. Use read_agent with agent_id "52-hygiene-car-r1" to read the results, or write_agent to send follow-up messages.
 </system_notification>
+
+---
+
+<system_notification>
+Agent "52-hygiene-review-r1" (car) has finished processing and is now idle. Use read_agent with agent_id "52-hygiene-review-r1" to read the results, or write_agent to send follow-up messages.
+</system_notification>
+
+---
+
+<system_notification>
+Agent "52-hygiene-review-r1" (car) has finished processing and is now idle. Use read_agent with agent_id "52-hygiene-review-r1" to read the results, or write_agent to send follow-up messages.
+</system_notification>
