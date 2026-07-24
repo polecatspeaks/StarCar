@@ -131,3 +131,5 @@ dispatch batch between regenerations.
 | a38588f299202d415 | returned | 2026-07-24T10:11:47Z | done-with-findings | a38588f299202d415/returned-20260724T101147Z.json |
 | ab8b2e7effb839f82 | dispatched | 2026-07-24T10:13:18Z |  | ab8b2e7effb839f82/dispatched-20260724T101318Z.json |
 | ab8b2e7effb839f82 | returned | 2026-07-24T10:30:30Z | REJECT | ab8b2e7effb839f82/returned-20260724T103030Z.json |
+| 51-fix-car-r1 | dispatched | 2026-07-24T17:10:20Z |  | 51-fix-car-r1/dispatched-20260724T171020Z.json |
+| 51-fix-review-r1 | dispatched | 2026-07-24T17:27:29Z |  | 51-fix-review-r1/dispatched-20260724T172729Z.json |
