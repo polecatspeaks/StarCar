@@ -1,0 +1,22 @@
+DELTA RE-REVIEW, ROUND 3. Revision 3 committed to dev.
+
+BASE VERIFICATION FIRST: `git -C C:\Users\Chris\git\starcar log --oneline -4 dev` (READ ONLY on the shared checkout). Expect HEAD 35570e1 (friction-log line), then 60b7ca4 (rev-3 design), 6f605ce (your round-2 verdict landed at artifacts/reviews/2026-07-24-dual-runtime-design-review-round2-REJECT.md), da02ed7 beneath. STOP and report if mismatched. The design file to review is docs/design/2026-07-24-dual-runtime-harness-design.md at 60b7ca4.
+
+ROUND HISTORY (carrier): Round 1 REJECT 1 Major/2 Minor (DR-1..3, all ruled ABSENT-resolved by you in round 2). Round 2 REJECT 1 Major/1 Minor:
+- DR-4 (MAJOR): "D2 filter fix alone makes launch records mint" was false — launch subject at Produce-Artifact.ps1:148 reads tool_response.agentId, absent from the compat launch payload (no toolCallId either); D7's named fallback did not exist in the payload; launch and stop identities shared no join key, dispatched/returned pairing unacknowledged.
+- DR-5 (MINOR): §3b-4 claimed 44/44 post-task entries "under Copilot"; only 3/44 are Copilot.
+
+AUTHOR DISCLOSURE (verify, don't trust): after your verdict, the conductor probed further. New evidence folded as §3b-8: the compat launch keyset quoted verbatim; the available launch subject is tool_input.name (= the agent id read_agent uses, confirmed by tool_result.text_result_for_llm prose); events.jsonl tool.execution_start maps toolCallId ↔ arguments.name (3/3 dispatches this session); in-flight-at-stop = subagent.started minus subagent.completed toolCallIds. D7 rewritten: filter fix + subject-extraction rewire (tool_response.agentId OR tool_input.name), stop-side join through execution_start into the SAME name-space, subject_basis: name-time disclosed on join failure; the "partial coverage breaks nothing" conflation is retracted (the yard board #1 pairs). DR-5 fix: §3b-4 restated as 3/3 Copilot entries. Round-2 dispositions in new §9c; your Q1-Q3 rulings adopted and closed; §10 now carries two new questions.
+
+YOUR TASKS:
+1. Walk DR-4 and DR-5 through rev 3 as Present/Absent/DRIFTED; verify each §9c fold is substantive.
+2. Re-derive §3b-8 yourself: dump a Copilot post-task.jsonl entry's keyset; confirm tool_input.name; open the parent events.jsonl (path in the probe-log entries) and confirm tool.execution_start carries arguments.name for the same toolCallId; confirm the started-minus-completed timing claim.
+3. Adversarial pass on the delta only (git diff 3bcb751..60b7ca4 -- docs/design/): the rewired D7, §3b-8's chain, §2c-4's reframed probe row, the new §10 questions. Attack: is the three-hop join actually implementable at stop time from inside a hook (the hook reads the parent events.jsonl WHILE the session is writing it — any file-locking or partial-line hazard)? Is name-space identity (agent friendly name) a sound subject when names can be reused across dispatches in one session?
+4. Rule on convergence: round trajectory is 3 findings → 2 → this round.
+5. Rule on the two §10 questions if evidence permits.
+
+CALIBRATION: any Major = REJECT. Mint DR-6..n; never reuse. Note: per doctrine, round count 4 triggers reviewer rotation NEXT round — if you REJECT, say what the fresh round-4 reviewer needs carried.
+
+VERIFICATION HONESTY: suite, count, SHA, observer on every claim; run the suites yourself at 35570e1, derive your own baseline.
+
+REPORT ENVELOPE (mandatory): end with a fenced block, info string starcar-artifact, carrying outcome, findings, abstract. NO angle brackets inside the fence.
