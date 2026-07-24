@@ -107,4 +107,3 @@ func main() {
 		log.Fatalf("board server: %v", err)
 	}
 }
-
