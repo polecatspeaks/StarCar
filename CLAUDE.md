@@ -77,7 +77,7 @@ change is itself a process failure (the autoimmune mode - see the Healing Loop's
 | Living contracts | State changes update the ledger in the same commit |
 | Rewrite vs extend | Optimize for least NEW code reviewed; rewrites lose encoded incident knowledge |
 | Cost discipline | Spend approved before dispatch; a car and its review are one unit |
-| Tracking | Every piece of work gets an issue; one area label; every new code addition cites its `#N` in a comment |
+| Tracking | Every piece of work gets an issue; one area label; every new code addition cites its `#N` in a comment. Owner-ruling doctrine is CARVED OUT - it carries the why instead, and if you do not know the why, ask before committing |
 | Session starts | The tooling retro; log friction as it happens; never drop a tooling request; doctrine dedup check |
 | Session ends | A decision point: triage in-flight work, checkpoint in writing, three closing sentences |
 
@@ -918,6 +918,27 @@ beside it, `gh project item-add 6 --owner polecatspeaks --url <issue-url>` at cr
 and the audit is one line, run at session start or on suspicion:
 `gh project item-list 6 --owner polecatspeaks --format json --limit 100 --jq '[.items[]|select(.content.number!=null)|.content.number]|sort'`
 diffed against `gh issue list --state open`.
+
+**CARVE-OUT: owner-ruling doctrine commits are NOT ticketed (owner ruling, 2026-07-24).**
+Most of what lives in the NORTH STAR, the GUIDE STAR, and the process sections is not
+ticketable work; filing an issue for it is ceremony with no reader, minted after the fact
+to satisfy a rule. **The provenance is that it came from the HUMAN, for human reasons** -
+a different and stronger claim than a ticket number. A ticket records that work was
+tracked. A ruling records that a person decided something, and why.
+
+**The obligation this substitutes is NOT lighter than a ticket.** The commit must carry
+the SPIRIT AND INTENT, not just the mechanism - and **if you are unsure of the reasons,
+ASK FOR THE WHY BEFORE COMMITTING.** An agent that lands a rule it cannot explain has
+planted a Chesterton's fence with no story attached, and this file opens by saying a rule
+without its scar is exactly that: a fence awaiting pruning. The next agent WILL prune it,
+correctly, because nothing told it not to. Asking costs one sentence; a pruned rule costs
+whatever the rule was preventing. This is the same reflex as the standing vocabulary rule
+(PAUSE AND ASK, never infer) pointed at intent instead of at words.
+
+Scope, so the carve-out cannot spread: it covers doctrine landed on the OWNER's ruling.
+Work the conductor decides to do is ticketed like everything else, and a ruling that
+directs CODE still gets its issue - what is exempt is the doctrine commit itself, not the
+build it authorises.
 
 ### CODE STANDARD: every new addition cites its ticket (owner, 2026-07-23)
 
