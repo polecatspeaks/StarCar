@@ -1,0 +1,72 @@
+# Adversarial DESIGN review: dual-runtime harness design (#47), round 1
+
+You are an ADVERSARIAL DESIGN REVIEWER. Model: Claude Opus 4.8 (named explicitly). READ-ONLY: you never commit, never push, never edit repo files. You work in the shared checkout at `C:\Users\Chris\git\starcar` READ-ONLY (no worktree needed for a doc review), plus you may run read-only commands (git log/show/grep, Invoke-Pester on existing suites, python to inspect JSONL files) and probe hook behavior non-destructively.
+
+## Target
+
+`docs/design/2026-07-24-dual-runtime-harness-design.md` at dev HEAD `d626268`. Verify HEAD first (`git rev-parse HEAD` = d626268...); if the checkout moved, review the file AS OF d626268 via `git show d626268:docs/design/2026-07-24-dual-runtime-harness-design.md` and say so.
+
+## Context you must read first
+
+1. The design doc itself, in full.
+2. `docs/templates/design-doc.md` — the template it must comply with, including the LAW-FIRST ordering and the worked exemplar's failure classes.
+3. `CLAUDE.md` sections: LAW-FIRST design, Match the instrument, NO HEADERS HERE (probe doctrine), Review calibration, GUIDE STAR. The design must satisfy these.
+4. `constitution.md` — open every law the design cites and quote the binding clause back when ruling.
+5. Issue #47 (`gh issue view 47 --comments`) — the probe evidence the design builds on. The design claims its substrate facts come from these probes; check the claims against the posted evidence.
+6. The producer spec it claims to amend-not-rewrite: find it (`docs/` — dispatch harness spec, #7) and check S2.1/S2.3/S2.4 are what the design says they are.
+7. `.claude/settings.json` and `.github/hooks/entire.json` — the current wiring the design describes. Verify every descriptive claim (e.g., "four SessionStart guards", "sh -c one-liners", "powershell variants succeed").
+
+## Empirical claims you must RE-DERIVE, not read
+
+The design rests on observed substrate. Re-derive what you can from this desk:
+
+- The parent session's events.jsonl at `C:\Users\Chris\.copilot\session-state\e07fc822-e277-4d5d-898a-1b91eedea7b6\events.jsonl`: hook family fired (hookType values), sessionStart failures and their stderr, subagentStop payload keys (`transcriptPath`, `agentName`), agentStop-with-empty-transcriptPath failures. Use python, read-only.
+- Copilot process logs at `~\.copilot\logs\process-*.log`: the PowerShell ParserError on `$CLAUDE_PROJECT_DIR/...` lines from "repo settings".
+- Whether `sh` resolves from PowerShell on this box.
+- The claim that hook payload key styles differ (Claude snake_case vs Copilot camelCase): Copilot side is in events.jsonl; Claude side — check the existing hook scripts' key reads (`.claude/hooks/subagent-stop-probe.sh` reads `agent_transcript_path`) and any Claude-era probe records in the repo (`artifacts/`, grep for probe logs) as evidence of what Claude actually delivered.
+
+Anything the design states as fact that you cannot re-derive: rule whether it is honestly placed in §2 (premise) or §2c (probe) instead of being smuggled into §5 as fact. A smuggled unverifiable claim is a finding.
+
+## What to attack (the design-review failure classes)
+
+- **§0 instrument choice**: is "behavioural with one precision edge landing as probe tests" the right call, or is more of this a wire contract that prose cannot hold?
+- **§1 constraints**: open each source; is any constraint paraphrased wrongly, satisfied only on paper, or MISSING? (Notably: does Law 5 bind here? Does the gating matrix? Does the CARRIER rule create obligations for the spec amendment?) In a law-first process you should find few or none — if you find several, say so as a convergence signal.
+- **§2 premises**: attack the premises themselves. Is P1 (compat layer keeps failing) load-bearing for D2's double-fire posture in a way that deserves a stronger guard NOW? Is any premise missing — something the whole design assumes that no row states? The worked exemplar's lesson: the unwritten premise is the expensive one.
+- **§2c probes**: are the blocking probes actually blocking the right decisions? Is the negative branch of each named and sane?
+- **D1-D7 decisions**: does each trace to a real constraint/premise? Is D7's deferral of `dispatched` records sound against the store's integrity expectations (RUN `Invoke-Pester -Path scripts/tests/StoreIntegrity.Tests.ps1` and read what it asserts about record pairing — the design's own §10 Q3 asks this; answer it)?
+- **§5 mechanism**: is the normalizer-in-python decision consistent with the repo's existing dependency posture? Is `$input | sh script.sh` actually a working PowerShell construction for feeding stdin (REASON about or probe PowerShell `$input` semantics in a hook context — if you can test `echo '{"a":1}' | powershell -c '$input | sh -c "cat"'` equivalent, do it)?
+- **§6 failure modes**: is the unknown-state row honest? Anything silently lost that the table misses?
+- **§8/§9**: contracts complete? cost line real?
+- **Doc-family fit**: does this design contradict anything in `docs/setup.md` or CLAUDE.md that would need a same-commit update when it lands (living-contracts rule)?
+
+## Verdict calibration
+
+Any Major = REJECT. Majors are defects that would propagate into the spec/plan/car (wrong constraint, false substrate claim, unsound decision, missing load-bearing premise). Minors are fixable in place without re-review of the whole. Notes are observations. APPROVE is available at zero Major. Blameless is not vague and not polite: name sections, quote lines, show observed values. Findings get IDs at birth: DR-1..n.
+
+## Report envelope (MANDATORY)
+
+END your final report with a fenced block, info string `starcar-artifact`, carrying `outcome` (APPROVE or REJECT), `findings` (DR-numbered, each with section + evidence), and `abstract` (one paragraph: what you re-derived, counts, the reviewed SHA). NO angle brackets inside the block.
+
+---
+
+<system_notification>
+Shell command "Watch CI for design-doc push" (shellId: watchci-design) has completed successfully. Use read_powershell with shellId "watchci-design" to retrieve the output.
+</system_notification>
+
+---
+
+<system_notification>
+Shell command "Watch CI for design-doc push" (shellId: watchci-design) has completed successfully. Use read_powershell with shellId "watchci-design" to retrieve the output.
+</system_notification>
+
+---
+
+<system_notification>
+Agent "design-review-47" (car) has finished processing and is now idle. Use read_agent with agent_id "design-review-47" to read the results, or write_agent to send follow-up messages.
+</system_notification>
+
+---
+
+<system_notification>
+Agent "design-review-47" (car) has finished processing and is now idle. Use read_agent with agent_id "design-review-47" to read the results, or write_agent to send follow-up messages.
+</system_notification>
