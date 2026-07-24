@@ -1,0 +1,24 @@
+{
+  "name": "claude-launch-runtime-id",
+  "description": "#47 D2/D3 mode (b): a Claude Code PostToolUse:Task launch payload yields a `dispatched` record whose subject is the runtime's own stable pairing id (tool_response.agentId) with subject_basis=runtime-id disclosed. Provenance: DESIGN-MANDATED - the landed producer already writes subject=agentId (OBSERVED, scripts/tests/fixtures/payloads/launch-car.json) but does NOT yet write subject_basis; this vector pins the disclosed-basis field #47 adds and lands red-first with the D4 seam. Claude launch shape OBSERVED from scripts/tests/fixtures/payloads/launch-car.json.",
+  "runtime": "claude",
+  "mode": "b",
+  "kind": "dispatched",
+  "input": {
+    "payload": {
+      "session_id": "sess-adapter-1",
+      "hook_event_name": "PostToolUse",
+      "tool_name": "Task",
+      "tool_input": { "description": "adapter car", "model": "sonnet", "prompt": "x", "subagent_type": "car" },
+      "tool_response": { "agentId": "a1b2c3d4e5f6a7b8c", "status": "async_launched", "resolvedModel": "claude-sonnet-5", "isAsync": true }
+    }
+  },
+  "expected": {
+    "record": {
+      "kind": "dispatched",
+      "subject": "a1b2c3d4e5f6a7b8c",
+      "session_id": "sess-adapter-1",
+      "subject_basis": "runtime-id"
+    }
+  }
+}

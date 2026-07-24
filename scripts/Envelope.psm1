@@ -86,12 +86,16 @@ function Get-LastAssistantText {
 function Get-StarcarEnvelope {
     <#
       Parse the report's outcome envelope: a fenced block, info string starcar-artifact,
-      carrying outcome, findings, abstract (spec S2.3). Faults, both landing with the body
-      intact (S2.3):
+      carrying outcome, findings, abstract (spec S2.3) and - since #47 (design section 5.7) -
+      an OPTIONAL `task-id` echoing the shop-minted dispatch id the brief carried. Faults,
+      both landing with the body intact (S2.3):
         Fault = 'absent'    -> no fence at all (a brief failure)
         Fault = 'malformed' -> a fence exists but a required field is missing (a producer
                                failure)
-        Fault = $null       -> Found, all three fields present
+        Fault = $null       -> Found, all three required fields present
+      task-id is NON-required: its absence never makes the envelope malformed (a car that
+      predates the #47 echo mandate still lands a clean returned record; the minted id just
+      does not round-trip on that record). TaskId is $null when the line is absent.
       LAST fence wins when a report carries more than one block (repeat-envelope
       precedent, Land-Verdict.ps1's Get-ResultBlockForTask last-wins return -- the later
       notification is the current one).
@@ -110,7 +114,7 @@ function Get-StarcarEnvelope {
 
     if ($matchList.Count -eq 0) {
         return [pscustomobject]@{
-            Found = $false; Outcome = $null; Findings = $null; Abstract = $null; Fault = 'absent'
+            Found = $false; Outcome = $null; Findings = $null; Abstract = $null; TaskId = $null; Fault = 'absent'
         }
     }
 
@@ -120,7 +124,7 @@ function Get-StarcarEnvelope {
     $fields = @{}
     $current = $null
     foreach ($line in ($body -split "`n")) {
-        if ($line -match '^(outcome|findings|abstract):[ ]?(.*)$') {
+        if ($line -match '^(task-id|outcome|findings|abstract):[ ]?(.*)$') {
             $current = $Matches[1]
             $fields[$current] = $Matches[2]
         } elseif ($current) {
@@ -131,9 +135,11 @@ function Get-StarcarEnvelope {
     $outcome  = if ($fields.ContainsKey('outcome'))  { $fields['outcome'].TrimEnd() }  else { $null }
     $findings = if ($fields.ContainsKey('findings')) { $fields['findings'].TrimEnd() } else { $null }
     $abstract = if ($fields.ContainsKey('abstract')) { $fields['abstract'].TrimEnd() } else { $null }
+    $taskId   = if ($fields.ContainsKey('task-id'))  { $fields['task-id'].TrimEnd() }  else { $null }
 
     # A fence with a missing (or empty) required field is malformed, not found: the body
-    # is present but does not carry the three payloads the record needs.
+    # is present but does not carry the three payloads the record needs. task-id is not in
+    # this completeness test (it is the #47 optional echo, not a required payload).
     $complete = -not (
         [string]::IsNullOrEmpty($outcome) -or
         [string]::IsNullOrEmpty($findings) -or
@@ -145,6 +151,7 @@ function Get-StarcarEnvelope {
         Outcome  = $outcome
         Findings = $findings
         Abstract = $abstract
+        TaskId   = if ([string]::IsNullOrEmpty($taskId)) { $null } else { $taskId }
         Fault    = if ($complete) { $null } else { 'malformed' }
     }
 }

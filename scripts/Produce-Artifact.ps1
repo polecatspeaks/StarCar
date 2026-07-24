@@ -77,6 +77,16 @@ function Get-Prop {
     return $p.Value
 }
 
+function Write-VisibleSkip {
+    # #47 D3/D4 (Law 4, Law 1): an intake payload no adapter recognises is SKIPPED VISIBLY,
+    # never silently. The three-hour "fully silent producer" misdiagnosis (superseded design
+    # D2) happened because a filter miss exited 0 saying nothing. Naming the present keys on
+    # stderr turns an invisible skip into an observable one, and names NO guessed subject.
+    param([object]$Payload, [string]$Kind)
+    $keys = @($Payload.PSObject.Properties.Name) -join ', '
+    [Console]::Error.WriteLine("Produce-Artifact: $Kind payload not recognised by any adapter (no Claude agent_type/subagent_type, no Copilot compat agent_name/agent_type); NO record written. Keys present: $keys")
+}
+
 # Get-Sha256Hex is imported from Artifact.psm1 (F4, Law 6 - the one owner; was
 # script-local here, duplicated in scripts/tests/Producer.Tests.ps1 and
 # scripts/tests/Migration.Tests.ps1 as test-local copies of the same idiom, and now also
@@ -136,29 +146,71 @@ try {
     if ([string]::IsNullOrWhiteSpace($raw)) { throw 'empty payload on stdin' }
     $payload = $raw | ConvertFrom-Json
 
-    # --- filter (spec S2.2): agent_type for stop, subagent_type for launch --------------
+    # --- family-agnostic intake adapter (#47 D2/D4) ------------------------------------
+    # ONE writer, per-runtime normalisation to one internal shape. Claude Code carries
+    # agent_type (stop) / tool_input.subagent_type (launch) and a camelCase
+    # tool_response.agentId; the Copilot CLI compat layer delivers snake_case with the
+    # Task matcher mapped to its Agent tool - agent_name at stop, tool_input.agent_type +
+    # tool_input.name at launch (superseded design section 3b, OBSERVED). `subject_basis`
+    # DISCLOSES which family rule produced the subject: runtime-id (mode b, Claude's stable
+    # pairing UUID) or minted-id (mode a, the shop id carried in the label/envelope).
+    $subjectBasis = $null
+    $runtime = $null
+    $provenance = $null
     if ($Kind -eq 'returned') {
-        $agentType = Get-Prop $payload 'agent_type'
-        if ([string]::IsNullOrWhiteSpace($agentType)) { exit 0 }   # internal subagent: no record
-        $subject = Get-Prop $payload 'agent_id'
+        $agentType = Get-Prop $payload 'agent_type'   # Claude stop
+        $agentName = Get-Prop $payload 'agent_name'   # Copilot compat stop
+        if (-not [string]::IsNullOrWhiteSpace($agentType)) {
+            $runtime = 'claude'; $subjectBasis = 'runtime-id'
+            $subject = Get-Prop $payload 'agent_id'   # mode (b): the runtime's stable pairing id
+        } elseif (-not [string]::IsNullOrWhiteSpace($agentName)) {
+            # Copilot mode (a): the compat stop payload carries no unique agent id (agent_name
+            # is the agent TYPE, not a pairing key - superseded design 3b-5). The subject is
+            # the shop-minted id, which arrives via the envelope task-id echo (#47 section
+            # 5.7), resolved after the transcript read below. agent_name is kept as provenance.
+            $runtime = 'copilot'; $subjectBasis = 'minted-id'
+            $provenance = [ordered]@{ runtime = 'copilot'; agent_name = [string]$agentName }
+            $subject = $null
+        } else {
+            Write-VisibleSkip -Payload $payload -Kind $Kind
+            exit 0
+        }
     } else {
         $toolInput = Get-Prop $payload 'tool_input'
-        $subagentType = Get-Prop $toolInput 'subagent_type'
-        if ([string]::IsNullOrWhiteSpace($subagentType)) { exit 0 } # internal subagent: no record
-        $toolResponse = Get-Prop $payload 'tool_response'
-        $subject = Get-Prop $toolResponse 'agentId'
+        $subagentType    = Get-Prop $toolInput 'subagent_type'   # Claude launch
+        $launchAgentType = Get-Prop $toolInput 'agent_type'      # Copilot compat launch
+        if (-not [string]::IsNullOrWhiteSpace($subagentType)) {
+            $runtime = 'claude'; $subjectBasis = 'runtime-id'
+            $toolResponse = Get-Prop $payload 'tool_response'
+            $subject = Get-Prop $toolResponse 'agentId'          # mode (b): runtime pairing id
+        } elseif (-not [string]::IsNullOrWhiteSpace($launchAgentType)) {
+            # Copilot mode (a): subject = the shop-minted id carried verbatim in
+            # tool_input.name (superseded design 3b-8), never scraped from a runtime internal.
+            $runtime = 'copilot'; $subjectBasis = 'minted-id'
+            $subject = Get-Prop $toolInput 'name'
+        } else {
+            Write-VisibleSkip -Payload $payload -Kind $Kind
+            exit 0
+        }
     }
 
-    if ([string]::IsNullOrWhiteSpace($subject)) { throw "no subject id in the $Kind payload" }
+    # subject is validated now for every path EXCEPT Copilot returned, whose subject is
+    # resolved from the envelope task-id after the transcript read (validated there).
+    if (-not ($runtime -eq 'copilot' -and $Kind -eq 'returned')) {
+        if ([string]::IsNullOrWhiteSpace($subject)) { throw "no subject id in the $Kind payload" }
+    }
     $sessionId = Get-Prop $payload 'session_id'
     if ([string]::IsNullOrWhiteSpace($sessionId)) { throw "no session_id in the $Kind payload" }
 
     $at = if ($Now) { $Now } else { (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') }
 
     # --- returned: obtain the outcome from the transcript envelope (spec S2.3) -----------
-    $outcome = $null; $findings = $null; $abstract = $null; $envFault = $null; $model = $null
+    $outcome = $null; $findings = $null; $abstract = $null; $envFault = $null; $model = $null; $taskId = $null
     if ($Kind -eq 'returned') {
+        # Claude carries agent_transcript_path; the Copilot compat stop payload carries
+        # transcript_path (superseded design 3b-2/3b-7). One writer, both keys tolerated.
         $transcriptPath = Get-Prop $payload 'agent_transcript_path'
+        if ([string]::IsNullOrWhiteSpace($transcriptPath)) { $transcriptPath = Get-Prop $payload 'transcript_path' }
         $rawText = $null
         $readErrors = @()
         if (-not [string]::IsNullOrWhiteSpace($transcriptPath)) {
@@ -183,8 +235,12 @@ try {
             foreach ($e in $readErrors) { Add-Fault -Message "transcript read failure: $e" }
         } else {
             $env = if ($rawText) { Get-StarcarEnvelope -Text $rawText } else {
-                [pscustomobject]@{ Found = $false; Outcome = $null; Findings = $null; Abstract = $null; Fault = 'absent' }
+                [pscustomobject]@{ Found = $false; Outcome = $null; Findings = $null; Abstract = $null; TaskId = $null; Fault = 'absent' }
             }
+            # #47 section 5.7: the envelope may echo the shop-minted dispatch id as task-id.
+            # OPTIONAL: its absence never faults the record (a car predating the echo mandate
+            # still lands cleanly; the minted id simply does not round-trip).
+            if ($env.PSObject.Properties['TaskId']) { $taskId = $env.TaskId }
             if ($env.Found) {
                 $outcome = $env.Outcome; $findings = $env.Findings; $abstract = $env.Abstract
             } else {
@@ -196,6 +252,15 @@ try {
                 $findings = if ($rawText) { $rawText } else { '' }
                 $abstract = "envelope $envFault - raw report retained in findings"
             }
+        }
+
+        # Copilot mode (a): the subject IS the minted id, which only the envelope task-id
+        # carries (the compat stop payload has no pairing key). Resolve it now, then validate.
+        if ($runtime -eq 'copilot' -and [string]::IsNullOrWhiteSpace($subject)) {
+            if ([string]::IsNullOrWhiteSpace($taskId)) {
+                throw "Copilot returned payload carries no envelope task-id to pair on (agent_name is a type, not a pairing key); no record written"
+            }
+            $subject = $taskId
         }
     } else {
         # dispatched: producer-optional metadata under the schema's open posture (same
@@ -283,6 +348,14 @@ try {
     # shop-default read failed; the fold applies its own default at fold time regardless.
     if ($Kind -eq 'dispatched' -and $null -ne $budgetSeconds) { $record['budget'] = $budgetSeconds }
     if ($Kind -eq 'dispatched' -and $model) { $record['model'] = $model }
+    # #47 D2/D4 open-posture extras, same disclosed-deviation class as `model` (not in
+    # index-format.md's canonical order; placed with the producer-metadata cluster):
+    #   subject_basis - which family rule produced the subject (runtime-id | minted-id)
+    #   task_id       - the shop-minted id echoed back by the envelope (returned only, #47 5.7)
+    #   provenance    - runtime-internal ids kept as enrichment, never identity
+    if ($subjectBasis) { $record['subject_basis'] = $subjectBasis }
+    if ($Kind -eq 'returned' -and $taskId) { $record['task_id'] = $taskId }
+    if ($provenance) { $record['provenance'] = $provenance }
     $record['producer']      = 'starcar-hook/1'
     $record['normalisation'] = @($normalisation)
 
@@ -301,6 +374,24 @@ try {
     }
     $compactAt = $at -replace '[-:]', ''
     $subjectDir = Join-Path $storeAbs $subject
+
+    # --- duplicate-dispatch refusal guard (#47 D2/DR-9, Q2 keep-first) -------------------
+    # Uniqueness at the mint boundary is MECHANICAL, not dispatcher vigilance: the producer
+    # REFUSES a second `dispatched` record whose subject already has an UN-SUPERSEDED
+    # dispatched record (one on disk with no `returned` record yet). Keep-first (Q2 ruling):
+    # the already-in-flight dispatch's identity stays stable so its dispatched<->returned
+    # pair resolves; the refused second never enters the store. Boundary (round-2 reviewer):
+    # "un-superseded" means a same-id re-dispatch AFTER the first returned is NOT refused
+    # here - that post-return reuse is caught downstream by the fold's superseded-exposure
+    # (schema/vectors/fold/duplicate-subject-two-dispatched.json). Loud fault, no write.
+    if ($Kind -eq 'dispatched') {
+        $existingDisp = @(Get-ChildItem -Path $subjectDir -Filter 'dispatched-*.json' -File -ErrorAction SilentlyContinue)
+        $existingRet  = @(Get-ChildItem -Path $subjectDir -Filter 'returned-*.json'   -File -ErrorAction SilentlyContinue)
+        if ($existingDisp.Count -gt 0 -and $existingRet.Count -eq 0) {
+            throw "duplicate dispatch refused (#47 DR-9 guard, keep-first): subject '$subject' already has an un-superseded dispatched record; no second dispatched record written"
+        }
+    }
+
     if (-not (Test-Path $subjectDir)) { New-Item -ItemType Directory -Path $subjectDir -Force | Out-Null }
     $recordPath = Join-Path $subjectDir "$Kind-$compactAt.json"
 
