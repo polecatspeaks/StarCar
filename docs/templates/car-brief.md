@@ -71,6 +71,8 @@ END YOUR REPORT WITH THE ARTIFACT ENVELOPE (mandatory - this is how your dispatc
 a fenced block, info string starcar-artifact, with three fields - outcome (done /
 done-with-findings / honest-stop), findings, abstract. NO ANGLE BRACKETS anywhere inside
 the envelope (they get HTML-escaped or filtered; the angle-bracket-free form lands clean).
+The envelope ALSO carries `task-id` echoing exactly the minted dispatch id this brief
+delivered to you - that is what pairs your `returned` record to its launch (#47).
 ```
 
 ## Reviewer brief addendum
@@ -125,5 +127,7 @@ VERDICT: APPROVE or REJECT up top; findings by severity with file:line.
 
 END YOUR REPORT WITH THE ARTIFACT ENVELOPE (mandatory - your verdict is a `returned`
 dispatch too): a fenced block, info string starcar-artifact, fields outcome (APPROVE /
-REJECT / honest-stop), findings, abstract. NO ANGLE BRACKETS inside the envelope.
+REJECT / honest-stop), findings, abstract. NO ANGLE BRACKETS inside the envelope. The
+envelope ALSO carries `task-id` echoing exactly the minted dispatch id this brief
+delivered to you - that is what pairs your `returned` record to its launch (#47).
 ```
