@@ -1,0 +1,25 @@
+<system_notification>
+Shell command "Commit verdict, merge car branch, push, watch CI" (shellId: 281) has completed successfully. Use read_powershell with shellId "281" to retrieve the output.
+</system_notification>
+
+---
+
+<system_notification>
+Shell command "Commit verdict, merge car branch, push, watch CI" (shellId: 281) has completed successfully. Use read_powershell with shellId "281" to retrieve the output.
+</system_notification>
+
+---
+
+ok let's continue
+
+---
+
+ok let's continue
+
+---
+
+ok correction. Since you needed a session restart, you bypassed that and went on to the next ticket. I just caught because I was here. This is good, a better behavior is to prompt me to restart.
+
+---
+
+ok correction. Since you needed a session restart, you bypassed that and went on to the next ticket. I just caught because I was here. This is good, a better behavior is to prompt me to restart.
