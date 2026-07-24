@@ -68,9 +68,10 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 	if s.testStreamOrderHook != nil {
 		s.testStreamOrderHook("initial-send-done")
 	}
-	if s.testStreamOrderHook != nil {
-		s.testStreamOrderHook("register-done")
-	}
+	// #52 C51R-1: a stray duplicate "register-done" hook call (leftover
+	// from the 14ccfc3 register-before-send edit) lived here; removed as
+	// dead/duplicated code - the real "register-done" fire is above at
+	// the point registration actually happens (line ~59).
 
 	heartbeat := time.NewTicker(time.Duration(s.cfg.HeartbeatMs) * time.Millisecond)
 	defer heartbeat.Stop()
