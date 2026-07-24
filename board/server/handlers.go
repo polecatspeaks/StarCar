@@ -47,14 +47,30 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "keep-alive")
 	w.WriteHeader(http.StatusOK)
 
+	// #51 C3: register BEFORE marshalling/sending the initial snapshot, so
+	// a poll's broadcast that lands in the gap between this client's
+	// snapshot read and its subscription cannot be missed. A duplicate
+	// current frame arriving via ch after the initial send is harmless -
+	// the client rejects any non-increasing seq (board/web/js/ingest.js:59:
+	// "if (typeof payload.seq === 'number' && payload.seq <= state.
+	// lastAppliedSeq)" is a no-op).
+	ch := s.subs.register()
+	defer s.subs.unregister(ch)
+	if s.testStreamOrderHook != nil {
+		s.testStreamOrderHook("register-done")
+	}
+
 	initial, err := marshalSnapshot(s.CurrentSnapshot())
 	if err == nil {
 		writeSSEFrame(w, initial)
 		flusher.Flush()
 	}
-
-	ch := s.subs.register()
-	defer s.subs.unregister(ch)
+	if s.testStreamOrderHook != nil {
+		s.testStreamOrderHook("initial-send-done")
+	}
+	if s.testStreamOrderHook != nil {
+		s.testStreamOrderHook("register-done")
+	}
 
 	heartbeat := time.NewTicker(time.Duration(s.cfg.HeartbeatMs) * time.Millisecond)
 	defer heartbeat.Stop()

@@ -53,6 +53,15 @@ type Server struct {
 	vocabLoadCondition *store.BoardCondition
 	defaultBudget      *float64
 	defaultBudgetCond  *store.BoardCondition
+
+	// testStreamOrderHook, if non-nil, is called (test-only; production
+	// never sets it) with a stage label at each ordering checkpoint inside
+	// handleStream (#51 C3): "register-done" and "initial-send-done". This
+	// is the structural seam TestHandleStreamRegistersBeforeInitialSend
+	// (handlers_test.go) uses to pin that registration happens BEFORE the
+	// initial snapshot is marshalled and sent - deterministically, without
+	// relying on a real, inherently flaky network race.
+	testStreamOrderHook func(stage string)
 }
 
 // NewServer compiles the schemas (via board/store.NewAdapter) and builds the
