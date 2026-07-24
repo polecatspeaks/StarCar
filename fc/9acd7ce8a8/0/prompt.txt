@@ -1,0 +1,21 @@
+<system_notification>
+Shell command "Commit new design, push, watch CI" (shellId: 153) has completed successfully. Use read_powershell with shellId "153" to retrieve the output.
+</system_notification>
+
+---
+
+<system_notification>
+Shell command "Commit new design, push, watch CI" (shellId: 153) has completed successfully. Use read_powershell with shellId "153" to retrieve the output.
+</system_notification>
+
+---
+
+<system_notification>
+Agent "design-review-47b" (car) has finished processing and is now idle. Use read_agent with agent_id "design-review-47b" to read the results, or write_agent to send follow-up messages.
+</system_notification>
+
+---
+
+<system_notification>
+Agent "design-review-47b" (car) has finished processing and is now idle. Use read_agent with agent_id "design-review-47b" to read the results, or write_agent to send follow-up messages.
+</system_notification>

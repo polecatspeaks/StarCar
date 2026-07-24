@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "fc9acd7ce8a8",
+  "strategy": "manual-commit",
+  "branch": "dev",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "artifacts/reviews/2026-07-24-family-agnostic-design-review-round1-REJECT.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/fc/9acd7ce8a8/0/metadata.json",
+      "transcript": "/fc/9acd7ce8a8/0/full.jsonl",
+      "compact_transcript": "/fc/9acd7ce8a8/0/transcript.jsonl",
+      "content_hash": "/fc/9acd7ce8a8/0/content_hash.txt",
+      "prompt": "/fc/9acd7ce8a8/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 43719,
+    "api_call_count": 33
+  }
+}
