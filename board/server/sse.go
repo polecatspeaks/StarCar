@@ -52,9 +52,33 @@ func (r *subscriberRegistry) broadcast(snap Snapshot) {
 		select {
 		case ch <- data:
 		default:
-			// a slow reader's stale pending frame is replaced by the
-			// non-blocking send failing; the reader still gets the
-			// connection's next successful broadcast, never a pile-up.
+			// #51 C5: the channel is full (a slow reader has not drained
+			// its buffered frame). Drain the stale queued frame and
+			// enqueue the new one, under r.mu - the same lock unregister
+			// holds while it deletes ch from r.subs (unregister.go:
+			// r.mu.Lock(); delete(r.subs, ch); r.mu.Unlock(); THEN
+			// close(ch)), so a concurrent unregister cannot complete its
+			// delete while this broadcast (which holds r.mu for its
+			// entire loop) is running, and close(ch) itself only runs
+			// AFTER that delete+unlock - by which point this channel is
+			// no longer in r.subs for any broadcast to touch. This send
+			// can never race a close. Before this fix, the send above
+			// simply failed and nothing replaced it, leaving the STALE
+			// frame in place - a consistently slow consumer stayed
+			// perpetually one frame behind forever, the opposite of what
+			// the old comment here claimed.
+			select {
+			case <-ch:
+			default:
+			}
+			select {
+			case ch <- data:
+			default:
+				// the buffer was drained by nothing else (only this
+				// goroutine, under r.mu, ever reads/writes this slot in
+				// the drop path) - unreachable in practice, but never
+				// block on it if it somehow is.
+			}
 		}
 	}
 }

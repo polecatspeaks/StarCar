@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -138,9 +139,20 @@ func TestPollOnceScanFailureIsFailedWithLastGood(t *testing.T) {
 	srv := newTestServer(t, root)
 
 	now := time.Date(2026, 7, 23, 12, 0, 0, 0, time.UTC)
-	_, _, err := srv.PollOnce(now)
+	snap1, _, err := srv.PollOnce(now)
 	if err != nil {
 		t.Fatalf("first PollOnce: %v", err)
+	}
+	// #51 C2: capture poll 1's good lane payloads BEFORE deleting the store,
+	// so the assertion below can confirm poll 2 retains the SAME payload
+	// (docs/contracts/state-ledger.md:102 already claims "the previous good
+	// lane DATA stays current" for lastGoodSnapshot - this test is the pin
+	// that claim never had).
+	goodData := map[string]any{}
+	for _, l := range snap1.Lanes {
+		if l.Position == "live" {
+			goodData[l.ID] = l.Data
+		}
 	}
 
 	if err := os.RemoveAll(root); err != nil {
@@ -159,6 +171,39 @@ func TestPollOnceScanFailureIsFailedWithLastGood(t *testing.T) {
 		}
 		if l.Freshness.LastGoodAsOf == nil {
 			t.Errorf("lane %q failed freshness must carry lastGoodAsOf, got nil", l.ID)
+		}
+		wantData := goodData[l.ID]
+		if wantData == nil {
+			continue // this lane had no data in poll 1 either; nothing to retain
+		}
+		if !reflect.DeepEqual(l.Data, wantData) {
+			t.Errorf("lane %q Data on scan failure = %#v, want the RETAINED poll-1 payload %#v (design S6 row 1 / state-ledger.md:102: failed lane carries lastGood VISIBLY MARKED, never an empty payload)", l.ID, l.Data, wantData)
+		}
+	}
+}
+
+// TestPollOnceFirstEverPollFailsKeepsDataNil pins the OTHER branch of #51
+// C2: when the very first poll ever run scans a missing directory, there is
+// no prior good payload to retain - lane.Data must stay nil (honest-empty,
+// never a fabricated payload).
+func TestPollOnceFirstEverPollFailsKeepsDataNil(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "does-not-exist")
+	srv := newTestServer(t, root)
+
+	now := time.Date(2026, 7, 23, 12, 0, 0, 0, time.UTC)
+	snap, _, err := srv.PollOnce(now)
+	if err != nil {
+		t.Fatalf("PollOnce must succeed at the server level even though the scan itself failed: %v", err)
+	}
+	for _, l := range snap.Lanes {
+		if l.Position != "live" {
+			continue
+		}
+		if l.Freshness.Kind != "failed" {
+			t.Fatalf("lane %q freshness = %q, want failed", l.ID, l.Freshness.Kind)
+		}
+		if l.Data != nil {
+			t.Errorf("lane %q Data = %#v, want nil on the FIRST-EVER poll failure (no prior good data exists to show)", l.ID, l.Data)
 		}
 	}
 }

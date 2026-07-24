@@ -374,19 +374,62 @@ func TestScanKnownProducerFieldsNotUnrecognised(t *testing.T) {
 		"normalisation": [],
 		"integrity": `+fakeIntegrity+`
 	}`)
+	// #51: subject_basis, task_id, and provenance are the #47-era producer
+	// fields (Produce-Artifact.ps1:356-358) - same epistemic rule as #26,
+	// an observed provenanced producer field gets DECLARED, not left to fire
+	// record-unrecognised-fields forever.
+	writeFixture(t, root, "returned-subj2/returned-1.json", `{
+		"schema": "starcar-artifact/1",
+		"kind": "returned",
+		"subject": "returned-subj2",
+		"session_id": "session-1",
+		"at": "2026-07-23T12:00:00Z",
+		"outcome": "done",
+		"findings": "none",
+		"abstract": "runtime-id family",
+		"subject_basis": "runtime-id",
+		"task_id": "51-fix-car-r1",
+		"provenance": {"runtime_id": "abc-123"},
+		"normalisation": [],
+		"integrity": `+fakeIntegrity+`
+	}`)
 
 	result, err := a.Scan(root, time.Now().UTC())
 	if err != nil {
 		t.Fatalf("Scan: %v", err)
 	}
-	if len(result.Records) != 2 {
-		t.Fatalf("expected both records to survive, got %d", len(result.Records))
+	if len(result.Records) != 3 {
+		t.Fatalf("expected all three records to survive, got %d", len(result.Records))
 	}
-	if v, ok := result.Records[0].Fields["model"]; !ok || v != "claude-sonnet-5" {
-		t.Fatalf("the 'model' field's VALUE must be preserved in Fields, got %v", result.Records[0].Fields)
+	// bySubject looks records up by their "subject" field value rather than
+	// assuming a fixed slice index - Scan's deterministic order sorts on the
+	// OS path separator (backslash on Windows), under which
+	// "returned-subj2\..." sorts before "returned-subj\..." (0x32 < 0x5C),
+	// so the index a record lands at is not the fixture-declaration order.
+	bySubject := func(subject string) map[string]any {
+		for _, rec := range result.Records {
+			if s, _ := rec.Fields["subject"].(string); s == subject {
+				return rec.Fields
+			}
+		}
+		t.Fatalf("no record found with subject %q among %d records", subject, len(result.Records))
+		return nil
 	}
-	if v, ok := result.Records[1].Fields["body_file"]; !ok || v != "reviews/2026-07-23-example.md" {
-		t.Fatalf("the 'body_file' field's VALUE must be preserved in Fields, got %v", result.Records[1].Fields)
+	if v, ok := bySubject("dispatched-subj")["model"]; !ok || v != "claude-sonnet-5" {
+		t.Fatalf("the 'model' field's VALUE must be preserved in Fields, got %v", bySubject("dispatched-subj"))
+	}
+	if v, ok := bySubject("returned-subj")["body_file"]; !ok || v != "reviews/2026-07-23-example.md" {
+		t.Fatalf("the 'body_file' field's VALUE must be preserved in Fields, got %v", bySubject("returned-subj"))
+	}
+	subj2 := bySubject("returned-subj2")
+	if v, ok := subj2["subject_basis"]; !ok || v != "runtime-id" {
+		t.Fatalf("the 'subject_basis' field's VALUE must be preserved in Fields, got %v", subj2)
+	}
+	if v, ok := subj2["task_id"]; !ok || v != "51-fix-car-r1" {
+		t.Fatalf("the 'task_id' field's VALUE must be preserved in Fields, got %v", subj2)
+	}
+	if _, ok := subj2["provenance"]; !ok {
+		t.Fatalf("the 'provenance' field must be preserved in Fields, got %v", subj2)
 	}
 
 	for _, c := range result.Conditions {

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -68,6 +69,62 @@ func TestSnapshotAndStreamShareOneMarshalPath(t *testing.T) {
 	}
 	if dataLine != string(snapshotBody) {
 		t.Fatalf("snapshot and stream bytes differ:\nsnapshot: %s\nstream:   %s", snapshotBody, dataLine)
+	}
+}
+
+// TestHandleStreamRegistersBeforeInitialSend pins #51 C3: handleStream must
+// register this client's subscriber channel BEFORE marshalling/sending the
+// initial snapshot frame, so a poll's broadcast that lands in the gap
+// cannot land on a subscriber set that does not yet contain this client (a
+// missed broadcast the client would otherwise sit on, stale, until some
+// LATER unrelated change happened to bump seq again). This is a
+// deterministic, non-flaky structural pin via testStreamOrderHook
+// (board/server/poll.go) rather than a real network race, which would be
+// inherently timing-dependent and could pass or fail depending on
+// scheduling - not a genuine red/green signal.
+func TestHandleStreamRegistersBeforeInitialSend(t *testing.T) {
+	srv, ts := newTestHTTPServer(t, t.TempDir())
+
+	var mu sync.Mutex
+	var order []string
+	srv.testStreamOrderHook = func(stage string) {
+		mu.Lock()
+		defer mu.Unlock()
+		order = append(order, stage)
+	}
+
+	req, _ := http.NewRequest(http.MethodGet, ts.URL+"/api/stream", nil)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("connecting: %v", err)
+	}
+	defer resp.Body.Close()
+	reader := bufio.NewReader(resp.Body)
+	// Read past the initial frame so both checkpoints have definitely fired.
+	for i := 0; i < 3; i++ {
+		if _, err := reader.ReadString('\n'); err != nil {
+			break
+		}
+	}
+
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		mu.Lock()
+		got := len(order)
+		mu.Unlock()
+		if got >= 2 || time.Now().After(deadline) {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	if len(order) < 2 {
+		t.Fatalf("expected both ordering checkpoints to fire, got %v", order)
+	}
+	if order[0] != "register-done" {
+		t.Fatalf("handleStream ordering = %v, want [\"register-done\", \"initial-send-done\"] - registration must happen BEFORE the initial snapshot is marshalled/sent, so a broadcast landing in the gap is never lost", order)
 	}
 }
 
