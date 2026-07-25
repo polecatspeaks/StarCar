@@ -1,0 +1,19 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "52-hygiene-car-r1",
+  "session_id": "70b173ed-7b83-485a-b71a-5adb0591db07",
+  "at": "2026-07-24T19:42:01Z",
+  "outcome": "completed",
+  "findings": "0",
+  "abstract": "Fixed MAJOR-1 by removing the drifted numeric citations from the TestSkipNotQueueGuardConcurrentClaimIsExclusive doc comment and deferring to the poll.go struct comment as sole line-number authority; commit 44ed2b4; go test 5/5 packages ok, gofmt clean.",
+  "subject_basis": "minted-id",
+  "task_id": "52-hygiene-car-r1",
+  "provenance": {
+    "runtime": "copilot",
+    "agent_name": "car"
+  },
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:122199ce591d4c0f9781e5749328ca27b1698f51f3bfda3e2fc193c5c3ba67b2"
+}
