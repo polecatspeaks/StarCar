@@ -1,0 +1,19 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "register-35-36-37-car-r1",
+  "session_id": "70b173ed-7b83-485a-b71a-5adb0591db07",
+  "at": "2026-07-25T23:13:21Z",
+  "outcome": "completed",
+  "findings": "0",
+  "abstract": "Two commits landed on car/register-35-36-37. Commit cf026db (#35, #36): tightened register-css.test.js to (a) strip block comments before rule-block extraction so a brace inside a comment cannot truncate it, and (b) assert that declared color is neither inherit nor currentColor - all three reviewer attacks (inherit, currentColor, commented-out declaration) now RED; added color:var(--text) to .track-title and a new .declared-not-observed CSS rule pinned structurally to var(--needs-attention); web suite 59 to 61. Commit 451e6d1 (#37): created board/web/test/register-taxonomy.test.js (REGISTER_ORDER vs schema enum, set-equality, ordering-is-compose.js-owned comment) and board/assemble/register_taxonomy_test.go (closedRegisters vs schema enum via repoRoot helper), both with fault-injection evidence confirming non-vacuity; web suite 61 to 62, all 5 Go packages pass, gofmt clean.",
+  "subject_basis": "minted-id",
+  "task_id": "register-35-36-37-car-r1",
+  "provenance": {
+    "runtime": "copilot",
+    "agent_name": "car"
+  },
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:faad960ec1878401589395f813d9d45c4f1047e3baec16fce594e22949de24f5"
+}
