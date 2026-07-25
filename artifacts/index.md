@@ -149,3 +149,9 @@ dispatch batch between regenerations.
 | tooling-review | dispatched | 2026-07-25T14:31:13Z |  | tooling-review/dispatched-20260725T143113Z.json |
 | tooling-41-39-38-car-r1 | returned | 2026-07-25T14:35:59Z | done-with-findings | tooling-41-39-38-car-r1/returned-20260725T143559Z.json |
 | tooling-41-39-38-review-r1 | returned | 2026-07-25T14:36:05Z | approve-for-merge | tooling-41-39-38-review-r1/returned-20260725T143605Z.json |
+| 41-suite-split-car-r1 | dispatched | 2026-07-25T17:36:32Z |  | 41-suite-split-car-r1/dispatched-20260725T173632Z.json |
+| car41-split | dispatched | 2026-07-25T17:37:22Z |  | car41-split/dispatched-20260725T173722Z.json |
+| 41-suite-split-review-r1 | dispatched | 2026-07-25T17:42:47Z |  | 41-suite-split-review-r1/dispatched-20260725T174247Z.json |
+| rev41-split | dispatched | 2026-07-25T17:43:25Z |  | rev41-split/dispatched-20260725T174325Z.json |
+| 41-suite-split-car-r1 | returned | 2026-07-25T17:46:46Z | completed | 41-suite-split-car-r1/returned-20260725T174646Z.json |
+| 41-suite-split-review-r1 | returned | 2026-07-25T17:46:53Z | approve-for-merge | 41-suite-split-review-r1/returned-20260725T174653Z.json |
