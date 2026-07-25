@@ -196,3 +196,15 @@ Agent "tooling-car" (car) has finished processing and is now idle. Use read_agen
 <system_notification>
 Agent "tooling-car" (car) has finished processing and is now idle. Use read_agent with agent_id "tooling-car" to read the results, or write_agent to send follow-up messages.
 </system_notification>
+
+---
+
+<system_notification>
+Agent "tooling-review" (car) has finished processing and is now idle. Use read_agent with agent_id "tooling-review" to read the results, or write_agent to send follow-up messages.
+</system_notification>
+
+---
+
+<system_notification>
+Agent "tooling-review" (car) has finished processing and is now idle. Use read_agent with agent_id "tooling-review" to read the results, or write_agent to send follow-up messages.
+</system_notification>
