@@ -59,7 +59,7 @@ STANDING RULES binding every commit:
   or names a missing API, that is a plan defect: HONEST-STOP on that task with the exact
   error and file:line, continue with independent tasks. Honest stops are SUCCESS
   outcomes; improvising past a contradiction is the failure mode that costs trains.
-- After your last task run <the full suite list; DERIVE expected totals - run the suite at your base commit before editing, record the observed N, then verify post-change as "base N + new M = observed N+M"; never copy a fixed number from another car's report or this brief, because StoreIntegrity.Tests.ps1 generates one test per store record and any hardcoded total is stale by construction> and build clean.
+- After your last task run <the full suite list; DERIVE expected totals - run the suite at your base commit before editing, record the observed N, then verify post-change as "base N + new M = observed N+M"; never copy a fixed number from another car's report or this brief. scripts/tests is now fixed-count (code tests only, #41). scripts/store-checks is the store-size-dependent suite (one test per artifacts/**/*.json record) and is invoked and reported separately - do NOT sum those two counts together> and build clean.
 
 FINAL REPORT: per task - commit SHA, red evidence (test name + observed failure reason),
 green evidence (counts), deviations with justification; then total suite results, ledger
@@ -98,7 +98,7 @@ ADJUDICATIONS: <each disclosed deviation, to be ruled on against real code>.
 PREMISE CHECK: any defect or concern this brief NAMES is a question to TEST against the
 real diff, never a conclusion to confirm - open the file before ruling on what it
 contains (#46; the brief's premise may itself be wrong).
-RUN YOURSELF: <suites; derive expected by running the suite at the car's final commit yourself - do NOT accept the car's stated total as ground truth, because StoreIntegrity.Tests.ps1 generates one test per store record and any hardcoded count in the brief or report may already be stale>. Report observed.
+RUN YOURSELF: <suites; derive expected by running the suite at the car's final commit yourself - do NOT accept the car's stated total as ground truth. scripts/tests is now fixed-count (code tests only, #41); scripts/store-checks is the store-size-dependent suite (one test per artifacts/**/*.json record, grows with every dispatch) reported separately. Run both independently and state both counts>. Report observed.
 CITATION CHECK: does every new file, and every new unit of consequence, carry a comment
 naming its ticket as bare `#N`? Verify the cited number is the RIGHT one - a citation to
 the wrong ticket is worse than none, because it sends the next reader somewhere confidently

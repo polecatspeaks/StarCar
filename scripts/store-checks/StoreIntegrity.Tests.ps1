@@ -12,8 +12,21 @@
 # there is no placeholder class and no gap this test needs to special-case). This asserts
 # the WHOLE store, uniformly.
 #
-# Runs in the existing CI Pester step (scripts/tests/**/*.Tests.ps1 glob already covers
-# this file) -- no ci.yml change needed.
+# INVOCATION (deliberately NOT under scripts/tests/ - #41 owner ruling 2026-07-25):
+# store integrity is a DATA-INTEGRITY CHECK, not a code test. Its per-record test count
+# grows with every producer dispatch (one record per dispatch), so placing it in
+# scripts/tests made that suite's total store-size-dependent and could mask a lost code
+# test (N new records + 1 real test breaks = total still +N-1 - a lying instrument).
+# This file follows the precedent of scripts/probes/SubstrateFloor.Probes.Tests.ps1
+# (see its header line 13: "INVOCATION (deliberately NOT under scripts/tests/ - car
+# briefs pin that suite's counts") and lives in scripts/store-checks/ with its own
+# separately-reported CI step. scripts/tests is now fixed-count (code tests only).
+#
+# INVOCATION:
+#   pwsh -NoProfile -Command "Invoke-Pester -Path ./scripts/store-checks"
+# CI: a dedicated 'Run store-checks (data integrity, per-record)' step in ci.yml (#41).
+#
+# #41
 
 BeforeDiscovery {
     $repoRoot = (git rev-parse --show-toplevel)
