@@ -320,3 +320,15 @@ Agent "register-car" (car) has finished processing and is now idle. Use read_age
 <system_notification>
 Agent "register-car" (car) has finished processing and is now idle. Use read_agent with agent_id "register-car" to read the results, or write_agent to send follow-up messages.
 </system_notification>
+
+---
+
+<system_notification>
+Agent "register-review" (car) has finished processing and is now idle. Use read_agent with agent_id "register-review" to read the results, or write_agent to send follow-up messages.
+</system_notification>
+
+---
+
+<system_notification>
+Agent "register-review" (car) has finished processing and is now idle. Use read_agent with agent_id "register-review" to read the results, or write_agent to send follow-up messages.
+</system_notification>
