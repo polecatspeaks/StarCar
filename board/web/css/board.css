@@ -149,12 +149,24 @@ body {
 .track-title {
   font-weight: 600;
   margin-bottom: 0.25rem;
+  /* NEUTRAL PAPER: train title is a property of the train, not the lane's freshness.
+     Without this explicit color it inherits the lane register class's color and would
+     repaint a nominal train's title hot when the lane is in needs-attention. #36 */
+  color: var(--text);
 }
 
 .track-cars {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
+}
+
+/* #36: absence disclosure - "declared, not yet observed" renders needs-attention
+   colors ALWAYS, independent of the lane's register state. Reuses var(--needs-attention)
+   for a structural pin to .register-needs-attention: both must use the same token so
+   they cannot silently drift (owner ruling 2026-07-25). */
+.declared-not-observed {
+  color: var(--needs-attention);
 }
 
 .car-chip {
