@@ -143,3 +143,9 @@ dispatch batch between regenerations.
 | 53-guard-review-r1 | returned | 2026-07-24T19:34:23Z | approve-for-merge | 53-guard-review-r1/returned-20260724T193423Z.json |
 | 52-hygiene-car-r1 | returned | 2026-07-24T19:42:01Z | completed | 52-hygiene-car-r1/returned-20260724T194201Z.json |
 | 52-hygiene-review-r1 | returned | 2026-07-24T19:43:20Z | approve-for-merge | 52-hygiene-review-r1/returned-20260724T194320Z.json |
+| tooling-41-39-38-car-r1 | dispatched | 2026-07-25T14:18:38Z |  | tooling-41-39-38-car-r1/dispatched-20260725T141838Z.json |
+| tooling-car | dispatched | 2026-07-25T14:19:23Z |  | tooling-car/dispatched-20260725T141923Z.json |
+| tooling-41-39-38-review-r1 | dispatched | 2026-07-25T14:30:31Z |  | tooling-41-39-38-review-r1/dispatched-20260725T143031Z.json |
+| tooling-review | dispatched | 2026-07-25T14:31:13Z |  | tooling-review/dispatched-20260725T143113Z.json |
+| tooling-41-39-38-car-r1 | returned | 2026-07-25T14:35:59Z | done-with-findings | tooling-41-39-38-car-r1/returned-20260725T143559Z.json |
+| tooling-41-39-38-review-r1 | returned | 2026-07-25T14:36:05Z | approve-for-merge | tooling-41-39-38-review-r1/returned-20260725T143605Z.json |
