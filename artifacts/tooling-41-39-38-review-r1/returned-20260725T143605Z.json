@@ -1,0 +1,19 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "tooling-41-39-38-review-r1",
+  "session_id": "70b173ed-7b83-485a-b71a-5adb0591db07",
+  "at": "2026-07-25T14:36:05Z",
+  "outcome": "approve-for-merge",
+  "findings": "0",
+  "abstract": "All three commits verified against empirical evidence. Pester baseline 289 at 7841b0d, 290 at tip c4f39e2 (observed, not copied). Fault-injection proved the new schema-pin test non-vacuous. The corrected board-model comment is truthful (no .Model consumer in board Go or JS code). The disclosure sentence in index-format.md names exactly the five unaccounted schema properties. No Majors, no Minors.",
+  "subject_basis": "minted-id",
+  "task_id": "tooling-41-39-38-review-r1",
+  "provenance": {
+    "runtime": "copilot",
+    "agent_name": "car"
+  },
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:a0265af07598e01ab73459ac76f605e8a84796a8fcc95c54ff788d6697ae5645"
+}
