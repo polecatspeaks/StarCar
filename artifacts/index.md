@@ -155,3 +155,9 @@ dispatch batch between regenerations.
 | rev41-split | dispatched | 2026-07-25T17:43:25Z |  | rev41-split/dispatched-20260725T174325Z.json |
 | 41-suite-split-car-r1 | returned | 2026-07-25T17:46:46Z | completed | 41-suite-split-car-r1/returned-20260725T174646Z.json |
 | 41-suite-split-review-r1 | returned | 2026-07-25T17:46:53Z | approve-for-merge | 41-suite-split-review-r1/returned-20260725T174653Z.json |
+| register-35-36-37-car-r1 | dispatched | 2026-07-25T22:56:44Z |  | register-35-36-37-car-r1/dispatched-20260725T225644Z.json |
+| register-car | dispatched | 2026-07-25T22:57:44Z |  | register-car/dispatched-20260725T225744Z.json |
+| register-35-36-37-review-r1 | dispatched | 2026-07-25T23:07:44Z |  | register-35-36-37-review-r1/dispatched-20260725T230744Z.json |
+| register-review | dispatched | 2026-07-25T23:08:36Z |  | register-review/dispatched-20260725T230836Z.json |
+| register-35-36-37-car-r1 | returned | 2026-07-25T23:13:21Z | completed | register-35-36-37-car-r1/returned-20260725T231321Z.json |
+| register-35-36-37-review-r1 | returned | 2026-07-25T23:13:32Z | approve-for-merge | register-35-36-37-review-r1/returned-20260725T231332Z.json |
