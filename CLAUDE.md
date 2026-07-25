@@ -810,11 +810,16 @@ the baseline it equals.
 watched branch, `scripts/Watch-CI.ps1` runs it to completion: it filters to OUR workflow
 (a PR-review bot posts its own green `dynamic` run at the same SHA - watching that instead
 reports GREEN over a red CI, observed on this script's first live test), watches the most
-recent run for the exact FULL sha, records the per-leg conclusion under `artifacts/ci-checks/`,
-and exits with a code that keeps RED distinct from could-not-observe: 0 green, 10 red (a
-CAUGHT PROBLEM, a success outcome - act on it, never merge on top), 1 failed-to-observe
-(no run appeared, push-parity mismatch, or timeout - THIS is the real failure the scar was).
-No merge to `main`, and no "CI green" claim, without a recorded terminal green for the sha.
+recent run for the exact FULL sha, records the per-leg conclusion under `.ci-checks/`
+(gitignored, LOCAL-ONLY - a watcher cache, not the durable record; #48 owner ruling
+2026-07-25: durable CI provenance is the coordinates-in-claims practice above - run ID,
+SHA and conclusion written into merge messages, ticket closes and plan docs, re-derived
+live at session start per the reconciliation cadence, never a committed mirror of a
+third party's ledger), and exits with a code that keeps RED distinct from
+could-not-observe: 0 green, 10 red (a CAUGHT PROBLEM, a success outcome - act on it,
+never merge on top), 1 failed-to-observe (no run appeared, push-parity mismatch, or
+timeout - THIS is the real failure the scar was). No merge to `main`, and no "CI green"
+claim, without a recorded terminal green for the sha.
 
 **Claims are never terminal until a second party re-derives them.** Every reviewer brief
 carries "RUN YOURSELF at HEAD, expect <counts>, report observed" - so a false or stale claim
