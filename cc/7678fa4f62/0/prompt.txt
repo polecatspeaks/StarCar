@@ -280,3 +280,15 @@ Agent "car41-split" (car) has finished processing and is now idle. Use read_agen
 <system_notification>
 Agent "car41-split" (car) has finished processing and is now idle. Use read_agent with agent_id "car41-split" to read the results, or write_agent to send follow-up messages.
 </system_notification>
+
+---
+
+<system_notification>
+Agent "rev41-split" (car) has finished processing and is now idle. Use read_agent with agent_id "rev41-split" to read the results, or write_agent to send follow-up messages.
+</system_notification>
+
+---
+
+<system_notification>
+Agent "rev41-split" (car) has finished processing and is now idle. Use read_agent with agent_id "rev41-split" to read the results, or write_agent to send follow-up messages.
+</system_notification>
