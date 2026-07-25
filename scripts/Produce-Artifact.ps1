@@ -90,7 +90,7 @@ function Write-VisibleSkip {
 # Get-Sha256Hex is imported from Artifact.psm1 (F4, Law 6 - the one owner; was
 # script-local here, duplicated in scripts/tests/Producer.Tests.ps1 and
 # scripts/tests/Migration.Tests.ps1 as test-local copies of the same idiom, and now also
-# consumed by scripts/tests/StoreIntegrity.Tests.ps1 from the shared module).
+# consumed by scripts/store-checks/StoreIntegrity.Tests.ps1 from the shared module).
 
 function Convert-PortablePath {
     # Rewrite operator-environment roots to portable placeholders BEFORE hashing, exactly

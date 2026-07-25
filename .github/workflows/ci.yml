@@ -219,13 +219,33 @@ jobs:
       - name: Run board tooling tests
         shell: pwsh
         run: |
+          # scripts/tests is now code-only (fixed count). StoreIntegrity moved to
+          # scripts/store-checks/ in #41 so that per-record growth can't mask a lost
+          # code test. Count here is deterministic between dispatches.
           $result = Invoke-Pester -Path ./scripts/tests -PassThru -Output Detailed
-          Write-Host "Passed: $($result.PassedCount)  Failed: $($result.FailedCount)"
+          Write-Host "code-tests (fixed count): Passed: $($result.PassedCount)  Failed: $($result.FailedCount)"
           if ($result.FailedCount -gt 0) { exit 1 }
           if ($result.PassedCount -eq 0) {
             # A suite that runs zero tests and reports success is a lying instrument -
             # exactly the shape this repo rejects everywhere else.
             Write-Error "Pester discovered ZERO tests. A green run that asserted nothing is not a pass."
+            exit 1
+          }
+
+      - name: Run store-checks (data integrity, per-record)
+        shell: pwsh
+        run: |
+          # DATA-INTEGRITY CHECK, not a code test (#41 owner ruling 2026-07-25).
+          # Count is store-size-dependent (one test per artifacts/**/*.json record) and
+          # grows with every producer dispatch. Reported separately so scripts/tests
+          # stays fixed-count and growth here cannot mask a broken code test.
+          # Follows the probes precedent (scripts/probes/SubstrateFloor.Probes.Tests.ps1
+          # header line 13). Fails the build on any per-record failure.
+          $result = Invoke-Pester -Path ./scripts/store-checks -PassThru -Output Detailed
+          Write-Host "store-checks (per-record, store-size-dependent): Passed: $($result.PassedCount)  Failed: $($result.FailedCount)"
+          if ($result.FailedCount -gt 0) { exit 1 }
+          if ($result.PassedCount -eq 0) {
+            Write-Error "Pester discovered ZERO store-checks tests. A green run that asserted nothing is not a pass."
             exit 1
           }
 
