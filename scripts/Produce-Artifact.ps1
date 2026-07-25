@@ -264,7 +264,8 @@ try {
         }
     } else {
         # dispatched: producer-optional metadata under the schema's open posture (same
-        # Law-7 class as `producer`). The board's model-mix rendering consumes it.
+        # Law-7 class as `producer`). Recorded for provenance on the artifact record;
+        # not currently consumed by the board (#39).
         $toolResponse = Get-Prop $payload 'tool_response'
         $model = Get-Prop $toolResponse 'resolvedModel'
 
