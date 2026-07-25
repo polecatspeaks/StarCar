@@ -132,8 +132,14 @@ dispatch batch between regenerations.
 | ab8b2e7effb839f82 | dispatched | 2026-07-24T10:13:18Z |  | ab8b2e7effb839f82/dispatched-20260724T101318Z.json |
 | ab8b2e7effb839f82 | returned | 2026-07-24T10:30:30Z | REJECT | ab8b2e7effb839f82/returned-20260724T103030Z.json |
 | 51-fix-car-r1 | dispatched | 2026-07-24T17:10:20Z |  | 51-fix-car-r1/dispatched-20260724T171020Z.json |
+| 51-fix-car-r1 | returned | 2026-07-24T17:26:29Z | done-with-findings | 51-fix-car-r1/returned-20260724T172629Z.json |
 | 51-fix-review-r1 | dispatched | 2026-07-24T17:27:29Z |  | 51-fix-review-r1/dispatched-20260724T172729Z.json |
+| 51-fix-review-r1 | returned | 2026-07-24T17:38:46Z | done-with-findings | 51-fix-review-r1/returned-20260724T173846Z.json |
 | 52-hygiene-car-r1 | dispatched | 2026-07-24T19:21:45Z |  | 52-hygiene-car-r1/dispatched-20260724T192145Z.json |
 | 53-guard-car-r1 | dispatched | 2026-07-24T19:22:28Z |  | 53-guard-car-r1/dispatched-20260724T192228Z.json |
+| 53-guard-car-r1 | returned | 2026-07-24T19:29:25Z | completed | 53-guard-car-r1/returned-20260724T192925Z.json |
 | 53-guard-review-r1 | dispatched | 2026-07-24T19:30:07Z |  | 53-guard-review-r1/dispatched-20260724T193007Z.json |
 | 52-hygiene-review-r1 | dispatched | 2026-07-24T19:33:18Z |  | 52-hygiene-review-r1/dispatched-20260724T193318Z.json |
+| 53-guard-review-r1 | returned | 2026-07-24T19:34:23Z | approve-for-merge | 53-guard-review-r1/returned-20260724T193423Z.json |
+| 52-hygiene-car-r1 | returned | 2026-07-24T19:42:01Z | completed | 52-hygiene-car-r1/returned-20260724T194201Z.json |
+| 52-hygiene-review-r1 | returned | 2026-07-24T19:43:20Z | approve-for-merge | 52-hygiene-review-r1/returned-20260724T194320Z.json |
