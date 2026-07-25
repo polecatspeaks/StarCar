@@ -1,0 +1,12 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "dispatched",
+  "subject": "tooling-41-39-38-review-r1",
+  "session_id": "70b173ed-7b83-485a-b71a-5adb0591db07",
+  "at": "2026-07-25T14:30:31Z",
+  "budget": 1800.0,
+  "subject_basis": "minted-id",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:165ee0aa34253ee1053baac20d30db48b19299d162cd7e672f2e8a48b4878722"
+}
