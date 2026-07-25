@@ -1,0 +1,19 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "53-guard-review-r1",
+  "session_id": "70b173ed-7b83-485a-b71a-5adb0591db07",
+  "at": "2026-07-24T19:34:23Z",
+  "outcome": "approve-for-merge",
+  "findings": "0",
+  "abstract": "Fix re-derived and correct; ran scripts/tests 279/279 and probes 22/22 myself; RED confirmed non-vacuous via disclosed base injection (reverted byte-clean); newest-dispatched-vs-newest-returned compare consumes the exact producer filename format; docs already encoded the correct un-superseded semantics so none are stale; commit cites #53 with Co-authored-by trailer.",
+  "subject_basis": "minted-id",
+  "task_id": "53-guard-review-r1",
+  "provenance": {
+    "runtime": "copilot",
+    "agent_name": "car"
+  },
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:240ea7652f62db877a26cd9db4c4f4df00db8e9470e3f45c8b4cdc1640539fa8"
+}
