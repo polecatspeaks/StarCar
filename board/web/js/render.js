@@ -6,6 +6,7 @@
 import { composeRegister, composeLines, mostSevereRegister } from './compose.js';
 import { hasRendererFor } from './lanes.js';
 import { describeVocab } from './vocab.js';
+import { computeHealthTrends } from './findings.js';
 
 // #62: lane-purpose subtitles (owner ruling: shared visual language, no
 // single keeper - "lane plates with lane-purpose subtitles"). PRESENTATION
@@ -168,6 +169,14 @@ export function buildBoardViewModel(snapshot, clientConditions = []) {
     // and already validated by the schema on ingest - rendered for the first
     // time in the footer's honesty chrome below. No new data, no wire change.
     storePathDisplay: snapshot.config.storePathDisplay,
+    // #28: the three primitives the view needs to build every provenance
+    // link itself (board/web/js/links.js) - "" (never undefined) when
+    // unconfigured, matching storePathDisplay's own always-a-string
+    // contract above (a non-GitHub yard degrades to no links, never a
+    // broken one).
+    githubRepoUrl: snapshot.config.githubRepoUrl || '',
+    githubRef: snapshot.config.githubRef || '',
+    githubArtifactsPrefix: snapshot.config.githubArtifactsPrefix || '',
     laneCompleteness: completeness,
     boardConditions,
     boardConditionGroups,
@@ -189,6 +198,9 @@ function buildLaneBody(lane, vocab, hasRenderer) {
         trains: lane.data.trains.map((t) => ({
           id: t.id,
           title: t.title,
+          // #28: the manifest's own declared ticket refs, structured, never
+          // re-parsed from title prose (assemble.Train.Tickets).
+          tickets: t.tickets || [],
           declaredNotObserved: t.declaredNotObserved || [],
           cars: t.cars.map((c) => ({
             subject: c.subject,
@@ -203,21 +215,34 @@ function buildLaneBody(lane, vocab, hasRenderer) {
             outcome: c.outcome ?? null,
             outcomeRegister: c.outcome ? describeVocab(c.outcome, vocab.outcomes).register : null,
             at: c.at,
-            superseded: c.superseded || []
+            superseded: c.superseded || [],
+            // #28: single-sourced from store.Record.Path server-side
+            // (assemble.recordDirBySubject) - never re-derived from
+            // `subject` here (Law 6).
+            recordDir: c.recordDir ?? null
           }))
         }))
       };
-    case 'gates':
+    case 'gates': {
+      // #12: ONE pass over this fold's gates computes every family's
+      // convergence trend, keyed by array index - computeHealthTrends is
+      // PURE and re-run every render (cheap: this lane's gate count, never
+      // cached/persisted - Law 6, no second copy of the wire's own
+      // findings text).
+      const healthTrends = computeHealthTrends(lane.data.gates);
       return {
         kind: 'gates',
-        gates: lane.data.gates.map((g) => ({
+        gates: lane.data.gates.map((g, index) => ({
           name: g.name,
           subject: g.subject,
           outcome: g.outcome, // VERBATIM - "REJECT" stays "REJECT" (spec YB-5: rendered VERBATIM, never re-derived)
           outcomeRegister: describeVocab(g.outcome, vocab.outcomes).register,
-          at: g.at
+          at: g.at,
+          recordDir: g.recordDir ?? null, // #28
+          healthTrend: healthTrends.get(index) ?? null // #12: present ONLY on a family's latest round
         }))
       };
+    }
     case 'dispatches': {
       const dispatches = lane.data.dispatches.map((d) => ({
         subject: d.subject,
@@ -228,7 +253,8 @@ function buildLaneBody(lane, vocab, hasRenderer) {
         elapsedSeconds: typeof d.elapsed_seconds === 'number' ? d.elapsed_seconds : null,
         budgetSeconds: typeof d.budget_seconds === 'number' ? d.budget_seconds : null,
         budgetSource: d.budget_source ?? null,
-        assigned: Boolean(d.assigned)
+        assigned: Boolean(d.assigned),
+        recordDir: d.recordDir ?? null // #28
       }));
       return {
         kind: 'dispatches',

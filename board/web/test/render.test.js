@@ -264,6 +264,132 @@ test('#62: the view model carries config.storePathDisplay verbatim (real wire fi
   assert.equal(vm.storePathDisplay, '<repo>/artifacts');
 });
 
+// --- #28: clickable provenance / #12: car health bar in the view model ---
+
+test('#28: the view model carries config.githubRepoUrl/githubRef/githubArtifactsPrefix verbatim', () => {
+  const snapshot = makeSnapshot([]);
+  snapshot.config.githubRepoUrl = 'https://github.com/polecatspeaks/StarCar';
+  snapshot.config.githubRef = 'dev';
+  snapshot.config.githubArtifactsPrefix = 'artifacts';
+  const vm = buildBoardViewModel(snapshot);
+  assert.equal(vm.githubRepoUrl, 'https://github.com/polecatspeaks/StarCar');
+  assert.equal(vm.githubRef, 'dev');
+  assert.equal(vm.githubArtifactsPrefix, 'artifacts');
+});
+
+test('#28: an unconfigured yard carries empty github config fields, never a guessed identity', () => {
+  const snapshot = makeSnapshot([]);
+  const vm = buildBoardViewModel(snapshot);
+  assert.equal(vm.githubRepoUrl, '');
+  assert.equal(vm.githubRef, '');
+  assert.equal(vm.githubArtifactsPrefix, '');
+});
+
+test('#28: trains carry the manifest\'s tickets array, and each car carries its recordDir', () => {
+  const snapshot = makeSnapshot([
+    {
+      id: 'trains',
+      title: 'Trains',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' },
+      data: {
+        trains: [
+          {
+            id: 'train:view-28-12',
+            title: 'Provenance + health bar',
+            tickets: ['#28', '#12'],
+            cars: [{ subject: 'carA', role: 'car', state: 'returned', at: '2026-07-23T00:00:00Z', recordDir: 'carA' }],
+            declaredNotObserved: []
+          }
+        ]
+      }
+    }
+  ]);
+  const vm = buildBoardViewModel(snapshot);
+  const train = vm.lanes[0].body.trains[0];
+  assert.deepEqual(train.tickets, ['#28', '#12']);
+  assert.equal(train.cars[0].recordDir, 'carA');
+});
+
+test('#28: a train with no declared tickets carries an empty array, never undefined', () => {
+  const snapshot = makeSnapshot([
+    {
+      id: 'trains',
+      title: 'Trains',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' },
+      data: { trains: [{ id: 'train:x', title: 'X', cars: [], declaredNotObserved: [] }] }
+    }
+  ]);
+  const vm = buildBoardViewModel(snapshot);
+  assert.deepEqual(vm.lanes[0].body.trains[0].tickets, []);
+});
+
+test('#28: gates carry recordDir', () => {
+  const snapshot = makeSnapshot([
+    {
+      id: 'gates',
+      title: 'Gates',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' },
+      data: { gates: [{ name: 'g', subject: 'gate-1', outcome: 'REJECT', at: '2026-07-23T00:00:00Z', recordDir: 'gate-1' }] }
+    }
+  ]);
+  const vm = buildBoardViewModel(snapshot);
+  assert.equal(vm.lanes[0].body.gates[0].recordDir, 'gate-1');
+});
+
+test('#12: gates carry a healthTrend ONLY on the family\'s latest round, computed from findings', () => {
+  const snapshot = makeSnapshot([
+    {
+      id: 'gates',
+      title: 'Gates',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' },
+      data: {
+        gates: [
+          { name: 'r1', subject: 'x-review-r1', outcome: 'REJECT', at: '2026-07-23T00:00:00Z', findings: '3 Major, 0 Minor' },
+          { name: 'r2', subject: 'x-review-r2', outcome: 'APPROVE', at: '2026-07-23T01:00:00Z', findings: '0 Major, 0 Minor' }
+        ]
+      }
+    }
+  ]);
+  const vm = buildBoardViewModel(snapshot);
+  const gates = vm.lanes[0].body.gates;
+  assert.equal(gates[0].healthTrend, null, 'round 1 (not the latest) carries no trend badge');
+  assert.deepEqual(gates[1].healthTrend, { trend: 'converged', majorsSeries: [3, 0] });
+});
+
+test('#12: a gate with no/unparseable findings text renders trend "unknown", never a guessed count', () => {
+  const snapshot = makeSnapshot([
+    {
+      id: 'gates',
+      title: 'Gates',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' },
+      data: {
+        gates: [{ name: 'r1', subject: 'solo-review-r1', outcome: 'REJECT', at: '2026-07-23T00:00:00Z' }]
+      }
+    }
+  ]);
+  const vm = buildBoardViewModel(snapshot);
+  assert.deepEqual(vm.lanes[0].body.gates[0].healthTrend, { trend: 'unknown', majorsSeries: null });
+});
+
+test('dispatches: dispatches carry recordDir', () => {
+  const snapshot = makeSnapshot([
+    {
+      id: 'dispatches',
+      title: 'Dispatches',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' },
+      data: { dispatches: [{ subject: 'orphan-1', state: 'dispatched', at: '2026-07-23T00:00:00Z', assigned: false, recordDir: 'orphan-1' }] }
+    }
+  ]);
+  const vm = buildBoardViewModel(snapshot);
+  assert.equal(vm.lanes[0].body.dispatches[0].recordDir, 'orphan-1');
+});
+
 test('dispatches: yard inventory (unassigned) count is tallied, never hidden', () => {
   const snapshot = makeSnapshot([
     {
