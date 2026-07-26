@@ -138,9 +138,10 @@ THIS IS A FLOOR, NOT A REPLACEMENT FOR JUDGMENT: measurement establishes what th
 IS rendering; you still RULE on whether that is CORRECT against the design authority
 (the mockup brief, the three-register law, the issue's own text) - a verdict that reports
 colours without ruling on them is a spelling check with better instrumentation.
-Provenance: #33's Car 31 reviewer had to hand-build a browser model to catch a live
-defect 50 passing DOM tests missed - enumerating all 11 `color:` declarations in
-board.css and walking 216 text-bearing elements by hand to compute the cascade itself;
+Provenance: #33's Car 31 reviewer had to hand-build a browser model - enumerating all 11
+`color:` declarations in board.css and walking 216 text-bearing elements by hand to
+compute the cascade itself - because 50 passing DOM tests could not have caught what a
+human eye caught at first light (#33's own account of how #31 was originally found);
 that is a SIMULATION of a cascade, not a measurement of one. The worked example of the
 floor being met is `artifacts/reviews/2026-07-26-view-30-review-round1-REJECT.md`'s "THE
 COMPUTED-STYLE GATE" section (`:137-176`): a real Chromium drove the real server,
