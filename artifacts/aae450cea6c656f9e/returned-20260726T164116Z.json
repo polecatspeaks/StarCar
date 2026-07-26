@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "aae450cea6c656f9e",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-26T16:41:16Z",
+  "outcome": "done",
+  "findings": "none - all three tasks matched their ticket's framing on inspection, no honest-stops required. Two items from #9 remain explicitly open and disclosed in the same commit rather than silently dropped: making CI walk the fidelity ledger (tracked, not built here per scope) and mirroring sections 9-10 into the separate Project-Bootstrapping repository (confirmed absent from this worktree, out of scope). Recommend the conductor decide whether #9 closes now or stays open for those two residual items.",
+  "abstract": "Three docs/templates commits landed on car/process-docs, verified base 5ba0602. Commit 509229a (#40) adds a RENDERING CHECK plus a GUARD CHECK amendment to car-brief.md's reviewer addendum, citing issue #33 and artifacts/reviews/2026-07-26-view-30-review-round1-REJECT.md's computed-style gate section as the worked exemplar, preserving the judgment requirement per the ticket's exact framing. Commit e511c5e (#13) adds a BASE-DELTA field and an UNREPRODUCIBLE-EVIDENCE CALLOUT to the same reviewer addendum (the only verdict template docs/templates/ has), citing the rotation-drill verdict verbatim at lines 103 and 110. Commit 71d0c25 (#9) folds Contracts-touched (section 9) and Fidelity-to-design (section 10) into worked-spec.md, adapted into its existing fictional staleness-banner universe from the real harness spec's approved sections 9-10, closes the numbering gap the round-1 spec reviewer flagged, and replaces the stale KNOWN-GAP disclosure with a closing provenance note that discloses two residual open items rather than silently completing the ticket. scripts/tests: 182/182 passed; scripts/store-checks: 178/178 passed; both at HEAD 71d0c25, pwsh 7. Working tree clean, no honest stops.",
+  "subject_basis": "runtime-id",
+  "task_id": "process-docs-car-r1",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:5493d586aeea91fc61f2544c8ee4ed72a87755aa85b9163a41f13cae602f9e66"
+}
