@@ -33,24 +33,35 @@ const ageBucketMsGranularity = int64(5000)
 // exactly the periods the board is busiest (design D9).
 //
 // DECISION (disclosed, per issue #27's own framing of the choice): the WIRE
-// value of elapsed_seconds stays EXACT, unbucketed - board/web/js/dom-
-// writer.js:201 renders it verbatim to the second (`${d.elapsedSeconds}s`),
-// and a connected client's current snapshot must keep showing fresh,
-// precise elapsed time. Only the CHANGE-DETECTION COMPARISON basis
-// (mustMarshalStripped below) quantises elapsed_seconds into this bucket.
-// This is the "no schema change, no consumer impact" option named in the
-// ticket: schema/yard-snapshot.schema.json's elapsed_seconds stays an
-// unconstrained integer, board/web needs no change, and a "dispatched" ->
-// "overdue" transition is still caught regardless of this bucket, because
-// that transition changes the STATE STRING (algorithm.go:240), a field this
-// bucketing never touches.
+// value of elapsed_seconds stays EXACT, unbucketed, whenever a snapshot IS
+// actually served fresh - board/web/js/dom-writer.js:201 renders it verbatim
+// to the second (`${d.elapsedSeconds}s`), never a rounded bucket number. Only
+// the CHANGE-DETECTION COMPARISON basis (mustMarshalStripped below)
+// quantises elapsed_seconds into this bucket; the value it lets through
+// unchanged is never itself rounded.
+//
+// WHAT THIS DOES NOT MEAN (measured, elapsedbucket_test.go:99-101): between
+// bucket crossings PollOnce serves the PRIOR snapshot unchanged (poll.go's
+// own PollOnce doc comment, "the prior snapshot stands unchanged"), so a
+// connected client's displayed elapsed_seconds can trail the true wall-clock
+// value by up to this bucket's width (observed: actual 50s, served 10s).
+// The VALUE is exact; its RECENCY is not. Nothing downstream derives from
+// it - dom-writer.js:200-202 only prints the number, render.js:188 only
+// passes it through with a type guard - and the alarm-bearing field, a
+// "dispatched" -> "overdue" transition, is EXACT and immediate regardless of
+// this bucket, because that transition changes the STATE STRING
+// (algorithm.go:240), a field this bucketing never touches. This is the "no
+// schema change, no consumer impact" option named in the ticket:
+// schema/yard-snapshot.schema.json's elapsed_seconds stays an unconstrained
+// integer and board/web needs no change.
 //
 // Granularity: order-of-minutes (60s), per the ticket's own framing. At the
 // default pollMs (1000ms), this cuts seq churn from "every poll" to "about
 // once a minute" while a dispatch sits in flight - the same shape ageBucketMs
-// already applies to stale age, just coarser here because per-second wire
-// precision (dom-writer.js) is worth preserving exactly, while the
-// CHANGE-DETECTION signal it drives does not need per-second resolution.
+// already applies to stale age, coarser here because the CHANGE-DETECTION
+// signal this bucket drives does not need per-second resolution, and the
+// trade (a display number that can trail by up to a minute, never the
+// alarm-bearing state) is sound for a Solari board.
 const elapsedSecondsBucketGranularity = int64(60)
 
 // Server holds the compiled adapter and every mutable field this train's
@@ -514,7 +525,7 @@ func mustMarshalStripped(snap Snapshot) []byte {
 // unmarshals fold.DispatchEntry through encoding/json's `any` target,
 // board/assemble/assemble.go's dispatchWireMap) - a "returned" or
 // "presumed-lost" entry carries no such key (fold.DispatchEntry.MarshalJSON,
-// output.go:9-32) and is copied through untouched.
+// output.go:9-35) and is copied through untouched.
 func bucketDispatchesForComparison(dp assemble.DispatchesPayload) assemble.DispatchesPayload {
 	out := assemble.DispatchesPayload{Dispatches: make([]map[string]any, len(dp.Dispatches))}
 	for i, m := range dp.Dispatches {

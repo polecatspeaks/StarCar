@@ -88,8 +88,9 @@ function freshnessLine(freshness) {
       return 'not yet polled';
     case 'fresh':
       // Rule 3: rendered age is ALWAYS server-issued (ageBucketMs), and the
-      // wire's "fresh" variant carries no ageBucketMs at all - only "stale"
-      // does (schema/yard-snapshot.schema.json $defs.freshness's oneOf).
+      // wire's "fresh" variant carries no ageBucketMs at all - "stale" and
+      // "idle" (#29, below in this same switch) are the two kinds that do
+      // (schema/yard-snapshot.schema.json $defs.freshness's oneOf).
       // Showing a computed elapsed time here (the mockup's illustrative
       // "fresh, 2s ago") would mean computing age from the client's own
       // clock off `asOf`, which Rule 3 forbids outright. Disclosed steering

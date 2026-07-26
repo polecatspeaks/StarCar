@@ -602,6 +602,19 @@ scratch copy of the real store plus one seeded in-flight fixture
 (`buildScratchStoreWithInFlightDispatch`, `real-board-server.js`) rather than relying on
 this repo's dispatch history staying empty - same car, same commit.
 
+**The undone half, disclosed (round-1 review m1, 2026-07-26):** issue #29's own text
+asked for two things; this amendment does the first (the taxonomy split) and leaves the
+second - "Also retune stalenessMs against measured reality" - untouched. Consequence,
+measured: `StalenessMs` ships at `15000` (`board/server/config.go:42`) against a shop
+default budget of `1800` seconds (`config/harness-defaults.json`), so `stale` now fires
+**15 seconds into every healthy 30-minute dispatch** and stays lit until it returns -
+identical to base behaviour, NOT a regression this fix introduced, but this amendment's
+own words ("the genuine alarm; something should be moving and is not") overstate what
+`stale` actually means while that default stands: for the overwhelming majority of a
+normal dispatch's lifetime, `stale` reads "a car is running," not "the pipeline broke."
+The retune is explicitly OUT OF SCOPE for this car (a tuning decision against measured
+production cadence, not a taxonomy fix); the conductor tracks it as its own ticket.
+
 ## §13 - Revision history
 
 - **Rev 1** (2026-07-21): REJECT, 9 Major. **Rev 2** (2026-07-22): REJECT, 8 Major -

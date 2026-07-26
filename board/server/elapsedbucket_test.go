@@ -14,19 +14,25 @@ import (
 // continuously-increasing value in its comparison basis unbucketed - so seq
 // bumped on nearly every poll while any dispatch sat in flight, defeating
 // change detection's idle-costs-nothing purpose for exactly the periods the
-// board is busiest (design D9; disclosed at poll.go:399-412).
+// board is busiest (design D9; the pre-fix gap was disclosed at
+// poll.go:399-412 as of base commit 8b9df53 - `git show
+// 8b9df53:board/server/poll.go` - that comment was superseded by this fix
+// and no longer exists at HEAD, so no current-file coordinate is cited).
 //
 // The fix quantises elapsed_seconds for the CHANGE-DETECTION COMPARISON ONLY
-// (mirroring ageBucketMs's own precedent, poll.go:18-25) - order-of-minutes
+// (mirroring ageBucketMs's own precedent, the `ageBucketMsGranularity` const
+// just above `elapsedSecondsBucketGranularity` in poll.go) - order-of-minutes
 // granularity (elapsedSecondsBucketGranularity, poll.go). The WIRE value
 // stays exact whenever a snapshot IS served fresh: board/web/js/dom-
 // writer.js:201 renders elapsed_seconds verbatim to the second, never a
 // rounded bucket number - proven at the bucket crossing below (snap3, 65s
-// exact, not rounded to 60). Between crossings, PollOnce's own pre-existing
-// contract already governs what a "no real change" poll serves ("the prior
-// snapshot stands unchanged", poll.go:190-196 - the same rule ageBucketMs
-// already relies on between ITS 5s crossings): this test's middle poll
-// (snap2) asserts that pre-existing behavior holds for elapsed_seconds too.
+// exact, not rounded to 60). Between crossings, `PollOnce`'s own doc comment
+// already governs what a "no real change" poll serves ("the prior snapshot
+// stands unchanged" - cited by symbol, not line: this comment shifts every
+// time an unrelated edit lands above it in the file, which a hardcoded line
+// range does not survive) - the same rule ageBucketMs already relies on
+// between ITS 5s crossings: this test's middle poll (snap2) asserts that
+// pre-existing behavior holds for elapsed_seconds too.
 //
 // cfg.StalenessMs is raised well past every elapsed value this test uses so
 // the live lane's freshness.kind stays "fresh" throughout (never "stale") -
@@ -35,7 +41,8 @@ import (
 // used in reverse (a RETURNED fixture, there, to keep elapsed_seconds out of
 // that test's way): here it keeps ageBucketMs crossings out of THIS test's
 // way, so any observed seq bump is attributable ONLY to elapsed_seconds'
-// own bucket, never to the freshness axis (poll.go:373-376).
+// own bucket, never to the freshness axis (`computeLiveFreshness`, cited by
+// symbol for the same reason as `PollOnce` above).
 func TestPollOnceElapsedSecondsBucketedForChangeDetection(t *testing.T) {
 	root := t.TempDir()
 	recordAt := time.Date(2026, 7, 24, 0, 0, 0, 0, time.UTC)
@@ -79,10 +86,11 @@ func TestPollOnceElapsedSecondsBucketedForChangeDetection(t *testing.T) {
 
 	// now2: elapsed = 50s - still bucket 0 (50/60==0), a real, continuous
 	// change to the raw value, but WITHIN the comparison bucket. Must NOT be
-	// seen as a change: this is the churn issue #27 names. Per PollOnce's own
-	// contract (poll.go:190-196, "otherwise the prior snapshot stands
-	// unchanged" - the SAME rule ageBucketMs already relies on between its
-	// own 5s crossings), the served snapshot when nothing changed is the
+	// seen as a change: this is the churn issue #27 names. Per `PollOnce`'s
+	// own doc comment ("otherwise the prior snapshot stands unchanged",
+	// cited by symbol, not line - see this file's header comment above) -
+	// the SAME rule ageBucketMs already relies on between its own 5s
+	// crossings - the served snapshot when nothing changed is the
 	// PRIOR one, unmodified: elapsed_seconds reads snap1's value (10), not
 	// a bucketed round number and not the new raw 50 - proving the fix
 	// quantises the COMPARISON only and never mutates a served value.

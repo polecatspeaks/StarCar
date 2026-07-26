@@ -112,7 +112,8 @@ test("issue #31: a nominal-register dispatch row inside a needs-attention-regist
     observed.laneIsNeedsAttention,
     true,
     `test precondition not met: expected .lane-dispatches to carry register-needs-attention (observed classes: ` +
-      `'${observed.laneClassList}') - the real store's records should always read stale relative to "now". If this ` +
+      `'${observed.laneClassList}') - the scratch store's seeded in-flight dispatch (buildScratchStoreWithInFlightDispatch, ` +
+      `dated 2020-01-01, no returned/presumed-lost successor) should always resolve "stale" under #29's rules. If this ` +
       `fails, the #31 REPRODUCTION did not occur this run (an infrastructure/precondition problem), not the fix.`
   );
   assert.notEqual(
