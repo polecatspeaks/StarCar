@@ -18,40 +18,93 @@
 # guards... one manifest" - carried verbatim from the retired dual-runtime design's D1),
 # extended to the fifth line so it is no longer the one structural outlier.
 #
-# AMENDED (#50 task 2, same car): the FIRST assertion below originally required ALL
-# FIVE SessionStart lines to match the bare `sh .claude/hooks/NAME.sh` form. Task 2
-# legitimately routes the four GUARD lines through a two-stage pipe
-# (`sh GUARD.sh | sh session-start-record.sh [--reset]`) so their combined stdout also
-# reaches a Copilot session (scripts/tests/SessionStartReport.Tests.ps1 owns that
-# mechanism's own tests). The bare-form assertion is narrowed here to the ONE line it
-# is still permanently true of - the fifth (entire-CLI wrapper) line, out of scope for
-# task 2's delivery mechanism by the brief's own scope guard. The broader "no fancy
-# quoting anywhere in SessionStart" invariant (the actual failure signature: nested
-# `sh -c` / single quotes) now lives in SessionStartReport.Tests.ps1, which also
-# asserts the four guard lines' pipe wiring - not duplicated here.
+# AMENDED (#50 task 2): a first revision narrowed the all-five bare-form assertion to
+# the fifth line only, on the theory that the broader "no fancy quoting" invariant had
+# moved to SessionStartReport.Tests.ps1's blacklist check (no `sh -c`, no `'`). THAT
+# WAS WRONG, not merely narrower - round-1 adversarial review (fix cycle round 2,
+# finding M1) PROVED it with a fault injection: an inline `if...fi` compound plus an
+# escaped-JSON `printf` - i.e. the EXACT shape the design records as breaking Copilot
+# (`docs/design/2026-07-24-family-agnostic-harness-design.md`: `syntax error:
+# unexpected end of file from 'if' command`) - contains no `sh -c` and no single quote,
+# and passed both suites 15/15 GREEN when installed on a SessionStart line. A blacklist
+# can only reject shapes someone thought to name; a whitelist rejects everything that
+# is not the known-good shape, including shapes nobody has thought of yet.
 #
-# This test reads the REAL .claude/settings.json (never a hand-copied duplicate, which
-# would drift silently the moment someone edits the file) - same discipline as
-# CiWrapperSimulation.Tests.ps1's ci.yml extraction.
+# THE FIX (this revision): restored to a WHITELIST applied to ALL FIVE lines, widened
+# from round 1's bare-only form to also permit the pipe-to-record.sh shape (#50 task 2)
+# - and narrowed again in fix cycle round 2 (finding M4) to drop the now-retired
+# `--reset` argument, which no longer exists in session-start-record.sh's calling
+# convention (freshness is a file property now, never an ordering flag - see that
+# script's own header). The whitelist is re-derived to match the FINAL wiring shape,
+# not merely patched.
+#
+# This test reads the REAL .claude/settings.json for the "all five lines pass" half
+# (never a hand-copied duplicate, which would drift silently the moment someone edits
+# the file - same discipline as CiWrapperSimulation.Tests.ps1's ci.yml extraction), and
+# a FIXTURE COPY of it (real hooks array, one line replaced) for the "the documented
+# failure signature is rejected" half - never mutates the real file on disk.
 
-Describe 'SessionStart wiring: the fifth line stays bare intersection dialect (#50)' {
+Describe 'SessionStart wiring: whitelist covers all five lines, rejects the documented failure signature (#50 M1, fix cycle round 2)' {
     BeforeAll {
         $script:RepoRoot = (git rev-parse --show-toplevel)
         $script:SettingsPath = Join-Path $script:RepoRoot '.claude/settings.json'
         $script:Settings = Get-Content $script:SettingsPath -Raw | ConvertFrom-Json
         $script:SessionStartHooks = $script:Settings.hooks.SessionStart[0].hooks
-        # Simple form: `sh .claude/hooks/<name>.sh`, no inline `-c`, no quoting layers.
-        $script:SimpleFormPattern = '^sh \.claude/hooks/[A-Za-z0-9_-]+\.sh$'
+
+        # The two legitimate shapes, and ONLY these: bare `sh .claude/hooks/NAME.sh`
+        # (the fifth, entire-CLI wrapper line), or that piped into the recorder with no
+        # trailing argument (the four guard lines, post fix-cycle-round-2/M4).
+        $script:WhitelistPattern = '^sh \.claude/hooks/[A-Za-z0-9_-]+\.sh( \| sh \.claude/hooks/session-start-record\.sh)?$'
+
+        # The EXACT fault injection the round-1 reviewer installed and proved 15/15
+        # GREEN under (round-1 REJECT, finding M1, "Fault injection D") - reproduced
+        # verbatim here as the documented failure signature this whitelist must reject,
+        # never a hand-invented stand-in for it.
+        $script:DocumentedFailureSignature = 'if true; then sh .claude/hooks/session-start-checkpoint-reconcile.sh; printf "%s\n" "{\"x\":1}"; fi | sh .claude/hooks/session-start-record.sh'
+
+        # A fixture COPY of the real settings.json with one real SessionStart line
+        # replaced by the injection - never mutates the file on disk, never a
+        # hand-copied duplicate of the surrounding structure (cloned from the real
+        # parsed object).
+        function New-InjectedFixtureHooks {
+            $clone = $script:Settings.hooks.SessionStart[0].hooks | ForEach-Object {
+                [pscustomobject]@{ type = $_.type; command = $_.command }
+            }
+            $clone[1].command = $script:DocumentedFailureSignature
+            $clone
+        }
     }
 
     It 'finds SessionStart hooks to check (a check that examines nothing is not a pass)' {
         $script:SessionStartHooks.Count | Should -BeGreaterThan 0
     }
 
+    It 'every REAL SessionStart hook command matches the whitelist (bare form, or piped to session-start-record.sh)' {
+        $violators = @()
+        foreach ($hook in $script:SessionStartHooks) {
+            if ($hook.command -notmatch $script:WhitelistPattern) { $violators += $hook.command }
+        }
+        $violators -join "`n---`n" | Should -BeNullOrEmpty
+    }
+
     It 'the fifth SessionStart hook command (entire-CLI wrapper) is bare simple-form: sh .claude/hooks/NAME.sh' {
         $fifth = $script:SessionStartHooks[4].command
-        $fifth | Should -Match $script:SimpleFormPattern
+        $fifth | Should -Match '^sh \.claude/hooks/[A-Za-z0-9_-]+\.sh$'
         $fifth | Should -Be 'sh .claude/hooks/session-start-entire.sh'
+    }
+
+    It 'the whitelist REJECTS the documented Copilot failure signature (round-1 REJECT fault injection D, reproduced verbatim)' {
+        $script:DocumentedFailureSignature | Should -Not -Match $script:WhitelistPattern
+    }
+
+    It 'a fixture settings.json carrying the documented failure signature on ONE line is flagged as the sole violator' {
+        $injectedHooks = New-InjectedFixtureHooks
+        $violators = @()
+        foreach ($hook in $injectedHooks) {
+            if ($hook.command -notmatch $script:WhitelistPattern) { $violators += $hook.command }
+        }
+        $violators.Count | Should -Be 1
+        $violators[0] | Should -Be $script:DocumentedFailureSignature
     }
 }
 

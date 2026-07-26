@@ -7,13 +7,31 @@
 # MECHANISM (car's choice, per brief): a small recording script,
 # .claude/hooks/session-start-record.sh, wired as the RIGHT side of a two-stage pipe in
 # .claude/settings.json - `sh .claude/hooks/GUARD.sh | sh .claude/hooks/session-start-
-# record.sh [--reset]`. It `tee -a`s the guard's stdout through to real stdout
-# unchanged and appends the same bytes to a gitignored .claude/session-start-report.txt.
-# `--reset` is attached to exactly ONE settings.json line (the first,
-# goodnight-resume-check.sh) so the file is truncated once per SessionStart batch,
-# never once per guard - a per-guard truncate (`>` instead of `>>`, or --reset on every
-# line) would silently drop every earlier guard's contribution, which is the race this
-# suite's "truncation race" tests exist to catch.
+# record.sh`. It `tee -a`s the guard's stdout through to real stdout unchanged and
+# appends the same bytes to a gitignored .claude/session-start-report.txt.
+#
+# AMENDED (fix cycle round 2, finding M4): round 1 attached `--reset` to exactly ONE
+# settings.json line and assumed the five SessionStart hooks fire sequentially in
+# array order - an unstated, unproven assumption the round-1 reviewer measured 2/15
+# silent losses under. `--reset` no longer exists as an argument: freshness is now a
+# property of the report FILE's own mtime (stale = missing, or older than
+# STALE_SECONDS), serialized by an atomic `mkdir` mutex so no two invocations can
+# interleave a truncate with another's append. Basic mechanism sanity (this file) and
+# the dedicated concurrency/staleness proofs (scripts/tests/
+# SessionStartReportConcurrency.Tests.ps1 - genuinely concurrent child processes, many
+# trials, zero losses) are split across the two files rather than duplicated.
+#
+# AMENDED (fix cycle round 2, finding M1): this file previously also asserted "no
+# SessionStart command reintroduces the fancy-quoting failure signature (nested sh -c
+# / single quotes)" as ITS OWN invariant, disjoint from SessionStartWiring.Tests.ps1's
+# (then-narrowed) bare-form check. Round-1 review PROVED that split was the defect: a
+# blacklist naming two known-bad shapes is blind to shapes nobody thought to name, and
+# an inline `if...fi` compound plus escaped-JSON `printf` (the ACTUAL documented
+# Copilot failure signature) passed both suites 15/15 green. The single authority for
+# "is this SessionStart command shape legitimate" is now the WHITELIST in
+# SessionStartWiring.Tests.ps1 (permits exactly the bare form and the pipe-to-recorder
+# form, rejects everything else including shapes not yet imagined) - not duplicated
+# here, per Law 6 and the same lesson.
 #
 # This does NOT invoke session-start-ci-baseline.sh (network-dependent: `gh run list`
 # against GitHub) in the acceptance-level tests below, deliberately - a Pester suite
@@ -44,18 +62,14 @@ Describe 'session-start-record.sh: the recording mechanism in isolation (#50)' {
 
         # Runs a guard-shaped command through the pipe, with REPORT_FILE overridden -
         # the same override-with-default shape as CHECKPOINT_FILE in
-        # session-start-checkpoint-reconcile.sh.
+        # session-start-checkpoint-reconcile.sh. No --reset argument (fix cycle round
+        # 2, M4) - freshness is decided by the report file's own mtime.
         function Invoke-RecordPipeline {
-            param(
-                [string]$GuardCommand,   # e.g. "echo hello"
-                [string]$ReportFile,
-                [switch]$Reset
-            )
-            $resetArg = if ($Reset) { '--reset' } else { '' }
+            param([string]$GuardCommand, [string]$ReportFile)
             $origReport = $env:REPORT_FILE
             $env:REPORT_FILE = $ReportFile
             try {
-                $pipeline = "$GuardCommand | sh $script:RecordScript $resetArg"
+                $pipeline = "$GuardCommand | sh $script:RecordScript"
                 & sh -c $pipeline 2>&1
             } finally {
                 $env:REPORT_FILE = $origReport
@@ -67,37 +81,26 @@ Describe 'session-start-record.sh: the recording mechanism in isolation (#50)' {
         Test-Path $script:RecordScript | Should -BeTrue
     }
 
-    It '--reset creates the report file with a fresh timestamp marker as the first line' {
+    It 'a fresh/absent report file gets a marker written on the first invocation of a batch' {
         $report = New-TempReportPath
-        Invoke-RecordPipeline -GuardCommand 'echo guard-one-output' -ReportFile $report -Reset | Out-Null
+        Invoke-RecordPipeline -GuardCommand 'echo guard-one-output' -ReportFile $report | Out-Null
         $lines = Get-Content $report
         $lines[0] | Should -Match '^\[session-start-report\] \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$'
         ($lines -join "`n") | Should -Match 'guard-one-output'
     }
 
-    It 'non-reset calls APPEND: all emitting guards survive in one file, not just the last (truncation race)' {
+    It 'subsequent calls in the SAME batch APPEND: all emitting guards survive in one file, not just the last' {
         $report = New-TempReportPath
-        Invoke-RecordPipeline -GuardCommand 'echo from-guard-A' -ReportFile $report -Reset | Out-Null
+        Invoke-RecordPipeline -GuardCommand 'echo from-guard-A' -ReportFile $report | Out-Null
         Invoke-RecordPipeline -GuardCommand 'echo from-guard-B' -ReportFile $report | Out-Null
         Invoke-RecordPipeline -GuardCommand 'echo from-guard-C' -ReportFile $report | Out-Null
         $content = Get-Content $report -Raw
-        # A naive truncate-per-hook bug (`>` instead of `>>`, or --reset on every call)
-        # would leave ONLY from-guard-C. All three must be present.
+        # A naive truncate-per-hook bug (`>` instead of `>>`) would leave ONLY
+        # from-guard-C. All three must be present - the fresh mtime each call leaves
+        # behind is exactly why the NEXT call sees "not stale" and appends.
         $content | Should -Match 'from-guard-A'
         $content | Should -Match 'from-guard-B'
         $content | Should -Match 'from-guard-C'
-    }
-
-    It '--reset on a later call truncates STALE content from a prior session, not just appends' {
-        $report = New-TempReportPath
-        Invoke-RecordPipeline -GuardCommand 'echo stale-session-content' -ReportFile $report -Reset | Out-Null
-        (Get-Content $report -Raw) | Should -Match 'stale-session-content'
-
-        # A fresh session start: --reset again should wipe the stale content.
-        Invoke-RecordPipeline -GuardCommand 'echo fresh-session-content' -ReportFile $report -Reset | Out-Null
-        $content = Get-Content $report -Raw
-        $content | Should -Not -Match 'stale-session-content'
-        $content | Should -Match 'fresh-session-content'
     }
 
     It 'passes a guard''s stdout through unchanged (byte for byte) in addition to recording it' {
@@ -108,13 +111,13 @@ Describe 'session-start-record.sh: the recording mechanism in isolation (#50)' {
         # and a bare `;` there would split the pipeline at shell-parse time (only the
         # LAST semicolon-separated statement would actually feed the pipe), which is
         # not what this test wants to exercise.
-        $piped = Invoke-RecordPipeline -GuardCommand 'printf "line-one\nline-two\n"' -ReportFile $report -Reset
+        $piped = Invoke-RecordPipeline -GuardCommand 'printf "line-one\nline-two\n"' -ReportFile $report
         ($piped -join "`n") | Should -Be ($direct -join "`n")
     }
 
     It 'a silent guard (no stdout) writes nothing new to the file and prints nothing' {
         $report = New-TempReportPath
-        Invoke-RecordPipeline -GuardCommand 'echo baseline' -ReportFile $report -Reset | Out-Null
+        Invoke-RecordPipeline -GuardCommand 'echo baseline' -ReportFile $report | Out-Null
         $before = Get-Content $report -Raw
         $output = Invoke-RecordPipeline -GuardCommand 'true' -ReportFile $report
         ($output -join '') | Should -BeNullOrEmpty
@@ -129,11 +132,9 @@ Describe '.claude/settings.json SessionStart wiring routes the four guards throu
         $script:SessionStartHooks = $script:Settings.hooks.SessionStart[0].hooks
     }
 
-    It 'exactly one SessionStart line carries --reset, and it is the first (goodnight-resume-check.sh)' {
+    It 'no SessionStart line carries --reset (fix cycle round 2, M4: the argument is retired - freshness is a file property now)' {
         $resetLines = $script:SessionStartHooks | Where-Object { $_.command -match '--reset' }
-        $resetLines.Count | Should -Be 1
-        $resetLines[0].command | Should -Match 'goodnight-resume-check\.sh'
-        $script:SessionStartHooks[0].command | Should -Match '--reset'
+        $resetLines.Count | Should -Be 0
     }
 
     It 'all four guard lines (not the fifth, entire wrapper) pipe through session-start-record.sh' {
@@ -145,20 +146,12 @@ Describe '.claude/settings.json SessionStart wiring routes the four guards throu
         $script:SessionStartHooks[4].command | Should -Not -Match 'session-start-record\.sh'
     }
 
-    It 'no SessionStart command reintroduces the fancy-quoting failure signature (nested sh -c / single quotes)' {
-        # The actual documented failure (docs/friction-log.md 2026-07-24): a nested
-        # `sh -c '...'` wrapper with escaped-JSON quoting broke Copilot's parser. A
-        # plain two-stage pipe (`sh a.sh | sh b.sh --reset`) carries neither `-c` nor
-        # any quote character, so this stays a meaningful invariant across both the
-        # #50 fifth-line fix and this task's pipe-based delivery mechanism.
-        $violators = @()
-        foreach ($hook in $script:SessionStartHooks) {
-            if ($hook.command -match "sh -c" -or $hook.command -match "'") {
-                $violators += $hook.command
-            }
-        }
-        $violators -join "`n---`n" | Should -BeNullOrEmpty
-    }
+    # NOTE (fix cycle round 2, M1): the "is this command shape legitimate" check
+    # (formerly a blacklist here: no `sh -c`, no single quote) is REMOVED from this
+    # file. That blacklist was proven blind to the actual documented failure signature
+    # (an inline if-compound, no `sh -c`, no quotes) by round-1 adversarial review.
+    # scripts/tests/SessionStartWiring.Tests.ps1 now owns the ONE whitelist covering
+    # all five SessionStart lines - not duplicated here.
 }
 
 Describe 'End-to-end with real project guards, no network dependency (#50)' {
@@ -182,15 +175,17 @@ Describe 'End-to-end with real project guards, no network dependency (#50)' {
         $env:REPORT_FILE = $report
         $env:CLAUDE_PROJECT_DIR = $script:RepoRoot
         try {
-            # goodnight-resume-check.sh runs FIRST in the real settings.json array and
-            # carries --reset; HOME is overridden to a fresh empty dir so no resume
-            # packet exists (deterministic silence), matching the "silent guards
-            # legitimately write nothing" case.
+            # goodnight-resume-check.sh runs FIRST in the real settings.json array (no
+            # --reset argument any more, fix cycle round 2 M4); HOME is overridden to a
+            # fresh empty dir so no resume packet exists (deterministic silence),
+            # matching the "silent guards legitimately write nothing" case. The report
+            # file is absent, so this call's own staleness check finds it missing and
+            # writes the marker regardless of which guard happens to run first.
             $env:HOME = $emptyHome
-            & sh -c "sh $script:GoodnightHook | sh $script:RecordScript --reset" 2>&1 | Out-Null
+            & sh -c "sh $script:GoodnightHook | sh $script:RecordScript" 2>&1 | Out-Null
 
-            # retro runs next, no --reset, deterministic (no network): its STANDING
-            # ITEM line is unconditional regardless of friction-log content.
+            # retro runs next, deterministic (no network): its STANDING ITEM line is
+            # unconditional regardless of friction-log content.
             $env:HOME = $origHome
             & sh -c "sh $script:RetroHook | sh $script:RecordScript" 2>&1 | Out-Null
         } finally {
@@ -205,8 +200,9 @@ Describe 'End-to-end with real project guards, no network dependency (#50)' {
         $content | Should -Match '^\[session-start-report\] \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z'
         $content | Should -Match '\[retro\] STANDING ITEM'
         # goodnight legitimately printed nothing (no packet), so its ABSENCE from the
-        # file is correct - and critically, its --reset did not wipe anything AFTER it
-        # because nothing ran after it in this ordering; retro's own append must still
-        # land alongside the marker, proving append-after-reset works end to end.
+        # file is correct - and critically, its own staleness-triggered reset did not
+        # wipe anything AFTER it because nothing ran after it in this ordering; retro's
+        # own append must still land alongside the marker, proving append-after-reset
+        # works end to end.
     }
 }

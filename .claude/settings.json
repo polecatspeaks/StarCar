@@ -48,7 +48,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh .claude/hooks/goodnight-resume-check.sh | sh .claude/hooks/session-start-record.sh --reset"
+            "command": "sh .claude/hooks/goodnight-resume-check.sh | sh .claude/hooks/session-start-record.sh"
           },
           {
             "type": "command",
