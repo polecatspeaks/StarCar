@@ -91,7 +91,13 @@ from the envelope `task-id` (the compat stop payload's `agent_name` is the agent
 pairing key - §3b-5), and the producer resolves it that way. **That with-envelope stop path is
 now pinned** by `copilot-stop-envelope-taskid.json` (OBSERVED payload keys `agent_name` +
 `transcript_path`; DESIGN-MANDATED expected record; red-first against the base producer, which
-does not recognise `agent_name` and writes no record). A Copilot returned record whose
+does not recognise `agent_name` and writes no record). **[CR-3]** What this pins is the
+producer's envelope-resolution code (`Get-LastAssistantText`/`Get-StarcarEnvelope` deriving
+`subject`/`task_id` from a fenced `task-id`), exercised against a Claude-format transcript
+fixture wrapped in a Copilot-shaped payload - not the real Copilot runtime: a real Copilot
+background stop's `transcript_path` points at the parent's `events.jsonl`, not a per-agent
+Claude-format transcript (§3b-6/3b-7), so the real Copilot envelope round-trip always flows
+through the events.jsonl branch this note already defers below. A Copilot returned record whose
 report carries NO envelope task-id at stop time cannot be paired from the stop payload alone;
 the superseded design's events.jsonl join (`toolCallId -> arguments.name`, §3b-8) is the
 enrichment path for that corner. That events.jsonl extraction branch is NOT pinned by a
