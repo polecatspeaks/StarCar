@@ -67,4 +67,7 @@ Reviewers hold documents to the code standard, because here they rank equal to i
   that is correct passes; elegant prose that is wrong does not.
 - A guard, gate, or protection the diff claims to install is unproven until someone has
   WATCHED it fire. Demand the fault-injection evidence, or raise the missing proof as a
-  finding. A configuration read-back is an assertion, not an observation.
+  finding. A configuration read-back is an assertion, not an observation. FOR A VISUAL
+  GUARD (#40): the fault injection must be driven THROUGH A REAL BROWSER (computed-style,
+  not a DOM-class or regex assertion) - #31 proved a text-level guard can pass while the
+  defect is live on screen.

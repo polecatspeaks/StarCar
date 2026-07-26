@@ -61,6 +61,18 @@ state that failing it escalates to the owner rather than to another round.
 author believed each round would close it. Only a reviewer holding the series could see
 it, and only because the conductor handed over the history.]
 
+BASE-DELTA (#13, on any round after the first, or any rotation to a fresh reviewer):
+state the SHA you are reviewing and the prior round's reviewed SHA, plus the diff range
+between them. UNREPRODUCIBLE-EVIDENCE CALLOUT (#13): name any finding resting on
+evidence you cannot hand to a future reader unchanged, in its own line, never folded
+into a findings table.
+
+[WHY: this brief is dispatched fresh every ROUND <N>, not only round 1 - the same
+rotation-drill gap the delta template two sections below exists to close applies here
+too. A reviewer picking up round 3 cold needs the round-2-to-round-3 delta from the
+verdict itself, not from CONVERGENCE HISTORY alone (which gives Major counts and
+clusters, not a diff range) or from the conductor's memory.]
+
 ATTACK THESE, in this order: <named failure classes specific to this design>.
 
 [WHY: "review this design" produces a spelling check. "Hunt THIS class in THIS seam"
@@ -81,7 +93,8 @@ RULINGS: rule on every open question the design asks. That is your job, not the 
 CONSTITUTION CHECK: all <N> laws, one line of evidence each, or a finding.
 
 OUTPUT:
-- VERDICT: APPROVE or REJECT, first line, one sentence.
+- VERDICT: APPROVE or REJECT, first line, one sentence; BASE-DELTA and any
+  UNREPRODUCIBLE-EVIDENCE callout (#13) stated explicitly.
 - FINDINGS by severity, each anchored to a location you opened.
 - RULINGS on the open questions.
 - CONSTITUTION CHECK.
@@ -111,16 +124,45 @@ re-review, not a fresh review - you have the context, do not rebuild it.
 SCOPE: commits <shas> against your own findings. For EACH finding you raised, rule:
 CLOSED / PARTIALLY CLOSED / NOT CLOSED, with the evidence you checked.
 
+BASE-DELTA (#13): state the SHA you are reviewing now and the SHA your round-<N> verdict
+reviewed, plus the diff range between them (`git diff <round-N-sha>..<this-sha> --stat`).
+Carry this even though you are the SAME reviewer with context intact - the LANDED VERDICT
+is what a rotation reviewer or auditor reads later, and it should not have to infer the
+delta from a memory it does not have.
+
+[WHY: the rotation drill that named this ticket found the opposite gap - the landed
+verdict pinned only ITS OWN base, so a rotation reviewer picking up the series cold could
+not confirm from the document alone what a revision had actually changed
+(`artifacts/reviews/2026-07-22-car2-plan-review-round2-drill.md:103`). Recording the delta
+here costs nothing when you already know it; it is what makes the SAME check possible for
+whoever reads the verdict without your memory.]
+
 Verify closures by the mechanism, not by the author's summary table - a claim that a
 finding is closed is exactly the claim most worth distrusting.
 
 New material introduced BY the fixes is in scope. Everything you already approved is not.
 
-[WHY: fresh full re-reviews cost roughly 110k tokens each and rebuild context the previous
-reviewer already had. Five of them were spent on one design where deltas would have
-served. The ancestor shop's fix cycle goes to the SAME agent for exactly this reason.]
+UNREPRODUCIBLE-EVIDENCE CALLOUT (#13): if closing any finding rests on evidence you
+cannot hand to a future reader unchanged (a gitignored log, a scratch repro since
+deleted, a claim only your own transcript can prove) - name it as such in its own line,
+never folded into the CLOSED/PARTIALLY CLOSED/NOT CLOSED table.
 
-VERDICT: APPROVE, or REJECT with the specific findings still open.
+[WHY: the same drill's blind spot (a finding resting on a gitignored probe log) WAS
+disclosed honestly - "recorded honestly as UNVERIFIABLE, not papered over... a fresh
+reviewer inherits the correct blindness" (`.../drill.md:105`) - so this is not a case of
+a closure hiding a gap. The drill's actual complaint was PLACEMENT: the disclosure
+existed but "lives buried in a table cell" with no standing flag that it was
+unreproducible (`.../drill.md:110`). A standing callout would have pointed the drill
+reviewer straight at its own hardest finding instead of making it re-derive the gap by
+hand from a table.]
+
+[WHY (fresh full re-reviews): fresh full re-reviews cost roughly 110k tokens each and
+rebuild context the previous reviewer already had. Five of them were spent on one design
+where deltas would have served. The ancestor shop's fix cycle goes to the SAME agent for
+exactly this reason.]
+
+VERDICT: APPROVE, or REJECT with the specific findings still open; BASE-DELTA and any
+UNREPRODUCIBLE-EVIDENCE callout stated explicitly (#13).
 ```
 
 ## 3. The design car brief (dispatching an agent to WRITE a design)

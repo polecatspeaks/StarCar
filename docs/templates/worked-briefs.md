@@ -101,6 +101,18 @@ SCOPE: three commits on car-B-banner, base <sha>: <sha1> (B.1 verdict derivation
 <sha2> (B.2 banner render), <sha3> (B.3 config threshold). Orders:
 docs/plans/2026-XX-XX-staleness-banner.md Car B tasks; spec sections 2/4.
 
+BASE-DELTA (#13, when this is a delta re-review after a fix cycle): state the SHA you
+are reviewing now and the SHA your prior round reviewed, plus the diff range between
+them. UNREPRODUCIBLE-EVIDENCE CALLOUT (#13): any finding resting on evidence you
+cannot hand to a future reader unchanged (a gitignored log, a scratch repro since
+deleted) is named as such, never folded into a findings table.
+
+[WHY: this exact brief shape is what section 3's fix cycle sends back to for the
+DELTA re-review - "verify-the-fix scope, not a full re-review." Without these two
+fields stated here, the delta round that actually happens on this train would produce
+a verdict pinning only its own base, the same gap the rotation drill found on Car 2's
+plan.]
+
 THE SENTENCE CHECK (the core): the freshness verdict crosses boundaries - adapter
 FetchedAt -> snapshot record -> verdict derivation -> banner props -> rendered DOM.
 Trace the full path yourself at this HEAD, every hop file:line; do NOT trust the car's
@@ -127,7 +139,8 @@ CONSTITUTION CHECK: name each law the diff implicates, one line of evidence each
 it is honored, or a finding where it is not.
 
 VERDICT: APPROVE or REJECT up top; findings by severity with file:line; the sentence
-trace as YOU rebuilt it; rulings; observed counts; constitution check. On APPROVE,
+trace as YOU rebuilt it; rulings; observed counts; constitution check; BASE-DELTA (#13)
+when this is a re-review, and any UNREPRODUCIBLE-EVIDENCE callout (#13). On APPROVE,
 Car C dispatches consuming your verified surface.
 ```
 

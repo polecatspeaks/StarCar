@@ -91,6 +91,19 @@ commit nothing, push nothing. Work ONLY in the detached worktree at <path> (HEAD
 <sha> - verify first, STOP if not).
 
 SCOPE: <commits> against <plan/spec sections>.
+BASE-DELTA (#13, mandatory whenever this round reviews a base a PRIOR round already
+reviewed - rotation and delta re-reviews): state the SHA you reviewed AND the prior
+round's reviewed base SHA, plus the diff range between them (`git diff
+<prior-base>..<this-base> --stat`) - so a rotation reviewer can confirm from carriers
+alone what the revision actually changed, without trusting the brief's word for it.
+Rotation-drill finding: the round-2 drill reviewer of Car 2's plan named TWO template
+gaps, not one - this is the first of them: "the verdict pins round 1's base (`efb7e67`)
+but not the delta to my base (`6c32ff50`); from carriers alone I could not confirm what
+changed between the reviewed base and rev-2's base and had to trust the brief's pin"
+(`artifacts/reviews/2026-07-22-car2-plan-review-round2-drill.md:103`). The second gap -
+findings resting on evidence the drill reviewer could not itself re-derive - is a
+DIFFERENT failure and gets its own field below (UNREPRODUCIBLE-EVIDENCE CALLOUT); the
+same commit adds both because the drill produced both.
 VERIFY: <the specific claims from the car's report, each with how to check it>.
 THE SENTENCE CHECK: <any cross-boundary value in this diff> - trace producer to final
 consumer, every hop file:line, every hand-maintained mirror checked.
@@ -112,9 +125,36 @@ DOC SENTENCE CHECK (if user-facing docs, or code they describe, are touched): <t
 at issue> - trace each from prose to the command it names to the code that runs to what a
 stranger observes, file:line at every hop, and state the trace. This is the PR-stage gate
 for user-facing documentation; an untraceable claim is a finding.
+RENDERING CHECK (#40, mandatory when this diff touches a RENDERED surface - board/web
+CSS/JS, register assignments, anything a user SEES): any claim about what the diff
+RENDERS is settled by computed-style evidence from a REAL browser against the real served
+board - name which registers, which elements, and which collapsed/expanded states you
+drove `getComputedStyle` against, and REPORT THE OBSERVED VALUES (the exact `rgb()`/px
+returned) - never by reading CSS or reasoning about the cascade, and never a bare
+pass/fail with no printed value (#40's own carrier item 1 ends "Report observed
+values."; naming a register without printing what was measured is unverifiable by a
+second party).
+THIS IS A FLOOR, NOT A REPLACEMENT FOR JUDGMENT: measurement establishes what the board
+IS rendering; you still RULE on whether that is CORRECT against the design authority
+(the mockup brief, the three-register law, the issue's own text) - a verdict that reports
+colours without ruling on them is a spelling check with better instrumentation.
+Provenance: #33's Car 31 reviewer had to hand-build a browser model - enumerating all 11
+`color:` declarations in board.css and walking 216 text-bearing elements by hand to
+compute the cascade itself - because 50 passing DOM tests could not have caught what a
+human eye caught at first light (#33's own account of how #31 was originally found);
+that is a SIMULATION of a cascade, not a measurement of one. The worked example of the
+floor being met is `artifacts/reviews/2026-07-26-view-30-review-round1-REJECT.md`'s "THE
+COMPUTED-STYLE GATE" section (`:137-176`): a real Chromium drove the real server,
+`getComputedStyle` returned `rgb(217, 213, 201)` for a NOTE group nested inside a
+`register-needs-attention` strip, proving `.board-condition-instance` relies on its own
+`register-*` class rather than inheriting - "the finding a DOM test could never have
+produced... the #31 cascade-inheritance defect does not recur" (`:173`).
 GUARD CHECK: <any gate, guard, or protection this diff installs> - has anyone WATCHED it
 fire? A config read-back or a passing-on-arrival test is an assertion, not an
-observation; demand the fault-injection evidence or raise its absence as a finding.
+observation; demand the fault-injection evidence or raise its absence as a finding. FOR A
+VISUAL GUARD (#40): the fault injection must be driven THROUGH A REAL BROWSER
+(computed-style, not a DOM-class or regex assertion) - #31 proved a text-level guard can
+pass while the defect is live on screen.
 CONVERGENCE CHECK (re-reviews only): <prior rounds' Major counts and the sections they
 clustered in - the conductor MUST supply these; a fresh reviewer cannot know them>. Rule on
 whether this series is converging, not only on whether this document is correct. If any two
@@ -122,8 +162,20 @@ of - Majors not declining, findings clustering in one section, or findings that 
 the previous round's fixes created - then SET A CAP: name what the next revision must
 demonstrate, and state that failing it escalates to the owner rather than to another round.
 CONSTITUTION CHECK: name each law the diff implicates, one line of evidence each.
+UNREPRODUCIBLE-EVIDENCE CALLOUT (#13): any finding that rests on evidence you
+structurally could NOT re-derive yourself - a gitignored log, a since-deleted scratch
+artifact, a claim only the author's own transcript can prove - is flagged AS SUCH, in its
+own line, never folded silently into a table cell. This is the single most important
+property to hand the next reviewer, and its absence is what cost the round-2 drill
+reviewer the fastest path to that round's own Major: "M3/M4 were unverifiable-by-
+construction (gitignored probe), which is the single most important property to hand a
+delta reviewer, yet it lives buried in a table cell. A 'findings on unreproducible
+evidence' flag would have pointed me straight at C2R2-M1"
+(`artifacts/reviews/2026-07-22-car2-plan-review-round2-drill.md:110`).
 
-VERDICT: APPROVE or REJECT up top; findings by severity with file:line.
+VERDICT: APPROVE or REJECT up top; findings by severity with file:line; BASE-DELTA (#13)
+WHEN THIS IS A RE-REVIEW, and any UNREPRODUCIBLE-EVIDENCE callouts (#13), stated
+explicitly, not folded into a table.
 
 END YOUR REPORT WITH THE ARTIFACT ENVELOPE (mandatory - your verdict is a `returned`
 dispatch too): a fenced block, info string starcar-artifact, fields outcome (APPROVE /
