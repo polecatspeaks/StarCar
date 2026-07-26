@@ -172,3 +172,5 @@ dispatch batch between regenerations.
 | a94fcd2c88a32d991 | returned | 2026-07-26T14:25:14Z | done | a94fcd2c88a32d991/returned-20260726T142514Z.json |
 | ae2db65a15d4b58a2 | dispatched | 2026-07-26T14:25:52Z |  | ae2db65a15d4b58a2/dispatched-20260726T142552Z.json |
 | ae2db65a15d4b58a2 | returned | 2026-07-26T14:34:19Z | APPROVE | ae2db65a15d4b58a2/returned-20260726T143419Z.json |
+| ae17d6a1ac77dc264 | dispatched | 2026-07-26T14:40:42Z |  | ae17d6a1ac77dc264/dispatched-20260726T144042Z.json |
+| ae17d6a1ac77dc264 | returned | 2026-07-26T14:55:44Z | CONFIRM | ae17d6a1ac77dc264/returned-20260726T145544Z.json |

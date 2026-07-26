@@ -229,3 +229,18 @@ overlap found.
   manipulates PATH or fabricates executables must use [IO.Path]::PathSeparator and grant
   the exec bit - the same environment-class lesson as r4, one axis over (OS, not
   attachment state).
+
+- 2026-07-26 (CORRECTION to the entry above, ordered by the hotfix post-hoc review - the
+  gate biting the conductor, which is the process working): the "UBUNTU LEG CAUGHT WHAT NO
+  DESK REVIEW COULD" entry overstated two counterfactuals, both mine. (F2) "no desk review
+  could" is DISPROVED by the record: round-1 verdict section A3 examined this exact
+  PATH-stripping helper for CI portability and cleared it - a hardcoded separator is a
+  STRUCTURAL fact, settled by reading, and a reviewer looked and missed rather than
+  could-not-have-seen. (F3) the commit's "only environment that can exhibit it" clause is
+  FALSE - WSL Ubuntu-24.04 is on this box and the post-hoc reviewer reproduced the failure
+  end-to-end there in one command, byte-exact fallback JSON included. (F4) "182/182" was
+  stated without its attached-vs-detached coordinate (true attached; detached is
+  181/0/1-skip). The CLASS LESSON STANDS unchanged; what falls is the inevitability
+  framing - and the difference matters because "could not have seen it" forecloses the
+  reading-check remedy that #57 now carries (two class siblings sat one grep away, one a
+  vacuously-green probe on the very ubuntu leg this incident vindicated).
