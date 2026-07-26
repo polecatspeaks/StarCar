@@ -3,3 +3,7 @@ Good morning Claude. It's 26 July 26. Open up the yard please. Then review the r
 ---
 
 Good morning Claude. It's 26 July 26. Open up the yard please. Then review the repo, there have been some changes. Mostly find that models from different families didn't work with the repo correctly, so there were some updates by claude fable under copilot.
+
+---
+
+1. A- yes. b - recommendations? 2. the word is given.
