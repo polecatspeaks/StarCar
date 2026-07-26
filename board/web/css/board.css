@@ -73,20 +73,58 @@ body {
   color: var(--text-dim);
 }
 
-.board-conditions {
+/* #30: the conditions strip is CHROME, not headline - a native <details>
+   collapsed by default (no JS needed to expand/collapse), summary line
+   carries the roll-up ("1 FLAG + 2 notes"), the yard lanes stay above the
+   fold regardless of what is inside. */
+.board-conditions-strip {
+  width: 100%;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.board-conditions-summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.board-condition-groups {
   list-style: none;
   margin: 0.25rem 0 0 0;
   padding: 0;
-  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-  font-size: 0.85rem;
 }
 
-.board-condition {
+/* #30: GROUP BY CLASS - one row per condition code, itself an expandable
+   <details> to the per-instance detail text. */
+.board-condition-group {
   padding: 0.1rem 0.4rem;
   border-left: 3px solid var(--border);
+}
+
+.board-condition-group-summary {
+  cursor: pointer;
+}
+
+.board-condition-instances {
+  list-style: none;
+  margin: 0.15rem 0 0 0.4rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+/* No color/border-left-color declared here on purpose - same convention as
+   .car-chip / .signal / .solari-row: this element ALSO carries its own
+   register-* class (dom-writer.js), and that class is the ONE owner of its
+   color (issue #31's own fix - a structural rule setting color here would
+   either fight the register class or (if using currentColor) silently
+   inherit whatever this element's ancestor is running, re-creating #31). */
+.board-condition-instance {
+  font-size: 0.8rem;
 }
 
 /* --- lanes ------------------------------------------------------------ */

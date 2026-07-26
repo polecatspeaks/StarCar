@@ -76,12 +76,24 @@ NO secondary line at all - it will never have one, and "not yet read" would be a
 - a connection state: when the feed dies, the board visibly flips to "disconnected -
   showing last known" while keeping the stale picture on screen, clearly marked;
 - a board-conditions strip for faults about the BOARD itself ("3 records unreadable",
-  "vocabulary file empty") - distinct from yard status;
+  "vocabulary file empty") - distinct from yard status. **AMENDED (issue #30,
+  2026-07-26 owner ruling):** the strip is GROUPED BY CLASS (one row per condition
+  code with a count, expandable to per-instance detail) and collapsed by default
+  behind a single chrome summary line ("1 FLAG + 2 notes") - it is chrome, never a
+  headline, and the yard lanes stay above the fold. See
+  `docs/design/2026-07-21-v0-yard-skeleton-design.md` §12b for the full amendment.
 - a lane count ("registry declares 5 lanes") - so a silently missing lane is detectable;
 - when running on demo data: a persistent DEMO banner.
 - **the discovery state**: when the board meets a state word it does not recognise, it
-  renders it hot, BY NAME, verbatim ("unrecognised state: 'quarantined'") - this board
+  renders it BY NAME, verbatim ("unrecognised state: 'quarantined'") - this board
   treats unknown vocabulary as a discovery to surface, never an error to hide.
+  **AMENDED (issue #30):** a "discovery" is NOTE-tier (an expected pattern) and
+  therefore renders CALM, not hot - the state word this bullet's own example uses
+  (an unrecognised dispatch STATE, not an outcome) is a different board-condition
+  path (fold-fault/discovery via `board/server/poll.go`) that still renders by name
+  always; only the REGISTER changed, from needs-attention to nominal for the
+  discovery class specifically. Severity per class is now ONE owned mapping,
+  `board/store/condition_severity.go`.
 
 **Sample data to mock with** - two kinds, labeled honestly:
 - **REAL, from the live store:** car `acc761f0add2b0af2` (outcome `done`) and car

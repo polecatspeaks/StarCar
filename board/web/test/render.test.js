@@ -125,6 +125,82 @@ test('a lane count mismatch (declared vs observed) raises a client-detected boar
   assert.ok(vm.boardConditions.some((c) => c.code === 'view-lane-count-mismatch'));
 });
 
+// --- #30: board conditions GROUPED BY CLASS, chrome placement ---
+
+test('#30 groupBoardConditions: one group per CODE, with a count and every instance preserved', () => {
+  const snapshot = makeSnapshot([{ id: 'dispatches', title: 'Dispatches', position: 'live', freshness: { kind: 'never-polled' }, data: { dispatches: [] } }]);
+  snapshot.board = [
+    { code: 'discovery', detail: 'outcome: completed', register: 'nominal' },
+    { code: 'discovery', detail: 'outcome: approve-for-merge', register: 'nominal' },
+    { code: 'record-unrecognised-fields', detail: 'x.json: 1 unrecognised field', register: 'needs-attention' }
+  ];
+  const vm = buildBoardViewModel(snapshot);
+
+  assert.equal(vm.boardConditionGroups.length, 2, 'two distinct codes -> two groups');
+  const discovery = vm.boardConditionGroups.find((g) => g.code === 'discovery');
+  assert.ok(discovery, 'a discovery group must exist');
+  assert.equal(discovery.count, 2);
+  assert.equal(discovery.register, 'nominal');
+  assert.deepEqual(
+    discovery.instances.map((i) => i.detail).sort(),
+    ['outcome: approve-for-merge', 'outcome: completed']
+  );
+
+  const unrecognised = vm.boardConditionGroups.find((g) => g.code === 'record-unrecognised-fields');
+  assert.ok(unrecognised);
+  assert.equal(unrecognised.count, 1);
+  assert.equal(unrecognised.register, 'needs-attention');
+});
+
+test('#30 groupBoardConditions: register is authoritative from the server per instance - the view never recomputes it, only rolls it up (most-severe-wins if a class ever carries mixed registers)', () => {
+  const snapshot = makeSnapshot([{ id: 'dispatches', title: 'Dispatches', position: 'live', freshness: { kind: 'never-polled' }, data: { dispatches: [] } }]);
+  // Defensive case: the same code observed at two different registers (never
+  // expected in production - conditionSeverity, board/store/condition_severity.go,
+  // is ONE owned mapping per code - but the view must not crash or silently
+  // pick the calmer one if it ever happens).
+  snapshot.board = [
+    { code: 'weird', detail: 'a', register: 'nominal' },
+    { code: 'weird', detail: 'b', register: 'needs-attention' }
+  ];
+  const vm = buildBoardViewModel(snapshot);
+  const group = vm.boardConditionGroups.find((g) => g.code === 'weird');
+  assert.equal(group.register, 'needs-attention', 'most-severe-wins at the group roll-up level');
+});
+
+test('#30 PLACEMENT: boardConditionSummary is a single chrome line, "N FLAG(S) + M note(s)" shaped, never the full detail list', () => {
+  const snapshot = makeSnapshot([{ id: 'dispatches', title: 'Dispatches', position: 'live', freshness: { kind: 'never-polled' }, data: { dispatches: [] } }]);
+  snapshot.board = [
+    { code: 'record-unrecognised-fields', detail: 'x', register: 'needs-attention' },
+    { code: 'discovery', detail: 'outcome: completed', register: 'nominal' },
+    { code: 'discovery', detail: 'outcome: approve-for-merge', register: 'nominal' }
+  ];
+  const vm = buildBoardViewModel(snapshot);
+  assert.equal(vm.boardConditionSummary, '1 FLAG + 2 notes');
+  assert.ok(!vm.boardConditionSummary.includes('outcome:'), 'the summary line is chrome, not the detail text');
+});
+
+test('#30 boardConditionSummary with zero conditions', () => {
+  const snapshot = makeSnapshot([{ id: 'dispatches', title: 'Dispatches', position: 'live', freshness: { kind: 'never-polled' }, data: { dispatches: [] } }]);
+  const vm = buildBoardViewModel(snapshot);
+  assert.equal(vm.boardConditionGroups.length, 0);
+  assert.equal(vm.boardConditionSummary, 'no conditions');
+});
+
+test('#30 HAVAGLANCE: boardConditionsRegister is the most-severe register across all groups, so the COLLAPSED summary line itself signals severity without expanding', () => {
+  const snapshot = makeSnapshot([{ id: 'dispatches', title: 'Dispatches', position: 'live', freshness: { kind: 'never-polled' }, data: { dispatches: [] } }]);
+  snapshot.board = [{ code: 'discovery', detail: 'outcome: completed', register: 'nominal' }];
+  assert.equal(buildBoardViewModel(snapshot).boardConditionsRegister, 'nominal', 'only NOTE-tier present -> calm');
+
+  snapshot.board = [
+    { code: 'discovery', detail: 'outcome: completed', register: 'nominal' },
+    { code: 'record-unrecognised-fields', detail: 'x', register: 'needs-attention' }
+  ];
+  assert.equal(buildBoardViewModel(snapshot).boardConditionsRegister, 'needs-attention', 'any FLAG present -> hot, even collapsed');
+
+  snapshot.board = [];
+  assert.equal(buildBoardViewModel(snapshot).boardConditionsRegister, 'nominal', 'no conditions at all -> calm');
+});
+
 test('discovery rendering: an unrecognised dispatch state word renders HOT, BY NAME, VERBATIM', () => {
   const snapshot = makeSnapshot([
     {
