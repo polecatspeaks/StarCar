@@ -98,15 +98,10 @@ SENTENCE CHECK ON EVERY SNIPPET - open the real file; every API a snippet calls 
 with that signature at the dispatch tip; (d) red validity - each stated red fails for
 its STATED reason at its point in the sequence; (e) amendment/LOCKED-block fidelity to
 the spec, not re-derived; (f) BASE-DELTA (#13, on any round after the first, or any
-rotation to a fresh reviewer): state the SHA you reviewed and the prior round's
-reviewed SHA, plus the diff range between them (`git diff <prior-sha>..<this-sha>
---stat`) - the plan's own HEAD-may-be-newer-than-base note above is the drift a
-FRESH reviewer sees; this field is what lets a rotation reviewer confirm the delta
-from the verdict alone, without inheriting the prior reviewer's memory; (g)
-UNREPRODUCIBLE-EVIDENCE CALLOUT (#13): any finding resting on evidence you cannot
-hand to a future reader unchanged (a gitignored probe log, a fault-injection repro in
-a scratch dir since deleted) is named as such, in its own line, never folded into a
-disposition table cell. If every defect is mechanical (line drift, count rebases,
+rotation): state the SHA you reviewed and the prior round's SHA, plus the diff range
+between them; (g) UNREPRODUCIBLE-EVIDENCE CALLOUT (#13): name any finding resting on
+evidence you cannot hand to a future reader unchanged, in its own line, never folded
+into a disposition table cell. If every defect is mechanical (line drift, count rebases,
 stale baselines) with NO structural/API breaks, you may verdict
 APPROVE-WITH-REBASE-LIST: enumerate the fixes; the conductor applies them as a binding
 addendum and cars dispatch without another round. ANY snippet calling a nonexistent

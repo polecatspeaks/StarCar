@@ -168,8 +168,17 @@ N tasks. Ledger: base <X>/<Y> -> A.2 +1 -> <X+1>/<Y+1>. Cars re-read live at dis
 
 ## The plan-review record (rule 5) - what the adversary hunts, and the verdict shape
 
-Ran AFTER the plan was written, BEFORE any car dispatched. Dimensions: (a) spec
-coverage (walk the table independently); (b) inter-task interface consistency
+Ran AFTER the plan was written, BEFORE any car dispatched. **Dimension-list ownership
+(#13):** the authoritative, current enumeration - now (a) through (g) - lives ONE PLACE,
+`docs/templates/worked-adversary-and-gate-briefs.md` section 3 (the dispatch brief
+itself), because that is the operational artifact a conductor actually copies into a
+real brief; this exemplar narrates OUTCOMES against the dimensions rather than
+re-deriving its own count, so the two files cannot drift the way (a)-(e) here and
+(a)-(g) there just did. This file's own list below is the historical (a)-(e), kept
+because the narrative below is about WHAT each one caught, not a restatement of the
+current count:
+
+(a) spec coverage (walk the table independently); (b) inter-task interface consistency
 (Consumes/Produces agree - each car sees only its own task); (c) THE SENTENCE CHECK ON
 EVERY SNIPPET - open the real file at base; every API a snippet calls must exist with
 that signature. This dimension is what caught the ancestor's three-round plan: invented
@@ -178,18 +187,28 @@ car would have hit mid-train, each caught at one-dispatch cost instead; (d) red
 validity - would each stated red fail for the STATED reason at its point in the
 sequence, verified by RUNNING it, never by reading (Amendment 1: the first plan's
 worst Major was a stated red that reading confirms and running refutes); (e)
-amendment-block fidelity to the spec, not re-derived.
+amendment-block fidelity to the spec, not re-derived. (f) BASE-DELTA and (g)
+UNREPRODUCIBLE-EVIDENCE CALLOUT are #13's later additions, at the exact rung the
+rotation drill that produced #13 ran on - see the brief template for their current
+wording, and the verdict shape immediately below for how this rung's own verdict
+carries them.
 
 Verdict shape (this exemplar's fictional round):
 
-> **REJECT.** Major: Task B.2's snippet calls `banner.setVerdict(v)` - no such member;
-> the real surface at base is a props object (`Banner({verdict})`, src/ui/banner.tsx:9).
-> A car would hit this as a compile wall; the plan's own A.1 Produces block already
-> names the right shape, so this is internal inconsistency, dimension (b) and (c) at
-> once. Fix and re-review the delta.
+> **REJECT.** BASE-DELTA (#13): this round reviewed `<sha2>` against round 1's
+> `<sha1>` (`git diff <sha1>..<sha2> --stat`: 1 file, +6/-2 - the A.1 Consumes block's
+> field rename). UNREPRODUCIBLE-EVIDENCE CALLOUT (#13): none - every claim below is
+> re-derivable from files in this worktree at `<sha2>`. Major: Task B.2's snippet calls
+> `banner.setVerdict(v)` - no such member; the real surface at base is a props object
+> (`Banner({verdict})`, src/ui/banner.tsx:9). A car would hit this as a compile wall;
+> the plan's own A.1 Produces block already names the right shape, so this is internal
+> inconsistency, dimension (b) and (c) at once. Fix and re-review the delta.
 
 Rework lands as plan edits + an amendment-block entry; the re-review verifies the
-delta; the verdict history stays in the plan. If every defect is mechanical
+delta and states its OWN base-delta and unreproducible-evidence callout every time
+(#13) - even when it is the SAME reviewer with context intact, because the LANDED
+verdict, not the reviewer's memory, is what a rotation reviewer or auditor reads
+later; the verdict history stays in the plan. If every defect is mechanical
 (line-number drift, count rebases) the reviewer may verdict APPROVE-WITH-REBASE-LIST:
 the conductor applies the enumerated fixes as a binding addendum and cars dispatch
 without another full round - but ANY snippet calling a nonexistent API stays a REJECT.
