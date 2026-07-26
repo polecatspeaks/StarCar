@@ -46,3 +46,21 @@ mock - direction is allowed to dream):**
 directory and open `starcar-board.dc.html` in a browser with `window.React` available
 (the design tool's viewer normally supplies it) - `support.js` throws without it. The
 mock is fully readable as markup + component data without rendering.
+
+**#62 ADJUDICATION (2026-07-26, all three deviations above resolved at implementation):**
+- Fonts: SYSTEM STACKS, no network fetch, ever - display/condensed role
+  `'Bahnschrift', 'Arial Narrow', 'Roboto Condensed', sans-serif` (`Bahnschrift` is a
+  real Windows 10+ variable condensed family; the stack degrades honestly to plain
+  sans-serif on a box with none of these installed, rather than lying about having the
+  mockup's exact face). Mono role unchanged from the v0 pass (`board/web/css/board.css`'s
+  `--font-mono`). No webfont `<link>`, no bundler, no build step - D19 holds.
+- Demo-invented vocabulary (`quarantined`, `presumed-lost`): NOT adopted - the #62 pass
+  touches CSS/layout/markup and dom-writer.js presentation only; compose.js's real
+  register/vocabulary derivations (contract) are untouched, so the board still renders
+  only whatever state word its actual data source provides, per the ui-mockup-brief's
+  own rule.
+- Fixed 1920x1080 canvas: NOT adopted - the implementation keeps a responsive lane-plate/
+  lane-content layout (`board/web/css/board.css`'s `.lane`/`.lane-plate`/`.lane-content`
+  rules plus a `max-width: 760px` collapse), verified at 1920x1080 (this car's own
+  screenshot evidence, `docs/screenshots/2026-07-26-register-check-candidates/`) and via
+  the existing narrower-viewport-agnostic test suite.

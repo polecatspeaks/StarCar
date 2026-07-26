@@ -8,15 +8,19 @@
 // so the same code runs unmodified against Node's test shim (task 5.5's
 // "render into a minimal DOM shim").
 //
-// Visual authority (plan task 5.3): the reviewed mockup brief
+// Visual authority: the reviewed mockup brief
 // (docs/design/2026-07-23-ui-mockup-brief.md) and design rev 5 S5.2's
 // composition rules BIND (three registers only, verbatim words, honesty
-// chrome, bagged/dark dignity); the 2b track-schematic (trains/gates) +
-// 1b Solari-board (dispatches) mockup merge STEERS. This v0 pass renders
-// the CONTRACTS fully and the steering direction structurally (track rows
-// for trains/gates, dense monospace rows for dispatches) rather than
-// pixel-for-pixel mockup fidelity - disclosed in this car's report as the
-// conductor's first human look is the actual visual-polish gate.
+// chrome, bagged/dark dignity); docs/design/mockups/2026-07-26-claude-
+// design-board/'s five owner-generated variants STEER (owner ruling,
+// 2026-07-26: NO SINGLE KEEPER - build the SHARED language, iterate later).
+// #62 built that shared language: lane label plates with purpose
+// subtitles, a footer status strip, a brand wordmark, the 2b track-
+// schematic (trains/gates) + 1b Solari-board (dispatches) structural
+// merge - still structural fidelity, not pixel-for-pixel, per the mock
+// doctrine ("direction, never contract"). Further slices (specific
+// elements from specific variants, per the owner ruling) remain open on
+// issue #1.
 
 function el(doc, tag, className, text) {
   const node = doc.createElement(tag);
@@ -41,14 +45,27 @@ export function renderBoard(doc, root, vm, connection) {
   root.appendChild(renderChrome(doc, vm, connection));
 
   const lanesRoot = el(doc, 'section', 'lanes');
-  for (const lane of vm.lanes) {
-    lanesRoot.appendChild(renderLane(doc, lane));
-  }
+  const total = vm.lanes.length;
+  vm.lanes.forEach((lane, index) => {
+    lanesRoot.appendChild(renderLane(doc, lane, index + 1, total));
+  });
   root.appendChild(lanesRoot);
+
+  root.appendChild(renderFooter(doc, vm));
 }
 
+// #62: shared visual language (owner ruling: no single keeper) - every one
+// of the five mockup variants opens with a condensed wordmark ("STARCAR")
+// ahead of the honesty chrome. Static presentational text, not data - the
+// single strongest common signal across all five variants (README.md's
+// "What the direction already gets right").
 function renderChrome(doc, vm, connection) {
   const chrome = el(doc, 'header', 'chrome');
+
+  const brand = el(doc, 'div', 'brand');
+  brand.appendChild(el(doc, 'span', 'brand-name', 'STARCAR'));
+  brand.appendChild(el(doc, 'span', 'brand-subtitle', 'YARD BOARD'));
+  chrome.appendChild(brand);
 
   if (vm.demoMode) {
     chrome.appendChild(el(doc, 'div', 'demo-banner', 'DEMO DATA'));
@@ -61,14 +78,38 @@ function renderChrome(doc, vm, connection) {
     el(doc, 'div', connectionClass, connection.connected ? 'connected' : 'disconnected - showing last known')
   );
 
-  const laneCountText = `${vm.laneCompleteness.observed} of ${vm.laneCompleteness.declared} lanes`;
-  chrome.appendChild(el(doc, 'div', 'lane-count', laneCountText));
+  return chrome;
+}
 
-  if (vm.boardConditionGroups.length > 0) {
-    chrome.appendChild(renderBoardConditionsStrip(doc, vm));
+// #62: the footer status strip (shared across every mockup variant) - moved
+// here from the top chrome: registry lane completeness, the real
+// storePathDisplay wire field (never rendered anywhere before this pass -
+// already publication-safe per schema/yard-snapshot.schema.json:191), and
+// the #30 board-conditions strip. Store-record/fold counts ("store: 65 ->
+// 17 dispatches") appear in the mockups too but carry NO wire field
+// (schema/yard-snapshot.schema.json has no such field) - inventing one
+// client-side would be a second copy of server-owned arithmetic (Law 6) and
+// adding one server-side is a wire change, out of this ticket's scope.
+// CORRECTED (#62 fix cycle round 2, review round 1 MINOR-1 - this comment
+// used to say "routed to issue #1" while nothing had actually been posted
+// there, a carrier-rule miss): now actually routed - see issue #1, comment
+// https://github.com/polecatspeaks/StarCar/issues/1#issuecomment-5085235534
+// (2026-07-26), item 2.
+function renderFooter(doc, vm) {
+  const footer = el(doc, 'footer', 'board-footer');
+
+  const laneCountText = `registry declares ${vm.laneCompleteness.declared} lane(s) - ${vm.laneCompleteness.observed} rendered`;
+  footer.appendChild(el(doc, 'div', 'lane-count', laneCountText));
+
+  if (vm.storePathDisplay) {
+    footer.appendChild(el(doc, 'div', 'store-path', `store: ${vm.storePathDisplay}`));
   }
 
-  return chrome;
+  if (vm.boardConditionGroups.length > 0) {
+    footer.appendChild(renderBoardConditionsStrip(doc, vm));
+  }
+
+  return footer;
 }
 
 // #30: CHROME, not headline (item 3) - a native <details>/<summary> pair
@@ -108,14 +149,37 @@ function renderBoardConditionGroup(doc, group) {
   return item;
 }
 
-function renderLane(doc, lane) {
+// #62: lane label PLATE (ordinal + title + purpose subtitle + freshness
+// lines) beside its content - the shared layout across every mockup
+// variant (1a's grid-template-columns label column, 2b's numbered plate,
+// 1c's surfaced card). `index`/`total` are the lane's position in the
+// already-known, already-ordered snapshot.lanes array (EXPECTED_LANE_IDS'
+// own registry order, restated at the view - render.test.js pins this
+// order) - a structural ordinal about DECLARED lane position, never new
+// data and never a second copy of anything server-owned.
+function renderLane(doc, lane, index, total) {
   const section = el(doc, 'article', `lane lane-${lane.id} ${registerClass(lane.register)}`);
-  section.appendChild(el(doc, 'h2', 'lane-title', lane.title));
-  section.appendChild(el(doc, 'div', 'lane-primary', lane.primary));
-  if (lane.secondary) {
-    section.appendChild(el(doc, 'div', 'lane-secondary', lane.secondary));
+
+  const plate = el(doc, 'div', 'lane-plate');
+  const heading = el(doc, 'div', 'lane-heading');
+  const ordinal = el(doc, 'span', 'lane-ordinal', String(index));
+  ordinal.setAttribute('title', `lane ${index} of ${total} declared`);
+  heading.appendChild(ordinal);
+  heading.appendChild(el(doc, 'h2', 'lane-title', lane.title));
+  plate.appendChild(heading);
+  if (lane.purpose) {
+    plate.appendChild(el(doc, 'div', 'lane-purpose', lane.purpose));
   }
-  section.appendChild(renderLaneBody(doc, lane.body));
+  plate.appendChild(el(doc, 'div', 'lane-primary', lane.primary));
+  if (lane.secondary) {
+    plate.appendChild(el(doc, 'div', 'lane-secondary', lane.secondary));
+  }
+  section.appendChild(plate);
+
+  const content = el(doc, 'div', 'lane-content');
+  content.appendChild(renderLaneBody(doc, lane.body));
+  section.appendChild(content);
+
   return section;
 }
 
@@ -173,8 +237,20 @@ function renderTrains(doc, body) {
 
 // GATES: signal-head direction (mockup merge 2b) - a small verdict light
 // per gate, verdict word VERBATIM.
+//
+// #62 N3 (fix cycle round 2, review round 1 NOTE-3): an empty-but-live
+// gates lane used to render a blank content pane - honest (body.gates is
+// really []) but reads as a rendering hole rather than a stated absence,
+// unlike freight's "no equipment on this lane" and fuel's "data held, not
+// surfaced". Derived honestly from the same data already in hand (zero
+// entries in THIS fold's gates array) - never invented, never a guess
+// about why it is empty.
 function renderGates(doc, body) {
   const wrap = el(doc, 'div', 'lane-body lane-body-gates');
+  if (body.gates.length === 0) {
+    wrap.appendChild(el(doc, 'div', 'lane-body-gates-empty', 'no gates in this fold'));
+    return wrap;
+  }
   for (const gate of body.gates) {
     const signal = el(doc, 'div', `signal ${registerClass(gate.outcomeRegister)}`);
     signal.appendChild(el(doc, 'span', 'signal-name', gate.name));
@@ -195,7 +271,12 @@ function renderDispatches(doc, body) {
   const rows = el(doc, 'div', 'solari-rows');
   for (const d of body.dispatches) {
     const row = el(doc, 'div', `solari-row ${registerClass(d.stateRegister)}${d.assigned ? '' : ' unassigned'}`);
-    row.appendChild(el(doc, 'span', 'solari-subject', d.subject));
+    const subject = el(doc, 'span', 'solari-subject', d.subject);
+    // #62: board.css truncates a long subject id with an ellipsis (the
+    // fixed-height dispatches grid) - the native title tooltip keeps the
+    // full id reachable, never silently lost.
+    subject.setAttribute('title', d.subject);
+    row.appendChild(subject);
     row.appendChild(el(doc, 'span', 'solari-state', d.state)); // VERBATIM
     if (d.elapsedSeconds !== null) {
       row.appendChild(el(doc, 'span', 'solari-elapsed', `${d.elapsedSeconds}s`));

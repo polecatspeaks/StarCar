@@ -162,6 +162,127 @@ test('#30 SEVERITY PER CLASS: a FLAG-tier group renders needs-attention, a NOTE-
   assert.ok(noteGroup.className.includes('register-nominal'));
 });
 
+// --- #62: shared visual language (owner ruling: no single keeper) ---
+
+test('#62: renderBoard renders a brand element carrying the product name, once, in the header chrome', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  renderBoard(doc, root, buildBoardViewModel(makeSnapshot([])), { connected: true });
+
+  const brands = root.querySelectorAll('.brand');
+  assert.equal(brands.length, 1, 'expected exactly one .brand element');
+  assert.ok(brands[0].textContent.includes('STARCAR'), `expected the brand element to carry "STARCAR", got: ${brands[0].textContent}`);
+});
+
+test('#62: renderBoard renders a footer honesty-chrome strip carrying the real storePathDisplay wire field', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([], { storePathDisplay: '<repo>/artifacts' });
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const footers = root.querySelectorAll('.board-footer');
+  assert.equal(footers.length, 1, 'expected exactly one .board-footer element');
+  assert.ok(
+    footers[0].textContent.includes('<repo>/artifacts'),
+    `expected the footer to render storePathDisplay verbatim, got: ${footers[0].textContent}`
+  );
+});
+
+test('#62: the board-conditions strip lives inside the footer (moved from top chrome, never duplicated)', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([]);
+  snapshot.board = [{ code: 'discovery', detail: 'outcome: completed', register: 'nominal' }];
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const strips = root.querySelectorAll('.board-conditions-strip');
+  assert.equal(strips.length, 1, 'exactly one conditions strip, never duplicated');
+
+  const footers = root.querySelectorAll('.board-footer');
+  assert.equal(footers.length, 1);
+  assert.ok(
+    footers[0].children.includes(strips[0]),
+    'expected the board-conditions-strip to be a direct child of .board-footer'
+  );
+});
+
+test('#62: renderBoard renders each lane as a plate (title/purpose/freshness) beside its content, with a lane-purpose subtitle drawn from the view model', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([{ id: 'freight', title: 'Freight', position: 'dark', freshness: { kind: 'not-applicable' } }]);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const plates = root.querySelectorAll('.lane-plate');
+  assert.equal(plates.length, 1, 'expected one lane-plate per lane');
+  const contents = root.querySelectorAll('.lane-content');
+  assert.equal(contents.length, 1, 'expected one lane-content per lane');
+
+  const purposes = root.querySelectorAll('.lane-purpose');
+  assert.equal(purposes.length, 1);
+  assert.equal(purposes[0].textContent, 'the inbound ticket queue');
+});
+
+test('#62: renderBoard numbers lanes by their declared position in the registry (1-based ordinal)', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([
+    { id: 'trains', title: 'Trains', position: 'dark', freshness: { kind: 'not-applicable' } },
+    { id: 'gates', title: 'Gates', position: 'dark', freshness: { kind: 'not-applicable' } }
+  ]);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const ordinals = root.querySelectorAll('.lane-ordinal');
+  assert.equal(ordinals.length, 2);
+  assert.equal(ordinals[0].textContent, '1');
+  assert.equal(ordinals[1].textContent, '2');
+});
+
+test('#62: a solari-subject carries the full subject as a title attribute (CSS truncates it visually - never silently, the full text stays reachable on hover)', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([
+    {
+      id: 'dispatches',
+      title: 'Dispatches',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+      data: { dispatches: [{ subject: '2026-07-22-harness-design-round4-REJECT-ESCALATED', state: 'returned', at: '2026-07-23T18:00:00Z', assigned: true }] }
+    }
+  ]);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const subjects = root.querySelectorAll('.solari-subject');
+  assert.equal(subjects.length, 1);
+  assert.equal(subjects[0].attributes.title, '2026-07-22-harness-design-round4-REJECT-ESCALATED');
+});
+
+test('#62 N3: an empty-but-live gates lane (zero gates in this fold) states its absence honestly, rather than rendering a blank pane; a non-empty gates lane does not', () => {
+  const doc = createMiniDocument();
+
+  const emptyRoot = doc.createElement('main');
+  const emptySnapshot = makeSnapshot([
+    { id: 'gates', title: 'Gates', position: 'live', freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' }, data: { gates: [] } }
+  ]);
+  renderBoard(doc, emptyRoot, buildBoardViewModel(emptySnapshot), { connected: true });
+  const emptyNotices = emptyRoot.querySelectorAll('.lane-body-gates-empty');
+  assert.equal(emptyNotices.length, 1, 'expected a stated-absence element for a zero-gates fold');
+  assert.ok(emptyNotices[0].textContent.length > 0, 'the stated absence must carry non-empty text');
+
+  const fullRoot = doc.createElement('main');
+  const fullSnapshot = makeSnapshot([
+    {
+      id: 'gates',
+      title: 'Gates',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+      data: { gates: [{ name: 'design round 1', subject: 'abc', outcome: 'REJECT', at: '2026-07-23T18:00:00Z' }] }
+    }
+  ]);
+  renderBoard(doc, fullRoot, buildBoardViewModel(fullSnapshot), { connected: true });
+  const fullNotices = fullRoot.querySelectorAll('.lane-body-gates-empty');
+  assert.equal(fullNotices.length, 0, 'a gates lane WITH gates must not render the empty-absence notice');
+});
+
 test('renderBoard distinguishes bagged (fuel) and dark (freight) with different rendered text', () => {
   const doc = createMiniDocument();
   const root = doc.createElement('main');
