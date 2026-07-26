@@ -434,14 +434,17 @@ body {
    (the fix cycle's own menu, considered and rejected): LIFTING the clip
    entirely was measured to cost nothing at the store's size on review
    day (footerBottom 1068 of 1080) - but the store is real and
-   append-only (every dispatch session adds records; it grew from ~79 to
-   ~90 rows between this car's two review rounds, the same day), so
-   "costs nothing today" is not a stable property to build on and lifting
-   would silently re-open the ORIGINAL, measured, 4-lanes-off-screen
-   defect within days. RAISING the cap substantially would not close the
-   disclosed gap either - sort order is alphabetical, not severity-based,
-   so no fixed height short of "unbounded" guarantees a hot row stays
-   inside it; a taller number would only look more fixed while remaining
+   append-only (every dispatch session adds records - that is the
+   append-only design, not a measured growth rate), so "costs nothing
+   today" is a snapshot, not a guarantee, and lifting would eventually
+   re-open the ORIGINAL, measured, 4-lanes-off-screen defect as the store
+   grows. The decisive reason, though, is sharper than store size: RAISING
+   or REMOVING the cap would not close the disclosed severity-escape gap
+   either way - sort order is alphabetical, not severity-based
+   (board/fold/algorithm.go), so no fixed height, however tall, guarantees
+   a hot row stays inside it. Fitting today is a coincidence of this
+   store's current alphabetical ordering, not a property this rule can
+   rely on - a taller number would only look more fixed while remaining
    exactly as unproven. Kept at the originally-measured height, disclosed
    honestly, with the real fix tracked at #1. */
 .solari-rows {
