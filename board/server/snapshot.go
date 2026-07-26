@@ -59,6 +59,15 @@ type WireConfig struct {
 	StorePathDisplay string `json:"storePathDisplay"`
 	LaneCount        int    `json:"laneCount"`
 	DemoMode         bool   `json:"demoMode"`
+	// GitHubRepoURL/GitHubRef/GitHubArtifactsPrefix (#28) are the ONLY three
+	// primitives the view needs to build every provenance link itself -
+	// never a per-link URL computed server-side (that would duplicate the
+	// same string-building logic on every entry). All three are "" when
+	// GitHubRepo/RepoRoot are unconfigured (githublinks.go) - the view must
+	// render NO link, never a broken one, whenever GitHubRepoURL is empty.
+	GitHubRepoURL         string `json:"githubRepoUrl,omitempty"`
+	GitHubRef             string `json:"githubRef,omitempty"`
+	GitHubArtifactsPrefix string `json:"githubArtifactsPrefix,omitempty"`
 }
 
 // Snapshot is the top-level YardSnapshot - schema/yard-snapshot.schema.json

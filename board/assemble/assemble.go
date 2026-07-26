@@ -11,6 +11,7 @@ package assemble
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -61,6 +62,10 @@ func Assemble(in Input) Result {
 	memberClaims := map[string][]string{}
 	assignedSubjects := map[string]bool{}
 
+	// #28: single pass over the raw records, single-sourced from
+	// store.Record.Path (recordDirBySubject's own doc comment).
+	recordDirs := recordDirBySubject(in.Records)
+
 	for _, intent := range in.Fold.Intents {
 		if !strings.HasPrefix(intent.Subject, trainPrefix) {
 			continue // not a manifest (design S5.5); v0's four surfaces render no other intent kind
@@ -76,7 +81,7 @@ func Assemble(in Input) Result {
 			continue
 		}
 
-		title, members, ok := manifestPayload(raw)
+		title, tickets, members, ok := manifestPayload(raw)
 		if !ok {
 			result.Conditions = append(result.Conditions, store.BoardCondition{
 				Code:     "manifest-payload-unreadable",
@@ -86,7 +91,7 @@ func Assemble(in Input) Result {
 			continue
 		}
 
-		train := Train{ID: intent.Subject, Title: title, Cars: []TrainCar{}, DeclaredNotObserved: []string{}}
+		train := Train{ID: intent.Subject, Title: title, Tickets: tickets, Cars: []TrainCar{}, DeclaredNotObserved: []string{}}
 		for _, m := range members {
 			memberClaims[m.Subject] = append(memberClaims[m.Subject], intent.Subject)
 			assignedSubjects[m.Subject] = true
@@ -103,6 +108,7 @@ func Assemble(in Input) Result {
 				State:      d.State,
 				At:         d.At,
 				Superseded: d.Superseded,
+				RecordDir:  recordDirs[m.Subject],
 			}
 			if d.State == "returned" {
 				car.Outcome = d.Outcome
@@ -115,10 +121,12 @@ func Assemble(in Input) Result {
 					name = m.Role
 				}
 				result.Gates.Gates = append(result.Gates.Gates, Gate{
-					Name:    name,
-					Subject: m.Subject,
-					Outcome: d.Outcome,
-					At:      d.At,
+					Name:      name,
+					Subject:   m.Subject,
+					Outcome:   d.Outcome,
+					At:        d.At,
+					RecordDir: recordDirs[m.Subject],
+					Findings:  findingsForReturnedSubject(in.Records, m.Subject),
 				})
 			}
 		}
@@ -148,7 +156,7 @@ func Assemble(in Input) Result {
 	// at least one winning manifest's members (yard inventory = false,
 	// rendered loudly per YB-5).
 	for _, d := range in.Fold.Dispatches {
-		m, err := dispatchWireMap(d, assignedSubjects[d.Subject])
+		m, err := dispatchWireMap(d, assignedSubjects[d.Subject], recordDirs[d.Subject])
 		if err != nil {
 			result.Conditions = append(result.Conditions, store.BoardCondition{
 				Code:     "dispatch-render-failed",
@@ -174,8 +182,10 @@ func Assemble(in Input) Result {
 
 // dispatchWireMap reuses fold.DispatchEntry's OWN MarshalJSON (the single
 // owner of its conditional key set - Law 6) and augments the result with
-// "assigned", rather than re-implementing the conditional shape here.
-func dispatchWireMap(d fold.DispatchEntry, assigned bool) (map[string]any, error) {
+// "assigned" and (#28) "recordDir" - the key is omitted entirely (never an
+// empty string) when recordDir is "", matching every other optional wire
+// field's omitempty convention.
+func dispatchWireMap(d fold.DispatchEntry, assigned bool, recordDir string) (map[string]any, error) {
 	data, err := json.Marshal(d)
 	if err != nil {
 		return nil, err
@@ -185,6 +195,9 @@ func dispatchWireMap(d fold.DispatchEntry, assigned bool) (map[string]any, error
 		return nil, err
 	}
 	m["assigned"] = assigned
+	if recordDir != "" {
+		m["recordDir"] = recordDir
+	}
 	return m, nil
 }
 
@@ -216,12 +229,20 @@ type manifestMember struct {
 // manifestPayload reads the raw intent record's "manifest" key (design
 // DR3-1: "the manifest PAYLOAD - members, roles, title, ticket refs - is NOT
 // in fold output and never will be; it lives in the raw intent records").
-func manifestPayload(r store.Record) (title string, members []manifestMember, ok bool) {
+// tickets (#28) is manifest.tickets verbatim - schema/starcar-manifest.
+// schema.json already declares this key; this is its first reader.
+func manifestPayload(r store.Record) (title string, tickets []string, members []manifestMember, ok bool) {
 	raw, isMap := r.Fields["manifest"].(map[string]any)
 	if !isMap {
-		return "", nil, false
+		return "", nil, nil, false
 	}
 	title, _ = raw["title"].(string)
+	rawTickets, _ := raw["tickets"].([]any)
+	for _, rt := range rawTickets {
+		if s, isStr := rt.(string); isStr {
+			tickets = append(tickets, s)
+		}
+	}
 	rawMembers, _ := raw["members"].([]any)
 	for _, rm := range rawMembers {
 		mm, isMap := rm.(map[string]any)
@@ -236,5 +257,57 @@ func manifestPayload(r store.Record) (title string, members []manifestMember, ok
 		}
 		members = append(members, manifestMember{Subject: subject, Role: role, Gate: gate})
 	}
-	return title, members, true
+	return title, tickets, members, true
+}
+
+// recordDirBySubject (#28, design note 1: "the wire exposes each entry's
+// record path - the adapter already knows it (store.Record.Path); emitting
+// it is single-source, while view-side re-derivation would duplicate the
+// subject-sanitisation rule") builds subject -> STORE-ROOT-RELATIVE
+// directory, from records ALONE - never from Config, keeping this package's
+// existing boundary (assemble derives from store.Record + fold.Output only;
+// the repo-root-relative prefix that turns this into a full GitHub path is a
+// server-side concern, board/server/githublinks.go, added on top of this
+// value). First-write-wins per subject: every record for one subject lives
+// under the SAME directory by the store's own layout convention
+// (store.Adapter.Scan walks artifacts/<subject>/*.json), so a second record
+// for an already-seen subject can only ever agree.
+func recordDirBySubject(records []store.Record) map[string]string {
+	out := make(map[string]string, len(records))
+	for _, r := range records {
+		subject, _ := r.Fields["subject"].(string)
+		if subject == "" {
+			continue
+		}
+		if _, seen := out[subject]; seen {
+			continue
+		}
+		dir := filepath.ToSlash(filepath.Dir(r.Path))
+		if dir == "." || dir == "" {
+			continue // Path had no directory component - no link rather than a wrong one
+		}
+		out[subject] = dir
+	}
+	return out
+}
+
+// findingsForReturnedSubject (#12: car health bar) fetches the RAW
+// "findings" field off the specific record the fold already named as this
+// subject's returned winner (subject match + kind=="returned") - never a
+// second "pick the latest" selection (that authority stays fold.Output's
+// alone, the same Law 6 trap findRawIntentRecord above already avoids for
+// manifests). Returns "" if no returned record survives for subject (a
+// dispatched/presumed-lost winner has no findings to show).
+func findingsForReturnedSubject(records []store.Record, subject string) string {
+	for _, r := range records {
+		if s, _ := r.Fields["subject"].(string); s != subject {
+			continue
+		}
+		if k, _ := r.Fields["kind"].(string); k != "returned" {
+			continue
+		}
+		findings, _ := r.Fields["findings"].(string)
+		return findings
+	}
+	return ""
 }

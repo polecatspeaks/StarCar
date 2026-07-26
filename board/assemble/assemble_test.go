@@ -304,3 +304,138 @@ func TestAssembleNonTrainIntentIgnoredForTrains(t *testing.T) {
 		t.Fatalf("a non-train: intent must not produce a Train entry, got %d", len(result.Trains.Trains))
 	}
 }
+
+// --- #28: clickable provenance ---------------------------------------------
+
+// manifestIntentWithTickets is manifestIntent plus the manifest.tickets array
+// (schema/starcar-manifest.schema.json already declares this key; only
+// manifestPayload was never reading it - design DR3-1's own quote: "the
+// manifest PAYLOAD - members, roles, title, ticket refs - is NOT in fold
+// output and never will be; it lives in the raw intent records").
+func manifestIntentWithTickets(subject, at, title string, tickets []string, members []map[string]any) store.Record {
+	membersAny := make([]any, len(members))
+	for i, m := range members {
+		membersAny[i] = m
+	}
+	ticketsAny := make([]any, len(tickets))
+	for i, tk := range tickets {
+		ticketsAny[i] = tk
+	}
+	return rec(map[string]any{
+		"schema": "starcar-artifact/1", "kind": "intent", "subject": subject,
+		"session_id": "s1", "at": at, "normalisation": []any{}, "integrity": "sha256:0",
+		"manifest": map[string]any{"title": title, "tickets": ticketsAny, "members": membersAny},
+	})
+}
+
+// recAt is store.Record{Path, Fields} with an explicit, REALISTIC repo-store
+// path (subject/kind-timestamp.json), unlike the shared rec() helper (which
+// sets Path=subject as a simplification the other tests never depend on) -
+// needed here because recordDirBySubject derives a value FROM Path, so a
+// test proving that derivation needs Path shaped like the real store's.
+func recAt(path string, fields map[string]any) store.Record {
+	return store.Record{Path: path, Fields: fields}
+}
+
+// TestAssembleTrainCarriesTicketsFromManifest: issue #28's "#N tokens ...
+// link to issues" surface - the manifest's own declared tickets array
+// (already schema-declared, schema/starcar-manifest.schema.json) flows
+// through onto the wire train, structured, never re-parsed from title prose.
+func TestAssembleTrainCarriesTicketsFromManifest(t *testing.T) {
+	records := []store.Record{
+		manifestIntentWithTickets("train:view-28-12", "2026-07-26T09:00:00Z", "Provenance + health bar", []string{"#28", "#12"},
+			[]map[string]any{{"subject": "carA", "role": "car"}}),
+		dispatched("carA", "2026-07-26T09:05:00Z"),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+	if len(result.Trains.Trains) != 1 {
+		t.Fatalf("expected 1 train, got %d", len(result.Trains.Trains))
+	}
+	got := result.Trains.Trains[0].Tickets
+	if len(got) != 2 || got[0] != "#28" || got[1] != "#12" {
+		t.Fatalf("Tickets = %v, want [#28 #12]", got)
+	}
+}
+
+// TestAssembleTrainNoTicketsIsEmptyNeverGuessed: a manifest that declares no
+// tickets array carries an empty (never nil-vs-guessed) Tickets slice - Law
+// 1, honest-empty rather than inventing a ticket reference.
+func TestAssembleTrainNoTicketsIsEmptyNeverGuessed(t *testing.T) {
+	records := []store.Record{
+		manifestIntent("train:no-tickets", "2026-07-26T09:00:00Z", "No tickets declared",
+			[]map[string]any{{"subject": "carA", "role": "car"}}),
+		dispatched("carA", "2026-07-26T09:05:00Z"),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+	if len(result.Trains.Trains[0].Tickets) != 0 {
+		t.Fatalf("Tickets = %v, want empty", result.Trains.Trains[0].Tickets)
+	}
+}
+
+// TestAssembleRecordDirSingleSourcedFromStorePath proves car/gate/dispatch
+// entries all carry a recordDir derived from store.Record.Path (design
+// note 1 on issue #28: "the wire exposes each entry's record path - the
+// adapter already knows it; emitting it is single-source, while view-side
+// re-derivation would duplicate the subject-sanitisation rule (Law 6)") -
+// never re-derived from the subject string client-side.
+func TestAssembleRecordDirSingleSourcedFromStorePath(t *testing.T) {
+	records := []store.Record{
+		manifestIntent("train:board-v0", "2026-07-26T09:00:00Z", "T", []map[string]any{
+			{"subject": "carA", "role": "car"},
+			{"subject": "gate-1", "role": "gate", "gate": "design review round 1"},
+		}),
+		recAt("carA/dispatched-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "dispatched", "subject": "carA",
+			"session_id": "s1", "at": "2026-07-26T09:05:00Z", "normalisation": []any{}, "integrity": "sha256:0",
+		}),
+		recAt("gate-1/returned-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "returned", "subject": "gate-1",
+			"session_id": "s1", "at": "2026-07-26T09:10:00Z", "outcome": "REJECT",
+			"findings": "1 Major, 0 Minor", "abstract": "a",
+			"normalisation": []any{}, "integrity": "sha256:0",
+		}),
+		recAt("orphan-1/dispatched-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "dispatched", "subject": "orphan-1",
+			"session_id": "s1", "at": "2026-07-26T09:06:00Z", "normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+
+	train := result.Trains.Trains[0]
+	byCar := map[string]TrainCar{}
+	for _, c := range train.Cars {
+		byCar[c.Subject] = c
+	}
+	if byCar["carA"].RecordDir != "carA" {
+		t.Errorf("carA.RecordDir = %q, want carA", byCar["carA"].RecordDir)
+	}
+
+	if len(result.Gates.Gates) != 1 {
+		t.Fatalf("expected 1 gate, got %d", len(result.Gates.Gates))
+	}
+	gate := result.Gates.Gates[0]
+	if gate.RecordDir != "gate-1" {
+		t.Errorf("gate.RecordDir = %q, want gate-1", gate.RecordDir)
+	}
+	if gate.Findings != "1 Major, 0 Minor" {
+		t.Errorf("gate.Findings = %q, want the returned record's findings text verbatim", gate.Findings)
+	}
+
+	var orphanDir string
+	var orphanFound bool
+	for _, d := range result.Dispatches.Dispatches {
+		if d["subject"] == "orphan-1" {
+			orphanFound = true
+			orphanDir, _ = d["recordDir"].(string)
+		}
+	}
+	if !orphanFound {
+		t.Fatalf("expected orphan-1 in the dispatches lane")
+	}
+	if orphanDir != "orphan-1" {
+		t.Errorf("orphan-1 recordDir = %q, want orphan-1", orphanDir)
+	}
+}

@@ -370,12 +370,15 @@ func (s *Server) buildSnapshot(scanResult *store.ScanResult, scanErr error, poll
 	return Snapshot{
 		Seq: 0, // placeholder - PollOnce assigns the real value AFTER comparison
 		Config: WireConfig{
-			PollMs:           s.cfg.PollMs,
-			HeartbeatMs:      s.cfg.HeartbeatMs,
-			StalenessMs:      s.cfg.StalenessMs,
-			StorePathDisplay: s.storePathDisplayValue(),
-			LaneCount:        len(laneRegistry),
-			DemoMode:         s.cfg.DemoMode,
+			PollMs:                s.cfg.PollMs,
+			HeartbeatMs:           s.cfg.HeartbeatMs,
+			StalenessMs:           s.cfg.StalenessMs,
+			StorePathDisplay:      s.storePathDisplayValue(),
+			LaneCount:             len(laneRegistry),
+			DemoMode:              s.cfg.DemoMode,
+			GitHubRepoURL:         githubRepoURL(s.cfg.GitHubRepo),
+			GitHubRef:             s.cfg.GitHubRef,
+			GitHubArtifactsPrefix: githubArtifactsPrefix(s.cfg.RepoRoot, s.cfg.StorePath),
 		},
 		Vocabularies: vocab,
 		Board:        conditions,

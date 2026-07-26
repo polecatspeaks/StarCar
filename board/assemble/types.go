@@ -16,6 +16,15 @@ type TrainCar struct {
 	At         string                        `json:"at"`
 	Outcome    string                        `json:"outcome,omitempty"`
 	Superseded []fold.DispatchSupersededItem `json:"superseded,omitempty"`
+	// RecordDir (#28: clickable provenance) is this subject's record
+	// directory, RELATIVE TO THE STORE ROOT (e.g. "51-fix-car-r1") -
+	// single-sourced from store.Record.Path (recordDirBySubject,
+	// assemble.go), never re-derived from Subject client-side (Law 6: the
+	// view would otherwise duplicate the store's own subject-to-directory
+	// convention). Empty when no surviving record names this subject (never
+	// observed in practice, but Law 1 - no link is rendered rather than a
+	// guessed one).
+	RecordDir string `json:"recordDir,omitempty"`
 }
 
 // Train is one train: subject's consist. id is the WHOLE train: subject,
@@ -25,6 +34,15 @@ type Train struct {
 	Title               string     `json:"title"`
 	Cars                []TrainCar `json:"cars"`
 	DeclaredNotObserved []string   `json:"declaredNotObserved"`
+	// Tickets (#28: "#N tokens in rendered text link to issues") is the
+	// manifest's own declared ticket refs (manifest.tickets,
+	// schema/starcar-manifest.schema.json - already schema-declared; this
+	// is the first consumer that reads it). Never re-parsed from Title
+	// prose - the manifest already carries this as a structured field, so
+	// re-parsing it would be a second, fuzzier derivation of the same fact
+	// (Law 6). Empty, never nil-vs-omitted-confusion, when the manifest
+	// declares none.
+	Tickets []string `json:"tickets,omitempty"`
 }
 
 // TrainsPayload is the trains lane's wire data shape (spec YB-5).
@@ -39,6 +57,16 @@ type Gate struct {
 	Subject string `json:"subject"`
 	Outcome string `json:"outcome"`
 	At      string `json:"at"`
+	// RecordDir (#28): same convention as TrainCar.RecordDir above - this
+	// gate's returned record's directory, relative to the store root.
+	RecordDir string `json:"recordDir,omitempty"`
+	// Findings (#12: car health bar) is the returned record's own findings
+	// field, VERBATIM free text (never re-derived, same posture as Outcome
+	// above) - the view's findings.js module parses a conservative Major/
+	// Minor count out of it CLIENT-SIDE; this field carries the raw source
+	// text so that parsing has exactly one place to happen, not a second
+	// Go-side reimplementation of the same regex (Law 6).
+	Findings string `json:"findings,omitempty"`
 }
 
 // GatesPayload is the gates lane's wire data shape (spec YB-5).

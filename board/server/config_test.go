@@ -22,6 +22,17 @@ func TestDefaultConfig(t *testing.T) {
 	if cfg.DemoMode {
 		t.Errorf("DemoMode default must be false")
 	}
+	// #28: an unconfigured yard must degrade to NO github links, never a
+	// guessed or hardcoded repo identity (Law 7).
+	if cfg.GitHubRepo != "" {
+		t.Errorf("GitHubRepo default = %q, want empty (unconfigured yards render no links)", cfg.GitHubRepo)
+	}
+	if cfg.GitHubRef != "dev" {
+		t.Errorf("GitHubRef default = %q, want %q (issue #28's own example ref)", cfg.GitHubRef, "dev")
+	}
+	if cfg.RepoRoot != "" {
+		t.Errorf("RepoRoot default must be empty until main() resolves it")
+	}
 }
 
 // TestApplyEnvOverrides: design 5.6 - "STARCAR_* env overrides".
@@ -34,6 +45,8 @@ func TestApplyEnvOverrides(t *testing.T) {
 		"STARCAR_STALENESS_MS": "30000",
 		"STARCAR_STORE_PATH":   "/tmp/demo-store",
 		"STARCAR_DEMO_MODE":    "true",
+		"STARCAR_GITHUB_REPO":  "polecatspeaks/StarCar",
+		"STARCAR_GITHUB_REF":   "main",
 	}
 	cfg := applyEnvOverrides(DefaultConfig(), func(k string) (string, bool) {
 		v, ok := env[k]
@@ -47,6 +60,12 @@ func TestApplyEnvOverrides(t *testing.T) {
 	}
 	if !cfg.DemoMode {
 		t.Fatalf("DemoMode must be true when STARCAR_DEMO_MODE=true")
+	}
+	if cfg.GitHubRepo != "polecatspeaks/StarCar" {
+		t.Fatalf("GitHubRepo = %q, want polecatspeaks/StarCar", cfg.GitHubRepo)
+	}
+	if cfg.GitHubRef != "main" {
+		t.Fatalf("GitHubRef = %q, want main (env override of the 'dev' default)", cfg.GitHubRef)
 	}
 }
 
