@@ -168,3 +168,16 @@ overlap found.
   `Start-Process <url>` shell fallback instead. Cost: one round trip. Class: a browser-automation
   dependency is an unverified capability at session start; for "open a page" the one-line shell
   fallback always works - reach for it first when the task is that small.
+
+- 2026-07-26 (conductor, self-caught by post-mutation verification): PROJECTV2 OPTIONS UPDATE
+  IS A REPLACE, NOT A MERGE. Executing #8 (add Backlog / In Review columns), the
+  updateProjectV2Field mutation regenerated ALL option ids and orphaned every item's status
+  assignment on the owner's live board (18 Done + 33 Todo became 51 null) - GitHub does not
+  match options by name. Caught in the very next command because the baseline distribution
+  was snapshotted BEFORE mutating; recovery re-derived every status from issue state
+  (CLOSED = Done, OPEN = Todo), reproduced the baseline exactly (18/33), 51/51 restored,
+  verified. Cost: ~3 minutes and one incident on a live surface. Class: a config mutation on
+  a third-party API is a guard-unverified-until-fired case - snapshot the per-item state
+  (not just counts) before touching field definitions, and verify the read-back immediately
+  after. Second lesson, cheap only by luck: the count-only snapshot happened to be
+  reconstructible from issue state; a board with hand-curated statuses would not have been.
