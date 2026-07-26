@@ -210,3 +210,7 @@ dispatch batch between regenerations.
 | a19ef853c23ba9742 | returned | 2026-07-26T20:03:47Z | done-with-findings | a19ef853c23ba9742/returned-20260726T200347Z.json |
 | ae6398614a373c807 | dispatched | 2026-07-26T20:04:47Z |  | ae6398614a373c807/dispatched-20260726T200447Z.json |
 | ae6398614a373c807 | returned | 2026-07-26T20:21:10Z | REJECT | ae6398614a373c807/returned-20260726T202110Z.json |
+| a19ef853c23ba9742 | returned | 2026-07-26T20:33:11Z | done | a19ef853c23ba9742/returned-20260726T203311Z.json |
+| ae6398614a373c807 | returned | 2026-07-26T20:41:06Z | APPROVE | ae6398614a373c807/returned-20260726T204106Z.json |
+| a19ef853c23ba9742 | returned | 2026-07-26T20:43:18Z | done | a19ef853c23ba9742/returned-20260726T204318Z.json |
+| a19ef853c23ba9742 | returned | 2026-07-26T20:45:17Z | done | a19ef853c23ba9742/returned-20260726T204517Z.json |

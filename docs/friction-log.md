@@ -244,3 +244,14 @@ overlap found.
   framing - and the difference matters because "could not have seen it" forecloses the
   reading-check remedy that #57 now carries (two class siblings sat one grep away, one a
   vacuously-green probe on the very ubuntu leg this incident vindicated).
+
+- 2026-07-26 (owner-observed calibration reading, positive): THE BRIEF GATES HELD AGAINST
+  TRAINED HELPFULNESS. During the #62 pre-merge one-liner, the car noticed an ADJACENT
+  same-class defect one line away and - instead of fixing it unauthorized (the default
+  agent gradient: scope creep dressed as helpfulness) - disclosed it with the exact words
+  "a contradiction I don't own" and left it. The owner's read: "Normal subagents would
+  have been overly helpful there." Why it worked: the brief put disclosure on the SUCCESS
+  branch ("do not fix beyond the ruled list without it being named"), which is the
+  gradient-shaping doctrine operating as designed. Cost: zero - one authorized follow-up
+  line. Class: truth-as-success-shape converts the helpfulness gradient into disclosure;
+  keep writing bounded scopes with named escape hatches into every directed brief.
