@@ -75,6 +75,15 @@ checkpoint (a killed dispatch fires no stop hook, so the budget gradient is the 
 that surfaces it). An un-backfilled gap is a first-class state, not an omission: close it
 with a `presumed-lost` record or carry it forward explicitly, never silently.
 
+**Also run `scripts/Reconcile-DispatchRecords.ps1` (#32) in the same sweep.** It
+cross-references `.claude/probe-logs/subagent-stop.jsonl` (a SEPARATE process from the
+producer, so it survives a producer write/commit failure) against the store, and catches
+a class `Detect-Dispatches.ps1` structurally cannot: a dispatch whose record was NEVER
+WRITTEN at all (git status clean, no signal, root cause unproven - hypothesis: git index
+contention). A nonzero exit names each gap's `agent_id`, `logged_at`, and missing kind -
+treat it exactly like an `_faults.log` entry above: not an omission, a first-class state
+to close with a `presumed-lost` record or carry forward explicitly in the checkpoint.
+
 ## 6. The yard-status close
 
 Three sentences, written to memory AND said to the owner: what landed, what is parked,
