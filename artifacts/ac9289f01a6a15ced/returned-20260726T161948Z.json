@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "ac9289f01a6a15ced",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-26T16:19:48Z",
+  "outcome": "done",
+  "findings": "0",
+  "abstract": "Fix cycle round 2 for issue #30 addressed all findings from review round 1's REJECT (3 Major, 4 Minor - the code/pin/rendering had already been confirmed sound; the reject was documentation-only). MAJOR-1: design Rule 4 (docs/design/2026-07-21-v0-yard-skeleton-design.md sec 5.2) and docs/contracts/gating-matrix.md line 45, both quoting the pre-#30 always-needs-attention claim, amended append-style with the original text preserved - an inline superseded pointer at Rule 4 plus a same-commit amended note in the gating-matrix table stating the register changed per-class while the never-suppressed guarantee did not. MAJOR-2: the section 12b amendment's over-claim that position/role also went calm was corrected - scoped explicitly to the kind/outcome board-condition register only, with position/role stated as unchanged and view-side, citing board/fold/algorithm.go and board/web/js/vocab.js by line number, re-verified current. MAJOR-3: the mockup-brief's deleted \"hot\" was restored, the amendment rescoped to only the board-conditions-strip bullet (the part #30 actually changed), and the orphaned citation at board/web/js/vocab.js was rewritten to disclaim any #30 lever over that view-side function. MIN-1: completed and approve-for-merge added to scripts/tests/BoardDefs.Tests.ps1's pinned register table, red-first reproduced (flip uncaught before, caught by name after, both reverts byte-identical). MIN-2: condition_severity_test.go's AST scanner tightened to skip only .Code-named selector pass-throughs, red-first reproduced with a time.RFC3339 injection into board/server/poll.go (silently ok before, caught by name after, poll.go reverted byte-identical, confirmed via empty git diff). MIN-3: corrected per-commit Go test counts (base 66, 69, 70, 70) carried in the fix commit message per instruction, matching the reviewer's independent re-derivation exactly, history not rewritten. MIN-4: section 12b's ambiguous x1 counts disambiguated with explicit units (one board-condition instance per distinct value vs 4/5 records behind them), matching schema/vocab/outcomes.json's own comment. All changes landed in a single commit fdfa80f (documentation plus test-file-only changes, zero production code touched). Final suites unchanged from round 1's observed figures: board Go 70/70 across 5 packages, board/web node --test 68/68, scripts/tests 182/182, scripts/store-checks 172/172, scripts/probes 24/24. Working tree clean.",
+  "subject_basis": "runtime-id",
+  "task_id": "view-30-car-r2",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:1ee6dd419e9be159dad7e2d7ad14286ac2bdeeb77877f5483abdcabed87bcaca"
+}
