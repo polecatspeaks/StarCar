@@ -85,15 +85,22 @@ NO secondary line at all - it will never have one, and "not yet read" would be a
 - a lane count ("registry declares 5 lanes") - so a silently missing lane is detectable;
 - when running on demo data: a persistent DEMO banner.
 - **the discovery state**: when the board meets a state word it does not recognise, it
-  renders it BY NAME, verbatim ("unrecognised state: 'quarantined'") - this board
+  renders it hot, BY NAME, verbatim ("unrecognised state: 'quarantined'") - this board
   treats unknown vocabulary as a discovery to surface, never an error to hide.
-  **AMENDED (issue #30):** a "discovery" is NOTE-tier (an expected pattern) and
-  therefore renders CALM, not hot - the state word this bullet's own example uses
-  (an unrecognised dispatch STATE, not an outcome) is a different board-condition
-  path (fold-fault/discovery via `board/server/poll.go`) that still renders by name
-  always; only the REGISTER changed, from needs-attention to nominal for the
-  discovery class specifically. Severity per class is now ONE owned mapping,
-  `board/store/condition_severity.go`.
+  **STILL TRUE, unchanged by #30 (corrected 2026-07-26, fix-cycle round 2 - review
+  round 1's MAJOR-3: an earlier draft of this note wrongly deleted "hot" and claimed
+  this bullet's own example went calm):** this bullet's example - an unrecognised
+  DISPATCH STATE word - is not a fold discovery at all. It travels a VIEW-SIDE path,
+  `board/web/js/render.js` -> `board/web/js/vocab.js:31-37` `describeVocab`, which
+  resolves an unrecognised id to `needs-attention` (hot) always, and is entirely
+  untouched by #30. This is a DIFFERENT mechanism from the board-conditions-strip
+  bullet above (`kind`/`outcome` "discovery" BOARD CONDITIONS, minted server-side by
+  `board/fold/algorithm.go` and classified by `board/store/condition_severity.go`) -
+  #30's NOTE-tier/calm reclassification applies ONLY to that server-side
+  board-condition class, never to this bullet's view-side unrecognised-word
+  rendering. Pinned green: `board/web/test/render.test.js` "discovery rendering: an
+  unrecognised dispatch state word renders HOT, BY NAME, VERBATIM"
+  (`item.stateRegister === 'needs-attention'`).
 
 **Sample data to mock with** - two kinds, labeled honestly:
 - **REAL, from the live store:** car `acc761f0add2b0af2` (outcome `done`) and car

@@ -37,10 +37,32 @@ func typeIdentName(expr ast.Expr) string {
 // BoardCondition/WireBoardCondition composite literal (cl.Type may be nil -
 // callers resolve the effective type before calling this, see the
 // ArrayType branch below for the elided-element-type case). Fatal on a
-// non-literal Code UNLESS it is a simple field-selector pass-through
-// (`Code: c.Code`) - observed at board/server/poll.go's toWireCondition,
-// which copies an already-classified condition's code onto its wire
-// mirror and introduces no NEW code for this mapping to cover.
+// non-literal Code UNLESS it is a simple field-selector PASS-THROUGH shaped
+// EXACTLY `Code: <expr>.Code` - observed at board/server/poll.go's
+// toWireCondition, which copies an already-classified condition's OWN Code
+// field onto its wire mirror and introduces no NEW code for this mapping to
+// cover.
+//
+// TIGHTENED (review round 1 MIN-2, fix-cycle round 2): the prior version
+// skipped ANY `*ast.SelectorExpr` Code value, on the theory that a
+// pass-through is the only shape a real Code assignment could take that
+// isn't a literal - but a SelectorExpr is also what `time.RFC3339` (a
+// package-qualified CONSTANT, nothing to do with this mapping) parses as,
+// so a genuinely NEW code supplied that way would be silently skipped
+// instead of caught. The fix narrows the skip to selectors whose FIELD NAME
+// is literally "Code" (`x.Code` for any `x`) - the actual shape of the one
+// pass-through this scanner needs to tolerate - so `time.RFC3339`,
+// `pkg.SomeOtherField`, or any selector not named `Code` now falls through
+// to the literal check below and is treated as a genuinely new code
+// (fatal, since this scanner cannot introspect it further).
+//
+// Fault-injection evidence (recorded in this fix-cycle's commit message):
+// with the OLD (untightened) skip, adding `WireBoardCondition{Code:
+// time.RFC3339, ...}` in board/server/poll.go made
+// TestConditionSeverityMappingMatchesEmittedCodes print bare `ok` - silently
+// blind. With this tightening, the SAME injection is now CAUGHT (see the
+// commit message for the exact failure text). Reverted byte-identical
+// before commit.
 func extractCode(t *testing.T, path string, cl *ast.CompositeLit, codes map[string]bool) {
 	t.Helper()
 	for _, elt := range cl.Elts {
@@ -52,12 +74,12 @@ func extractCode(t *testing.T, path string, cl *ast.CompositeLit, codes map[stri
 		if !ok || key.Name != "Code" {
 			continue
 		}
-		if _, isSelector := kv.Value.(*ast.SelectorExpr); isSelector {
-			continue // pass-through, see doc comment above
+		if sel, isSelector := kv.Value.(*ast.SelectorExpr); isSelector && sel.Sel.Name == "Code" {
+			continue // pass-through (`x.Code`), see doc comment above
 		}
 		lit, ok := kv.Value.(*ast.BasicLit)
 		if !ok || lit.Kind != token.STRING {
-			t.Fatalf("%s: a BoardCondition/WireBoardCondition Code field is neither a string literal nor a field-selector pass-through (found %T) - extend this scanner (#30) before adding a computed code", path, kv.Value)
+			t.Fatalf("%s: a BoardCondition/WireBoardCondition Code field is neither a string literal nor a `.Code` field-selector pass-through (found %T) - extend this scanner (#30) before adding a computed code", path, kv.Value)
 			continue
 		}
 		val, uerr := strconv.Unquote(lit.Value)

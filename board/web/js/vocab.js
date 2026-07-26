@@ -6,9 +6,17 @@
 // (design rev 5 S5.4 item 2 / Law 6: vocabularies travel on every snapshot
 // so the view never fetches or hardcodes a separate copy that could drift).
 //
-// An id with no matching def is UNRECOGNISED - the discovery rule (design
-// rev 5 S5.2, mockup brief "the discovery state") renders it hot, BY NAME,
-// verbatim, never silently as calm.
+// An id with no matching def is UNRECOGNISED - the discovery rule (mockup
+// brief `docs/design/2026-07-23-ui-mockup-brief.md`, "the discovery state"
+// bullet) renders it hot, BY NAME, verbatim, never silently as calm. THIS
+// PATH IS UNCHANGED BY ISSUE #30 (2026-07-26): #30 reclassified the SERVER-
+// SIDE "discovery" BOARD-CONDITION class (kind/outcome, minted by
+// board/fold/algorithm.go, classified by board/store/condition_severity.go)
+// to NOTE-tier/calm - it has no lever over this function, which resolves
+// ANY unrecognised id (position, role, state, outcome-as-label) hot,
+// always. Do not read "discovery" here as the same thing #30 touched; the
+// mockup brief's own bullet carries the disambiguation (review round 1
+// MAJOR-3 caught an earlier design-doc draft conflating the two).
 
 /**
  * @param {Array<{id: string, label: string, register: string}>} defs
