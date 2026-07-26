@@ -1,5 +1,5 @@
 {
-  "$comment": "Recognition vocabulary for the 'outcome' field (only meaningful when kind = 'returned'). Same posture as kinds.json: data, not a schema enum. YB-3 (spec 2026-07-23-yard-board S2): done and CONFIRM added on OBSERVATION (5 and 3 live-store records respectively, enumerated 2026-07-23 - the detector fired discoveries on both before this change); done-with-findings added on CONTRACT enumeration (docs/templates/car-brief.md:47-48's outcome set), not observation - the one exception the epistemic rule (design S2) names explicitly. Nothing else is added: unobserved, uncontracted values wait for the detector to discover them.",
+  "$comment": "Recognition vocabulary for the 'outcome' field (only meaningful when kind = 'returned'). Same posture as kinds.json: data, not a schema enum. YB-3 (spec 2026-07-23-yard-board S2): done and CONFIRM added on OBSERVATION (5 and 3 live-store records respectively, enumerated 2026-07-23 - the detector fired discoveries on both before this change); done-with-findings added on CONTRACT enumeration (docs/templates/car-brief.md:47-48's outcome set), not observation - the one exception the epistemic rule (design S2) names explicitly. 'completed' and 'approve-for-merge' added #30 (2026-07-26, owner-ruled 'quiet by declaration'): a cross-family vocabulary gap - a different agent runtime (Copilot, provenance.runtime='copilot' on the returned records) produces these sibling words for 'done'/'APPROVE' respectively - enumerated on OBSERVATION against the real store (4 and 5 returned-*.json records respectively as of this car's base 4f0182d; see board/server/quiet_by_declaration_test.go and this car's report for the exact counts and derivation command). Nothing else is added: unobserved, uncontracted values wait for the detector to discover them.",
   "values": [
     "APPROVE",
     "APPROVE-WITH-REBASE-LIST",
@@ -8,6 +8,8 @@
     "honest-stop",
     "done",
     "CONFIRM",
-    "done-with-findings"
+    "done-with-findings",
+    "completed",
+    "approve-for-merge"
   ]
 }
