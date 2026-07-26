@@ -31,14 +31,19 @@ export function positionRegister(positionId, positionDefs) {
   return describeVocab(positionId, positionDefs).register;
 }
 
-// Freshness's register: the design's closed mapping (S5.2):
-// not-applicable -> nominal, never-polled -> in-progress, fresh -> nominal,
-// stale -> needs-attention, failed -> needs-attention.
+// Freshness's register: the design's closed mapping (S5.2, amended #29
+// 2026-07-26): not-applicable -> nominal, never-polled -> in-progress,
+// fresh -> nominal, stale -> needs-attention, idle -> nominal, failed ->
+// needs-attention. 'idle' is old data with NOTHING in flight - a yard at
+// rest, rendered exactly as calm as 'fresh' (no fourth register; the
+// three-register law is unaffected, this is a new KIND mapped to an
+// EXISTING register, not a new color).
 const FRESHNESS_REGISTER = {
   'not-applicable': 'nominal',
   'never-polled': 'in-progress',
   fresh: 'nominal',
   stale: 'needs-attention',
+  idle: 'nominal',
   failed: 'needs-attention'
 };
 
@@ -83,8 +88,9 @@ function freshnessLine(freshness) {
       return 'not yet polled';
     case 'fresh':
       // Rule 3: rendered age is ALWAYS server-issued (ageBucketMs), and the
-      // wire's "fresh" variant carries no ageBucketMs at all - only "stale"
-      // does (schema/yard-snapshot.schema.json $defs.freshness's oneOf).
+      // wire's "fresh" variant carries no ageBucketMs at all - "stale" and
+      // "idle" (#29, below in this same switch) are the two kinds that do
+      // (schema/yard-snapshot.schema.json $defs.freshness's oneOf).
       // Showing a computed elapsed time here (the mockup's illustrative
       // "fresh, 2s ago") would mean computing age from the client's own
       // clock off `asOf`, which Rule 3 forbids outright. Disclosed steering
@@ -93,6 +99,13 @@ function freshnessLine(freshness) {
     case 'stale': {
       const bucketSeconds = Math.round((freshness.ageBucketMs || 0) / 1000);
       return `stale, ${bucketSeconds}s`;
+    }
+    case 'idle': {
+      // #29: same server-issued ageBucketMs mechanism as 'stale' (Rule 3 -
+      // never a client-computed elapsed time), but a DISTINCT word so a
+      // reader never mistakes a calmly-idle yard for the "stale" alarm.
+      const bucketSeconds = Math.round((freshness.ageBucketMs || 0) / 1000);
+      return `idle, quiet ${bucketSeconds}s`;
     }
     case 'failed': {
       const reason = freshness.reason || {};

@@ -51,11 +51,14 @@ export function applyIncomingPayload(state, payload, validator) {
   // description: "the client applies a snapshot only if seq exceeds the
   // last applied"). A payload whose seq does not EXCEED the last applied
   // one is a stale/duplicate frame under normal SSE delivery and a
-  // deliberate no-op here - cheap (one integer comparison) and correct
-  // under the churn issue #27 describes (elapsed_seconds is unquantised,
-  // so seq can bump on nearly every poll while a dispatch is actively
-  // running; this comparison must never grow heavier than an int compare
-  // regardless of how often it runs).
+  // deliberate no-op here - cheap (one integer comparison), and this stays
+  // true regardless of how OFTEN it runs. Issue #27 (RESOLVED, server car,
+  // 2026-07-26) is why "how often" no longer means "nearly every poll while
+  // a dispatch is active": the server now buckets elapsed_seconds for its
+  // OWN change-detection comparison (board/server/poll.go's
+  // elapsedSecondsBucketGranularity), so seq only bumps on a real change.
+  // This comparison stays cheap either way - it never depended on how often
+  // seq moves.
   if (typeof payload.seq === 'number' && payload.seq <= state.lastAppliedSeq) {
     return state;
   }

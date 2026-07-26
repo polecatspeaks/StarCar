@@ -24,6 +24,51 @@ import (
 // updates periodically as the age climbs.
 const ageBucketMsGranularity = int64(5000)
 
+// elapsedSecondsBucketGranularity is issue #27's fix: an in-flight
+// ("dispatched") winner's elapsed_seconds recomputes every poll from now-at
+// (board/fold/algorithm.go:221-222) and, unlike ageBucketMs above, is a raw,
+// continuously-increasing counter with no quantisation of its own - every
+// poll differs while any dispatch is in flight, so seq bumped on nearly
+// every tick, defeating change detection's idle-costs-nothing purpose for
+// exactly the periods the board is busiest (design D9).
+//
+// DECISION (disclosed, per issue #27's own framing of the choice): the WIRE
+// value of elapsed_seconds stays EXACT, unbucketed, whenever a snapshot IS
+// actually served fresh - board/web/js/dom-writer.js:201 renders it verbatim
+// to the second (`${d.elapsedSeconds}s`), never a rounded bucket number. Only
+// the CHANGE-DETECTION COMPARISON basis (mustMarshalStripped below)
+// quantises elapsed_seconds into this bucket; the value it lets through
+// unchanged is never itself rounded.
+//
+// WHAT THIS DOES NOT MEAN (measured: elapsedbucket_test.go's
+// TestPollOnceElapsedSecondsBucketedForChangeDetection - dispatchElapsed(snap2)
+// must read 10, the prior snapshot's value, while actual elapsed is 50 -
+// cited by symbol/description, not line, since a line coordinate into a
+// file the SAME commit edits is exactly the trap this convention exists to
+// avoid, per that test file's own header comment on this point).
+// Between bucket crossings PollOnce serves the PRIOR snapshot unchanged (poll.go's
+// own PollOnce doc comment, "the prior snapshot stands unchanged"), so a
+// connected client's displayed elapsed_seconds can trail the true wall-clock
+// value by up to this bucket's width (observed: actual 50s, served 10s).
+// The VALUE is exact; its RECENCY is not. Nothing downstream derives from
+// it - dom-writer.js:200-202 only prints the number, render.js:188 only
+// passes it through with a type guard - and the alarm-bearing field, a
+// "dispatched" -> "overdue" transition, is EXACT and immediate regardless of
+// this bucket, because that transition changes the STATE STRING
+// (algorithm.go:240), a field this bucketing never touches. This is the "no
+// schema change, no consumer impact" option named in the ticket:
+// schema/yard-snapshot.schema.json's elapsed_seconds stays an unconstrained
+// integer and board/web needs no change.
+//
+// Granularity: order-of-minutes (60s), per the ticket's own framing. At the
+// default pollMs (1000ms), this cuts seq churn from "every poll" to "about
+// once a minute" while a dispatch sits in flight - the same shape ageBucketMs
+// already applies to stale age, coarser here because the CHANGE-DETECTION
+// signal this bucket drives does not need per-second resolution, and the
+// trade (a display number that can trail by up to a minute, never the
+// alarm-bearing state) is sound for a Solari board.
+const elapsedSecondsBucketGranularity = int64(60)
+
 // Server holds the compiled adapter and every mutable field this train's
 // living-contract obligation (plan task 4.4) ledgers: lastGoodSnapshot,
 // pollInFlight, seq, connectedClients (sse.go), lane-id set (laneRegistry).
@@ -40,23 +85,26 @@ type Server struct {
 	lastCompareBytes []byte
 	lastPollAt       *time.Time // plan task 4.4 ledger row: set after EVERY PollOnce call, success or scan failure - distinct from lastGoodSnapshot's asOf, which only advances on a successful scan
 	// #52 C51R-5 SINGLE-POLL INVARIANT: lastGoodAsOf and lastGoodLaneData
-	// (both below) are written by buildSnapshot BEFORE s.mu is taken (see
-	// PollOnce, poll.go:197-203 - buildSnapshot runs at line 200, s.mu.Lock
-	// only at line 203) and so are NOT protected by s.mu. Their safety
-	// rests entirely on PollOnce never running concurrently with itself -
-	// an invariant enforced NOT here but at the ONE production call site,
-	// RunPollLoop (poll.go:168-182), which only invokes PollOnce (in its
-	// own goroutine) after TryBeginPoll's atomic.CompareAndSwapInt32
-	// (poll.go:157-158) has claimed the in-flight slot; a tick that loses
-	// the CAS is skipped, never queued (TestSkipNotQueueGuard,
+	// (both below) are written by buildSnapshot BEFORE s.mu is taken - see
+	// PollOnce: it calls s.buildSnapshot(...) first and only reaches
+	// s.mu.Lock() afterward - and so are NOT protected by s.mu. Their
+	// safety rests entirely on PollOnce never running concurrently with
+	// itself - an invariant enforced NOT here but at the ONE production
+	// call site, RunPollLoop, which only invokes PollOnce (in its own
+	// goroutine) after TryBeginPoll's atomic.CompareAndSwapInt32 has
+	// claimed the in-flight slot; a tick that loses the CAS is skipped,
+	// never queued (TestSkipNotQueueGuard,
 	// TestSkipNotQueueGuardConcurrentClaimIsExclusive, poll_test.go). If a
 	// SECOND poller (a second RunPollLoop, an admin-triggered PollOnce,
 	// etc.) is ever added without going through this SAME guard, these two
 	// maps become a data race. Pin, don't assume: any new PollOnce call
 	// site must be gated by TryBeginPoll/EndPoll exactly as RunPollLoop is.
-	// (Line numbers cited here are as observed at this commit on branch
-	// car/52-hygiene, base d09dd2d; they will drift - re-verify before
-	// trusting them blindly in a future diff.)
+	// CITED BY SYMBOL, NOT LINE (R3-M1, 2026-07-26): this paragraph used to
+	// cite hardcoded line numbers "as observed at this commit on branch
+	// car/52-hygiene" with a disclaimer that they would drift - they did,
+	// three separate times across three later trains, and the disclaimer
+	// did not stop it. Function and field names survive an insertion
+	// anywhere else in this file; a line number does not.
 	lastGoodAsOf     map[string]*string // per live-lane-id, the most recent successful asOf (carried through a failed scan)
 	lastGoodLaneData map[string]any     // #51 C2: per live-lane-id, the most recent successful assembled payload (assemble.DispatchesPayload/GatesPayload/TrainsPayload) - what buildSnapshot assigns to lane.Data on a scan failure, so a failed lane keeps showing its last good content instead of degrading to "no renderer for this payload" (docs/design/2026-07-21-v0-yard-skeleton-design.md section 6 row 1; docs/contracts/state-ledger.md:108 - #52 C51R-4: corrected from :102, which is the `seq` row, not this field's row)
 
@@ -276,7 +324,7 @@ func (s *Server) buildSnapshot(scanResult *store.ScanResult, scanErr error, poll
 
 		nowStr := now.UTC().Format(time.RFC3339)
 		newLastGood = &nowStr
-		liveFreshnessVal = computeLiveFreshness(scanResult.Records, now, int64(s.cfg.StalenessMs), nowStr)
+		liveFreshnessVal = computeLiveFreshness(scanResult.Records, out.Dispatches, now, int64(s.cfg.StalenessMs), nowStr)
 	}
 
 	if newLastGood != nil {
@@ -344,11 +392,30 @@ func (s *Server) storePathDisplayValue() string {
 // computeLiveFreshness implements design S5.2's freshness rule for the live
 // lanes (dispatches/gates/trains all share one scan, hence one freshness):
 // an honest-empty store (zero records) is always fresh - there is no data
-// to be stale about (DR3-5a). Otherwise, staleness is DATA age (now minus
-// the newest observed record's "at"), never scan-cadence health - proven
-// deliberately by spec YB-15 (staleness still fires on unchanging demo
-// data even though the scan itself keeps succeeding on schedule).
-func computeLiveFreshness(records []store.Record, now time.Time, stalenessMs int64, nowStr string) Freshness {
+// to be stale about (DR3-5a). Otherwise, DATA age (now minus the newest
+// observed record's "at") past stalenessMs still never means the SCAN is
+// unhealthy (spec YB-15: staleness still fires on unchanging demo data even
+// though the scan itself keeps succeeding on schedule) - but issue #29's
+// fix means old data alone is no longer sufficient for the alarming "stale"
+// kind. Old data splits two ways, per the fold's own dispatch entries
+// (dispatches, out.Dispatches from buildSnapshot's Fold call):
+//
+//   - Something is IN FLIGHT (a "dispatched"/"overdue" winner, not yet
+//     returned) and the data has stopped moving: "stale" - the genuine
+//     alarm, something SHOULD be updating and is not.
+//   - Nothing is in flight (every dispatch has returned, or is
+//     presumed-lost, or the store holds no dispatch subjects at all): the
+//     yard is simply AT REST. "idle" - calm, nominal register
+//     (board/web/js/compose.js), its age still honestly disclosed via the
+//     SAME ageBucketMs mechanism "stale" carries; never rendered as broken
+//     just because nothing has happened in a while (Law 1 - "a yard at rest
+//     is not stale", issue #29's own framing).
+//
+// Before this fix, EVERY old-data case rendered "stale" regardless of
+// activity - a confident falsehood discovered live the first time a real
+// (non-hand-edited) store sat quiet overnight (docs/screenshots/2026-07-23-
+// first-light.png).
+func computeLiveFreshness(records []store.Record, dispatches []fold.DispatchEntry, now time.Time, stalenessMs int64, nowStr string) Freshness {
 	if len(records) == 0 {
 		return Freshness{Kind: "fresh", AsOf: &nowStr}
 	}
@@ -373,7 +440,25 @@ func computeLiveFreshness(records []store.Record, now time.Time, stalenessMs int
 		return Freshness{Kind: "fresh", AsOf: &nowStr}
 	}
 	bucket := (age.Milliseconds() / ageBucketMsGranularity) * ageBucketMsGranularity
-	return Freshness{Kind: "stale", AsOf: &nowStr, AgeBucketMs: &bucket}
+	if hasInFlightDispatch(dispatches) {
+		return Freshness{Kind: "stale", AsOf: &nowStr, AgeBucketMs: &bucket}
+	}
+	return Freshness{Kind: "idle", AsOf: &nowStr, AgeBucketMs: &bucket}
+}
+
+// hasInFlightDispatch (#29) reports whether any dispatch subject's fold
+// winner is still IN FLIGHT - state "dispatched" or "overdue" (algorithm.go
+// promotes "dispatched" to "overdue" past budget; both mean "not yet
+// returned"). A "returned" or "presumed-lost" winner is NOT in flight: the
+// former succeeded, the latter has already been given up on - neither is
+// something the yard is still waiting to hear from.
+func hasInFlightDispatch(dispatches []fold.DispatchEntry) bool {
+	for _, d := range dispatches {
+		if d.State == "dispatched" || d.State == "overdue" {
+			return true
+		}
+	}
+	return false
 }
 
 func toWireCondition(c store.BoardCondition) WireBoardCondition {
@@ -396,20 +481,14 @@ func foldRecordsFrom(records []store.Record) []fold.Record {
 // time. Panics only on a json.Marshal failure of a fully static Go value,
 // which cannot happen for this struct family - never reached in practice.
 //
-// DISCLOSED, OUT OF SCOPE (found writing the C4R-3 fix-cycle test, Car 4
-// review round 1): this function does NOT strip a "dispatched"-winner
-// entry's elapsed_seconds (board/fold.DispatchEntry, recomputed every poll
-// from now-at), which is a raw, continuously-increasing counter exactly
-// like the fields this function DOES strip - unlike ageBucketMs, it is not
-// quantised. A live train with an actively dispatched (not yet returned)
-// car will therefore see seq bump on every poll that ticks past a whole
-// second, not just on a real state change. Not fixed here: the review that
-// ordered this comment scoped the ask to ageBucketMs's inclusion direction
-// only, and this is a genuinely separate design question (should
-// elapsed_seconds be quantised the same way ageBucketMs is, and if so at
-// what granularity) that deserves its own decision, not a silent
-// side-fix riding on an unrelated commit. Triaged as issue #27
-// (deferred; triggers stated there).
+// #27 fix: the dispatches lane's payload (assemble.DispatchesPayload, each
+// entry a map[string]any built by fold.DispatchEntry.MarshalJSON) also has
+// its "elapsed_seconds" entry quantised into elapsedSecondsBucketGranularity
+// buckets for THIS COMPARISON COPY ONLY - snap itself (the value actually
+// served on the wire) is never touched, only stripped's deep-copied maps
+// are. A "dispatched" -> "overdue" transition still bumps seq regardless of
+// this bucket, because that changes the "state" string, which this function
+// does not touch.
 func mustMarshalStripped(snap Snapshot) []byte {
 	stripped := snap
 	stripped.Seq = 0
@@ -420,6 +499,9 @@ func mustMarshalStripped(snap Snapshot) []byte {
 		f.AsOf = nil
 		f.LastGoodAsOf = nil
 		l.Freshness = f
+		if dp, ok := l.Data.(assemble.DispatchesPayload); ok {
+			l.Data = bucketDispatchesForComparison(dp)
+		}
 		stripped.Lanes[i] = l
 	}
 	// Board conditions carry no timestamps of their own; sort for a stable
@@ -438,4 +520,31 @@ func mustMarshalStripped(snap Snapshot) []byte {
 		panic("board/server: marshalling a stripped Snapshot for change detection failed: " + err.Error())
 	}
 	return data
+}
+
+// bucketDispatchesForComparison (#27) returns a DEEP COPY of dp with every
+// entry's "elapsed_seconds" quantised to elapsedSecondsBucketGranularity.
+// A deep copy is required, not a mutation in place: dp.Dispatches' maps are
+// the SAME map instances buildSnapshot assigned to the real Snapshot that
+// gets served on the wire (assemble.Assemble builds them once per poll;
+// Lane.Data holds that same value) - mutating them here would corrupt the
+// precise elapsed_seconds a connecting client is entitled to see.
+// elapsed_seconds arrives as float64 (dispatchWireMap marshals then
+// unmarshals fold.DispatchEntry through encoding/json's `any` target,
+// board/assemble/assemble.go's dispatchWireMap) - a "returned" or
+// "presumed-lost" entry carries no such key (fold.DispatchEntry.MarshalJSON,
+// output.go:9-35) and is copied through untouched.
+func bucketDispatchesForComparison(dp assemble.DispatchesPayload) assemble.DispatchesPayload {
+	out := assemble.DispatchesPayload{Dispatches: make([]map[string]any, len(dp.Dispatches))}
+	for i, m := range dp.Dispatches {
+		cp := make(map[string]any, len(m))
+		for k, v := range m {
+			cp[k] = v
+		}
+		if raw, ok := cp["elapsed_seconds"].(float64); ok {
+			cp["elapsed_seconds"] = (int64(raw) / elapsedSecondsBucketGranularity) * elapsedSecondsBucketGranularity
+		}
+		out.Dispatches[i] = cp
+	}
+	return out
 }

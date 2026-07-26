@@ -105,9 +105,13 @@ func TestPollOnceEmptyStoreIsFresh(t *testing.T) {
 }
 
 // TestPollOnceStaleAfterThreshold: freshness "stale" fires once the newest
-// observed record's "at" is older than stalenessMs - regardless of scan
-// success (spec YB-15's staleness-still-fires case, pinned generically
-// here; the demoMode-specific version lives in demomode_test.go).
+// observed record's "at" is older than stalenessMs AND something is
+// IN FLIGHT (this fixture's sole record is "dispatched", never returned) -
+// regardless of scan success (spec YB-15's staleness-still-fires case,
+// pinned generically here; the demoMode-specific version lives in
+// demomode_test.go). The #29 "idle" discriminator (freshnessidle_test.go)
+// pins the OTHER half: the same age, with NOTHING in flight, renders idle
+// instead.
 func TestPollOnceStaleAfterThreshold(t *testing.T) {
 	root := t.TempDir()
 	writeRecord(t, root, "s1/dispatched-1.json", validDispatchedJSON("s1", "2026-07-23T11:59:00Z"))
@@ -256,10 +260,10 @@ func TestPollOnceChangeDetectionExcludesSeqAsOfIncludesFreshnessKind(t *testing.
 // round 1, Minor): mustMarshalStripped keeps freshness.kind/ageBucketMs and
 // strips only raw timestamps, so INCLUSION of ageBucketMs in change
 // detection is correct by construction - but nothing pinned the direction
-// that matters: a stale lane whose age crosses a 5000ms bucket boundary
-// between two polls (poll.go's ageBucketMsGranularity) must be seen as a
-// real change and bump seq, even though nothing else about the store
-// changed at all.
+// that matters: a lane whose age crosses a 5000ms bucket boundary between
+// two polls (poll.go's ageBucketMsGranularity) must be seen as a real
+// change and bump seq, even though nothing else about the store changed at
+// all.
 //
 // The fixture is deliberately a RETURNED record, not a dispatched one: a
 // "dispatched" winner's elapsed_seconds recomputes every poll (fold.go),
@@ -273,6 +277,14 @@ func TestPollOnceChangeDetectionExcludesSeqAsOfIncludesFreshnessKind(t *testing.
 // pin, not a redesign of elapsed_seconds churn) - a "returned" record has no
 // elapsed_seconds field at all (fold.go's DispatchEntry.MarshalJSON), so
 // this fixture isolates EXACTLY the ageBucketMs variable the review named.
+//
+// #29 UPDATE (2026-07-26): this fixture's sole record is RETURNED - nothing
+// is in flight - so under the #29 fix an aged-out freshness now reads
+// "idle", not "stale" (a returned-only yard at rest is calm, never hot).
+// The kind name changed; the ageBucketMs-crossing MECHANISM this test pins
+// did not - "idle" carries ageBucketMs exactly like "stale" does
+// (computeLiveFreshness, poll.go), so the bucket-crossing assertions below
+// are unchanged in shape, only in the expected kind string.
 func TestChangeDetectionFiresOnAgeBucketBoundaryCrossing(t *testing.T) {
 	root := t.TempDir()
 	writeRecord(t, root, "s1/returned-1.json", `{
@@ -291,18 +303,19 @@ func TestChangeDetectionFiresOnAgeBucketBoundaryCrossing(t *testing.T) {
 
 	recordAt := time.Date(2026, 7, 23, 10, 0, 0, 0, time.UTC)
 
-	// age = 16s -> stale (stalenessMs default 15000), ageBucketMs = 15000.
+	// age = 16s -> idle (stalenessMs default 15000; nothing in flight - the
+	// sole record is RETURNED), ageBucketMs = 15000.
 	now1 := recordAt.Add(16 * time.Second)
 	snap1, changed1, err := srv.PollOnce(now1)
 	if err != nil || !changed1 {
 		t.Fatalf("first poll: snap=%+v changed=%v err=%v", snap1, changed1, err)
 	}
 	lane1 := laneByID(snap1, "dispatches")
-	if lane1.Freshness.Kind != "stale" || lane1.Freshness.AgeBucketMs == nil || *lane1.Freshness.AgeBucketMs != 15000 {
-		t.Fatalf("test setup: expected stale/ageBucketMs=15000, got %+v", lane1.Freshness)
+	if lane1.Freshness.Kind != "idle" || lane1.Freshness.AgeBucketMs == nil || *lane1.Freshness.AgeBucketMs != 15000 {
+		t.Fatalf("test setup: expected idle/ageBucketMs=15000, got %+v", lane1.Freshness)
 	}
 
-	// age = 21s -> STILL stale, but ageBucketMs = 20000 - a bucket crossing
+	// age = 21s -> STILL idle, but ageBucketMs = 20000 - a bucket crossing
 	// with NOTHING ELSE in the store having changed (a "returned" record's
 	// wire shape carries no elapsed_seconds, so it is byte-identical here
 	// apart from the bucket). This must still bump seq: ageBucketMs is

@@ -166,7 +166,10 @@ pins these shapes executably at the spec rung, which then becomes the single own
   (D11), each with a `register` and a `surfacesData` flag.
 - **Freshness** - closed by mechanism, provably complete: `not-applicable` (no adapter) |
   `never-polled` | `fresh` | `stale` (with server-issued `ageBucketMs`) | `failed` (with
-  coded reason and `lastGood`/`lastGoodAsOf` carried).
+  coded reason and `lastGood`/`lastGoodAsOf` carried). **`[AMENDED, issue #29,
+  2026-07-26 - see §12b]`**: old data alone no longer means `stale` - a sixth kind,
+  `idle`, now covers old data with NOTHING in flight (a yard at rest, calm). This line's
+  five-kind enumeration is superseded; §12b's #29 amendment is the corrected text.
 - **Composition rules** (rev 2's REJECT root cause, closed in rev 3, restated in full):
   - **Rule 1:** rendered register = MOST SEVERE of the three axes' registers - position's
     (from its def; `needs-attention` if unrecognised), freshness's (per this mapping:
@@ -174,7 +177,9 @@ pins these shapes executably at the spec rung, which then becomes the single own
     `stale`→`needs-attention`, `failed`→`needs-attention`), and capability's (`nominal`,
     or `needs-attention` when no renderer exists for the payload). The load-bearing case:
     a `live` lane whose data source dies resolves `needs-attention` - the board goes hot
-    when the data dies.
+    when the data dies. **`[AMENDED, issue #29, 2026-07-26 - see §12b]`**: this mapping
+    is missing the new `idle`→`nominal` row; §12b's #29 amendment carries the corrected
+    six-row mapping.
   - **Rule 2:** position speaks first (primary line), freshness second; `not-applicable`
     renders NO freshness line (a lane that will never be read must never say "not yet
     read"); `surfacesData: false` renders no payload and says so; missing capability says
@@ -517,12 +522,15 @@ now ONE owned mapping (`board/store/condition_severity.go`), pinned by
 production Go source file under `board/` actually constructs - the #37
 register-taxonomy precedent applied to a second axis.
 
-**`docs/contracts/gating-matrix.md:45`** quotes the pre-#30 Rule 4 verbatim as
-the rationale for why the detector surface is never suppressed; that document
-is amended in the same commit as this one (2026-07-26, fix-cycle round 2) -
-see its own inline amendment. The rationale it protects - the surface is never
-SUPPRESSED - still holds exactly as written; only the register a `kind`/
-`outcome` discovery renders at changed, from always-hot to per-class.
+**`docs/contracts/gating-matrix.md`'s Detector/discovery rendering row**
+(cited by row name, not line - R3-M1, 2026-07-26: this row has already moved
+once, from a later row's insertion, and a hardcoded number does not survive
+that) quotes the pre-#30 Rule 4 verbatim as the rationale for why the
+detector surface is never suppressed; that document is amended in the same
+commit as this one (2026-07-26, fix-cycle round 2) - see its own inline
+amendment. The rationale it protects - the surface is never SUPPRESSED -
+still holds exactly as written; only the register a `kind`/`outcome`
+discovery renders at changed, from always-hot to per-class.
 
 First application (#30 item 4, "quiet by declaration"): the cross-family
 outcome words `completed` and `approve-for-merge` are declared in
@@ -538,6 +546,77 @@ records share the value) - but the underlying RETURNED RECORDS carrying those
 outcome values numbered **4** (`completed`) and **5** (`approve-for-merge`)
 respectively, matching `schema/vocab/outcomes.json`'s own `$comment` exactly.
 One board condition per distinct value; four and five records behind it.
+
+**Amendment (2026-07-26, issue #29 - freshness gains a sixth kind, `idle`; amends
+§5.2's freshness enumeration and its Rule 1 register mapping, both quoted above):**
+
+**The finding, first-light (2026-07-23):** `stalenessMs` fires on DATA age alone
+(§5.2's own text: "staleness is DATA age, never scan-cadence health"), so a yard whose
+every dispatch has already returned - nothing in flight, nothing expected to change -
+rendered `stale`/`needs-attention` identically to a yard where something IS in flight
+and the pipeline has genuinely stalled. Confident falsehood (Law 1): "a yard at rest is
+not stale," the finding's own words (issue #29).
+
+**The fix:** `board/server/poll.go`'s `computeLiveFreshness` now takes the fold's own
+dispatch entries (`out.Dispatches`, threaded from `buildSnapshot`) and asks whether
+anything is IN FLIGHT (state `dispatched` or `overdue` - not yet returned, not
+presumed-lost: `hasInFlightDispatch`). Old data (age > `stalenessMs`) now splits:
+
+- **In flight AND stalled** -> `stale` (unchanged register, `needs-attention`) - the
+  genuine alarm; something should be moving and is not.
+- **Nothing in flight** -> `idle` (NEW kind, register `nominal`) - the yard is at rest;
+  its age is still honestly disclosed via the SAME `ageBucketMs` mechanism `stale`
+  already carries (schema's `idle` oneOf branch mirrors `stale`'s shape exactly: `kind`,
+  `asOf`, `ageBucketMs`, all required).
+
+**Freshness is still closed by mechanism, now six-valued**: `not-applicable` |
+`never-polled` | `fresh` | `stale` | `idle` | `failed`. §5.2's register mapping gains one
+row: `idle` -> `nominal`. No fourth register is introduced (the three-register law is
+unaffected - `idle` maps to an EXISTING register, exactly as `not-applicable` and
+`fresh` already do).
+
+**Wire impact (same commit, the #30 precedent):** `schema/yard-snapshot.schema.json`'s
+`$defs.freshness` oneOf gains the `idle` branch; `board/server/poll.go`'s `Freshness`
+struct is unchanged (no new fields - `idle` reuses `AsOf`/`AgeBucketMs`, exactly like
+`stale`); `board/web/js/compose.js`'s `FRESHNESS_REGISTER` map and `freshnessLine`
+switch both gain an `idle` case. `docs/contracts/gating-matrix.md`'s Staleness row is
+amended in the same commit (its own inline note).
+
+**Disclosed process note, for the conductor/owner to weigh:** `docs/retros/2026-07-23-
+board-train-retro.md:120-121` flagged, at the prior train's close, that "the
+staleness/idle semantics (#29) touch the freshness union, which is CLOSED by
+mechanism - growing it is a design-rung decision, not a patch." This car's brief
+explicitly authorized the wire-schema change and named the #30 precedent (a car +
+this-document amendment closed a comparable closed-taxonomy change, rather than a
+fresh design→spec→plan cycle) as the shape to follow - which is what this amendment
+does. The retro's concern is reproduced here VERBATIM rather than silently overridden:
+whether a bounded, one-value extension of an already-open-ended-by-mechanism enum
+(following #30's landed pattern exactly) satisfies that concern, or whether it still
+warrants a standalone design-rung pass, is the human/conductor's call, not this car's.
+
+**Real-store consequence, discovered while fixing this (disclosed):** a repo-wide scan
+of this repo's OWN committed `artifacts/` store (87 dispatch-kind subjects) found ZERO
+still in flight - every merged dispatch has returned. Under this fix, that makes the
+real store's live lanes render `idle`, not `stale`, PERMANENTLY (not a transient
+snapshot-in-time fact, since committed records only get older, never un-return).
+`board/web/test/browser-register-cascade.test.js` (issue #31's browser regression
+guard) depended on the ambient store reading `stale` forever; it now builds its own
+scratch copy of the real store plus one seeded in-flight fixture
+(`buildScratchStoreWithInFlightDispatch`, `real-board-server.js`) rather than relying on
+this repo's dispatch history staying empty - same car, same commit.
+
+**The undone half, disclosed (round-1 review m1, 2026-07-26):** issue #29's own text
+asked for two things; this amendment does the first (the taxonomy split) and leaves the
+second - "Also retune stalenessMs against measured reality" - untouched. Consequence,
+measured: `StalenessMs` ships at `15000` (`board/server/config.go:42`) against a shop
+default budget of `1800` seconds (`config/harness-defaults.json`), so `stale` now fires
+**15 seconds into every healthy 30-minute dispatch** and stays lit until it returns -
+identical to base behaviour, NOT a regression this fix introduced, but this amendment's
+own words ("the genuine alarm; something should be moving and is not") overstate what
+`stale` actually means while that default stands: for the overwhelming majority of a
+normal dispatch's lifetime, `stale` reads "a car is running," not "the pipeline broke."
+The retune is explicitly OUT OF SCOPE for this car (a tuning decision against measured
+production cadence, not a taxonomy fix); the conductor tracks it as its own ticket.
 
 ## §13 - Revision history
 
