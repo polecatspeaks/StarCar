@@ -11,3 +11,7 @@ is, the tiered reading path, and the compliance floor for every agent family.
 your brief's minted id as `task-id`; cars commit locally and never push; honest-stop on a
 brief/code contradiction; TDD red-first; verify with exact counts and SHAs. Full detail in
 `ONBOARDING.md`.
+
+**Read `.claude/session-start-report.txt` at session start (#50):** SessionStart hook stdout is
+not injected into your context on this runtime, so the four SessionStart guards' combined
+output lands there instead - a gitignored file, freshly truncated per session.

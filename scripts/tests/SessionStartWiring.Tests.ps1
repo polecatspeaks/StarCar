@@ -1,7 +1,7 @@
-# SessionStartWiring.Tests.ps1 -- #50: every SessionStart hook line in
-# .claude/settings.json stays in the intersection dialect (`sh .claude/hooks/NAME.sh`),
-# and the entire-CLI wrapper script preserves its exact behavior once moved out of the
-# inline `sh -c` form.
+# SessionStartWiring.Tests.ps1 -- #50: the fifth SessionStart hook line stays in the
+# bare intersection dialect (`sh .claude/hooks/NAME.sh`, no inline `-c`, no quoting
+# layers), and the entire-CLI wrapper script preserves its exact behavior once moved
+# out of the inline `sh -c` form.
 #
 # WHY: docs/friction-log.md (2026-07-24 entries) - under Copilot CLI's Claude-compat
 # layer, the fifth SessionStart line (an inline `sh -c '...'` wrapper with an
@@ -18,11 +18,23 @@
 # guards... one manifest" - carried verbatim from the retired dual-runtime design's D1),
 # extended to the fifth line so it is no longer the one structural outlier.
 #
+# AMENDED (#50 task 2, same car): the FIRST assertion below originally required ALL
+# FIVE SessionStart lines to match the bare `sh .claude/hooks/NAME.sh` form. Task 2
+# legitimately routes the four GUARD lines through a two-stage pipe
+# (`sh GUARD.sh | sh session-start-record.sh [--reset]`) so their combined stdout also
+# reaches a Copilot session (scripts/tests/SessionStartReport.Tests.ps1 owns that
+# mechanism's own tests). The bare-form assertion is narrowed here to the ONE line it
+# is still permanently true of - the fifth (entire-CLI wrapper) line, out of scope for
+# task 2's delivery mechanism by the brief's own scope guard. The broader "no fancy
+# quoting anywhere in SessionStart" invariant (the actual failure signature: nested
+# `sh -c` / single quotes) now lives in SessionStartReport.Tests.ps1, which also
+# asserts the four guard lines' pipe wiring - not duplicated here.
+#
 # This test reads the REAL .claude/settings.json (never a hand-copied duplicate, which
 # would drift silently the moment someone edits the file) - same discipline as
 # CiWrapperSimulation.Tests.ps1's ci.yml extraction.
 
-Describe 'SessionStart wiring stays in the intersection dialect (#50)' {
+Describe 'SessionStart wiring: the fifth line stays bare intersection dialect (#50)' {
     BeforeAll {
         $script:RepoRoot = (git rev-parse --show-toplevel)
         $script:SettingsPath = Join-Path $script:RepoRoot '.claude/settings.json'
@@ -36,16 +48,10 @@ Describe 'SessionStart wiring stays in the intersection dialect (#50)' {
         $script:SessionStartHooks.Count | Should -BeGreaterThan 0
     }
 
-    It 'every SessionStart hook command is simple-form: sh .claude/hooks/NAME.sh' {
-        $violators = @()
-        foreach ($hook in $script:SessionStartHooks) {
-            if ($hook.command -notmatch $script:SimpleFormPattern) {
-                $violators += $hook.command
-            }
-        }
-        # Listing every violator (not just the first) mirrors DocPolicy.Tests.ps1's
-        # discipline: a fix pass wants the whole set, not one at a time.
-        $violators -join "`n---`n" | Should -BeNullOrEmpty
+    It 'the fifth SessionStart hook command (entire-CLI wrapper) is bare simple-form: sh .claude/hooks/NAME.sh' {
+        $fifth = $script:SessionStartHooks[4].command
+        $fifth | Should -Match $script:SimpleFormPattern
+        $fifth | Should -Be 'sh .claude/hooks/session-start-entire.sh'
     }
 }
 

@@ -1,4 +1,5 @@
 .claude/probe-logs/
+.claude/session-start-report.txt
 testResults.xml
 __pycache__/
 .ci-checks/
