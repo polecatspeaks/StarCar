@@ -66,7 +66,7 @@ change is itself a process failure (the autoimmune mode - see the Healing Loop's
 | Match the instrument | Behavioural work gets prose; formats/protocols get an EXECUTABLE spec |
 | NO HEADERS HERE | Truth is constructed by probes; probes must LAND as durable artifacts |
 | LAW-FIRST design | Constraints and premises on the page BEFORE the mechanism |
-| ASK FOR THE PRIOR ART | Check `docs/templates/` FIRST - the landed store adjudicates most of it; ask the owner for what has NOT landed; an empty search is a trigger, never an answer |
+| ASK FOR THE PRIOR ART | Check `docs/templates/` FIRST - the landed store adjudicates most of it; ask the owner for what has NOT landed; an empty search is a trigger, never an answer; ported art is a GUIDE STAR - adopt/adapt/refuse after review, never drag-and-drop |
 | Build from wreckage | Only when no prior art exists; never for a rung never run |
 | GUIDE STAR | Blameless is not vague and not polite; REJECT and reversal are SUCCESS outcomes with a durable artifact |
 | Reality vs spec | When a written rule does not fit reality, the HUMAN adjudicates - sharpen or loosen, case by case, never inferred. The escalation path is the PRESSURE RELEASE VALVE: a process with no legitimate way to bend gets bent silently |
@@ -401,6 +401,24 @@ adjacent jobs: the templates say what SHAPE is known, the probes say what is TRU
 for what was deliberately deferred; and THEN ask the owner what exists that has not landed.
 A rung with no artifact is not necessarily a rung with no prior art, and a directory with
 no matching file is not a shop with no matching practice.
+
+**Prior art is a GUIDE STAR, never a drop-in (owner ruling, 2026-07-26).** What arrives
+from the ancestor or a sibling is reviewed FOR adoption and adapted to this shop's laws,
+scars, and measurements - never pasted as-is. The receiving shop's own record adjudicates
+fit, three dispositions: ADOPT what survives review; ADAPT what almost fits, stating what
+changed and why; REFUSE what contradicts a standing local ruling - loudly, the divergence
+surfaced for the owner rather than harmonized silently in either direction. Drag-and-drop
+porting is the prior-art rule's own agreeableness failure: it treats another shop's
+codified judgment as senior to this shop's evidence, which no document here is.
+
+*First application, same day as the ruling: the sibling's operating-tempo port (see Cost
+discipline) was adopted with one adaptation - "race-critical heavy" generalized to
+owner-declared windows, this shop having no race calendar - and its reviewers-on-Sonnet
+leg was REFUSED: it contradicted StarCar's standing per-car-Opus topology, the divergence
+was surfaced instead of silently harmonized, and same-day evidence (an Opus reviewer's
+five-Major catch, every finding measured rather than read) supported keeping the standing
+ruling. Revisitable if calibration counts ever show cheaper reviews catching at the same
+rate.*
 
 ## When no prior art exists: build it from wreckage
 
@@ -935,9 +953,9 @@ stale reading is a cost-line defect, not a formality.
 inferred (the standing vocabulary rule doing its job - the conductor's archive search
 came up empty because the conversation lived in the sibling project, and the empty
 search was treated as a trigger to ask, not an answer). The sibling's third leg -
-reviewers on Sonnet, Opus only at whole-branch gates - was NOT adopted silently: it
-contradicts StarCar's standing per-car-Opus-review topology and awaits an explicit
-owner ruling, recorded here when made.*
+reviewers on Sonnet, Opus only at whole-branch gates - was REFUSED under the
+guide-star ruling (see the prior-art section): it contradicts StarCar's standing
+per-car-Opus-review topology, and same-day evidence supported the standing ruling.*
 
 ## Tracking
 
