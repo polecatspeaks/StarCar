@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "aae450cea6c656f9e",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-26T17:09:50Z",
+  "outcome": "done",
+  "findings": "All 3 Majors and all 7 Minors from round 1 fixed, plus the optional N-1 attribution nuance. M-1 (#13): BASE-DELTA and UNREPRODUCIBLE-EVIDENCE landed in design-briefs.md's DELTA re-review template and all four worked-adversary-and-gate-briefs.md reviewer briefs including the plan adversary (the rung the drill actually ran on), each in native shape; round-1's false commit-message claim corrected in the new commit's message rather than by amending history. M-2 and M-3 (#9): worked-spec.md's two false fidelity/contracts rows corrected to what their cited sections actually support, with two rows now honestly marked NOT CARRIED rather than pointed at a plausible-looking but silent section. m-1 through m-7 all fixed as specified by the reviewer's stated remedies. N-1 reworded for attribution precision (optional, done since cheap). N-4 left for its own ticket per the coordinator's instruction.",
+  "abstract": "Fix cycle round 2 on car/process-docs, four new commits (7cf2e48, 3e267e2, c7e263e, 000111b) stacked on 71d0c25, addressing every Major and Minor from artifacts/reviews/2026-07-26-process-docs-review-round1-REJECT.md. The #40 commit's rendering-evidence floor gained a printed-observed-value requirement and a matching amendment to the paired car.md agent definition. The #13 fields (BASE-DELTA, UNREPRODUCIBLE-EVIDENCE CALLOUT) now also live in the two templates the round-1 search missed - most importantly the plan-adversary brief, which is the exact rung the rotation drill that produced #13 ran on - plus three quote/wording minors fixed in car-brief.md. The #9 fold's two false rows (a contracts row asserting non-existent state, a fidelity row citing silent sections) are corrected, with the fidelity table's two now-honest NOT CARRIED rows framed as the table doing its job rather than a defect in the exemplar; an uncheckable row-count parenthetical and a wrong \"closed\" heading are also fixed. scripts/tests 182/182 passed, scripts/store-checks 178/178 passed, both at HEAD 000111b767108d241ed62eb58db36303512c55ec, pwsh 7. Working tree clean.",
+  "subject_basis": "runtime-id",
+  "task_id": "process-docs-car-r2",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:155d39fa945b86a02e0d2802c9e1b3c2e948db3e4c79729f5045df89a35fdf98"
+}
