@@ -59,6 +59,29 @@ type WireConfig struct {
 	StorePathDisplay string `json:"storePathDisplay"`
 	LaneCount        int    `json:"laneCount"`
 	DemoMode         bool   `json:"demoMode"`
+	// GitHubRepoURL/GitHubRef/GitHubArtifactsPrefix (#28) are the ONLY three
+	// primitives the view needs to build every provenance link itself -
+	// never a per-link URL computed server-side (that would duplicate the
+	// same string-building logic on every entry). CORRECTED (#28/#12 fix
+	// cycle round 2 MINOR-1: the prior wording claimed all three are ""
+	// under one shared condition, which the live wire disproves): each
+	// field degrades independently -
+	//   - GitHubRepoURL is "" exactly when Config.GitHubRepo is unset
+	//     (STARCAR_GITHUB_REPO never configured).
+	//   - GitHubRef defaults to "dev" (DefaultConfig) regardless of whether
+	//     GitHubRepo is set, and is observed non-empty on every real wire
+	//     snapshot unless STARCAR_GITHUB_REF is explicitly cleared.
+	//   - GitHubArtifactsPrefix is "" only when Config.RepoRoot is unset or
+	//     StorePath does not resolve under it (githubArtifactsPrefix,
+	//     githublinks.go) - independent of whether GitHubRepo is configured
+	//     at all, and observed non-empty ("artifacts") on this repo's own
+	//     default production layout.
+	// The view (links.js) still requires GitHubRepoURL non-empty before
+	// rendering ANY link - a non-empty prefix or ref alone never produces
+	// one, so "no link, never a broken one" still holds in every case.
+	GitHubRepoURL         string `json:"githubRepoUrl,omitempty"`
+	GitHubRef             string `json:"githubRef,omitempty"`
+	GitHubArtifactsPrefix string `json:"githubArtifactsPrefix,omitempty"`
 }
 
 // Snapshot is the top-level YardSnapshot - schema/yard-snapshot.schema.json

@@ -25,7 +25,11 @@ import { chromium } from 'playwright';
 import { mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { startRealBoardServer, buildScratchStoreWithInFlightDispatch } from './test/support/real-board-server.js';
+import {
+  startRealBoardServer,
+  buildScratchStoreWithInFlightDispatch,
+  buildScratchStoreWithHealthTrendFamilies
+} from './test/support/real-board-server.js';
 
 const REPO_ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const today = new Date().toISOString().slice(0, 10);
@@ -50,6 +54,15 @@ async function probeComputedStyles(page) {
     const body = getComputedStyle(document.body);
     const brand = document.querySelector('.brand-name');
     const laneTitle = document.querySelector('.lane-title');
+    // #28/#12: the new colored/interactive elements this car's train adds -
+    // reported the SAME way (real getComputedStyle, never a hex read off
+    // the stylesheet text) as every register above.
+    const provenanceLink = document.querySelector('.provenance-link');
+    const healthTrends = [...document.querySelectorAll('.health-trend')].map((el) => ({
+      text: el.textContent,
+      className: el.className,
+      color: getComputedStyle(el).color
+    }));
     return {
       bodyBackgroundColor: body.backgroundColor,
       bodyFontFamily: body.fontFamily,
@@ -59,7 +72,12 @@ async function probeComputedStyles(page) {
       brandFontFamily: brand ? getComputedStyle(brand).fontFamily : null,
       laneTitleFontFamily: laneTitle ? getComputedStyle(laneTitle).fontFamily : null,
       laneTitleFontSize: laneTitle ? getComputedStyle(laneTitle).fontSize : null,
-      laneRegisterClasses: [...document.querySelectorAll('.lane')].map((l) => l.className)
+      laneRegisterClasses: [...document.querySelectorAll('.lane')].map((l) => l.className),
+      provenanceLinkTag: provenanceLink ? provenanceLink.tagName : null,
+      provenanceLinkHref: provenanceLink ? provenanceLink.getAttribute('href') : null,
+      provenanceLinkColor: provenanceLink ? getComputedStyle(provenanceLink).color : null,
+      provenanceLinkTextDecoration: provenanceLink ? getComputedStyle(provenanceLink).textDecorationLine : null,
+      healthTrends
     };
   });
 }
@@ -85,6 +103,21 @@ const browser = await chromium.launch();
 try {
   await captureState(browser, 'calm-yard', {});
   await captureState(browser, 'hot-yard', { storePath: buildScratchStoreWithInFlightDispatch() });
+  // #28/#12: a controlled scratch store with a converged AND a stalled
+  // review-round family, PLUS a configured GitHub repo (STARCAR_GITHUB_REPO)
+  // so the train's ticket link (#28) actually renders as a real anchor.
+  // DISCLOSED: this scratch store lives under os.tmpdir(), outside the repo
+  // root, so config.githubArtifactsPrefix resolves empty here (the honest-
+  // degrade path, githublinks.go) - car/gate/dispatch RECORD-DIRECTORY links
+  // do NOT render in this particular screenshot for that reason (proven
+  // separately, in-repo, by board/server's TestBuildSnapshotGitHubConfigConfigured
+  // and this file's own dom-writer.test.js suite); the ticket link and the
+  // health-trend badges DO render here, since buildIssueLink only needs
+  // githubRepoUrl.
+  await captureState(browser, 'health-trend-and-provenance', {
+    storePath: buildScratchStoreWithHealthTrendFamilies(),
+    env: { STARCAR_GITHUB_REPO: 'polecatspeaks/StarCar', STARCAR_GITHUB_REF: 'dev' }
+  });
   console.log(`\nScreenshots + computed-style evidence written to ${outDir}`);
   console.log('These are evidence for a human/reviewer to read, never a pass/fail gate - ' +
     'see board/web/test/browser-register-cascade.test.js for the landed computed-style regression guard.');

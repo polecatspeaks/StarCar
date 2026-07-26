@@ -34,8 +34,13 @@ const ageBucketMsGranularity = int64(5000)
 //
 // DECISION (disclosed, per issue #27's own framing of the choice): the WIRE
 // value of elapsed_seconds stays EXACT, unbucketed, whenever a snapshot IS
-// actually served fresh - board/web/js/dom-writer.js:201 renders it verbatim
-// to the second (`${d.elapsedSeconds}s`), never a rounded bucket number. Only
+// actually served fresh - board/web/js/dom-writer.js's renderDispatches
+// function renders it verbatim to the second (`${d.elapsedSeconds}s`) in its
+// solari-elapsed span - cited by SYMBOL, not line (#28/#12 fix cycle round
+// 2: a later train's commits shifted this file's line numbers, exactly the
+// drift this comment's OWN "cited by symbol/description, not line"
+// convention below already names, now applied to itself) - never a rounded
+// bucket number. Only
 // the CHANGE-DETECTION COMPARISON basis (mustMarshalStripped below)
 // quantises elapsed_seconds into this bucket; the value it lets through
 // unchanged is never itself rounded.
@@ -51,8 +56,10 @@ const ageBucketMsGranularity = int64(5000)
 // connected client's displayed elapsed_seconds can trail the true wall-clock
 // value by up to this bucket's width (observed: actual 50s, served 10s).
 // The VALUE is exact; its RECENCY is not. Nothing downstream derives from
-// it - dom-writer.js:200-202 only prints the number, render.js:188 only
-// passes it through with a type guard - and the alarm-bearing field, a
+// it - dom-writer.js's renderDispatches only prints the number, render.js's
+// buildLaneBody dispatches case only passes it through with a type guard
+// (both cited by symbol, not line, same #28/#12 fix cycle round 2 reason
+// as above) - and the alarm-bearing field, a
 // "dispatched" -> "overdue" transition, is EXACT and immediate regardless of
 // this bucket, because that transition changes the STATE STRING
 // (algorithm.go:240), a field this bucketing never touches. This is the "no
@@ -370,12 +377,15 @@ func (s *Server) buildSnapshot(scanResult *store.ScanResult, scanErr error, poll
 	return Snapshot{
 		Seq: 0, // placeholder - PollOnce assigns the real value AFTER comparison
 		Config: WireConfig{
-			PollMs:           s.cfg.PollMs,
-			HeartbeatMs:      s.cfg.HeartbeatMs,
-			StalenessMs:      s.cfg.StalenessMs,
-			StorePathDisplay: s.storePathDisplayValue(),
-			LaneCount:        len(laneRegistry),
-			DemoMode:         s.cfg.DemoMode,
+			PollMs:                s.cfg.PollMs,
+			HeartbeatMs:           s.cfg.HeartbeatMs,
+			StalenessMs:           s.cfg.StalenessMs,
+			StorePathDisplay:      s.storePathDisplayValue(),
+			LaneCount:             len(laneRegistry),
+			DemoMode:              s.cfg.DemoMode,
+			GitHubRepoURL:         githubRepoURL(s.cfg.GitHubRepo),
+			GitHubRef:             s.cfg.GitHubRef,
+			GitHubArtifactsPrefix: githubArtifactsPrefix(s.cfg.RepoRoot, s.cfg.StorePath),
 		},
 		Vocabularies: vocab,
 		Board:        conditions,

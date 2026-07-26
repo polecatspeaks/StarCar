@@ -283,6 +283,257 @@ test('#62 N3: an empty-but-live gates lane (zero gates in this fold) states its 
   assert.equal(fullNotices.length, 0, 'a gates lane WITH gates must not render the empty-absence notice');
 });
 
+// --- #28: clickable provenance ---------------------------------------------
+
+const githubCfg = {
+  githubRepoUrl: 'https://github.com/polecatspeaks/StarCar',
+  githubRef: 'dev',
+  githubArtifactsPrefix: 'artifacts'
+};
+
+test('#28: a car subject renders as a link to its record directory when github config + recordDir are both present', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot(
+    [
+      {
+        id: 'trains',
+        title: 'Trains',
+        position: 'live',
+        freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+        data: {
+          trains: [
+            {
+              id: 'train:board-v0',
+              title: 'T',
+              tickets: [],
+              cars: [{ subject: 'carA', role: 'car', state: 'returned', at: '2026-07-23T18:00:00Z', recordDir: 'carA' }],
+              declaredNotObserved: []
+            }
+          ]
+        }
+      }
+    ],
+    githubCfg
+  );
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const subjects = root.querySelectorAll('.car-subject');
+  assert.equal(subjects.length, 1);
+  assert.equal(subjects[0].tagName, 'a', 'expected the car subject to render as an anchor');
+  assert.equal(subjects[0].attributes.href, 'https://github.com/polecatspeaks/StarCar/tree/dev/artifacts/carA');
+  assert.equal(subjects[0].textContent, 'carA');
+});
+
+test('#28: a car subject with NO recordDir (or no github config) renders as plain text, never a broken link', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([
+    {
+      id: 'trains',
+      title: 'Trains',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+      data: {
+        trains: [
+          { id: 'train:board-v0', title: 'T', tickets: [], cars: [{ subject: 'carA', role: 'car', state: 'returned', at: '2026-07-23T18:00:00Z' }], declaredNotObserved: [] }
+        ]
+      }
+    }
+  ]); // no githubCfg extra - unconfigured
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const subjects = root.querySelectorAll('.car-subject');
+  assert.equal(subjects.length, 1);
+  assert.notEqual(subjects[0].tagName, 'a', 'expected plain text, not a link, when recordDir/github config is absent');
+  assert.equal(subjects[0].attributes.href, undefined);
+});
+
+test('#28: a train\'s declared tickets render as issue links', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot(
+    [
+      {
+        id: 'trains',
+        title: 'Trains',
+        position: 'live',
+        freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+        data: { trains: [{ id: 'train:view-28-12', title: 'T', tickets: ['#28', '#12'], cars: [], declaredNotObserved: [] }] }
+      }
+    ],
+    githubCfg
+  );
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const ticketLinks = root.querySelectorAll('.ticket-link');
+  assert.equal(ticketLinks.length, 2);
+  assert.equal(ticketLinks[0].attributes.href, 'https://github.com/polecatspeaks/StarCar/issues/28');
+  assert.equal(ticketLinks[0].textContent, '#28');
+  assert.equal(ticketLinks[1].attributes.href, 'https://github.com/polecatspeaks/StarCar/issues/12');
+});
+
+test('#28: a train with no declared tickets renders no ticket links at all', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot(
+    [
+      {
+        id: 'trains',
+        title: 'Trains',
+        position: 'live',
+        freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+        data: { trains: [{ id: 'train:x', title: 'T', tickets: [], cars: [], declaredNotObserved: [] }] }
+      }
+    ],
+    githubCfg
+  );
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+  assert.equal(root.querySelectorAll('.ticket-link').length, 0);
+});
+
+test('#28: a gate signal name renders as a link to its record directory', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot(
+    [
+      {
+        id: 'gates',
+        title: 'Gates',
+        position: 'live',
+        freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+        data: { gates: [{ name: 'design review round 1', subject: 'gate-1', outcome: 'REJECT', at: '2026-07-23T18:00:00Z', recordDir: 'gate-1' }] }
+      }
+    ],
+    githubCfg
+  );
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const names = root.querySelectorAll('.signal-name');
+  assert.equal(names.length, 1);
+  assert.equal(names[0].tagName, 'a');
+  assert.equal(names[0].attributes.href, 'https://github.com/polecatspeaks/StarCar/tree/dev/artifacts/gate-1');
+});
+
+test('#28: a solari (dispatch) subject renders as a link when recordDir is present, keeping its title tooltip', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot(
+    [
+      {
+        id: 'dispatches',
+        title: 'Dispatches',
+        position: 'live',
+        freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+        data: { dispatches: [{ subject: 'orphan-1', state: 'dispatched', at: '2026-07-23T18:00:00Z', assigned: false, recordDir: 'orphan-1' }] }
+      }
+    ],
+    githubCfg
+  );
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const subjects = root.querySelectorAll('.solari-subject');
+  assert.equal(subjects.length, 1);
+  assert.equal(subjects[0].tagName, 'a');
+  assert.equal(subjects[0].attributes.href, 'https://github.com/polecatspeaks/StarCar/tree/dev/artifacts/orphan-1');
+  assert.equal(subjects[0].attributes.title, 'orphan-1', 'the full-subject title tooltip must survive becoming a link');
+});
+
+// --- #12: car health bar ----------------------------------------------------
+
+test('#12: a converged family (majors reaches 0) renders a calm health-trend badge with the series, on the LATEST round only', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([
+    {
+      id: 'gates',
+      title: 'Gates',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+      data: {
+        gates: [
+          { name: 'r1', subject: 'x-review-r1', outcome: 'REJECT', at: '2026-07-23T00:00:00Z', findings: '7 Major, 0 Minor' },
+          { name: 'r2', subject: 'x-review-r2', outcome: 'REJECT', at: '2026-07-23T01:00:00Z', findings: '1 Major, 0 Minor' },
+          { name: 'r3', subject: 'x-review-r3', outcome: 'APPROVE', at: '2026-07-23T02:00:00Z', findings: '0 Major, 0 Minor' }
+        ]
+      }
+    }
+  ]);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const badges = root.querySelectorAll('.health-trend');
+  assert.equal(badges.length, 1, 'exactly one badge - only the family\'s LATEST round carries it');
+  assert.ok(badges[0].className.includes('register-nominal'), 'a converged trend must render the CALM register, never a 4th color');
+  assert.ok(badges[0].textContent.includes('7'), `expected the series in the badge text, got: ${badges[0].textContent}`);
+  assert.ok(badges[0].textContent.includes('0'));
+});
+
+test('#12: a stalled family (3 -> 4 -> 4) renders needs-attention - the swirl signature, never silently calm', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([
+    {
+      id: 'gates',
+      title: 'Gates',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+      data: {
+        gates: [
+          { name: 'r1', subject: 'tooling-50-32-review-r1', outcome: 'REJECT', at: '2026-07-23T00:00:00Z', findings: '3 Major, 2 Minor' },
+          { name: 'r2', subject: 'tooling-50-32-review-r2', outcome: 'REJECT', at: '2026-07-23T01:00:00Z', findings: '4 Major, 1 Minor' },
+          { name: 'r3', subject: 'tooling-50-32-review-r3', outcome: 'REJECT', at: '2026-07-23T02:00:00Z', findings: '4 Major, 0 Minor' }
+        ]
+      }
+    }
+  ]);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const badges = root.querySelectorAll('.health-trend');
+  assert.equal(badges.length, 1);
+  assert.ok(badges[0].className.includes('register-needs-attention'), 'a stalled/climbing trend must render HOT, never calm');
+});
+
+test('#12: a first-round (no history yet) gate renders a NEUTRAL badge - never colored hot just because Majors > 0 on round 1 (a REJECT with Majors is normal traffic)', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([
+    {
+      id: 'gates',
+      title: 'Gates',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+      data: { gates: [{ name: 'r1', subject: 'solo-review-r1', outcome: 'REJECT', at: '2026-07-23T00:00:00Z', findings: '3 Major, 1 Minor' }] }
+    }
+  ]);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const badges = root.querySelectorAll('.health-trend');
+  assert.equal(badges.length, 1);
+  assert.ok(!badges[0].className.includes('register-needs-attention'), 'round 1 alone must never render hot');
+  assert.ok(!badges[0].className.includes('register-nominal'), 'round 1 has no trend yet - distinct from a genuinely calm converged trend');
+});
+
+test('#12: unparseable findings renders a neutral "unknown" badge, never a guessed count', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([
+    {
+      id: 'gates',
+      title: 'Gates',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+      data: { gates: [{ name: 'r1', subject: 'solo-review-r1', outcome: 'REJECT', at: '2026-07-23T00:00:00Z' }] }
+    }
+  ]);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const badges = root.querySelectorAll('.health-trend');
+  assert.equal(badges.length, 1);
+  assert.ok(!badges[0].className.includes('register-needs-attention'));
+  assert.ok(!badges[0].className.includes('register-nominal'));
+  assert.ok(badges[0].textContent.toLowerCase().includes('unknown'));
+});
+
 test('renderBoard distinguishes bagged (fuel) and dark (freight) with different rendered text', () => {
   const doc = createMiniDocument();
   const root = doc.createElement('main');

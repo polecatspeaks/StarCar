@@ -89,6 +89,20 @@ Stop it with Ctrl-C. Nothing it does writes to the artifact store, and nothing i
 leaves your machine - it is **local-only and unauthenticated** by design; do not expose
 port 4600 on a network you do not trust.
 
+**Optional: clickable provenance links (issue #28).** Every car/gate/dispatch chip and
+every train's declared ticket refs can link out to GitHub - to a subject's record
+directory, or to the issue a train's tickets name - if you set two environment
+variables before starting the server:
+
+```sh
+STARCAR_GITHUB_REPO=your-owner/your-repo STARCAR_GITHUB_REF=dev go run ./server
+```
+
+`STARCAR_GITHUB_REPO` is `"owner/repo"`; `STARCAR_GITHUB_REF` defaults to `dev` and
+rarely needs setting. **Neither is required** - leave both unset and the board runs
+exactly as above, with every subject/ticket rendered as plain text instead of a link
+(never a broken one).
+
 Verified 2026-07-23 from a clean `git clone` of this exact command sequence: `GET /`,
 `GET /api/snapshot`, and a served JS module (`GET /js/app.js`) each answered HTTP 200;
 `GET /api/stream` emitted a real `event: yard` SSE frame; and the `/api/snapshot` body

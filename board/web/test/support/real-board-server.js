@@ -81,6 +81,98 @@ export function buildScratchStoreWithInFlightDispatch() {
   return storeDir;
 }
 
+// buildScratchStoreWithHealthTrendFamilies (#12: car health bar browser
+// cascade guard) builds a MINIMAL, self-contained scratch store (never the
+// ambient repo store, which has no controlled review-round family to prove
+// a specific trend from) with one train manifest declaring TWO gate
+// families: a CONVERGED one (3 Major, then 0 Major - healthy regardless of
+// the starting number) and a STALLED one (3 -> 4 -> 4, the swirl
+// signature) - real JSON records, the real schema's required fields, so
+// the real Go server folds/assembles/serves them exactly as it would any
+// other review round.
+export function buildScratchStoreWithHealthTrendFamilies() {
+  const storeDir = mkdtempSync(join(tmpdir(), 'starcar-board-health-trend-store-'));
+
+  // dirName sanitises a subject into a filesystem-safe directory name
+  // (":" is illegal in a Windows path) - matching this repo's OWN real
+  // convention: artifacts/train-board-v0/ holds subject "train:board-v0"'s
+  // record, dash for colon, exactly the producer-side sanitisation issue
+  // #28's own design note names ("the subject-sanitisation rule"). The
+  // manifest intent record's OWN directory name is otherwise irrelevant to
+  // assemble.go (it matches raw records by subject+kind+at content, never
+  // by path) - this mirrors real practice rather than being load-bearing
+  // for this fixture to work.
+  function dirName(subject) {
+    return subject.replace(/:/g, '-');
+  }
+
+  function write(subject, kind, at, extra = {}) {
+    const dir = join(storeDir, dirName(subject));
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, `${kind}-${at.replace(/[:.]/g, '')}.json`),
+      JSON.stringify(
+        {
+          schema: 'starcar-artifact/1',
+          kind,
+          subject,
+          session_id: 'health-trend-probe-session',
+          at,
+          normalisation: [],
+          integrity: 'sha256:0000000000000000000000000000000000000000000000000000000000000000',
+          ...extra
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+  }
+
+  write('train:health-trend-demo', 'intent', '2026-07-23T09:00:00Z', {
+    manifest: {
+      title: 'Health trend cascade probe',
+      tickets: ['#12'],
+      members: [
+        { subject: 'conv-review-r1', role: 'gate', gate: 'round 1' },
+        { subject: 'conv-review-r2', role: 'gate', gate: 'round 2' },
+        { subject: 'stall-review-r1', role: 'gate', gate: 'round 1' },
+        { subject: 'stall-review-r2', role: 'gate', gate: 'round 2' },
+        { subject: 'stall-review-r3', role: 'gate', gate: 'round 3' }
+      ]
+    }
+  });
+
+  write('conv-review-r1', 'returned', '2026-07-23T10:00:00Z', {
+    outcome: 'REJECT',
+    findings: '3 Major, 1 Minor',
+    abstract: 'round 1'
+  });
+  write('conv-review-r2', 'returned', '2026-07-23T11:00:00Z', {
+    outcome: 'APPROVE',
+    findings: '0 Major, 0 Minor',
+    abstract: 'round 2 - converged'
+  });
+
+  write('stall-review-r1', 'returned', '2026-07-23T10:00:00Z', {
+    outcome: 'REJECT',
+    findings: '3 Major, 2 Minor',
+    abstract: 'round 1'
+  });
+  write('stall-review-r2', 'returned', '2026-07-23T11:00:00Z', {
+    outcome: 'REJECT',
+    findings: '4 Major, 1 Minor',
+    abstract: 'round 2'
+  });
+  write('stall-review-r3', 'returned', '2026-07-23T12:00:00Z', {
+    outcome: 'REJECT',
+    findings: '4 Major, 0 Minor',
+    abstract: 'round 3 - stalled, the swirl signature'
+  });
+
+  return storeDir;
+}
+
 function goBinary() {
   // CI (docs/setup.md's Go toolchain row): actions/setup-go puts `go` on
   // PATH for the whole job, same as the existing "Run board Go vet +
@@ -155,7 +247,11 @@ async function waitForHttpReady(port, timeoutMs) {
 // board/server's own default StorePath resolution); that behavior is
 // UNCHANGED when storePath is omitted. buildScratchStoreWithInFlightDispatch
 // below is the one reason a caller would ever set it.
-export async function startRealBoardServer({ port, pollMs = 50, storePath } = {}) {
+// env (#28) is an OPTIONAL passthrough of additional STARCAR_* overrides
+// (e.g. STARCAR_GITHUB_REPO/STARCAR_GITHUB_REF) - added on top of, never
+// replacing, the port/host/pollMs/storePath overrides every existing caller
+// already relies on (backward compatible: omitted, this is a no-op `{}`).
+export async function startRealBoardServer({ port, pollMs = 50, storePath, env = {} } = {}) {
   const binPath = buildServerBinary();
   const resolvedPort = port ?? 4700 + (process.pid % 200);
 
@@ -166,7 +262,8 @@ export async function startRealBoardServer({ port, pollMs = 50, storePath } = {}
       STARCAR_PORT: String(resolvedPort),
       STARCAR_HOST: '127.0.0.1',
       STARCAR_POLL_MS: String(pollMs),
-      ...(storePath ? { STARCAR_STORE_PATH: storePath } : {})
+      ...(storePath ? { STARCAR_STORE_PATH: storePath } : {}),
+      ...env
     },
     stdio: ['ignore', 'pipe', 'pipe']
   });

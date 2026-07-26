@@ -8,8 +8,9 @@ Car 1's to instantiate with the three surfaces below.
 
 ## Header (keep count current)
 
-9 surfaces audited (3 dispatch-harness + 6 yard-board - 5 added 2026-07-23 by the
-yard-board train's Car 4, plan task 4.4; +1 Idle row added 2026-07-26, issue #29).
+10 surfaces audited (3 dispatch-harness + 7 yard-board - 5 added 2026-07-23 by the
+yard-board train's Car 4, plan task 4.4; +1 Idle row added 2026-07-26, issue #29; +1
+Health-trend row added 2026-07-26, issue #12).
 
 ## Table shape
 
@@ -30,13 +31,16 @@ in this table (R6v2, trigger in `docs/setup.md`); rendering is #1's job. That mi
 fold landed, both CI-dependent gates armed, one enumeration decision still ahead by
 design - is the DELIBERATE state this table records, not an omission.
 
-## The yard board's truth surfaces (2026-07-23, yard-board train Car 4, plan task 4.4; +1 row 2026-07-26, issue #29)
+## The yard board's truth surfaces (2026-07-23, yard-board train Car 4, plan task 4.4; +1 row 2026-07-26, issue #29; +1 row 2026-07-26, issue #12)
 
 Design rev 5's S1 constraints table names the board's own gating-matrix obligation
 (`docs/contracts/gating-matrix.md (staleness row)` - "never suppressed, DELIBERATE, no
 override"); this section instantiates it plus the four other truth surfaces plan task 4.3
-built. Six rows as of #29 (2026-07-26): the original five plus Idle, which splits out of
-Staleness's own old-data case rather than adding a wholly new axis.
+built. Seven rows as of #12 (2026-07-26): the original five, Idle (#29, splits out of
+Staleness's own old-data case rather than adding a wholly new axis), and Health-trend
+(#12, a NEW independent axis - the first surface in this table whose register a client-
+side derivation computes, never the server, from wire data the server already emits
+verbatim).
 
 | Surface | Fires when | Suppressed when | Resets on | Classification | Evidence (test name) |
 |---|---|---|---|---|---|
@@ -46,6 +50,7 @@ Staleness's own old-data case rather than adding a wholly new axis.
 | Failed-panel (per live lane) | `board/store.Adapter.Scan` returns an error (the store directory is missing/unreadable) | never (design S6 row 1: "NEVER an empty yard rendered as truth") | the next scan that succeeds | GATED, DELIBERATE, no override | `TestPollOnceScanFailureIsFailedWithLastGood` (the store directory is removed mid-run; freshness flips to `failed` with `lastGoodAsOf` carried, never silently `fresh`) |
 | Detector/discovery rendering | `board/fold.Fold`'s own `Discoveries` (an unrecognised `kind`/`outcome`) or `Faults` (an unreadable/malformed/empty recognition vocabulary) are non-empty for this poll | **never** - the code and detail are never dropped, never an ack-list, never silently thrown away. **`[AMENDED, issue #30, 2026-07-26]`** the original rationale here quoted design Rule 4 verbatim - `"the detector's register is needs-attention, deliberately - the one alarm that is about the board rather than the yard"` - which #30 made false as a universal claim: Rule 4 is itself amended (`docs/design/2026-07-21-v0-yard-skeleton-design.md` §12b, §5.2), and a `discovery`'s register is now per-class via `board/store/condition_severity.go` (`discovery` resolves NOTE-tier/`nominal`, an expected pattern, per the owner's severity philosophy). **What did NOT change:** this row's own guarantee - the surface fires, and is never suppressed regardless of register. A calm-registered, collapsed-behind-chrome discovery is still a RENDERED discovery, not a hidden one; grouping at the view (`board/web/js/render.js` `groupBoardConditions`) rolls instances up by code but discards none. | the next poll where the fold reports neither (the record is gone, or the vocabulary now recognises it) | GATED, DELIBERATE, no override | `TestFoldDiscoveriesAndFaultsSurfaceAsBoardConditions` - **fault-injection proof, not just a positive case:** this test was RED on arrival (`board=[]` - the fold's discoveries were computed and then silently discarded, never reaching the wire) until `poll.go`'s `buildSnapshot` was fixed to fold `out.Faults`/`out.Discoveries` into the wire `board` array; the red-to-green transition is the proof this gate actually fires. Updated #30 (2026-07-26): this test's assertion now pins register `nominal` for a discovery, not `needs-attention` - see the test's own updated doc comment for the same-commit rationale |
 | Board conditions (general disclosure: quarantine, unknown-fields, manifest/subject-namespace collisions, vocab-defs load failures) | `board/store.Adapter.Scan` quarantines a record or discloses unknown fields; `board/assemble.Assemble` detects a collision; `board/assemble.LoadVocabularies` hits a missing file or a malformed row | never (Law 1/4: a board that guesses or silently drops is the harm these exist to prevent) | the next poll where the underlying condition no longer holds | GATED, DELIBERATE, no override | `board/store`'s `TestScanAllQuarantined`/`TestScanUnknownFieldRecordDisclosed`/`TestScanMalformedAtQuarantined`/`TestScanFutureDatedAtQuarantined`; `board/assemble`'s `TestAssembleManifestMembershipCollision`/`TestAssembleSubjectNamespaceCollision`/`TestLoadVocabulariesMissingFileYieldsOneCondition`/`TestLoadVocabulariesBadRowQuarantinedAndConditioned` |
+| Health-trend (per review-round family, gates lane) `[NEW ROW, issue #12, 2026-07-26]` | a review-round family (gate subjects sharing a common prefix once a trailing `-rN` round suffix is stripped) has 2+ rounds whose `findings` text ALL parse to the unambiguous `"N Major(s), M Minor(s)"` head shape, AND the latest round's Major count is NOT lower than the round before it (flat or climbing, nonzero) - the swirl signature, issue #12's own `3 -> 4 -> 4` worked example (CORRECTED #28/#12 fix cycle round 2 MAJOR-3: was misattributed to a nonexistent `docs/CLAUDE.md`; root `CLAUDE.md`'s own, DIFFERENT swirl-scar series is `3 -> 4 -> 5`) | **never for a genuine `stalled` trend** (a truth surface, same posture as every other row here) - but the badge itself renders a DIFFERENT, calm word/color for `converged` (latest Major count = 0, healthy regardless of the starting number) and `declining` (still improving), and a NEUTRAL, non-alarming word/color for `first-round` (no history yet - a REJECT with Majors alone is normal traffic, never hot on round 1) or `unknown` (ANY round in the family is unparseable - Law 1, never a guessed partial trend) | a NEW round observed for the family whose Major count is lower than the prior round (flips `stalled` -> `declining` or `converged`), or the family's `findings` text stops matching the parser (flips to `unknown`, never silently held at the prior trend) | GATED, DELIBERATE, no override, register reuses the EXISTING `register-nominal`/`register-needs-attention` classes only - no fourth color; `first-round`/`unknown` carry neither register class | `board/web/test/findings.test.js` (18 tests: the conservative parser's real-store-text table + garbage-renders-unknown cases; the trend derivation's `7->1->0`/`3->4->4` worked examples); `board/web/test/render.test.js`'s `#12:` tests (the trend attaches ONLY to a family's latest round); `board/web/test/dom-writer.test.js`'s `#12:` tests (badge rendering, register classes); **REAL BROWSER, non-vacuous fault injection** (`board/web/test/browser-health-trend-cascade.test.js`): a converged and a stalled badge on the SAME real page measure two DIFFERENT `getComputedStyle` colors matching the live `.register-nominal`/`.register-needs-attention` probes exactly; an injected naive (un-guarded) CSS rule was OBSERVED to repaint both badges the same wrong muted color, then removed and re-verified hot again |
 
 **Closed (2026-07-23, Car 5, plan section 6, task 5.3):** the Disconnect row's client-side
 half is now landed and tested (see the row above) - `board/web/` no longer has a gap to
@@ -62,7 +67,10 @@ crossed a whole second, not only on a real state change. Fixed by
 `elapsedSecondsBucketGranularity` (`poll.go`, 60s buckets): the COMPARISON basis now
 quantises `elapsed_seconds` the same way `ageBucketMs` already quantises age, while the
 WIRE value - what a served snapshot actually carries when it IS current - stays exact,
-never rounded (`board/web/js/dom-writer.js:201` renders it verbatim; no schema change).
+never rounded (`board/web/js/dom-writer.js`'s `renderDispatches` function, in its
+`solari-elapsed` span - cited by SYMBOL, not line, #28/#12 fix cycle round 2: a later
+train's commits shifted this file's line numbers, the same class of drift MAJOR-1/2
+fixed elsewhere in this repo's citations; no schema change).
 A `dispatched` -> `overdue` transition still bumps `seq` regardless of this bucket, because
 that changes the `state` string, which the bucketing never touches. Evidence:
 `TestPollOnceElapsedSecondsBucketedForChangeDetection` (`board/server/elapsedbucket_test.go`).

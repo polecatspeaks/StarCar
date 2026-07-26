@@ -380,6 +380,62 @@ body {
   margin-top: 0;
 }
 
+/* #28 (clickable provenance): a QUIET affordance - "visible on hover/focus",
+   never underline soup on a glance. Uses currentColor for the dotted
+   underline so a linked car-subject/signal-name/solari-subject/ticket-link
+   still carries whichever register color its container is already running
+   (the SAME issue #31 rule .board-condition-instance's own comment names:
+   a structural rule here would either fight the register class or silently
+   inherit an unrelated ancestor's color). Brightens to the paper ink color
+   only on hover/focus - the one moment a reader has decided to interact. */
+.provenance-link {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dotted currentColor;
+  cursor: pointer;
+}
+
+.provenance-link:hover,
+.provenance-link:focus-visible {
+  color: var(--text);
+  border-bottom-style: solid;
+}
+
+/* #28: a train's declared ticket refs (manifest.tickets), rendered as a
+   small row of quiet issue links beneath the track title - distinct from
+   the track-cars row below it, never mixed into the consist itself. */
+.train-tickets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-bottom: 0.25rem;
+}
+
+/* #12 (car health bar): the badge reuses the SAME three-register classes
+   every other severity signal on this board uses (register-nominal /
+   register-needs-attention) - never a fourth "health" color. A neutral
+   trend (first-round / unknown) carries NEITHER register class and gets
+   its own muted text-dim rule below - quiet-when-calm, never confused with
+   a genuinely converged (calm) trend. The :not() combinators (rather than
+   just letting cascade ORDER decide) are deliberate: a plain `.health-trend
+   { color: ... }` base rule would tie on specificity with `.register-*`
+   and the LATER rule in the file would silently win regardless of which
+   trend actually applies - the exact #31 class of bug (a structural color
+   rule fighting or shadowing the register class) this repo already paid
+   for once. */
+.health-trend {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  margin-left: 0.4rem;
+}
+
+.health-trend:not(.register-nominal):not(.register-needs-attention) {
+  color: var(--text-dim);
+}
+
 /* --- DISPATCHES: Solari split-flap direction (mockup 1b) --------------- */
 
 .lane-body-dispatches {
@@ -418,14 +474,20 @@ body {
    strip - their severity does NOT currently escape to any
    always-visible surface. #30's <summary> is Law-1-safe because it
    carries a register-colored roll-up ("1 FLAG + 2 notes",
-   render.js:104-108, dom-writer.js:121); this grid has no such roll-up.
+   render.js's summariseBoardConditionGroups function, dom-writer.js's
+   renderBoardConditionsStrip function - cited by SYMBOL, not line, #28/#12
+   fix cycle round 2: a later train's commits shifted both files' line
+   numbers, exactly the drift MAJOR-1/MAJOR-2 in that same fix cycle's
+   review named for other citations); this grid has no such roll-up.
    The round-1 reviewer PROVED this live: a scratch store with one
    presumed-lost dispatch sorted to the bottom (board/fold/algorithm.go's
    alphabetical sort - out of this ticket's scope) rendered a board with
    ZERO hot pixels - the hot row sat 242px below this grid's clip edge
-   while every lane read register-nominal, because render.js:137's lane
-   register composes position x freshness x capability only
-   (compose.js:73-79); a row's own stateRegister never joins that
+   while every lane read register-nominal, because render.js's
+   buildBoardViewModel's per-lane composeRegister call (cited by symbol, same
+   reason as above) composes position x freshness x capability only
+   (compose.js:73-79 - compose.js itself untouched by this train, still
+   line-accurate); a row's own stateRegister never joins that
    composition. That gap is PRE-EXISTING lane-register semantics (not
    introduced by this rule, not fixable in CSS/dom-writer scope per this
    ticket's own boundary) and is measured + routed to issue #1

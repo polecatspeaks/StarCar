@@ -608,7 +608,11 @@ this repo's dispatch history staying empty - same car, same commit.
 **The undone half, disclosed (round-1 review m1, 2026-07-26):** issue #29's own text
 asked for two things; this amendment does the first (the taxonomy split) and leaves the
 second - "Also retune stalenessMs against measured reality" - untouched. Consequence,
-measured: `StalenessMs` ships at `15000` (`board/server/config.go:42`) against a shop
+measured: `StalenessMs` ships at `15000` (`board/server/config.go`'s `DefaultConfig()`
+function - cited by SYMBOL, not line, #28/#12 fix cycle round 2 MAJOR-2: this citation's
+own prior line coordinate was falsified when a LATER commit in this same train grew
+`Config` by roughly 21 lines, exactly the trap `poll.go`'s own "cited by symbol, not
+line" convention exists to avoid) against a shop
 default budget of `1800` seconds (`config/harness-defaults.json`), so `stale` now fires
 **15 seconds into every healthy 30-minute dispatch** and stays lit until it returns -
 identical to base behaviour, NOT a regression this fix introduced, but this amendment's
@@ -617,6 +621,117 @@ own words ("the genuine alarm; something should be moving and is not") overstate
 normal dispatch's lifetime, `stale` reads "a car is running," not "the pipeline broke."
 The retune is explicitly OUT OF SCOPE for this car (a tuning decision against measured
 production cadence, not a taxonomy fix); the conductor tracks it as its own ticket.
+
+**Amendment (2026-07-26, issues #28/#12 - clickable provenance + car health bar; ADDITIVE
+wire growth, no supersession of anything above, following the #30/#29 precedent's
+same-commit-schema-plus-code shape):**
+
+**#28, clickable provenance.** The wire's OPEN `additionalProperties` posture (already
+exercised by #26/#30/#29) absorbs this without a schema version bump. Four new,
+optional fields - never a broken link, never a hardcoded repo identity (Law 7).
+CORRECTED (#28/#12 fix cycle round 2 MINOR-1): these do NOT all share one "unconfigured"
+condition - `githubRepoUrl` is "" exactly when `GitHubRepo` is unset; `githubRef`
+DEFAULTS to `"dev"` (`DefaultConfig`) and is observed non-empty on every real wire
+snapshot regardless of whether a repo is configured; `githubArtifactsPrefix` degrades on
+`RepoRoot`/`StorePath` alone, independent of `GitHubRepo`, and is observed `"artifacts"`
+on this repo's own default layout even with no GitHub repo configured at all. The view
+(`links.js`) still gates every link on `githubRepoUrl` being non-empty, so "no link,
+never a broken one" holds regardless:
+
+- `config.githubRepoUrl`/`config.githubRef` (`board/server/config.go`'s new
+  `GitHubRepo`/`GitHubRef` fields, `STARCAR_GITHUB_REPO`/`STARCAR_GITHUB_REF`) - the
+  ONE place this repo's (or any fork's) GitHub identity is configured, never derived by
+  parsing `.git/config` (rejected: an added `git` subprocess dependency for a value the
+  operator already knows).
+- `config.githubArtifactsPrefix` (`board/server/githublinks.go`'s
+  `githubArtifactsPrefix`) - the configured store's path RELATIVE TO THE REPO ROOT
+  (`Config.RepoRoot`, `main.go`'s `resolveDefaultRepoRoot` result, now threaded through
+  Config). Deliberately NOT cwd-relative like `storePathDisplay` - this repo's own
+  documented quickstart (`cd board && go run ./server`, `reporoot.go`) puts the
+  process's cwd one level BELOW the repo root, and a cwd-relative computation here
+  would silently produce `"../artifacts"`, a GitHub tree link pointing outside the repo.
+- `recordDir` (on `trainsPayload`'s car entries, `gatesPayload`'s gate entries, and
+  `dispatchesPayload`'s dispatch entries) - each subject's record directory, RELATIVE TO
+  THE STORE ROOT, single-sourced from `store.Record.Path` (`board/assemble/assemble.go`'s new
+  `recordDirBySubject`) rather than re-derived from `subject` client-side. **Why this
+  matters, measured live during this car's own visual verification:** the real
+  committed store's `train:board-v0` manifest record sits under directory
+  `artifacts/train-board-v0/` (dash), not `artifacts/train:board-v0/` (colon - illegal
+  on Windows) - subject and directory name are NOT always the same string, exactly the
+  "subject-sanitisation rule" issue #28's own design note warned a view-side
+  re-derivation would have to duplicate (Law 6). `recordDirBySubject` sidesteps this
+  entirely: it reads the ALREADY-sanitised directory name off `store.Record.Path`,
+  never re-sanitising anything itself.
+- `tickets` (on `trainsPayload`'s train entries) - `manifest.tickets`, ALREADY declared
+  by `schema/starcar-manifest.schema.json` (design DR3-1's own list: "members, roles,
+  title, ticket refs") but never previously read by `board/assemble.manifestPayload`;
+  this is that field's first consumer, not a new concept.
+
+**View-side, `board/web/js/links.js`** is the ONE place a `(config, recordDir)` or
+`(config, "#N")` pair becomes a real `https://github.com/OWNER/REPO/tree/REF/PREFIX/DIR`
+or `.../issues/N` URL (repo-relative paths, GitHub URLs, never a `localhost` file route
+or an absolute local path - the conductor's own ruling on this issue) or `null`.
+`board/web/js/dom-writer.js`'s `factOrLink` renders an `<a class="... provenance-link">`
+when a link is available, or the same element as plain text otherwise - CORRECTED
+(#28/#12 fix cycle round 2 MINOR-2: "identical className either way" was literally
+false) - the BASE className is preserved either way, with `provenance-link` APPENDED
+only on the linked form, so a caller's `querySelectorAll('.car-subject')` finds the
+element regardless of which tag it rendered as. `board.css`'s
+`.provenance-link` is a quiet, dotted-underline affordance (`color: inherit`, never a
+structural color declaration - avoids re-creating issue #31's cascade-bleed class) that
+solidifies and brightens only on hover/focus.
+
+**Scope, disclosed:** three concrete click surfaces landed (subject-to-record-directory,
+train ticket refs, gate-verdict-to-record-directory) - the brief's own narrowed scope
+from the ticket's fuller brainstorm (board-condition-to-record, superseded-entry links).
+Those two remain open, filed as a follow-on rather than attempted here at the risk of an
+undertested rush.
+
+**#12, car health bar.** `gatesPayload`'s gate entries gain one new optional field,
+`findings` (`board/assemble.Gate.Findings`, sourced from the winning `returned` record's
+own `findings` field, VERBATIM - the raw free text, never re-derived Go-side).
+`board/web/js/findings.js` is the ONE place this text is parsed: `parseFindingsCounts`
+recognises ONLY the unambiguous head-anchored `"N Major(s), M Minor(s)"` shape (Law 1 -
+everything else, including text that merely MENTIONS a count mid-sentence, renders
+UNKNOWN, never a guessed number) - calibrated directly against this repo's OWN
+`artifacts/` store, method and count both reproducible (CORRECTED #28/#12 fix cycle
+round 2 MINOR-4: was cited to "this car's final report", not a durable artifact): of
+207 store records, 136 carry a `findings` field, the parser recognises 38 of them and
+renders the remaining 98 UNKNOWN - re-derivable any time by walking `artifacts/**/*.json`
+and counting matches against `board/web/js/findings.js`'s own pattern.
+`familyKey(subject)` groups a car's review rounds by stripping a trailing `-rN` suffix
+(e.g. `tooling-50-32-review-r1/-r2/-r3`);
+`computeHealthTrends` sorts each family CHRONOLOGICALLY (by `at`, never subject lexical
+order - `r10` would otherwise sort before `r2`) and derives ONE trend, attached ONLY to
+the family's LATEST round: `converged` (latest Majors = 0, healthy regardless of the
+starting number - the ticket's own `7 -> 1 -> 0` example), `declining` (still improving,
+not yet zero), `stalled` (flat or climbing, nonzero - the swirl signature, the ticket's
+own `3 -> 4 -> 4` example), `first-round` (no history yet - never alarming on its own, a
+REJECT with Majors is normal traffic per this repo's own review-calibration framing), or
+`unknown` (ANY round in the family is unparseable - Law 1, the whole family's trend is
+withheld rather than computed from a partial, guessed series).
+
+**Rendering, three-register law honored:** the health-trend badge (`.health-trend`,
+`board/web/css/board.css`) reuses the EXISTING `register-nominal`/`register-needs-
+attention` classes for `converged`/`declining` and `stalled` respectively - no fourth
+color. `first-round`/`unknown` carry NEITHER register class, falling through to a muted
+`text-dim` rule scoped with `:not(.register-nominal):not(.register-needs-attention)`
+rather than a plain `.health-trend { color: ... }` base rule - the latter would tie in
+CSS specificity with `.register-*` and the LATER rule in `board.css`'s own source order
+would silently win regardless of which trend actually applied, the exact issue #31 class
+of bug (a structural color declaration fighting the register class) this repo already
+paid for once. Proven live, through a REAL browser (never a DOM-class assertion): a
+converged badge and a stalled badge, in the SAME real page, measured two DIFFERENT
+`getComputedStyle` colors matching the live `.register-nominal`/`.register-needs-
+attention` probe colors exactly (`board/web/test/browser-health-trend-cascade.test.js`);
+fault-injecting the naive, un-guarded rule (an injected later stylesheet, not a disk
+edit - Go's `http.FileServer` was OBSERVED to 304 an edited file within the same
+mtime-granularity second, a false-negative this test's own history discloses) was
+OBSERVED to repaint both badges the SAME wrong muted color, then reverted and
+re-verified hot again.
+
+**`docs/contracts/gating-matrix.md` gains a new truth-surface row (same commit) for
+the health-trend badge** - see its own inline addition.
 
 ## §13 - Revision history
 

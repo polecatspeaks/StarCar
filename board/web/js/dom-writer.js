@@ -21,6 +21,14 @@
 // doctrine ("direction, never contract"). Further slices (specific
 // elements from specific variants, per the owner ruling) remain open on
 // issue #1.
+//
+// #28/#12: this module ALSO renders clickable provenance (a car/gate/
+// dispatch subject or a train's declared ticket becomes an anchor when the
+// wire supplies both a GitHub identity and the entry's own recordDir/
+// ticket token) and the car-health-bar badge (#12) - both built from
+// board/web/js/links.js and board/web/js/findings.js's pure helpers; this
+// file's only job is turning their output into DOM.
+import { buildRecordLink, buildIssueLink } from './links.js';
 
 function el(doc, tag, className, text) {
   const node = doc.createElement(tag);
@@ -31,6 +39,54 @@ function el(doc, tag, className, text) {
 
 function registerClass(register) {
   return `register-${register}`;
+}
+
+// #28: renders an <a> (quiet provenance affordance, board.css's
+// .provenance-link) when href is truthy, or a plain element otherwise -
+// "no link, never a broken one" (issue #28's own escape hatch). CORRECTED
+// (#28/#12 fix cycle round 2 MINOR-2: "the className is IDENTICAL either
+// way" was literally false): the BASE className is preserved either way (a
+// caller's querySelectorAll('.car-subject') finds the element regardless
+// of which tag it rendered as), but 'provenance-link' is APPENDED only on
+// the linked form so board.css's quiet-affordance styling applies only
+// there - the two className strings differ by exactly that one token.
+function factOrLink(doc, className, text, href) {
+  if (href) {
+    const anchor = el(doc, 'a', `${className} provenance-link`, text);
+    anchor.setAttribute('href', href);
+    anchor.setAttribute('rel', 'noopener');
+    return anchor;
+  }
+  return el(doc, 'span', className, text);
+}
+
+// #12: the health-trend badge text - a compact glyph + word + the family's
+// own Major-count series, so the number itself (never just a color) carries
+// the evidence (HAVAGLANCE: a glance must transmit the WHOLE story, and a
+// bare color dot would not). 'first-round'/'unknown' get NO register class
+// (neutral, muted text-dim via board.css) - Majors on round 1 alone is
+// normal traffic in this shop, never alarming, and an unparseable findings
+// shape is Law 1's honest-unknown, never a guessed calm OR guessed hot.
+function healthTrendBadgeText(healthTrend) {
+  const series = healthTrend.majorsSeries ? healthTrend.majorsSeries.join('→') : null;
+  switch (healthTrend.trend) {
+    case 'converged':
+      return `▼ converged (${series})`;
+    case 'declining':
+      return `▼ declining (${series})`;
+    case 'stalled':
+      return `● stalled (${series})`;
+    case 'first-round':
+      return 'round 1 (no trend yet)';
+    default:
+      return 'trend: unknown';
+  }
+}
+
+function healthTrendRegisterClass(trend) {
+  if (trend === 'converged' || trend === 'declining') return 'register-nominal';
+  if (trend === 'stalled') return 'register-needs-attention';
+  return ''; // first-round / unknown: neutral, no register class (board.css's own muted default)
 }
 
 /**
@@ -44,10 +100,19 @@ export function renderBoard(doc, root, vm, connection) {
 
   root.appendChild(renderChrome(doc, vm, connection));
 
+  // #28: the three link-building primitives, read off the view model ONCE
+  // per render and threaded down to every lane body that needs them -
+  // never re-read from vm inside a deeply nested renderer.
+  const linkCfg = {
+    githubRepoUrl: vm.githubRepoUrl,
+    githubRef: vm.githubRef,
+    githubArtifactsPrefix: vm.githubArtifactsPrefix
+  };
+
   const lanesRoot = el(doc, 'section', 'lanes');
   const total = vm.lanes.length;
   vm.lanes.forEach((lane, index) => {
-    lanesRoot.appendChild(renderLane(doc, lane, index + 1, total));
+    lanesRoot.appendChild(renderLane(doc, lane, index + 1, total, linkCfg));
   });
   root.appendChild(lanesRoot);
 
@@ -84,12 +149,17 @@ function renderChrome(doc, vm, connection) {
 // #62: the footer status strip (shared across every mockup variant) - moved
 // here from the top chrome: registry lane completeness, the real
 // storePathDisplay wire field (never rendered anywhere before this pass -
-// already publication-safe per schema/yard-snapshot.schema.json:191), and
-// the #30 board-conditions strip. Store-record/fold counts ("store: 65 ->
-// 17 dispatches") appear in the mockups too but carry NO wire field
-// (schema/yard-snapshot.schema.json has no such field) - inventing one
-// client-side would be a second copy of server-owned arithmetic (Law 6) and
-// adding one server-side is a wire change, out of this ticket's scope.
+// already publication-safe per schema/yard-snapshot.schema.json's
+// config.storePathDisplay property - cited by SYMBOL, not line, #28/#12 fix
+// cycle round 2 MAJOR-1: this comment's own "  :191" line citation was
+// falsified by a LATER commit in this same train that grew the schema file,
+// exactly the trap poll.go's own "cited by symbol, not line" convention
+// exists to avoid), and the #30 board-conditions strip. Store-record/fold
+// counts ("store: 65 -> 17 dispatches") appear in the mockups too but
+// carry NO wire field (schema/yard-snapshot.schema.json has no such field)
+// - inventing one client-side would be a second copy of server-owned
+// arithmetic (Law 6) and adding one server-side is a wire change, out of
+// this ticket's scope.
 // CORRECTED (#62 fix cycle round 2, review round 1 MINOR-1 - this comment
 // used to say "routed to issue #1" while nothing had actually been posted
 // there, a carrier-rule miss): now actually routed - see issue #1, comment
@@ -157,7 +227,7 @@ function renderBoardConditionGroup(doc, group) {
 // own registry order, restated at the view - render.test.js pins this
 // order) - a structural ordinal about DECLARED lane position, never new
 // data and never a second copy of anything server-owned.
-function renderLane(doc, lane, index, total) {
+function renderLane(doc, lane, index, total, linkCfg) {
   const section = el(doc, 'article', `lane lane-${lane.id} ${registerClass(lane.register)}`);
 
   const plate = el(doc, 'div', 'lane-plate');
@@ -177,20 +247,20 @@ function renderLane(doc, lane, index, total) {
   section.appendChild(plate);
 
   const content = el(doc, 'div', 'lane-content');
-  content.appendChild(renderLaneBody(doc, lane.body));
+  content.appendChild(renderLaneBody(doc, lane.body, linkCfg));
   section.appendChild(content);
 
   return section;
 }
 
-function renderLaneBody(doc, body) {
+function renderLaneBody(doc, body, linkCfg) {
   switch (body.kind) {
     case 'trains':
-      return renderTrains(doc, body);
+      return renderTrains(doc, body, linkCfg);
     case 'gates':
-      return renderGates(doc, body);
+      return renderGates(doc, body, linkCfg);
     case 'dispatches':
-      return renderDispatches(doc, body);
+      return renderDispatches(doc, body, linkCfg);
     case 'dark':
       return el(doc, 'div', 'lane-body lane-body-dark', body.text);
     case 'bagged':
@@ -204,15 +274,25 @@ function renderLaneBody(doc, body) {
 
 // TRAINS: track-schematic direction (mockup merge 2b) - each train is a
 // labeled track holding its cars in sequence.
-function renderTrains(doc, body) {
+function renderTrains(doc, body, linkCfg) {
   const wrap = el(doc, 'div', 'lane-body lane-body-trains');
   for (const train of body.trains) {
     const track = el(doc, 'div', 'track');
     track.appendChild(el(doc, 'div', 'track-title', `${train.title} (${train.id})`));
+    // #28: the manifest's own declared ticket refs, rendered as issue
+    // links - a train with none renders no ticket strip at all (never an
+    // empty one), matching every other honest-absence convention here.
+    if (train.tickets.length > 0) {
+      const ticketsEl = el(doc, 'div', 'train-tickets');
+      for (const ticket of train.tickets) {
+        ticketsEl.appendChild(factOrLink(doc, 'ticket-link', ticket, buildIssueLink(linkCfg, ticket)));
+      }
+      track.appendChild(ticketsEl);
+    }
     const cars = el(doc, 'div', 'track-cars');
     for (const car of train.cars) {
       const chip = el(doc, 'div', `car-chip ${registerClass(car.stateRegister)}`);
-      chip.appendChild(el(doc, 'span', 'car-subject', car.subject));
+      chip.appendChild(factOrLink(doc, 'car-subject', car.subject, buildRecordLink(linkCfg, car.recordDir)));
       chip.appendChild(el(doc, 'span', 'car-role', car.role.label));
       // VERBATIM state word - never translated (mockup brief).
       chip.appendChild(el(doc, 'span', 'car-state', car.state));
@@ -245,7 +325,7 @@ function renderTrains(doc, body) {
 // surfaced". Derived honestly from the same data already in hand (zero
 // entries in THIS fold's gates array) - never invented, never a guess
 // about why it is empty.
-function renderGates(doc, body) {
+function renderGates(doc, body, linkCfg) {
   const wrap = el(doc, 'div', 'lane-body lane-body-gates');
   if (body.gates.length === 0) {
     wrap.appendChild(el(doc, 'div', 'lane-body-gates-empty', 'no gates in this fold'));
@@ -253,9 +333,22 @@ function renderGates(doc, body) {
   }
   for (const gate of body.gates) {
     const signal = el(doc, 'div', `signal ${registerClass(gate.outcomeRegister)}`);
-    signal.appendChild(el(doc, 'span', 'signal-name', gate.name));
+    signal.appendChild(factOrLink(doc, 'signal-name', gate.name, buildRecordLink(linkCfg, gate.recordDir)));
     signal.appendChild(el(doc, 'span', 'signal-outcome', gate.outcome)); // VERBATIM
     signal.appendChild(el(doc, 'span', 'signal-at', gate.at));
+    // #12: the car health bar - present ONLY on a review-round family's
+    // LATEST round (render.js's computeHealthTrends already scoped this;
+    // this renderer just draws whatever it was handed).
+    if (gate.healthTrend) {
+      signal.appendChild(
+        el(
+          doc,
+          'span',
+          `health-trend ${healthTrendRegisterClass(gate.healthTrend.trend)}`.trim(),
+          healthTrendBadgeText(gate.healthTrend)
+        )
+      );
+    }
     wrap.appendChild(signal);
   }
   return wrap;
@@ -263,7 +356,7 @@ function renderGates(doc, body) {
 
 // DISPATCHES: Solari split-flap direction (mockup merge 1b) - dense
 // monospace rows: subject, state word, elapsed.
-function renderDispatches(doc, body) {
+function renderDispatches(doc, body, linkCfg) {
   const wrap = el(doc, 'div', 'lane-body lane-body-dispatches');
   wrap.appendChild(
     el(doc, 'div', 'yard-inventory-count', `${body.yardInventoryCount} in yard inventory (unassigned)`)
@@ -271,10 +364,11 @@ function renderDispatches(doc, body) {
   const rows = el(doc, 'div', 'solari-rows');
   for (const d of body.dispatches) {
     const row = el(doc, 'div', `solari-row ${registerClass(d.stateRegister)}${d.assigned ? '' : ' unassigned'}`);
-    const subject = el(doc, 'span', 'solari-subject', d.subject);
+    const subject = factOrLink(doc, 'solari-subject', d.subject, buildRecordLink(linkCfg, d.recordDir));
     // #62: board.css truncates a long subject id with an ellipsis (the
     // fixed-height dispatches grid) - the native title tooltip keeps the
-    // full id reachable, never silently lost.
+    // full id reachable, never silently lost. Survives becoming a link
+    // (#28) - the title attribute goes on the anchor/span either way.
     subject.setAttribute('title', d.subject);
     row.appendChild(subject);
     row.appendChild(el(doc, 'span', 'solari-state', d.state)); // VERBATIM

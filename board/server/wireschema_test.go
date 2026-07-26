@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/polecatspeaks/StarCar/board/assemble"
 	"github.com/santhosh-tekuri/jsonschema/v6"
 )
 
@@ -28,6 +29,7 @@ func TestAssembledSnapshotValidatesAgainstWireSchema(t *testing.T) {
 		"integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
 		"manifest": {
 			"title": "The yard board train",
+			"tickets": ["#28", "#12"],
 			"members": [
 				{ "subject": "carA", "role": "car" },
 				{ "subject": "gate-1", "role": "gate", "gate": "design review round 1" }
@@ -42,14 +44,20 @@ func TestAssembledSnapshotValidatesAgainstWireSchema(t *testing.T) {
 		"session_id": "s1",
 		"at": "2026-07-23T09:10:00Z",
 		"outcome": "REJECT",
-		"findings": "f",
+		"findings": "1 Major, 0 Minor",
 		"abstract": "a",
 		"normalisation": [],
 		"integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
 	}`)
 	writeRecord(t, root, "orphan-1/dispatched-1.json", validDispatchedJSON("orphan-1", "2026-07-23T09:06:00Z"))
 
-	srv := newTestServer(t, root)
+	cfg := testConfig(t, root)
+	cfg.RepoRoot = filepath.Dir(root) // root itself is NOT "artifacts", but any parent proves the prefix computes
+	cfg.GitHubRepo = "polecatspeaks/StarCar"
+	srv, err := NewServer(cfg)
+	if err != nil {
+		t.Fatalf("NewServer: %v", err)
+	}
 	now := time.Date(2026, 7, 23, 9, 20, 0, 0, time.UTC)
 	snap, _, err := srv.PollOnce(now)
 	if err != nil {
@@ -74,5 +82,71 @@ func TestAssembledSnapshotValidatesAgainstWireSchema(t *testing.T) {
 	}
 	if err := sch.Validate(doc); err != nil {
 		t.Fatalf("assembled snapshot failed wire-schema validation: %v\nsnapshot: %s", err, data)
+	}
+
+	// #28/#12: the new fields must actually be PRESENT and correctly shaped
+	// on the real, schema-validated wire output - not merely schema-legal
+	// (an absent optional field also validates, which would let a silent
+	// wiring bug through undetected).
+	if snap.Config.GitHubRepoURL != "https://github.com/polecatspeaks/StarCar" {
+		t.Errorf("Config.GitHubRepoURL = %q", snap.Config.GitHubRepoURL)
+	}
+	if snap.Config.GitHubArtifactsPrefix == "" {
+		t.Errorf("Config.GitHubArtifactsPrefix must be non-empty when RepoRoot is a real ancestor of StorePath")
+	}
+	var trainsLane, gatesLane, dispatchesLane Lane
+	for _, l := range snap.Lanes {
+		switch l.ID {
+		case "trains":
+			trainsLane = l
+		case "gates":
+			gatesLane = l
+		case "dispatches":
+			dispatchesLane = l
+		}
+	}
+	trainsPayload, ok := trainsLane.Data.(assemble.TrainsPayload)
+	if !ok {
+		t.Fatalf("trains lane Data is %T, want assemble.TrainsPayload", trainsLane.Data)
+	}
+	if len(trainsPayload.Trains) != 1 || len(trainsPayload.Trains[0].Tickets) != 2 {
+		t.Fatalf("expected 1 train with 2 tickets, got %+v", trainsPayload.Trains)
+	}
+	var carA assemble.TrainCar
+	for _, c := range trainsPayload.Trains[0].Cars {
+		if c.Subject == "carA" {
+			carA = c
+		}
+	}
+	if carA.RecordDir != "carA" {
+		t.Errorf("carA.RecordDir = %q, want carA", carA.RecordDir)
+	}
+
+	gatesPayload, ok := gatesLane.Data.(assemble.GatesPayload)
+	if !ok {
+		t.Fatalf("gates lane Data is %T, want assemble.GatesPayload", gatesLane.Data)
+	}
+	if len(gatesPayload.Gates) != 1 {
+		t.Fatalf("expected 1 gate, got %d", len(gatesPayload.Gates))
+	}
+	if gatesPayload.Gates[0].RecordDir != "gate-1" {
+		t.Errorf("gate.RecordDir = %q, want gate-1", gatesPayload.Gates[0].RecordDir)
+	}
+	if gatesPayload.Gates[0].Findings != "1 Major, 0 Minor" {
+		t.Errorf("gate.Findings = %q", gatesPayload.Gates[0].Findings)
+	}
+
+	dispatchesPayload, ok := dispatchesLane.Data.(assemble.DispatchesPayload)
+	if !ok {
+		t.Fatalf("dispatches lane Data is %T, want assemble.DispatchesPayload", dispatchesLane.Data)
+	}
+	var orphanDir string
+	for _, d := range dispatchesPayload.Dispatches {
+		if d["subject"] == "orphan-1" {
+			orphanDir, _ = d["recordDir"].(string)
+		}
+	}
+	if orphanDir != "orphan-1" {
+		t.Errorf("orphan-1 recordDir = %q, want orphan-1", orphanDir)
 	}
 }
