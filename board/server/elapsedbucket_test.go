@@ -32,7 +32,12 @@ import (
 // time an unrelated edit lands above it in the file, which a hardcoded line
 // range does not survive) - the same rule ageBucketMs already relies on
 // between ITS 5s crossings: this test's middle poll (snap2) asserts that
-// pre-existing behavior holds for elapsed_seconds too.
+// pre-existing behavior holds for elapsed_seconds too. GENERAL RULE (R2-M1,
+// 2026-07-26): this applies doubly to a citation INTO a file the SAME
+// commit is editing - such a coordinate must be re-derived after the
+// edit lands, or it must be expressed as a symbol/description instead,
+// because the citing comment and its target can shift by different
+// amounts in the same diff and no amount of care catches that by eye.
 //
 // cfg.StalenessMs is raised well past every elapsed value this test uses so
 // the live lane's freshness.kind stays "fresh" throughout (never "stale") -

@@ -40,8 +40,13 @@ const ageBucketMsGranularity = int64(5000)
 // quantises elapsed_seconds into this bucket; the value it lets through
 // unchanged is never itself rounded.
 //
-// WHAT THIS DOES NOT MEAN (measured, elapsedbucket_test.go:99-101): between
-// bucket crossings PollOnce serves the PRIOR snapshot unchanged (poll.go's
+// WHAT THIS DOES NOT MEAN (measured: elapsedbucket_test.go's
+// TestPollOnceElapsedSecondsBucketedForChangeDetection - dispatchElapsed(snap2)
+// must read 10, the prior snapshot's value, while actual elapsed is 50 -
+// cited by symbol/description, not line, since a line coordinate into a
+// file the SAME commit edits is exactly the trap this convention exists to
+// avoid, per that test file's own header comment on this point).
+// Between bucket crossings PollOnce serves the PRIOR snapshot unchanged (poll.go's
 // own PollOnce doc comment, "the prior snapshot stands unchanged"), so a
 // connected client's displayed elapsed_seconds can trail the true wall-clock
 // value by up to this bucket's width (observed: actual 50s, served 10s).
