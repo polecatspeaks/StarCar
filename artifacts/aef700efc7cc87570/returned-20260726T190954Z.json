@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "aef700efc7cc87570",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-26T19:09:54Z",
+  "outcome": "done",
+  "findings": "R2-M1 fixed at commit 807564086a4d427c1a8b0ecf002b1e4177b2dcec, one line plus one added sentence to the existing comment-convention block, both prose-only. Re-audited afterward for a repeat of the same failure class (grepped every poll.go self-citation repo-wide): none introduced; the only remaining internal poll.go line citations are pre-existing #52-hygiene drift that predates this car's base commit entirely (out of scope, self-disclosed by that earlier train) and the immutable git-show-pinned historical reference from round 2. Diff scope confirmed exactly two files, one hunk each, via git diff --stat against 9080a5f. Go suite re-run and unchanged: 73/73 pass, go vet clean. Per the reviewer's own stated round-3 plan (targeted delta, re-resolve the one citation, re-run nothing else), the other five suites were not re-executed since no non-Go file changed and no behavior changed in the Go files either - both edits are comment-only.",
+  "abstract": "Addressed round-2 REJECT's single new Major (R2-M1): a citation the round-2 fix itself had pasted verbatim from the round-1 verdict without re-deriving after its own edit shifted the target by 8 lines, landing a reader on error-propagation plumbing instead of the promised measurement. Fixed with the already-established symbol/description remedy (no line coordinate) at the one site that had missed it, and added the reviewer's recommended general-rule sentence to the existing comment-convention note explaining why a citation into a file the same commit edits must be re-derived or symbolized. Confirmed via git diff --stat that only the two named files changed, one hunk each, both comment-only; re-audited the whole repo for any recurrence of dead poll.go self-citations and found none new. Go suite re-run: 73/73 pass, vet clean, matching rounds 1 and 2 exactly.",
+  "subject_basis": "runtime-id",
+  "task_id": "server-27-29-car-r3",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:1d01393e4570e4a957ffe72ebe5cb237430290512584eaae667924c04c53a560"
+}
