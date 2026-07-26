@@ -181,3 +181,16 @@ overlap found.
   (not just counts) before touching field definitions, and verify the read-back immediately
   after. Second lesson, cheap only by luck: the count-only snapshot happened to be
   reconstructible from issue state; a board with hand-curated statuses would not have been.
+
+- 2026-07-26 (reviewer-caught, conductor honors the cap): THE SWIRL DOCTRINE FIRED ON ITS
+  FIRST LIVE TEST. Tooling train #50+#32: round 1 REJECT (5 Major), fix cycle closed all
+  eleven findings, round 2 REJECT (4 Major) - with 4 of 4 new Majors CREATED BY THE FIXES
+  and 3 of 4 clustered in one file (session-start-record.sh). Two of three swirl triggers
+  fired; the reviewer set a cap (no round 3 on the delivery mechanism) and escalated the
+  unquestioned premise: that the record script must determine session-batch identity by
+  itself, when its stdin is occupied and can never read the payload carrying session_id.
+  Two mechanisms were written for one requirement; each was correct against the tests
+  written for it; each lost guard output under conditions those tests did not model. Cost:
+  one extra review round, cheap - the cap fired BEFORE a third mechanism was written, which
+  is the exact failure the doctrine was built from (the harness-design 4-round scar).
+  Class: the reviewer-held cap works; a conductor cannot detect its own churn, and did not.
