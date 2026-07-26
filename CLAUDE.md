@@ -1023,12 +1023,21 @@ test - the nearest surface that can hold prose without altering the subject.
 producer, not by a person, and is data rather than code. A generator citing a ticket in
 every record it stamps would be noise, and the record already carries its own provenance.
 
-*Mechanism, trigger-gated, and the prior art already exists in-repo so nobody invents it:
-`docs/templates/repo-policy-check-patterns.md` §1's gate pattern is already ported as
-`scripts/tests/DocPolicy.Tests.ps1`, which enforces the docs `Status:` line the same way.
-The citation check is that pattern aimed at new code files, and it lands with #3 and #4 on
-the next CI touch whose own scope includes repo-policy enforcement. Until then this is
-attention-tier and reviewers carry it, which is a real downgrade and is recorded as one.*
+*Mechanism, LANDED (#42, 2026-07-26): `docs/templates/repo-policy-check-patterns.md` §1's
+gate pattern - already ported as `scripts/tests/DocPolicy.Tests.ps1`, which enforces the
+docs `Status:` line - is now also ported as `scripts/tests/CodeCitationPolicy.Tests.ps1`,
+aimed at new code files instead of docs. It walks files added after the boundary commit
+`d4db6f5baf2bd31bf41f9dc5804684334797cb35`, checks extensions `.ps1 .psm1 .go .js .mjs .sh`
+(derived from the real post-boundary corpus at landing), skips `artifacts/**` and `.json`/
+`.md` (config, fixtures, and docs are out of this gate's scope for the reasons stated
+above and in the test file's header), and fails listing every violator by name if any
+post-boundary code file lacks a bare `#N` marker. It runs wherever `scripts/tests` runs -
+`.github/workflows/ci.yml`'s "Run board tooling tests" step already invokes
+`Invoke-Pester -Path ./scripts/tests`, so no CI wiring change was needed. Calibrated
+against the real corpus at landing: all 21 post-boundary code files already carried
+citations (the "already the house habit" signal below held), so the gate landed green
+with zero fixes required. This closes the parked bullet in #3/#4's queue for THIS one
+check; #3 (area-label presence) and #4 (PR docs review) remain open, unaffected.*
 
 **NO BACKFILL. THE BOUNDARY IS THE POINT (owner ruling, 2026-07-23).** Code that predates
 `d4db6f5` is not retrofitted - not now, not opportunistically, not by a future agent
