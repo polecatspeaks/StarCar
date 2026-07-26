@@ -24,6 +24,35 @@ import (
 // updates periodically as the age climbs.
 const ageBucketMsGranularity = int64(5000)
 
+// elapsedSecondsBucketGranularity is issue #27's fix: an in-flight
+// ("dispatched") winner's elapsed_seconds recomputes every poll from now-at
+// (board/fold/algorithm.go:221-222) and, unlike ageBucketMs above, is a raw,
+// continuously-increasing counter with no quantisation of its own - every
+// poll differs while any dispatch is in flight, so seq bumped on nearly
+// every tick, defeating change detection's idle-costs-nothing purpose for
+// exactly the periods the board is busiest (design D9).
+//
+// DECISION (disclosed, per issue #27's own framing of the choice): the WIRE
+// value of elapsed_seconds stays EXACT, unbucketed - board/web/js/dom-
+// writer.js:201 renders it verbatim to the second (`${d.elapsedSeconds}s`),
+// and a connected client's current snapshot must keep showing fresh,
+// precise elapsed time. Only the CHANGE-DETECTION COMPARISON basis
+// (mustMarshalStripped below) quantises elapsed_seconds into this bucket.
+// This is the "no schema change, no consumer impact" option named in the
+// ticket: schema/yard-snapshot.schema.json's elapsed_seconds stays an
+// unconstrained integer, board/web needs no change, and a "dispatched" ->
+// "overdue" transition is still caught regardless of this bucket, because
+// that transition changes the STATE STRING (algorithm.go:240), a field this
+// bucketing never touches.
+//
+// Granularity: order-of-minutes (60s), per the ticket's own framing. At the
+// default pollMs (1000ms), this cuts seq churn from "every poll" to "about
+// once a minute" while a dispatch sits in flight - the same shape ageBucketMs
+// already applies to stale age, just coarser here because per-second wire
+// precision (dom-writer.js) is worth preserving exactly, while the
+// CHANGE-DETECTION signal it drives does not need per-second resolution.
+const elapsedSecondsBucketGranularity = int64(60)
+
 // Server holds the compiled adapter and every mutable field this train's
 // living-contract obligation (plan task 4.4) ledgers: lastGoodSnapshot,
 // pollInFlight, seq, connectedClients (sse.go), lane-id set (laneRegistry).
@@ -396,20 +425,14 @@ func foldRecordsFrom(records []store.Record) []fold.Record {
 // time. Panics only on a json.Marshal failure of a fully static Go value,
 // which cannot happen for this struct family - never reached in practice.
 //
-// DISCLOSED, OUT OF SCOPE (found writing the C4R-3 fix-cycle test, Car 4
-// review round 1): this function does NOT strip a "dispatched"-winner
-// entry's elapsed_seconds (board/fold.DispatchEntry, recomputed every poll
-// from now-at), which is a raw, continuously-increasing counter exactly
-// like the fields this function DOES strip - unlike ageBucketMs, it is not
-// quantised. A live train with an actively dispatched (not yet returned)
-// car will therefore see seq bump on every poll that ticks past a whole
-// second, not just on a real state change. Not fixed here: the review that
-// ordered this comment scoped the ask to ageBucketMs's inclusion direction
-// only, and this is a genuinely separate design question (should
-// elapsed_seconds be quantised the same way ageBucketMs is, and if so at
-// what granularity) that deserves its own decision, not a silent
-// side-fix riding on an unrelated commit. Triaged as issue #27
-// (deferred; triggers stated there).
+// #27 fix: the dispatches lane's payload (assemble.DispatchesPayload, each
+// entry a map[string]any built by fold.DispatchEntry.MarshalJSON) also has
+// its "elapsed_seconds" entry quantised into elapsedSecondsBucketGranularity
+// buckets for THIS COMPARISON COPY ONLY - snap itself (the value actually
+// served on the wire) is never touched, only stripped's deep-copied maps
+// are. A "dispatched" -> "overdue" transition still bumps seq regardless of
+// this bucket, because that changes the "state" string, which this function
+// does not touch.
 func mustMarshalStripped(snap Snapshot) []byte {
 	stripped := snap
 	stripped.Seq = 0
@@ -420,6 +443,9 @@ func mustMarshalStripped(snap Snapshot) []byte {
 		f.AsOf = nil
 		f.LastGoodAsOf = nil
 		l.Freshness = f
+		if dp, ok := l.Data.(assemble.DispatchesPayload); ok {
+			l.Data = bucketDispatchesForComparison(dp)
+		}
 		stripped.Lanes[i] = l
 	}
 	// Board conditions carry no timestamps of their own; sort for a stable
@@ -438,4 +464,31 @@ func mustMarshalStripped(snap Snapshot) []byte {
 		panic("board/server: marshalling a stripped Snapshot for change detection failed: " + err.Error())
 	}
 	return data
+}
+
+// bucketDispatchesForComparison (#27) returns a DEEP COPY of dp with every
+// entry's "elapsed_seconds" quantised to elapsedSecondsBucketGranularity.
+// A deep copy is required, not a mutation in place: dp.Dispatches' maps are
+// the SAME map instances buildSnapshot assigned to the real Snapshot that
+// gets served on the wire (assemble.Assemble builds them once per poll;
+// Lane.Data holds that same value) - mutating them here would corrupt the
+// precise elapsed_seconds a connecting client is entitled to see.
+// elapsed_seconds arrives as float64 (dispatchWireMap marshals then
+// unmarshals fold.DispatchEntry through encoding/json's `any` target,
+// board/assemble/assemble.go's dispatchWireMap) - a "returned" or
+// "presumed-lost" entry carries no such key (fold.DispatchEntry.MarshalJSON,
+// output.go:9-32) and is copied through untouched.
+func bucketDispatchesForComparison(dp assemble.DispatchesPayload) assemble.DispatchesPayload {
+	out := assemble.DispatchesPayload{Dispatches: make([]map[string]any, len(dp.Dispatches))}
+	for i, m := range dp.Dispatches {
+		cp := make(map[string]any, len(m))
+		for k, v := range m {
+			cp[k] = v
+		}
+		if raw, ok := cp["elapsed_seconds"].(float64); ok {
+			cp["elapsed_seconds"] = (int64(raw) / elapsedSecondsBucketGranularity) * elapsedSecondsBucketGranularity
+		}
+		out.Dispatches[i] = cp
+	}
+	return out
 }

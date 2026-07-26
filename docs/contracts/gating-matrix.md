@@ -51,15 +51,16 @@ disclose here. The row previously named a deliberate scope split ("no client exi
 this note is retained as the record of that decision, trued up in the same commit that
 closed it, per the living-documents same-commit rule.
 
-**Disclosed finding, out of this fix cycle's scope (2026-07-23, found writing the C4R-3
-regression test, Car 4 review round 1 fix cycle):** the Staleness row's change-detection
-comparison (`mustMarshalStripped`, `poll.go`) strips `freshness.asOf`/`lastGoodAsOf` but
-does NOT strip a dispatched-winner entry's `elapsed_seconds` (`board/fold.DispatchEntry`,
-recomputed every poll from `now - at`) - unlike `ageBucketMs`, this field is not quantised,
-so a live train with an actively dispatched (not yet returned) car will bump `seq` on
-essentially every poll that crosses a whole second, not only on a real state change. Found,
-not fixed: the ordering review scoped this cycle's C4R-3 ask to `ageBucketMs`'s inclusion
-direction specifically, and whether `elapsed_seconds` should be quantised the same way (and
-at what granularity) is a genuinely separate design question, not a silent side-fix riding
-on an unrelated commit. Recorded here so it is triaged as issue #27 (deferred, triggers stated there),
-never a silently-dropped observation.
+**RESOLVED (2026-07-26, issue #27, server car):** the Staleness row's change-detection
+comparison (`mustMarshalStripped`, `poll.go`) previously did NOT strip a dispatched-winner
+entry's `elapsed_seconds` (`board/fold.DispatchEntry`, recomputed every poll from
+`now - at`) - unlike `ageBucketMs`, that field was not quantised, so a live train with an
+actively dispatched (not yet returned) car bumped `seq` on essentially every poll that
+crossed a whole second, not only on a real state change. Fixed by
+`elapsedSecondsBucketGranularity` (`poll.go`, 60s buckets): the COMPARISON basis now
+quantises `elapsed_seconds` the same way `ageBucketMs` already quantises age, while the
+WIRE value - what a served snapshot actually carries when it IS current - stays exact,
+never rounded (`board/web/js/dom-writer.js:201` renders it verbatim; no schema change).
+A `dispatched` -> `overdue` transition still bumps `seq` regardless of this bucket, because
+that changes the `state` string, which the bucketing never touches. Evidence:
+`TestPollOnceElapsedSecondsBucketedForChangeDetection` (`board/server/elapsedbucket_test.go`).
