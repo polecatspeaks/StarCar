@@ -61,6 +61,18 @@ state that failing it escalates to the owner rather than to another round.
 author believed each round would close it. Only a reviewer holding the series could see
 it, and only because the conductor handed over the history.]
 
+BASE-DELTA (#13, on any round after the first, or any rotation to a fresh reviewer):
+state the SHA you are reviewing and the prior round's reviewed SHA, plus the diff range
+between them. UNREPRODUCIBLE-EVIDENCE CALLOUT (#13): name any finding resting on
+evidence you cannot hand to a future reader unchanged, in its own line, never folded
+into a findings table.
+
+[WHY: this brief is dispatched fresh every ROUND <N>, not only round 1 - the same
+rotation-drill gap the delta template two sections below exists to close applies here
+too. A reviewer picking up round 3 cold needs the round-2-to-round-3 delta from the
+verdict itself, not from CONVERGENCE HISTORY alone (which gives Major counts and
+clusters, not a diff range) or from the conductor's memory.]
+
 ATTACK THESE, in this order: <named failure classes specific to this design>.
 
 [WHY: "review this design" produces a spelling check. "Hunt THIS class in THIS seam"
@@ -81,7 +93,8 @@ RULINGS: rule on every open question the design asks. That is your job, not the 
 CONSTITUTION CHECK: all <N> laws, one line of evidence each, or a finding.
 
 OUTPUT:
-- VERDICT: APPROVE or REJECT, first line, one sentence.
+- VERDICT: APPROVE or REJECT, first line, one sentence; BASE-DELTA and any
+  UNREPRODUCIBLE-EVIDENCE callout (#13) stated explicitly.
 - FINDINGS by severity, each anchored to a location you opened.
 - RULINGS on the open questions.
 - CONSTITUTION CHECK.
