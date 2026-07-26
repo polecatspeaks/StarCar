@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a19ef853c23ba9742",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-26T20:43:18Z",
+  "outcome": "done",
+  "findings": "MINOR-2 fixed: board.css:437's false same-day store-growth claim (\"~79 to ~90 rows\") corrected to the true ground - the store is append-only by design (growth is not a measured rate) and the decisive, foregrounded reason the bound stays is that alphabetical, severity-blind sort order means no fixed height guarantees a hot row's visibility, so fitting today is coincidence, not guarantee. Comment-only change; node --test re-verified 81/81 unaffected. One adjacent, same-class imprecision noticed at board.css:397-398 (\"~79 dispatch records\" is actually the unassigned-subset count, same mislabeling class as MINOR-2) but deliberately not touched - out of this one-liner's explicit scope (\"nothing else touched\") and this is a reviewer-waived pre-merge commit; disclosed here rather than silently expanded into or silently left unmentioned.",
+  "abstract": "Pre-merge one-line fix cycle for issue #62 addressing MINOR-2 from the round-2 re-review: corrected a false claim in board.css's keep-the-bound comment that conflated two different measurements (an unassigned-dispatch-count snapshot vs a reviewer-injected-probe count) as same-day store growth. Replaced with the true, decisive reasoning - the store's append-only design guarantees eventual growth (not a measured rate), and the real reason the bound is kept is that alphabetical sort order can never guarantee a hot row's visibility regardless of clip height. Comment-only, no code touched; node --test 81/81 unaffected. Committed at 4d3b9bdbe57348815ebf5359cfc4d98a729e1f73 on car/view-62.",
+  "subject_basis": "runtime-id",
+  "task_id": "view-62-car-r3",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:c14b9d978107a53a09e972a9f623ee22953c7ad12cff9b0f4ab00a0e6877e777"
+}
