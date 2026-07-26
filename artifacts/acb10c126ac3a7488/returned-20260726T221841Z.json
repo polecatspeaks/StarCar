@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "acb10c126ac3a7488",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-26T22:18:41Z",
+  "outcome": "done",
+  "findings": "All 4 Major and 6 Minor findings from round-1 review addressed with verification; MAJOR-4 fixed red-first with the observed failure quoted verbatim as required, plus a Go-side disclosure assertion (gate-findings-record-not-found board condition) added beyond the minimum fix. While sweeping for MAJOR-1/2's citation-drift class I found and fixed two additional self-invalidated citations in board/server/poll.go and three in board/web/css/board.css that the review did not explicitly name but that the living-document rule obligated fixing (same root cause: this train's own earlier commits shifted line numbers in files those comments cited by line). No new suite regressions; all six requested suite families re-run and green at final HEAD.",
+  "abstract": "Fix cycle round 2 for issues #28 (clickable provenance) and #12 (car health bar) addressing an Opus reviewer's REJECT (4 Major, 6 Minor) on round 1. The load-bearing MAJOR-4 fixed a live wire defect where a gate's rendered findings text could come from a superseded (older) returned record while its outcome/at came from the winning (newer) one - reproduced red-first with a two-returned-records test, fixed by matching subject+kind+at instead of subject+kind alone, and hardened with a new Go-side board condition for the should-be-unreachable not-found case. Three citation-truth defects (self-invalidated line-number citations across dom-writer.js/config.go from this train's own earlier commits, and a fabricated \"docs/CLAUDE.md\" attribution for two worked examples that actually originate in issue #12's body) were corrected throughout, plus six Minor findings (independent GitHub-config field degradation, className semantics, an unenforced-invariant claim, an uncheckable citation recalibrated to a reproducible measurement, a wrong file path, and a missing user-facing env-var doc). Go 85/85, Node 129/129, Pester 195/195, probes 24/24, schema probe PASS - all six requested suite families green at new HEAD 6346d7d670a7460a6173c3584f88af22bf288f4a.",
+  "subject_basis": "runtime-id",
+  "task_id": "view-28-12-car-r2",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:f96c21c16ad592cdc45642ef52e4c646318f9e2be9f4f441986ffa5028e533f4"
+}
