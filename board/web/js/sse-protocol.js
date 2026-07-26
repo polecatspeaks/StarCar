@@ -13,8 +13,10 @@
 // by the event-stream processing algorithm beyond resetting the
 // reconnection timer's internal bookkeeping) - so a page built on
 // EventSource literally cannot observe a heartbeat arriving, and
-// gating-matrix.md:43's own rule ("resets on: any frame arriving, data OR
-// heartbeat") is unimplementable against that API's public surface.
+// gating-matrix.md's Disconnect row's own rule (cited by row name, not
+// line, since that row has already moved once) - "resets on: any frame
+// arriving, data OR heartbeat" - is unimplementable against that API's
+// public surface.
 //
 // This module reads the raw response body (fetch + ReadableStream) instead
 // - still vanilla JS, still no bundler, no framework, no build step (D19's
@@ -76,10 +78,11 @@ export function classifyFrame(rawFrame) {
 }
 
 /**
- * The client-side half of the disconnect gating-matrix row
- * (docs/contracts/gating-matrix.md:43): "two consecutive heartbeatMs
- * intervals pass with no frame" fires `onDisconnect`; "any frame arriving,
- * data or heartbeat" resets the timer and clears the disconnected mark.
+ * The client-side half of docs/contracts/gating-matrix.md's Disconnect row
+ * (cited by row name, not line, since that row has already moved once):
+ * "two consecutive heartbeatMs intervals pass with no frame" fires
+ * `onDisconnect`; "any frame arriving, data or heartbeat" resets the timer
+ * and clears the disconnected mark.
  *
  * Uses the GLOBAL setTimeout/clearTimeout so tests can drive it
  * deterministically with `node:test`'s built-in `t.mock.timers` rather than

@@ -85,23 +85,26 @@ type Server struct {
 	lastCompareBytes []byte
 	lastPollAt       *time.Time // plan task 4.4 ledger row: set after EVERY PollOnce call, success or scan failure - distinct from lastGoodSnapshot's asOf, which only advances on a successful scan
 	// #52 C51R-5 SINGLE-POLL INVARIANT: lastGoodAsOf and lastGoodLaneData
-	// (both below) are written by buildSnapshot BEFORE s.mu is taken (see
-	// PollOnce, poll.go:197-203 - buildSnapshot runs at line 200, s.mu.Lock
-	// only at line 203) and so are NOT protected by s.mu. Their safety
-	// rests entirely on PollOnce never running concurrently with itself -
-	// an invariant enforced NOT here but at the ONE production call site,
-	// RunPollLoop (poll.go:168-182), which only invokes PollOnce (in its
-	// own goroutine) after TryBeginPoll's atomic.CompareAndSwapInt32
-	// (poll.go:157-158) has claimed the in-flight slot; a tick that loses
-	// the CAS is skipped, never queued (TestSkipNotQueueGuard,
+	// (both below) are written by buildSnapshot BEFORE s.mu is taken - see
+	// PollOnce: it calls s.buildSnapshot(...) first and only reaches
+	// s.mu.Lock() afterward - and so are NOT protected by s.mu. Their
+	// safety rests entirely on PollOnce never running concurrently with
+	// itself - an invariant enforced NOT here but at the ONE production
+	// call site, RunPollLoop, which only invokes PollOnce (in its own
+	// goroutine) after TryBeginPoll's atomic.CompareAndSwapInt32 has
+	// claimed the in-flight slot; a tick that loses the CAS is skipped,
+	// never queued (TestSkipNotQueueGuard,
 	// TestSkipNotQueueGuardConcurrentClaimIsExclusive, poll_test.go). If a
 	// SECOND poller (a second RunPollLoop, an admin-triggered PollOnce,
 	// etc.) is ever added without going through this SAME guard, these two
 	// maps become a data race. Pin, don't assume: any new PollOnce call
 	// site must be gated by TryBeginPoll/EndPoll exactly as RunPollLoop is.
-	// (Line numbers cited here are as observed at this commit on branch
-	// car/52-hygiene, base d09dd2d; they will drift - re-verify before
-	// trusting them blindly in a future diff.)
+	// CITED BY SYMBOL, NOT LINE (R3-M1, 2026-07-26): this paragraph used to
+	// cite hardcoded line numbers "as observed at this commit on branch
+	// car/52-hygiene" with a disclaimer that they would drift - they did,
+	// three separate times across three later trains, and the disclaimer
+	// did not stop it. Function and field names survive an insertion
+	// anywhere else in this file; a line number does not.
 	lastGoodAsOf     map[string]*string // per live-lane-id, the most recent successful asOf (carried through a failed scan)
 	lastGoodLaneData map[string]any     // #51 C2: per live-lane-id, the most recent successful assembled payload (assemble.DispatchesPayload/GatesPayload/TrainsPayload) - what buildSnapshot assigns to lane.Data on a scan failure, so a failed lane keeps showing its last good content instead of degrading to "no renderer for this payload" (docs/design/2026-07-21-v0-yard-skeleton-design.md section 6 row 1; docs/contracts/state-ledger.md:108 - #52 C51R-4: corrected from :102, which is the `seq` row, not this field's row)
 

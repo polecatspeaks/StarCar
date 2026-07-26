@@ -51,9 +51,11 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 	// a poll's broadcast that lands in the gap between this client's
 	// snapshot read and its subscription cannot be missed. A duplicate
 	// current frame arriving via ch after the initial send is harmless -
-	// the client rejects any non-increasing seq (board/web/js/ingest.js:59:
-	// "if (typeof payload.seq === 'number' && payload.seq <= state.
-	// lastAppliedSeq)" is a no-op).
+	// the client rejects any non-increasing seq (board/web/js/ingest.js's
+	// applyIncomingPayload - cited by symbol and by the guard's own quoted
+	// code, not by line, since a citation into an untouched file can still
+	// be broken by an edit to that file's target: "if (typeof payload.seq
+	// === 'number' && payload.seq <= state.lastAppliedSeq)" is a no-op).
 	ch := s.subs.register()
 	defer s.subs.unregister(ch)
 	if s.testStreamOrderHook != nil {

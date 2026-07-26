@@ -82,7 +82,8 @@ async function streamLoop(validator) {
         for (const rawFrame of frames) {
           const frame = classifyFrame(rawFrame);
           // ANY frame - heartbeat or data - resets the watchdog
-          // (gating-matrix.md:43's disconnect row).
+          // (gating-matrix.md's Disconnect row - cited by row name, not
+          // line, since that row has already moved once).
           watchdog.noteFrame();
           if (!connected) {
             connected = true;

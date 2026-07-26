@@ -522,12 +522,15 @@ now ONE owned mapping (`board/store/condition_severity.go`), pinned by
 production Go source file under `board/` actually constructs - the #37
 register-taxonomy precedent applied to a second axis.
 
-**`docs/contracts/gating-matrix.md:45`** quotes the pre-#30 Rule 4 verbatim as
-the rationale for why the detector surface is never suppressed; that document
-is amended in the same commit as this one (2026-07-26, fix-cycle round 2) -
-see its own inline amendment. The rationale it protects - the surface is never
-SUPPRESSED - still holds exactly as written; only the register a `kind`/
-`outcome` discovery renders at changed, from always-hot to per-class.
+**`docs/contracts/gating-matrix.md`'s Detector/discovery rendering row**
+(cited by row name, not line - R3-M1, 2026-07-26: this row has already moved
+once, from a later row's insertion, and a hardcoded number does not survive
+that) quotes the pre-#30 Rule 4 verbatim as the rationale for why the
+detector surface is never suppressed; that document is amended in the same
+commit as this one (2026-07-26, fix-cycle round 2) - see its own inline
+amendment. The rationale it protects - the surface is never SUPPRESSED -
+still holds exactly as written; only the register a `kind`/`outcome`
+discovery renders at changed, from always-hot to per-class.
 
 First application (#30 item 4, "quiet by declaration"): the cross-family
 outcome words `completed` and `approve-for-merge` are declared in
