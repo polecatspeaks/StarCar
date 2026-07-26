@@ -395,8 +395,13 @@ body {
 
 /* #62 FIX, found live during this car's own visual verification (not in
    the original ticket text): this repo's real artifacts/ store now holds
-   ~79 dispatch records (this car's screenshot evidence,
-   docs/screenshots/2026-07-26-register-check-candidates/calm-yard.png),
+   dozens of dispatch rows and growing (this car's screenshot evidence,
+   docs/screenshots/2026-07-26-register-check-candidates/calm-yard.png -
+   a specific count is deliberately not given here: an append-only store's
+   count goes stale the moment it is written down, and the earlier "~79"
+   was itself a mislabeled figure, the yard-inventory unassigned subset
+   rather than a store total, corrected in the same conflation class as
+   the MINOR-2 fix below),
    and the pre-#62 CSS rendered every one of them as a single flex column
    with no bound - the dispatches lane alone filled the entire 1920x1080
    frame and pushed gates/trains/freight/fuel off-screen (measured again,
