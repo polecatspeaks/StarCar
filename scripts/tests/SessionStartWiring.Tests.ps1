@@ -1,42 +1,31 @@
-# SessionStartWiring.Tests.ps1 -- #50: the fifth SessionStart hook line stays in the
+# SessionStartWiring.Tests.ps1 -- #50: every SessionStart hook command stays in the
 # bare intersection dialect (`sh .claude/hooks/NAME.sh`, no inline `-c`, no quoting
-# layers), and the entire-CLI wrapper script preserves its exact behavior once moved
-# out of the inline `sh -c` form.
+# layers, no pipes), and the entire-CLI wrapper script preserves its exact behavior
+# once moved out of the inline `sh -c` form (Task 1, still in force).
 #
-# WHY: docs/friction-log.md (2026-07-24 entries) - under Copilot CLI's Claude-compat
-# layer, the fifth SessionStart line (an inline `sh -c '...'` wrapper with an
-# escaped-JSON printf fallback) broke the WHOLE SessionStart invocation with
-# `syntax error: unexpected end of file from 'if' command`, while the four sibling
-# guards (already simple-form: `sh .claude/hooks/NAME.sh`) executed fine. Local
-# reproduction was ATTEMPTED and DID NOT reproduce the parse error: the extracted
-# command string passed `sh -n` and `dash -n` (both exit 0) and executed correctly
-# under both `sh -c` (bash-as-sh) and `dash -c` on this box (probed, this car,
-# 2026-07-26 - not landed as a test because there is nothing here to pin: the failure
-# is a property of Copilot's own shell invocation, not of this box's shells). The fix
-# therefore stands on the design's own simple-form rule (docs/design/2026-07-24-family-
-# agnostic-harness-design.md D4/D5: "intersection dialect for the four SessionStart
-# guards... one manifest" - carried verbatim from the retired dual-runtime design's D1),
-# extended to the fifth line so it is no longer the one structural outlier.
+# WHY BARE FORM: docs/friction-log.md (2026-07-24 entries) - under Copilot CLI's
+# Claude-compat layer, an inline `sh -c '...'` wrapper with an escaped-JSON printf
+# fallback broke the WHOLE SessionStart invocation with `syntax error: unexpected end
+# of file from 'if' command`, while bare `sh .claude/hooks/NAME.sh` lines executed
+# fine. This is the shape observed working under BOTH runtimes.
 #
-# AMENDED (#50 task 2): a first revision narrowed the all-five bare-form assertion to
-# the fifth line only, on the theory that the broader "no fancy quoting" invariant had
-# moved to SessionStartReport.Tests.ps1's blacklist check (no `sh -c`, no `'`). THAT
-# WAS WRONG, not merely narrower - round-1 adversarial review (fix cycle round 2,
-# finding M1) PROVED it with a fault injection: an inline `if...fi` compound plus an
-# escaped-JSON `printf` - i.e. the EXACT shape the design records as breaking Copilot
-# (`docs/design/2026-07-24-family-agnostic-harness-design.md`: `syntax error:
-# unexpected end of file from 'if' command`) - contains no `sh -c` and no single quote,
-# and passed both suites 15/15 GREEN when installed on a SessionStart line. A blacklist
-# can only reject shapes someone thought to name; a whitelist rejects everything that
-# is not the known-good shape, including shapes nobody has thought of yet.
+# THE WHITELIST, not a blacklist: a round-2 adversarial fault injection (an inline
+# `if...fi` compound plus escaped-JSON `printf`, installed on a SessionStart line)
+# passed a blacklist-shaped check (no `sh -c`, no single quote) 15/15 green - a
+# blacklist can only reject shapes someone thought to name. The whitelist below
+# rejects everything that is not the one known-good shape, including shapes nobody
+# has thought of yet.
 #
-# THE FIX (this revision): restored to a WHITELIST applied to ALL FIVE lines, widened
-# from round 1's bare-only form to also permit the pipe-to-record.sh shape (#50 task 2)
-# - and narrowed again in fix cycle round 2 (finding M4) to drop the now-retired
-# `--reset` argument, which no longer exists in session-start-record.sh's calling
-# convention (freshness is a file property now, never an ordering flag - see that
-# script's own header). The whitelist is re-derived to match the FINAL wiring shape,
-# not merely patched.
+# HISTORY (kept OUT of this live file per this repo's own house rule - a live surface
+# should not carry a stale mechanism's name once that mechanism is deleted): a
+# push-based delivery mechanism was built, reviewed, and DELETED across three fix-cycle
+# rounds and an owner ruling (2026-07-26, option d - agent-pull replaces push). The
+# full narrative, including the whitelist widening this file went through and back, is
+# in docs/design/2026-07-24-family-agnostic-harness-design.md's amendment history and
+# the landed review verdicts under artifacts/reviews/ - both exempt from the "no stale
+# mechanism name on a live surface" rule because they are records, never edited after
+# landing. This file's own comment history (git log on this path) carries the same
+# story for anyone who needs it.
 #
 # This test reads the REAL .claude/settings.json for the "all five lines pass" half
 # (never a hand-copied duplicate, which would drift silently the moment someone edits
@@ -44,23 +33,24 @@
 # a FIXTURE COPY of it (real hooks array, one line replaced) for the "the documented
 # failure signature is rejected" half - never mutates the real file on disk.
 
-Describe 'SessionStart wiring: whitelist covers all five lines, rejects the documented failure signature (#50 M1, fix cycle round 2)' {
+Describe 'SessionStart wiring: bare-form whitelist covers all five lines, rejects any fancier shape (#50)' {
     BeforeAll {
         $script:RepoRoot = (git rev-parse --show-toplevel)
         $script:SettingsPath = Join-Path $script:RepoRoot '.claude/settings.json'
         $script:Settings = Get-Content $script:SettingsPath -Raw | ConvertFrom-Json
         $script:SessionStartHooks = $script:Settings.hooks.SessionStart[0].hooks
 
-        # The two legitimate shapes, and ONLY these: bare `sh .claude/hooks/NAME.sh`
-        # (the fifth, entire-CLI wrapper line), or that piped into the recorder with no
-        # trailing argument (the four guard lines, post fix-cycle-round-2/M4).
-        $script:WhitelistPattern = '^sh \.claude/hooks/[A-Za-z0-9_-]+\.sh( \| sh \.claude/hooks/session-start-record\.sh)?$'
+        # The ONE legitimate shape: bare `sh .claude/hooks/NAME.sh`. No `-c`, no
+        # quoting, no pipe - the agent-pull replacement (#50, owner ruling 2026-07-26)
+        # removed the only reason a pipe ever appeared here.
+        $script:WhitelistPattern = '^sh \.claude/hooks/[A-Za-z0-9_-]+\.sh$'
 
-        # The EXACT fault injection the round-1 reviewer installed and proved 15/15
-        # GREEN under (round-1 REJECT, finding M1, "Fault injection D") - reproduced
-        # verbatim here as the documented failure signature this whitelist must reject,
-        # never a hand-invented stand-in for it.
-        $script:DocumentedFailureSignature = 'if true; then sh .claude/hooks/session-start-checkpoint-reconcile.sh; printf "%s\n" "{\"x\":1}"; fi | sh .claude/hooks/session-start-record.sh'
+        # A documented failure signature this whitelist must reject regardless of
+        # mechanism - an inline `if...fi` compound plus escaped-JSON `printf`, the
+        # shape a round-2 adversarial fault injection proved a blacklist misses.
+        # Reproduced structurally (not tied to any specific downstream command, since
+        # that command no longer exists) rather than verbatim to the old injection.
+        $script:DocumentedFailureSignature = 'if true; then sh .claude/hooks/session-start-checkpoint-reconcile.sh; printf "%s\n" "{\"x\":1}"; fi'
 
         # A fixture COPY of the real settings.json with one real SessionStart line
         # replaced by the injection - never mutates the file on disk, never a
@@ -79,7 +69,7 @@ Describe 'SessionStart wiring: whitelist covers all five lines, rejects the docu
         $script:SessionStartHooks.Count | Should -BeGreaterThan 0
     }
 
-    It 'every REAL SessionStart hook command matches the whitelist (bare form, or piped to session-start-record.sh)' {
+    It 'every REAL SessionStart hook command matches the bare-form whitelist' {
         $violators = @()
         foreach ($hook in $script:SessionStartHooks) {
             if ($hook.command -notmatch $script:WhitelistPattern) { $violators += $hook.command }
@@ -89,12 +79,17 @@ Describe 'SessionStart wiring: whitelist covers all five lines, rejects the docu
 
     It 'the fifth SessionStart hook command (entire-CLI wrapper) is bare simple-form: sh .claude/hooks/NAME.sh' {
         $fifth = $script:SessionStartHooks[4].command
-        $fifth | Should -Match '^sh \.claude/hooks/[A-Za-z0-9_-]+\.sh$'
+        $fifth | Should -Match $script:WhitelistPattern
         $fifth | Should -Be 'sh .claude/hooks/session-start-entire.sh'
     }
 
-    It 'the whitelist REJECTS the documented Copilot failure signature (round-1 REJECT fault injection D, reproduced verbatim)' {
+    It 'the whitelist REJECTS the documented Copilot failure signature (inline if-compound plus escaped-JSON printf)' {
         $script:DocumentedFailureSignature | Should -Not -Match $script:WhitelistPattern
+    }
+
+    It 'the whitelist REJECTS a pipe shape - no SessionStart line ever pipes to anything now (#50, agent-pull replaces push)' {
+        $pipeShape = 'sh .claude/hooks/session-start-checkpoint-reconcile.sh | sh .claude/hooks/some-other-script.sh'
+        $pipeShape | Should -Not -Match $script:WhitelistPattern
     }
 
     It 'a fixture settings.json carrying the documented failure signature on ONE line is flagged as the sole violator' {

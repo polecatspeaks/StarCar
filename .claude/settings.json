@@ -48,19 +48,19 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh .claude/hooks/goodnight-resume-check.sh | sh .claude/hooks/session-start-record.sh"
+            "command": "sh .claude/hooks/goodnight-resume-check.sh"
           },
           {
             "type": "command",
-            "command": "sh .claude/hooks/session-start-checkpoint-reconcile.sh | sh .claude/hooks/session-start-record.sh"
+            "command": "sh .claude/hooks/session-start-checkpoint-reconcile.sh"
           },
           {
             "type": "command",
-            "command": "sh .claude/hooks/session-start-ci-baseline.sh | sh .claude/hooks/session-start-record.sh"
+            "command": "sh .claude/hooks/session-start-ci-baseline.sh"
           },
           {
             "type": "command",
-            "command": "sh .claude/hooks/session-start-retro.sh | sh .claude/hooks/session-start-record.sh"
+            "command": "sh .claude/hooks/session-start-retro.sh"
           },
           {
             "type": "command",

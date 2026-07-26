@@ -110,22 +110,24 @@ simple-form rule rather than a locally-observed repro. Landed: the line's body m
 present-branch exec argv, both verified against a stub). Restart-gated same as the four
 guards above - unverified under a live Copilot session from this desk.
 
-**The four guards' output is now ALSO delivered via a report file, because Copilot does
-not inject SessionStart stdout at all (#50).** The same restart-gated probe found that
-even when the four guards execute successfully under Copilot's compat layer, their
-stdout never reaches the agent context - Copilot surfaces hook failures in `events.jsonl`
-only. Landed: each of the four guard lines in `.claude/settings.json` now pipes through a
-new `.claude/hooks/session-start-record.sh` (`sh GUARD.sh | sh session-start-record.sh`),
-which `tee -a`s the guard's stdout through UNCHANGED (Claude Code's context-injection
-path is untouched) and additionally appends the same bytes to a gitignored
-`.claude/session-start-report.txt`. **Fix cycle round 2 (finding M4):** freshness is a
-property of the report file's own mtime (stale = missing, or older than 60 seconds),
-never of settings.json array order - an atomic `mkdir` mutex serializes concurrent
-invocations so no guard's output can be lost to a truncate racing an append, pinned by
-`scripts/tests/SessionStartReportConcurrency.Tests.ps1` (20 trials of 4 genuinely
-concurrent child processes, zero losses). Pointer lines in
-`.github/copilot-instructions.md` and `ONBOARDING.md` tell a Copilot agent to read the
-report file. **Restart-gated, same as above:** verify on the next Copilot session start
-that all five SessionStart lines report `hook.end success=true` in `events.jsonl`, that
-`.claude/session-start-report.txt` exists and is fresh, and that a Copilot agent actually
-reads it - none of this is claimed verified from this desk.
+**Guard delivery to Copilot is AGENT-PULL, not push (#50, owner ruling 2026-07-26,
+option d).** The same restart-gated probe found that even when the four guards execute
+successfully under Copilot's compat layer, their stdout never reaches the agent context
+- Copilot surfaces hook failures in `events.jsonl` only. Two push-based delivery
+mechanisms were built, reviewed, and retired across three fix-cycle rounds (the full
+narrative - what each one was, exactly which defects each reproduced, and the escalated
+premise underneath both - lives in `docs/design/2026-07-24-family-agnostic-harness-
+design.md`'s §2c and D5 amendment history, a record kept intact rather than restated
+here). **The owner ruled option d: delete the push mechanism rather than revise it a
+third time.** The four guard lines in `.claude/settings.json` are back to bare
+intersection dialect. In its place: `.claude/hooks/run-session-start-guards.sh` (#50) -
+any agent whose runtime does not inject SessionStart stdout runs it as its FIRST action
+per the arrival docs (`.github/copilot-instructions.md`, `ONBOARDING.md`) and reads the
+output directly. No shared mutable file, no truncation, no race, no mutex - the reliance
+on the agent following its arrival doc is UNCHANGED from the earlier design, only the
+machinery between "guard runs" and "agent reads" is gone. **Verification carrier: issue
+#55**, triggered on the next Copilot session ("a minor tooling gap for a very specific
+case," owner framing) - verify the session runs the guard runner as its first action,
+that the output lands in its context, and only then judge whether instruction-tier
+delivery suffices. Until that observation, no further mechanism work (the prior cap's
+own spirit: do not harden the unobservable).
