@@ -215,3 +215,17 @@ overlap found.
   verdicts alone, replicated the prior reviewer's injections by name, honored the r2 cap
   correctly, and caught what continuation plausibly would have caught plus the
   environment class - the verdict template carries everything it claims to.
+
+- 2026-07-26 (CI-caught, conductor hotfix): THE UBUNTU LEG CAUGHT WHAT NO DESK REVIEW
+  COULD. The tooling-train merge went red on ubuntu only (run 30205842313): the new
+  fifth-line wiring test's stub helper hardcoded the Windows PATH separator (";") and
+  wrote its stub without the exec bit - Git-bash on Windows forgives both, Linux forgives
+  neither, so `command -v entire` missed the stub and the hook honestly took its absent
+  branch. Five review rounds (two reviewers, both on this Windows box) could not have
+  seen it; the second CI leg (#14's whole purpose) fired on first contact. Fixed by
+  conductor hotfix within the five-leg boundary (mechanical, test-infra-only, red
+  observed in the only environment that can exhibit it, post-hoc adversarial review
+  dispatched). Class: PATH shape and exec-bit semantics are PER-OS; any test that
+  manipulates PATH or fabricates executables must use [IO.Path]::PathSeparator and grant
+  the exec bit - the same environment-class lesson as r4, one axis over (OS, not
+  attachment state).

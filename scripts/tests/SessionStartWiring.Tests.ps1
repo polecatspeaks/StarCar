@@ -119,7 +119,11 @@ Describe 'session-start-entire.sh preserves the inline wrapper''s exact behavior
             # `sh` reachable via Git's own bin dir - proven reachable in isolation
             # (probed, this car): stripping scoop\shims still resolves `sh` to
             # C:\Program Files\Git\bin\sh.exe.
-            $filtered = ($env:PATH -split ';' | Where-Object { $_ -notlike '*scoop\shims*' }) -join ';'
+            # #50 hotfix (CI run 30205842313): the PATH separator is per-OS - ';' on
+            # Windows, ':' on Linux. Hardcoding ';' made the ubuntu leg treat the whole
+            # PATH as one garbage entry. Git-bash on Windows forgave it; Linux did not.
+            $sep = [System.IO.Path]::PathSeparator
+            $filtered = ($env:PATH -split [regex]::Escape($sep) | Where-Object { $_ -notlike '*scoop\shims*' }) -join $sep
             $origPath = $env:PATH
             $env:PATH = $filtered
             try {
@@ -139,8 +143,14 @@ Describe 'session-start-entire.sh preserves the inline wrapper''s exact behavior
             New-Item -ItemType Directory -Path $stubDir -Force | Out-Null
             $stubScript = Join-Path $stubDir 'entire'
             Set-Content -Path $stubScript -Value "#!/bin/sh`necho STUB_ENTIRE_CALLED_WITH: `"`$@`"" -NoNewline:$false -Encoding ascii
+            # #50 hotfix (CI run 30205842313): Linux `command -v` requires the exec bit,
+            # which Set-Content does not grant; Git-bash on Windows does not care. Without
+            # this the hook takes the ABSENT branch on ubuntu and the assertion sees the
+            # fallback JSON instead of the stub echo.
+            if (-not $IsWindows) { & chmod +x $stubScript }
+            $sep = [System.IO.Path]::PathSeparator
             $origPath = $env:PATH
-            $env:PATH = "$stubDir;$env:PATH"
+            $env:PATH = "$stubDir$sep$env:PATH"
             try {
                 & sh $HookPath 2>&1
                 $script:LastExit = $LASTEXITCODE
