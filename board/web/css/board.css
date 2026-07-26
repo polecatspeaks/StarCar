@@ -395,17 +395,55 @@ body {
 
 /* #62 FIX, found live during this car's own visual verification (not in
    the original ticket text): this repo's real artifacts/ store now holds
-   ~79 dispatch records (this car's screenshot evidence, board/web/test/
-   screenshots-62/calm-real-store.png), and the pre-#62 CSS rendered every
-   one of them as a single flex column with no bound - the dispatches lane
-   alone filled the entire 1920x1080 frame and pushed gates/trains/freight/
-   fuel off-screen, the exact HAVAGLANCE failure this ticket exists to fix
-   ("doesn't help much"). A CSS-only, no-data-change fix: a wrapping grid
-   (mockup 1a/1c's multi-column dispatch treatment) capped to a fixed
-   height with its own scrollbar - EVERY row is still in the DOM and still
-   reachable (Law 1: "visible, never hidden", same posture as the #30
-   collapsed-but-present conditions strip), it is just given a bounded
-   viewport so one lane can never crowd out the other four. */
+   ~79 dispatch records (this car's screenshot evidence,
+   docs/screenshots/2026-07-26-register-check-candidates/calm-yard.png),
+   and the pre-#62 CSS rendered every one of them as a single flex column
+   with no bound - the dispatches lane alone filled the entire 1920x1080
+   frame and pushed gates/trains/freight/fuel off-screen (measured again,
+   independently, by the round-1 reviewer: restoring the pre-#62 rule at
+   runtime puts the footer at y 2743, four of five lanes off a 1080px
+   screen). A CSS-only, no-data-change fix: a wrapping grid (mockup 1a/1c's
+   multi-column dispatch treatment) capped to a fixed height with its own
+   scrollbar.
+
+   CORRECTED (#62 fix cycle round 2, review round 1 MAJOR-2 - the original
+   comment here invoked the #30 conditions-strip precedent and the
+   analogy was BACKWARDS): rows below the fold ARE still in the DOM and
+   reachable by scrolling, but - unlike #30's collapsed-but-present
+   strip - their severity does NOT currently escape to any
+   always-visible surface. #30's <summary> is Law-1-safe because it
+   carries a register-colored roll-up ("1 FLAG + 2 notes",
+   render.js:104-108, dom-writer.js:121); this grid has no such roll-up.
+   The round-1 reviewer PROVED this live: a scratch store with one
+   presumed-lost dispatch sorted to the bottom (board/fold/algorithm.go's
+   alphabetical sort - out of this ticket's scope) rendered a board with
+   ZERO hot pixels - the hot row sat 242px below this grid's clip edge
+   while every lane read register-nominal, because render.js:137's lane
+   register composes position x freshness x capability only
+   (compose.js:73-79); a row's own stateRegister never joins that
+   composition. That gap is PRE-EXISTING lane-register semantics (not
+   introduced by this rule, not fixable in CSS/dom-writer scope per this
+   ticket's own boundary) and is measured + routed to issue #1
+   (https://github.com/polecatspeaks/StarCar/issues/1#issuecomment-5085235534,
+   2026-07-26). Until a severity roll-up or hot-rows-first ordering lands
+   there, this bound is a deliberate, disclosed trade: it fixes the
+   measured 4-of-5-lanes-off-screen crowding above, at the cost of not
+   guaranteeing a below-the-fold alarm is visible from a glance.
+
+   Why the height stays as measured rather than being lifted or raised
+   (the fix cycle's own menu, considered and rejected): LIFTING the clip
+   entirely was measured to cost nothing at the store's size on review
+   day (footerBottom 1068 of 1080) - but the store is real and
+   append-only (every dispatch session adds records; it grew from ~79 to
+   ~90 rows between this car's two review rounds, the same day), so
+   "costs nothing today" is not a stable property to build on and lifting
+   would silently re-open the ORIGINAL, measured, 4-lanes-off-screen
+   defect within days. RAISING the cap substantially would not close the
+   disclosed gap either - sort order is alphabetical, not severity-based,
+   so no fixed height short of "unbounded" guarantees a hot row stays
+   inside it; a taller number would only look more fixed while remaining
+   exactly as unproven. Kept at the originally-measured height, disclosed
+   honestly, with the real fix tracked at #1. */
 .solari-rows {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
@@ -424,10 +462,10 @@ body {
      truncates with an ellipsis rather than wrapping to a second line -
      wrapping is what made the #62 grid's fixed max-height crop rows
      mid-line (found live during this car's own visual verification,
-     board/web/test/screenshots-62/). The VERBATIM state word itself is
-     never truncated (flex:none on .solari-state below) - only the subject
-     id, which is also shown in full via the browser's native title
-     tooltip (dom-writer.js). */
+     docs/screenshots/2026-07-26-register-check-candidates/). The
+     VERBATIM state word itself is never truncated (flex:none on
+     .solari-state below) - only the subject id, which is also shown in
+     full via the browser's native title tooltip (dom-writer.js). */
   white-space: nowrap;
 }
 
@@ -454,6 +492,17 @@ body {
 
 .lane-body-dark,
 .lane-body-bagged {
+  color: var(--text-dim);
+  font-style: italic;
+  font-family: var(--font-mono);
+  padding: 0.3rem 0;
+}
+
+/* #62 N3: an empty-but-LIVE lane's stated absence (distinct from dark/
+   bagged, which are lanes with no data source at all - this is a live
+   lane whose current fold happens to carry zero entries). Same quiet,
+   dim, italic treatment - not a fourth register, not an alarm. */
+.lane-body-gates-empty {
   color: var(--text-dim);
   font-style: italic;
   font-family: var(--font-mono);

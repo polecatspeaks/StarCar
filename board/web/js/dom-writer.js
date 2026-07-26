@@ -89,9 +89,12 @@ function renderChrome(doc, vm, connection) {
 // 17 dispatches") appear in the mockups too but carry NO wire field
 // (schema/yard-snapshot.schema.json has no such field) - inventing one
 // client-side would be a second copy of server-owned arithmetic (Law 6) and
-// adding one server-side is a wire change, out of this ticket's scope;
-// disclosed as a deviation-from-direction note in this car's report,
-// routed to issue #1.
+// adding one server-side is a wire change, out of this ticket's scope.
+// CORRECTED (#62 fix cycle round 2, review round 1 MINOR-1 - this comment
+// used to say "routed to issue #1" while nothing had actually been posted
+// there, a carrier-rule miss): now actually routed - see issue #1, comment
+// https://github.com/polecatspeaks/StarCar/issues/1#issuecomment-5085235534
+// (2026-07-26), item 2.
 function renderFooter(doc, vm) {
   const footer = el(doc, 'footer', 'board-footer');
 
@@ -234,8 +237,20 @@ function renderTrains(doc, body) {
 
 // GATES: signal-head direction (mockup merge 2b) - a small verdict light
 // per gate, verdict word VERBATIM.
+//
+// #62 N3 (fix cycle round 2, review round 1 NOTE-3): an empty-but-live
+// gates lane used to render a blank content pane - honest (body.gates is
+// really []) but reads as a rendering hole rather than a stated absence,
+// unlike freight's "no equipment on this lane" and fuel's "data held, not
+// surfaced". Derived honestly from the same data already in hand (zero
+// entries in THIS fold's gates array) - never invented, never a guess
+// about why it is empty.
 function renderGates(doc, body) {
   const wrap = el(doc, 'div', 'lane-body lane-body-gates');
+  if (body.gates.length === 0) {
+    wrap.appendChild(el(doc, 'div', 'lane-body-gates-empty', 'no gates in this fold'));
+    return wrap;
+  }
   for (const gate of body.gates) {
     const signal = el(doc, 'div', `signal ${registerClass(gate.outcomeRegister)}`);
     signal.appendChild(el(doc, 'span', 'signal-name', gate.name));

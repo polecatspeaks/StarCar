@@ -256,6 +256,33 @@ test('#62: a solari-subject carries the full subject as a title attribute (CSS t
   assert.equal(subjects[0].attributes.title, '2026-07-22-harness-design-round4-REJECT-ESCALATED');
 });
 
+test('#62 N3: an empty-but-live gates lane (zero gates in this fold) states its absence honestly, rather than rendering a blank pane; a non-empty gates lane does not', () => {
+  const doc = createMiniDocument();
+
+  const emptyRoot = doc.createElement('main');
+  const emptySnapshot = makeSnapshot([
+    { id: 'gates', title: 'Gates', position: 'live', freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' }, data: { gates: [] } }
+  ]);
+  renderBoard(doc, emptyRoot, buildBoardViewModel(emptySnapshot), { connected: true });
+  const emptyNotices = emptyRoot.querySelectorAll('.lane-body-gates-empty');
+  assert.equal(emptyNotices.length, 1, 'expected a stated-absence element for a zero-gates fold');
+  assert.ok(emptyNotices[0].textContent.length > 0, 'the stated absence must carry non-empty text');
+
+  const fullRoot = doc.createElement('main');
+  const fullSnapshot = makeSnapshot([
+    {
+      id: 'gates',
+      title: 'Gates',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+      data: { gates: [{ name: 'design round 1', subject: 'abc', outcome: 'REJECT', at: '2026-07-23T18:00:00Z' }] }
+    }
+  ]);
+  renderBoard(doc, fullRoot, buildBoardViewModel(fullSnapshot), { connected: true });
+  const fullNotices = fullRoot.querySelectorAll('.lane-body-gates-empty');
+  assert.equal(fullNotices.length, 0, 'a gates lane WITH gates must not render the empty-absence notice');
+});
+
 test('renderBoard distinguishes bagged (fuel) and dark (freight) with different rendered text', () => {
   const doc = createMiniDocument();
   const root = doc.createElement('main');

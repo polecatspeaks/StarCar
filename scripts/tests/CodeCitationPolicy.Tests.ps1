@@ -217,6 +217,16 @@ Describe 'Repo policy: code files added after the citation standard cite their t
         $script:DeclaredExemptExtensions = [ordered]@{
             '.json' = 'no native comment syntax; the fixture-mutation reasoning for schema/vectors/**/*.json generalizes to config/manifest JSON'
             '.md'   = 'documentation; owned by DocPolicy.Tests.ps1''s Status-line gate, not this one'
+            # '.png' joined the exempt set when the first post-boundary .png files
+            # landed (#62 fix cycle round 2, 2026-07-26 - the closed-set guard red BY
+            # NAME, exactly as designed - round 1's own review round caught this
+            # commit reporting scripts/tests green while this gate was red): a binary
+            # image has no native comment syntax (same reasoning family as .json
+            # above), and these files (docs/screenshots/**/*.png) are Playwright-
+            # generated evidence records, not authored code - the same posture the
+            # pre-existing docs/screenshots/2026-07-23-first-light.png already held,
+            # uncited, before this citation standard existed.
+            '.png'  = 'binary image, no comment syntax; screenshots are evidence records, not authored code (same reasoning family as .json)'
         }
 
         $script:BoundaryResolvable = Test-BoundaryResolvable -RepoRoot $script:RepoRoot -BoundarySha $script:BoundarySha

@@ -17,6 +17,17 @@ import { describeVocab } from './vocab.js';
 // horizontal lanes" section so it is traceable to that source rather than
 // invented. An id outside this set (the 6th-lane discovery path) gets no
 // purpose line at all - never a guessed one.
+//
+// LANE ORDER NOTE (#62 fix cycle round 2, review round 1 MINOR-1): the
+// keys above are listed in the ui-mockup-brief's illustrative order
+// (trains, gates, dispatches, freight, fuel), but the actual rendered
+// order follows lanes.js's EXPECTED_LANE_IDS (dispatches, gates, trains,
+// freight, fuel) - the real, server-authoritative wire order
+// (board/server/laneregistry.go), left untouched by this ticket (contract
+// wins over illustrative direction, per the mock doctrine's own routing
+// rule). This direction-vs-contract conflict is routed to issue #1, see
+// https://github.com/polecatspeaks/StarCar/issues/1#issuecomment-5085235534
+// (2026-07-26), item 1.
 const LANE_PURPOSE = Object.freeze({
   trains: 'active work units - cars held in sequence',
   gates: 'review signals - verdict word rendered verbatim',
