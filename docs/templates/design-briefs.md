@@ -147,10 +147,14 @@ cannot hand to a future reader unchanged (a gitignored log, a scratch repro sinc
 deleted, a claim only your own transcript can prove) - name it as such in its own line,
 never folded into the CLOSED/PARTIALLY CLOSED/NOT CLOSED table.
 
-[WHY: the same drill found this hiding in a table cell - a finding built on a gitignored
-probe log was recorded as closed with no flag that the closure itself was unverifiable by
-anyone else (`.../drill.md:110`). A standing callout would have pointed the drill reviewer
-straight at its own hardest finding instead of making it re-derive the gap by hand.]
+[WHY: the same drill's blind spot (a finding resting on a gitignored probe log) WAS
+disclosed honestly - "recorded honestly as UNVERIFIABLE, not papered over... a fresh
+reviewer inherits the correct blindness" (`.../drill.md:105`) - so this is not a case of
+a closure hiding a gap. The drill's actual complaint was PLACEMENT: the disclosure
+existed but "lives buried in a table cell" with no standing flag that it was
+unreproducible (`.../drill.md:110`). A standing callout would have pointed the drill
+reviewer straight at its own hardest finding instead of making it re-derive the gap by
+hand from a table.]
 
 [WHY (fresh full re-reviews): fresh full re-reviews cost roughly 110k tokens each and
 rebuild context the previous reviewer already had. Five of them were spent on one design

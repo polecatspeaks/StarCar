@@ -97,7 +97,7 @@ so explicitly, the same non-vacuity discipline section 5 already applies to stat
 
 [WHY this section exists: the design rung has one, in the real design that produced this
 fold (`docs/design/2026-07-22-dispatch-harness-design.md` section 8: eight rows, one per
-document, each with an owner). Without its spec-rung equivalent, a design's documentation obligations
+obligation, each with an owner). Without its spec-rung equivalent, a design's documentation obligations
 evaporate at the design-to-spec handoff - the first real use of this template without this
 section lost nine of them, and a zero-context plan-writer working from the spec alone would
 have written no documentation tasks at all. See `worked-rung-carriers.md`: obligations cross
@@ -158,7 +158,9 @@ Spec review (document attack, a DIFFERENT failure surface than the ideas): round
 function (the reviewer opened it; a wrong citation that sends a car to the wrong code
 is a Major); M2 "the banner shows staleness" was readable two ways (age text vs
 verdict color) - ambiguity is a finding because a car that sees only its own task will
-pick the wrong reading. Round 2: **APPROVED**.
+pick the wrong reading. Round 2: **APPROVED**, the round-2 reviewer having read sections
+9 and 10 above and accepted the two NOT CARRIED rows as the honest, correct disclosure
+of a real but small gap rather than a defect blocking approval.
 
 [The review records stay IN the spec forever. They are how the next reader knows what
 was already attacked, what was ruled, and what the document's claims have survived.]
