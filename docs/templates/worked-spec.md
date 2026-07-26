@@ -90,13 +90,14 @@ so explicitly, the same non-vacuity discipline section 5 already applies to stat
 
 | Document | What changes | Owner |
 |---|---|---|
-| `docs/contracts/state-ledger.md` | Instantiates the new mutable field `Snapshot.verdict` with the old -> delta -> new arithmetic from section 5 | Car B |
+| `docs/contracts/state-ledger.md` | Instantiated - records that this feature adds NO mutable process state (section 5 says `Snapshot.verdict` is "NOT STATE - recomputed per snapshot"), so the ledger's arithmetic is 0 -> 0. A `none` row is still a mandatory row, per this section's own opening line - it demonstrates the non-vacuity discipline rather than skipping it | Car B |
 | `docs/contracts/gating-matrix.md` | The UNKNOWN verdict is a gated truth surface, never suppressed - the example row this project's own gating-matrix template already carries (`gating-matrix.md:23`) becomes real | Car B |
 | `docs/glossary.md` | Defines `fresh` / `aging` / `stale` / `unknown` as the verdict's closed string union, replacing the three components' informal, disagreeing prose | Car A |
 | The three retired self-computing comparisons' call sites [file:line each, section 4] | Doc comments describing the old per-component computation are removed same-commit as the code | Car A / Car C |
 
-[WHY this section exists: the design-rung template has one (design section 8, nine rows,
-with owners). Without its spec-rung equivalent, a design's documentation obligations
+[WHY this section exists: the design rung has one, in the real design that produced this
+fold (`docs/design/2026-07-22-dispatch-harness-design.md` section 8: eight rows, one per
+document, each with an owner). Without its spec-rung equivalent, a design's documentation obligations
 evaporate at the design-to-spec handoff - the first real use of this template without this
 section lost nine of them, and a zero-context plan-writer working from the spec alone would
 have written no documentation tasks at all. See `worked-rung-carriers.md`: obligations cross
@@ -114,9 +115,9 @@ rung's own one-row-per-finding table already enforces (design section 9b).
 | DR-2 (config-reload double-read race - thresholds read once per derivation) | Section 2, bullet 2 |
 | DR-3 (observability reality - the error-path FetchedAt question) | Section 7, probe item 1 |
 | DR-4 (YAGNI - per-adapter detail deferred) | Section 8 |
-| Owner decision: verdict derives ONLY from adapter-reported FetchedAt, never the browser clock alone | Section 2 (opening line) |
+| Owner decision: verdict derives ONLY from adapter-reported FetchedAt, never the browser clock alone | **NOT CARRIED - header only.** The "ONLY from adapter-reported FetchedAt" half is close to section 2's opening line (`derived in the adapter layer at snapshot arrival`), but "never the browser clock alone" is not stated in any numbered section - only in the document header's "Owner decisions locked in the brainstorm" line |
 | Owner decision: UNKNOWN is a first-class rendered state | Section 2, bullet 1 |
-| Owner decision: thresholds configurable per deployment, defaulted 30s/120s | Section 2 (opening line), section 3 |
+| Owner decision: thresholds configurable per deployment, defaulted 30s/120s | **NOT CARRIED - header only.** A whole-file grep for every threshold token finds this decision only at the document header (`Owner decisions locked in the brainstorm`); section 2's opening line and section 3 are both silent on configurability and on 30s/120s specifically - section 5's config-reload cell (`derived with the NEW thresholds from the next snapshot on`) is the nearest thing to a numbered-section carrier, and even that assumes configurability rather than stating it |
 
 [WHY this section exists: the design rung's one-row-per-finding-and-ruling disposition
 table demonstrably worked - it is why a design revision could prove nothing had been
@@ -124,6 +125,14 @@ dropped. With no spec-rung equivalent, the first real use of this template silen
 dropped five adopted design requirements, including the feature's central mechanism. A
 row here that cites nowhere real, or a real requirement with no row, is the fold that
 LOOKS folded - the failure this table exists to make impossible to hide.]
+
+**The two NOT CARRIED rows above are not a gap in this exemplar - they ARE the
+exemplar.** A fidelity table's job is to surface exactly this: an owner decision that
+was locked at the header and never actually landed in a numbered section is a real,
+if small, defect in the fictional spec it describes, and the honest row says so instead
+of pointing at the nearest plausible-looking section. A false full row teaches the wrong
+lesson twice (it hides the gap AND models the failure the paragraph below warns about);
+an honest NOT CARRIED row teaches what this table is FOR.
 
 **Known fallibility, kept rather than smoothed over:** the real spec that produced this
 shape had its own fidelity ledger produce a FALSE row in its first round - a row claiming
@@ -156,7 +165,7 @@ was already attacked, what was ruled, and what the document's claims have surviv
 
 ---
 
-## Sections 9-10 provenance and residual open items (#9, closed 2026-07-26)
+## Sections 9-10 provenance and residual open items (folded 2026-07-26, #9)
 
 Sections 9 and 10 above were carried, not invented. They are the shape and rhetoric
 of `docs/specs/2026-07-22-dispatch-harness-spec.md` sections 9 and 10 - the real spec
