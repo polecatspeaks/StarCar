@@ -7,6 +7,28 @@ import { composeRegister, composeLines, mostSevereRegister } from './compose.js'
 import { hasRendererFor } from './lanes.js';
 import { describeVocab } from './vocab.js';
 
+// #62: lane-purpose subtitles (owner ruling: shared visual language, no
+// single keeper - "lane plates with lane-purpose subtitles"). PRESENTATION
+// ONLY, keyed by the same closed five-id registry lanes.js already pins
+// (EXPECTED_LANE_IDS) - same posture as buildLaneBody's existing freight/
+// fuel honesty text below, which is also client-side fixed prose keyed by
+// lane id, not wire data (Car 4's precedent). Copy is lifted near-verbatim
+// from docs/design/2026-07-23-ui-mockup-brief.md's own "Layout: five
+// horizontal lanes" section so it is traceable to that source rather than
+// invented. An id outside this set (the 6th-lane discovery path) gets no
+// purpose line at all - never a guessed one.
+const LANE_PURPOSE = Object.freeze({
+  trains: 'active work units - cars held in sequence',
+  gates: 'review signals - verdict word rendered verbatim',
+  dispatches: 'the raw worker feed',
+  freight: 'the inbound ticket queue',
+  fuel: 'the spend / usage gauge'
+});
+
+function lanePurpose(id) {
+  return Object.prototype.hasOwnProperty.call(LANE_PURPOSE, id) ? LANE_PURPOSE[id] : null;
+}
+
 /**
  * Completeness guard (design rev 5 S5.2), restated at the view: the
  * mockup's "a lane count ... so a silently missing lane is detectable" is
@@ -118,6 +140,7 @@ export function buildBoardViewModel(snapshot, clientConditions = []) {
     return {
       id: lane.id,
       title: lane.title,
+      purpose: lanePurpose(lane.id),
       register,
       primary: lines.primary,
       secondary: lines.secondary,
@@ -128,6 +151,12 @@ export function buildBoardViewModel(snapshot, clientConditions = []) {
   return {
     asOf: snapshot.asOf,
     demoMode: Boolean(snapshot.config.demoMode),
+    // #62: real wire field (schema/yard-snapshot.schema.json's
+    // config.storePathDisplay), already normalised server-side to be
+    // publication-safe (never a raw absolute path - board/server/storepath.go)
+    // and already validated by the schema on ingest - rendered for the first
+    // time in the footer's honesty chrome below. No new data, no wire change.
+    storePathDisplay: snapshot.config.storePathDisplay,
     laneCompleteness: completeness,
     boardConditions,
     boardConditionGroups,

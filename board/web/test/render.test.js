@@ -233,6 +233,37 @@ test('gates render outcomes VERBATIM (REJECT stays "REJECT", never translated to
   assert.equal(gate.outcomeRegister, 'nominal', 'REJECT is a SUCCESS outcome in this shop - the gates lane must not run hot on normal traffic');
 });
 
+// --- #62: lane-purpose subtitles + storePathDisplay in the view model ---
+
+test('#62: every one of the five known lane ids carries a lane-purpose subtitle in the view model', () => {
+  const snapshot = makeSnapshot(
+    ['trains', 'gates', 'dispatches', 'freight', 'fuel'].map((id) => ({
+      id,
+      title: id,
+      position: 'dark',
+      freshness: { kind: 'not-applicable' }
+    }))
+  );
+  const vm = buildBoardViewModel(snapshot);
+  for (const lane of vm.lanes) {
+    assert.equal(typeof lane.purpose, 'string', `expected lane '${lane.id}' to carry a string purpose subtitle`);
+    assert.ok(lane.purpose.length > 0, `expected lane '${lane.id}' purpose to be non-empty`);
+  }
+});
+
+test('#62: an unrecognised (6th) lane id carries NO purpose subtitle - never a guessed one', () => {
+  const snapshot = makeSnapshot([{ id: 'ticket-queue-v2', title: 'Ticket queue', position: 'live', freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' }, data: { anything: 1 } }]);
+  const vm = buildBoardViewModel(snapshot);
+  assert.equal(vm.lanes[0].purpose, null);
+});
+
+test('#62: the view model carries config.storePathDisplay verbatim (real wire field, already publication-safe) for the footer honesty chrome', () => {
+  const snapshot = makeSnapshot([]);
+  snapshot.config.storePathDisplay = '<repo>/artifacts';
+  const vm = buildBoardViewModel(snapshot);
+  assert.equal(vm.storePathDisplay, '<repo>/artifacts');
+});
+
 test('dispatches: yard inventory (unassigned) count is tallied, never hidden', () => {
   const snapshot = makeSnapshot([
     {
