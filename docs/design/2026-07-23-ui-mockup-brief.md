@@ -130,3 +130,16 @@ proving it tells the truth.
 
 *Review record: round 1 REJECT (`2026-07-23-ui-brief-round1-REJECT.md`), delta round 2
 APPROVE - both verdicts landed verbatim in `artifacts/reviews/`.*
+
+---
+
+**AMENDMENT (#62, 2026-07-26): the mockup-production run this brief exists for has
+happened.** The owner generated five board variants (two design turns: CTC panel,
+terminal-brutalist, softer ops-room; then the schematic pivot: track schematic, dense
+interlocking) in Claude Design, project `77eb9e00-078b-438e-9c33-90ff2644abb2`. The
+landed copies and full provenance live at
+`docs/design/mockups/2026-07-26-claude-design-board/` (README there carries the
+fidelity notes and the direction-vs-contract deviations found at import: webfont
+dependency, invented demo states, fixed 1920x1080 canvas). Per this brief's own routing
+rule those deviations are adjudicated by the implementing car (#62) with contract
+winning meanwhile; the mock doctrine above binds unchanged.
