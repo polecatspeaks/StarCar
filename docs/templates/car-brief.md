@@ -127,7 +127,11 @@ RENDERING CHECK (#40, mandatory when this diff touches a RENDERED surface - boar
 CSS/JS, register assignments, anything a user SEES): any claim about what the diff
 RENDERS is settled by computed-style evidence from a REAL browser against the real served
 board - name which registers, which elements, and which collapsed/expanded states you
-drove `getComputedStyle` against - never by reading CSS or reasoning about the cascade.
+drove `getComputedStyle` against, and REPORT THE OBSERVED VALUES (the exact `rgb()`/px
+returned) - never by reading CSS or reasoning about the cascade, and never a bare
+pass/fail with no printed value (#40's own carrier item 1 ends "Report observed
+values."; naming a register without printing what was measured is unverifiable by a
+second party).
 THIS IS A FLOOR, NOT A REPLACEMENT FOR JUDGMENT: measurement establishes what the board
 IS rendering; you still RULE on whether that is CORRECT against the design authority
 (the mockup brief, the three-register law, the issue's own text) - a verdict that reports
