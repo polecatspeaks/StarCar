@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "af5f0b4f753a8f9d7",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-26T13:15:18Z",
+  "outcome": "done",
+  "findings": "All three in-scope findings (N4 Major, N5 Minor, N8 nit) fixed with red-first evidence, green confirmation, and full cap compliance (verified by an empty git diff against the round-2 base for every frozen file). N4's fix was independently verified twice: once by hand-injecting round-1's injection C into the real tracked Produce-Artifact.ps1 and observing the pin fail by name before reverting byte-identical, and once by landing a permanent, self-contained regression test whose own non-vacuity was separately confirmed.",
+  "abstract": "Scoped fix round on car/tooling-50-32-car-r3, same worktree/branch, base db1d3da unchanged. Two commits, both touching only cap-exempt files (scripts/Reconcile-DispatchRecords.ps1 and its two test files) - verified by an empty git diff against every frozen surface named in the cap (session-start-record.sh, settings.json, copilot-instructions.md, ONBOARDING.md, the design doc, docs/setup.md). N4 (5ec45d9): the M5 epoch floor had silently made the #32 divergence pin's test 1 vacuous (its probe line was always pre-floor, always excluded, so producer-side subject drift stopped being caught - 14/14 green under round-1's injection C instead of the correct 8 passed/1 failed). Fixed by moving the fixture's timestamp post-floor; verified by hand-applying injection C to the real file, observing the pin fail by name (13/14), then reverting byte-identical (SHA-256 confirmed, git diff empty); a new permanent regression test was also landed using a disposable sibling-copy technique that never touches the real tracked file. N5 (5ec45d9): the reconciler's trailing success message overclaimed \"every firing has a matching record\" even when firings were excluded and none matched; fixed to a qualified message in that composition, unaffected in the all-matched or gap-reported compositions. N8 (7abfec8): child-process stdout was leaking into every suite run because ProcessStartInfo had no stream redirection; fixed with asynchronously-drained redirected streams, test-hygiene only, mechanism untouched. Final suite totals: scripts/tests 185/185 (182 round-2 base + 3 new), scripts/store-checks 159/159 unchanged, scripts/probes 24/24 unchanged.",
+  "subject_basis": "runtime-id",
+  "task_id": "tooling-50-32-car-r3",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:60f3f6b2835c709bfbc1682c679d6a768a8346e88e22b17507f362159a6aa04a"
+}
