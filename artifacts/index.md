@@ -144,20 +144,15 @@ dispatch batch between regenerations.
 | 52-hygiene-car-r1 | returned | 2026-07-24T19:42:01Z | completed | 52-hygiene-car-r1/returned-20260724T194201Z.json |
 | 52-hygiene-review-r1 | returned | 2026-07-24T19:43:20Z | approve-for-merge | 52-hygiene-review-r1/returned-20260724T194320Z.json |
 | tooling-41-39-38-car-r1 | dispatched | 2026-07-25T14:18:38Z |  | tooling-41-39-38-car-r1/dispatched-20260725T141838Z.json |
-| tooling-car | dispatched | 2026-07-25T14:19:23Z |  | tooling-car/dispatched-20260725T141923Z.json |
 | tooling-41-39-38-review-r1 | dispatched | 2026-07-25T14:30:31Z |  | tooling-41-39-38-review-r1/dispatched-20260725T143031Z.json |
-| tooling-review | dispatched | 2026-07-25T14:31:13Z |  | tooling-review/dispatched-20260725T143113Z.json |
 | tooling-41-39-38-car-r1 | returned | 2026-07-25T14:35:59Z | done-with-findings | tooling-41-39-38-car-r1/returned-20260725T143559Z.json |
 | tooling-41-39-38-review-r1 | returned | 2026-07-25T14:36:05Z | approve-for-merge | tooling-41-39-38-review-r1/returned-20260725T143605Z.json |
 | 41-suite-split-car-r1 | dispatched | 2026-07-25T17:36:32Z |  | 41-suite-split-car-r1/dispatched-20260725T173632Z.json |
-| car41-split | dispatched | 2026-07-25T17:37:22Z |  | car41-split/dispatched-20260725T173722Z.json |
 | 41-suite-split-review-r1 | dispatched | 2026-07-25T17:42:47Z |  | 41-suite-split-review-r1/dispatched-20260725T174247Z.json |
-| rev41-split | dispatched | 2026-07-25T17:43:25Z |  | rev41-split/dispatched-20260725T174325Z.json |
 | 41-suite-split-car-r1 | returned | 2026-07-25T17:46:46Z | completed | 41-suite-split-car-r1/returned-20260725T174646Z.json |
 | 41-suite-split-review-r1 | returned | 2026-07-25T17:46:53Z | approve-for-merge | 41-suite-split-review-r1/returned-20260725T174653Z.json |
 | register-35-36-37-car-r1 | dispatched | 2026-07-25T22:56:44Z |  | register-35-36-37-car-r1/dispatched-20260725T225644Z.json |
-| register-car | dispatched | 2026-07-25T22:57:44Z |  | register-car/dispatched-20260725T225744Z.json |
 | register-35-36-37-review-r1 | dispatched | 2026-07-25T23:07:44Z |  | register-35-36-37-review-r1/dispatched-20260725T230744Z.json |
-| register-review | dispatched | 2026-07-25T23:08:36Z |  | register-review/dispatched-20260725T230836Z.json |
 | register-35-36-37-car-r1 | returned | 2026-07-25T23:13:21Z | completed | register-35-36-37-car-r1/returned-20260725T231321Z.json |
 | register-35-36-37-review-r1 | returned | 2026-07-25T23:13:32Z | approve-for-merge | register-35-36-37-review-r1/returned-20260725T231332Z.json |
+| af5f0b4f753a8f9d7 | dispatched | 2026-07-26T11:19:26Z |  | af5f0b4f753a8f9d7/dispatched-20260726T111926Z.json |
