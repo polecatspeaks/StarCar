@@ -57,10 +57,37 @@
 #
 # WIRED into the goodnight ritual's existing "5b. Artifact-store sweep" step
 # (.claude/skills/goodnight/SKILL.md) - joined, not duplicated.
+#
+# THE PRODUCER-EPOCH FLOOR (fix cycle round 2, finding M5). Round 1 wired this script
+# into the nightly goodnight sweep without ever running it against the real corpus:
+# on day one it exits 1 with 9 gaps across 7 agents, every one at or before
+# 2026-07-22T16:35:08Z, while the earliest producer-written `returned` record in the
+# real store is 2026-07-22T16:40:01Z (reproduced verbatim by this car, read-only,
+# against the shared checkout's real .claude/probe-logs/subagent-stop.jsonl and
+# artifacts/ - the 9 agent_ids and timestamps matched the round-1 verdict exactly).
+# Those 9 firings predate the producer hook's own existence in this repo - expected,
+# not instances of the class this script exists to detect. A nightly step reporting
+# the same 9 non-defects forever is the severity-philosophy scar this repo already
+# paid: "expected/placeholder patterns are NOTES, defects are FLAGS - an instrument
+# that cries wolf is worse than no instrument."
+#
+# THE FIX: the default floor is DERIVED FROM THE STORE - the earliest `kind: returned`
+# record's `at` timestamp - so it advances automatically as real history accumulates
+# and is never a hand-set constant that goes stale. -Since overrides it (tests never
+# touch the real store to establish a floor). A probe firing whose `_probe_logged_at`
+# is BEFORE the floor and has no matching record is EXCLUDED as expected-not-a-gap,
+# counted in ONE summary NOTE line, never a FLAG and never affecting the exit code. A
+# MISSING or unparseable `_probe_logged_at` can never be proven pre-epoch, so it is
+# NEVER excluded on that basis - it stays a reported gap, conservative by design
+# (never silently suppress a signal the epoch logic cannot justify suppressing), and
+# renders `logged_at=unknown` explicitly rather than blank (m3, Law 1: unknown renders
+# as unknown, never as an empty string a reader could mistake for "recorded but
+# empty").
 
 param(
     [string]$ProbeLog = '',
-    [string]$StoreRoot = ''
+    [string]$StoreRoot = '',
+    [string]$Since = ''
 )
 
 Set-StrictMode -Version Latest
@@ -109,10 +136,28 @@ if (Test-Path $ProbeLog) {
     }
 }
 
-# --- load every `returned` record's subject from the store ------------------------------
+# --- load every `returned` record's subject AND `at` timestamp from the store -----------
+# The `at` values double as the raw material for the default epoch floor below - one
+# pass over the store, never two.
+#
+# FILENAME-SCOPED, deliberately (caught running M5's real-corpus verification, this
+# car): the store also holds LANDED REVIEW VERDICTS under `artifacts/reviews/`
+# (`scripts/Migrate-Verdicts.ps1`), which share the SAME `starcar-artifact/1` schema
+# and the SAME `kind: "returned"` value, but are a different category of record
+# entirely - hand-landed by `Land-Verdict.ps1`, not auto-recorded by the producer hook
+# this reconciler cross-references. Their `at` timestamps predate the producer hook's
+# own existence by months (observed: 2026-07-22T03:44:34-04:00, a design-review
+# verdict, vs the earliest PRODUCER-written record at 2026-07-22T16:40:01Z) - scanning
+# ALL `*.json` files contaminated the epoch floor with a verdict's landing time,
+# silently defeating M5's pre-epoch exclusion entirely (observed against the real
+# store: 0/9 gaps excluded with the unscoped filter, all 9 excluded correctly once
+# scoped). `Produce-Artifact.ps1:394-397` names its own convention explicitly -
+# `dispatched-<timestamp>.json` / `returned-<timestamp>.json` - so scoping to
+# `returned-*.json` is the producer's OWN naming contract, not an invented filter.
 $returnedSubjects = New-Object 'System.Collections.Generic.HashSet[string]'
+$returnedAtValues = @()
 if (Test-Path $StoreRoot) {
-    foreach ($f in @(Get-ChildItem -Path $StoreRoot -Filter *.json -Recurse -File)) {
+    foreach ($f in @(Get-ChildItem -Path $StoreRoot -Filter 'returned-*.json' -Recurse -File)) {
         try {
             $obj = Get-Content $f.FullName -Raw -Encoding UTF8 | ConvertFrom-Json -DateKind String
         } catch {
@@ -121,22 +166,71 @@ if (Test-Path $StoreRoot) {
         if ((Get-Prop $obj 'kind') -eq 'returned') {
             $subj = Get-Prop $obj 'subject'
             if (-not [string]::IsNullOrWhiteSpace($subj)) { [void]$returnedSubjects.Add($subj) }
+            $at = Get-Prop $obj 'at'
+            if (-not [string]::IsNullOrWhiteSpace($at)) { $returnedAtValues += $at }
         }
     }
 }
 
-# --- cross-reference: report every gap loudly --------------------------------------------
+# --- the producer-epoch floor (M5) -------------------------------------------------------
+# -Since wins outright when supplied (tests never touch the real store to establish a
+# floor). Otherwise, derive the floor as the EARLIEST `at` among every `returned`
+# record in the store - if the store carries no returned records at all, there is no
+# evidence to derive a floor from, and $epochFloor stays $null (no exclusion applies,
+# the pre-M5 behaviour, honest when there is nothing to compare against).
+function ConvertTo-Instant {
+    param([string]$Text)
+    if ([string]::IsNullOrWhiteSpace($Text)) { return $null }
+    try {
+        return [datetimeoffset]::Parse($Text, [cultureinfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind)
+    } catch {
+        return $null
+    }
+}
+
+$epochFloor = $null
+if ($Since) {
+    $epochFloor = ConvertTo-Instant $Since
+} elseif ($returnedAtValues.Count -gt 0) {
+    foreach ($atText in $returnedAtValues) {
+        $parsed = ConvertTo-Instant $atText
+        if ($null -ne $parsed -and ($null -eq $epochFloor -or $parsed -lt $epochFloor)) {
+            $epochFloor = $parsed
+        }
+    }
+}
+
+# --- cross-reference: report every REAL gap loudly, exclude pre-epoch firings as notes ---
 $gaps = @()
+$preEpochCount = 0
 foreach ($entry in $probeEntries) {
     $subject = Get-WouldHaveAdaptedSubject -ProbeLine $entry
     if ($null -eq $subject) { continue }   # empty agent_type - internal harness subagent, excluded
-    if (-not $returnedSubjects.Contains($subject)) {
-        $gaps += [pscustomobject]@{
-            AgentId  = $subject
-            LoggedAt = (Get-Prop $entry '_probe_logged_at')
-            Kind     = 'returned'
-        }
+    if ($returnedSubjects.Contains($subject)) { continue }   # has a matching record - not a gap
+
+    $loggedAtRaw = Get-Prop $entry '_probe_logged_at'
+    $loggedAtInstant = ConvertTo-Instant $loggedAtRaw
+
+    # Pre-epoch exclusion applies ONLY when the floor exists AND this entry's own
+    # timestamp is known and provably before it. A missing/unparseable timestamp can
+    # never be proven pre-epoch, so it is never excluded on that basis (m3, Law 1).
+    if ($null -ne $epochFloor -and $null -ne $loggedAtInstant -and $loggedAtInstant -lt $epochFloor) {
+        $preEpochCount++
+        continue
     }
+
+    $gaps += [pscustomobject]@{
+        AgentId  = $subject
+        # Law 1: unknown renders as unknown, never as an empty string a reader could
+        # mistake for "recorded but empty" (m3).
+        LoggedAt = if ([string]::IsNullOrWhiteSpace($loggedAtRaw)) { 'unknown' } else { $loggedAtRaw }
+        Kind     = 'returned'
+    }
+}
+
+if ($preEpochCount -gt 0) {
+    $floorDisplay = if ($epochFloor) { $epochFloor.ToString('yyyy-MM-ddTHH:mm:ssK') } else { 'unknown' }
+    "[reconcile] NOTE - $preEpochCount probe firing(s) excluded as pre-producer-epoch (before $floorDisplay) - expected, not gaps"
 }
 
 if ($gaps.Count -gt 0) {

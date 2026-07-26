@@ -117,7 +117,14 @@ Describe 'Reconcile-DispatchRecords.ps1 - fixture behaviour (#32)' {
         New-Item -ItemType Directory -Path $store -Force | Out-Null
         Add-ProbeLine -ProbeLogPath $probeLog -AgentId 'internal-agent-789' -AgentType '' -LoggedAt '2026-07-23T09:10:00Z'
         Add-ProbeLine -ProbeLogPath $probeLog -AgentId 'complete-agent-456' -AgentType 'car' -LoggedAt '2026-07-23T09:05:00Z'
-        Add-ProbeLine -ProbeLogPath $probeLog -AgentId 'gap-agent-123' -AgentType 'car' -LoggedAt '2026-07-23T09:00:00Z'
+        # gap-agent-123's LoggedAt is deliberately AFTER the store's one returned
+        # record (at 2026-07-23T10:00:00Z, New-ReturnedRecord's fixed fixture time) -
+        # fix cycle round 2, M5: the default epoch floor derives from the store's
+        # earliest returned record, and a gap logged BEFORE that floor is excluded as
+        # pre-epoch (see the dedicated M5 Describe block below). This entry must stay
+        # POST-floor so this test keeps exercising "a real gap is reported", not the
+        # epoch-exclusion path.
+        Add-ProbeLine -ProbeLogPath $probeLog -AgentId 'gap-agent-123' -AgentType 'car' -LoggedAt '2026-07-23T11:00:00Z'
         New-ReturnedRecord -StoreRoot $store -Subject 'complete-agent-456'
 
         $r = Invoke-Reconcile -ProbeLog $probeLog -StoreRoot $store
@@ -256,5 +263,147 @@ Describe 'Reconcile-DispatchRecords.ps1 rule agrees with Produce-Artifact.ps1 (#
         $recon = Invoke-Reconcile -ProbeLog $probeLog -StoreRoot $store
         $recon.ExitCode | Should -Be 0
         $recon.Output | Should -Not -Match 'ad3814d978427e657'
+    }
+}
+
+Describe 'Reconcile-DispatchRecords.ps1 - the producer-epoch floor (#32, fix cycle round 2, M5)' {
+    # ROUND-1 FINDING: wired into the nightly goodnight sweep without ever being run
+    # against the real corpus. Run there (read-only, this car), it exited 1 with 9
+    # gaps across 7 agents - EVERY one at or before 2026-07-22T16:35:08Z, while the
+    # earliest producer-written returned record in the real store is
+    # 2026-07-22T16:40:01Z. All 9 are pre-producer-epoch firings (the producer hook
+    # did not exist yet, or had not yet been wired, at the time they fired) -
+    # structurally expected, never instances of the #32 class this script exists to
+    # detect. A nightly step reporting the same 9 non-defects forever is exactly the
+    # severity-philosophy scar this repo already paid: "expected/placeholder patterns
+    # are NOTES, defects are FLAGS - an instrument that cries wolf is worse than none."
+    #
+    # THE FIX: the default epoch floor is DERIVED FROM THE STORE - the earliest
+    # `kind: returned` record's `at` timestamp - never hand-set and never stale, since
+    # it moves forward automatically as the real store accumulates history. A probe
+    # firing whose `_probe_logged_at` predates the floor and has no matching record is
+    # EXCLUDED as expected-not-a-gap and counted in one NOTE-severity summary line,
+    # never a FLAG. -Since overrides the derived floor for tests (and for a future
+    # need to widen or narrow it deliberately). A missing/unparseable `_probe_logged_at`
+    # can never be proven pre-epoch, so it is NEVER excluded - it stays a reported gap
+    # (conservative: never silently suppress a signal the epoch logic cannot justify
+    # suppressing), with `logged_at=unknown` rendered explicitly rather than blank (m3).
+    BeforeAll {
+        $script:RepoRoot = (git rev-parse --show-toplevel)
+        $script:Script = Join-Path $script:RepoRoot 'scripts/Reconcile-DispatchRecords.ps1'
+
+        function New-FixtureDir {
+            $d = Join-Path ([System.IO.Path]::GetTempPath()) ("reconcile-epoch-" + [guid]::NewGuid().ToString('N'))
+            New-Item -ItemType Directory -Path $d -Force | Out-Null
+            $d
+        }
+
+        function Add-ProbeLine {
+            param([string]$ProbeLogPath, [string]$AgentId, [string]$AgentType, [string]$LoggedAt)
+            $props = [ordered]@{
+                agent_id = $AgentId
+                agent_type = $AgentType
+                agent_transcript_path = ''
+                session_id = 'sess-fixture'
+                hook_event_name = 'SubagentStop'
+                '_probe_transcript_exists_at_fire' = $false
+            }
+            if ($null -ne $LoggedAt) { $props['_probe_logged_at'] = $LoggedAt }
+            $line = [pscustomobject]$props | ConvertTo-Json -Compress
+            Add-Content -Path $ProbeLogPath -Value $line -Encoding utf8
+        }
+
+        function New-ReturnedRecord {
+            param([string]$StoreRoot, [string]$Subject, [string]$At)
+            $dir = Join-Path $StoreRoot $Subject
+            New-Item -ItemType Directory -Path $dir -Force | Out-Null
+            $record = [ordered]@{
+                schema = 'starcar-artifact/1'
+                kind = 'returned'
+                subject = $Subject
+                session_id = 'sess-fixture'
+                at = $At
+                outcome = 'completed'
+                findings = '0'
+                abstract = 'fixture record'
+            } | ConvertTo-Json -Compress
+            Set-Content -Path (Join-Path $dir "returned-epoch-fixture.json") -Value $record -Encoding utf8
+        }
+
+        function Invoke-Reconcile {
+            param([string]$ProbeLog, [string]$StoreRoot, [string]$Since)
+            $p = @{ ProbeLog = $ProbeLog; StoreRoot = $StoreRoot }
+            if ($Since) { $p['Since'] = $Since }
+            $out = & $script:Script @p 2>&1
+            [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = ($out -join "`n") }
+        }
+    }
+
+    It 'a pre-epoch line (before -Since) with no matching record is excluded, never reported as a gap' {
+        $dir = New-FixtureDir
+        $probeLog = Join-Path $dir 'subagent-stop.jsonl'
+        $store = Join-Path $dir 'artifacts'
+        New-Item -ItemType Directory -Path $store -Force | Out-Null
+        Add-ProbeLine -ProbeLogPath $probeLog -AgentId 'pre-epoch-agent' -AgentType 'car' -LoggedAt '2026-07-22T14:00:00+00:00'
+
+        $r = Invoke-Reconcile -ProbeLog $probeLog -StoreRoot $store -Since '2026-07-22T16:40:01Z'
+        $r.ExitCode | Should -Be 0
+        $r.Output | Should -Not -Match 'pre-epoch-agent'
+        $r.Output | Should -Match '1.*pre-producer-epoch'
+    }
+
+    It 'a fixture with ONE pre-epoch line and ONE post-epoch gap: exit nonzero naming ONLY the post-epoch gap' {
+        $dir = New-FixtureDir
+        $probeLog = Join-Path $dir 'subagent-stop.jsonl'
+        $store = Join-Path $dir 'artifacts'
+        New-Item -ItemType Directory -Path $store -Force | Out-Null
+        Add-ProbeLine -ProbeLogPath $probeLog -AgentId 'pre-epoch-agent' -AgentType 'car' -LoggedAt '2026-07-22T14:00:00+00:00'
+        Add-ProbeLine -ProbeLogPath $probeLog -AgentId 'post-epoch-gap-agent' -AgentType 'car' -LoggedAt '2026-07-22T17:00:00+00:00'
+
+        $r = Invoke-Reconcile -ProbeLog $probeLog -StoreRoot $store -Since '2026-07-22T16:40:01Z'
+        $r.ExitCode | Should -Not -Be 0
+        $r.Output | Should -Match 'post-epoch-gap-agent'
+        $r.Output | Should -Not -Match 'pre-epoch-agent'
+    }
+
+    It 'the default floor DERIVES from the store''s earliest returned record when -Since is not given' {
+        $dir = New-FixtureDir
+        $probeLog = Join-Path $dir 'subagent-stop.jsonl'
+        $store = Join-Path $dir 'artifacts'
+        New-Item -ItemType Directory -Path $store -Force | Out-Null
+        New-ReturnedRecord -StoreRoot $store -Subject 'establishes-the-floor' -At '2026-07-22T16:40:01Z'
+        Add-ProbeLine -ProbeLogPath $probeLog -AgentId 'pre-epoch-agent' -AgentType 'car' -LoggedAt '2026-07-22T14:00:00+00:00'
+        Add-ProbeLine -ProbeLogPath $probeLog -AgentId 'post-epoch-gap-agent' -AgentType 'car' -LoggedAt '2026-07-22T17:00:00+00:00'
+
+        $r = Invoke-Reconcile -ProbeLog $probeLog -StoreRoot $store
+        $r.ExitCode | Should -Not -Be 0
+        $r.Output | Should -Match 'post-epoch-gap-agent'
+        $r.Output | Should -Not -Match 'pre-epoch-agent'
+    }
+
+    It 'a missing/unparseable logged_at is NEVER excluded as pre-epoch, and renders as unknown (m3), never blank' {
+        $dir = New-FixtureDir
+        $probeLog = Join-Path $dir 'subagent-stop.jsonl'
+        $store = Join-Path $dir 'artifacts'
+        New-Item -ItemType Directory -Path $store -Force | Out-Null
+        Add-ProbeLine -ProbeLogPath $probeLog -AgentId 'no-timestamp-agent' -AgentType 'car' -LoggedAt $null
+
+        $r = Invoke-Reconcile -ProbeLog $probeLog -StoreRoot $store -Since '2026-07-22T16:40:01Z'
+        $r.ExitCode | Should -Not -Be 0
+        $r.Output | Should -Match 'no-timestamp-agent'
+        $r.Output | Should -Match 'logged_at=unknown'
+    }
+
+    It 'an all-pre-epoch fixture exits 0 and notes the exclusion count, never crying wolf' {
+        $dir = New-FixtureDir
+        $probeLog = Join-Path $dir 'subagent-stop.jsonl'
+        $store = Join-Path $dir 'artifacts'
+        New-Item -ItemType Directory -Path $store -Force | Out-Null
+        Add-ProbeLine -ProbeLogPath $probeLog -AgentId 'pre-epoch-a' -AgentType 'car' -LoggedAt '2026-07-22T14:00:00+00:00'
+        Add-ProbeLine -ProbeLogPath $probeLog -AgentId 'pre-epoch-b' -AgentType 'car' -LoggedAt '2026-07-22T15:00:00+00:00'
+
+        $r = Invoke-Reconcile -ProbeLog $probeLog -StoreRoot $store -Since '2026-07-22T16:40:01Z'
+        $r.ExitCode | Should -Be 0
+        $r.Output | Should -Match '2.*pre-producer-epoch'
     }
 }

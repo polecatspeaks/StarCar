@@ -84,6 +84,22 @@ contention). A nonzero exit names each gap's `agent_id`, `logged_at`, and missin
 treat it exactly like an `_faults.log` entry above: not an omission, a first-class state
 to close with a `presumed-lost` record or carry forward explicitly in the checkpoint.
 
+**Epoch floor (fix cycle round 2, #32, finding M5 - measured, not assumed).** Wired into
+this sweep without ever being run against the real corpus, this script exited 1 with 9
+gaps on day one - every one at or before 2026-07-22T16:35:08Z, while the earliest
+producer-written record is 2026-07-22T16:40:01Z: all 9 were pre-producer-epoch firings,
+not defects. Fixed: the default floor derives from the store's earliest
+`returned-*.json`-named record (never a hand-set constant), and a probe firing logged
+before it is excluded as a NOTE, never a FLAG. Re-measured against the real corpus
+(read-only) after the fix: **8 of the 9 are now correctly excluded** (one summary NOTE
+line); **1 remains flagged** - `agent_id=adba6552daddbe6db`, the very first line of the
+real probe log, which predates the `_probe_logged_at` field's own introduction and
+carries no timestamp at all. It is almost certainly ALSO pre-epoch by file position, but
+the epoch-floor logic will not exclude it on that basis (Law 1: unknown renders as
+unknown, never a guessed exclusion) - a human reading this sweep may close it with a
+`presumed-lost` record if the position-based inference is trusted, exactly like any
+other un-backfilled gap above.
+
 ## 6. The yard-status close
 
 Three sentences, written to memory AND said to the owner: what landed, what is parked,
