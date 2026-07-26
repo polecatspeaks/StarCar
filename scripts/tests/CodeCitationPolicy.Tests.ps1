@@ -206,7 +206,12 @@ Describe 'Repo policy: code files added after the citation standard cite their t
         # Dockerfile, Makefile, CODEOWNERS, or shebang script with no suffix is exactly as
         # comment-capable as a .sh file. See the header's EXTENSIONLESS FILES note for
         # the reasoning and the disclosed genuinely-comment-incapable edge case.
-        $script:CodeExtensions = @('.ps1', '.psm1', '.go', '.js', '.mjs', '.sh', '')
+        # '.html' joined the checked set when the first post-boundary .html landed (#62,
+        # the Claude Design mockup import, 2026-07-26 - the closed-set guard red BY NAME
+        # demanding this decision, exactly as designed): HTML carries comments natively,
+        # and the pre-boundary precedent (board/web/index.html) is a first-class code
+        # surface here, so checked - not exempt - is the loud-failure direction.
+        $script:CodeExtensions = @('.ps1', '.psm1', '.go', '.js', '.mjs', '.sh', '.html', '')
         # The closed set's other half (#42 round 2 MAJOR-2): every declared exemption
         # carries its reason inline, same discipline as the header's SCOPE section.
         $script:DeclaredExemptExtensions = [ordered]@{
