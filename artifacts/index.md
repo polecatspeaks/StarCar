@@ -218,3 +218,5 @@ dispatch batch between regenerations.
 | acb10c126ac3a7488 | returned | 2026-07-26T21:30:05Z | done-with-findings | acb10c126ac3a7488/returned-20260726T213005Z.json |
 | a678b799208107386 | dispatched | 2026-07-26T21:32:10Z |  | a678b799208107386/dispatched-20260726T213210Z.json |
 | a678b799208107386 | returned | 2026-07-26T21:59:02Z | REJECT | a678b799208107386/returned-20260726T215902Z.json |
+| acb10c126ac3a7488 | returned | 2026-07-26T22:18:41Z | done | acb10c126ac3a7488/returned-20260726T221841Z.json |
+| a678b799208107386 | returned | 2026-07-26T22:34:41Z | REJECT | a678b799208107386/returned-20260726T223441Z.json |
