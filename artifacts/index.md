@@ -156,3 +156,6 @@ dispatch batch between regenerations.
 | register-35-36-37-car-r1 | returned | 2026-07-25T23:13:21Z | completed | register-35-36-37-car-r1/returned-20260725T231321Z.json |
 | register-35-36-37-review-r1 | returned | 2026-07-25T23:13:32Z | approve-for-merge | register-35-36-37-review-r1/returned-20260725T231332Z.json |
 | af5f0b4f753a8f9d7 | dispatched | 2026-07-26T11:19:26Z |  | af5f0b4f753a8f9d7/dispatched-20260726T111926Z.json |
+| af5f0b4f753a8f9d7 | returned | 2026-07-26T11:54:02Z | done | af5f0b4f753a8f9d7/returned-20260726T115402Z.json |
+| ad18f715d2df17fe5 | dispatched | 2026-07-26T11:55:40Z |  | ad18f715d2df17fe5/dispatched-20260726T115540Z.json |
+| ad18f715d2df17fe5 | returned | 2026-07-26T12:15:18Z | REJECT | ad18f715d2df17fe5/returned-20260726T121518Z.json |
