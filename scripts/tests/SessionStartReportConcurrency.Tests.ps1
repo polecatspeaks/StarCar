@@ -39,22 +39,45 @@ Describe 'session-start-record.sh: freshness is a file property, not an ordering
         }
 
         # Launches N `echo`-emitting "guards" through session-start-record.sh as
-        # GENUINELY CONCURRENT child processes (Start-Process, real OS processes - not
-        # PowerShell background jobs sharing this process's own I/O buffering, and not
-        # a sequential loop, which would prove nothing about the race).
+        # GENUINELY CONCURRENT child processes (real OS processes via
+        # System.Diagnostics.Process - not PowerShell background jobs sharing this
+        # process's own I/O buffering, and not a sequential loop, which would prove
+        # nothing about the race).
+        #
+        # STDOUT/STDERR REDIRECTED (fix cycle round 3, N8, test-hygiene only - no
+        # mechanism change): with UseShellExecute=$false and NO redirection, a child
+        # process inherits the PARENT's console streams, so every guard's `echo` (and
+        # session-start-record.sh's own `tee -a` passthrough) flowed straight into
+        # Pester's own output - 4 guards x 20 trials x (this test plus the other two)
+        # leaked 80+ lines into every suite run and CI log. Both streams are redirected
+        # and drained ASYNCHRONOUSLY via `Register-ObjectEvent` (never synchronously
+        # read after `WaitForExit`, which would serialize the very concurrency this
+        # test exists to exercise, and never left un-drained, which risks a deadlock
+        # if a child's output ever exceeds the OS pipe buffer). Event subscriptions are
+        # unregistered per process so they never accumulate across the 20-trial loop.
         function Invoke-ConcurrentGuards {
             param([string[]]$GuardTexts, [string]$ReportFile)
             $procs = @()
+            $subs = @()
             foreach ($text in $GuardTexts) {
                 $psi = [System.Diagnostics.ProcessStartInfo]::new()
                 $psi.FileName = 'sh'
                 $psi.Arguments = "-c `"echo $text | sh $script:RecordScript`""
                 $psi.UseShellExecute = $false
+                $psi.RedirectStandardOutput = $true
+                $psi.RedirectStandardError = $true
                 $psi.EnvironmentVariables['REPORT_FILE'] = $ReportFile
-                $p = [System.Diagnostics.Process]::Start($psi)
+                $p = [System.Diagnostics.Process]::new()
+                $p.StartInfo = $psi
+                $subs += Register-ObjectEvent -InputObject $p -EventName OutputDataReceived -Action { }
+                $subs += Register-ObjectEvent -InputObject $p -EventName ErrorDataReceived -Action { }
+                [void]$p.Start()
+                $p.BeginOutputReadLine()
+                $p.BeginErrorReadLine()
                 $procs += $p
             }
             foreach ($p in $procs) { $p.WaitForExit(10000) | Out-Null }
+            foreach ($sub in $subs) { Unregister-Event -SourceIdentifier $sub.Name -ErrorAction SilentlyContinue }
         }
     }
 
