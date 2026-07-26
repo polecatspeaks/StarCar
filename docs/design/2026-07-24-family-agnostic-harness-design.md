@@ -70,6 +70,30 @@ the echo existing before the car builds it.
 
 **AMENDMENT (fix cycle round 4, #50, owner ruling 2026-07-26, option d, car tooling-50-32-car-r4).** Round-2 delta re-review (`artifacts/reviews/2026-07-26-tooling-50-32-review-round2-REJECT-CAPPED.md`) set a CAP on further revision of the mtime+mutex mechanism above (three new reproduced defects: a second SessionStart within 60s appending to a stale marker instead of truncating; a `date -r` fallback losing 30/40 guard outputs under concurrency on non-GNU coreutils; the mutex releasing a lock it never acquired) and escalated the unquestioned premise underneath BOTH push mechanisms: that `session-start-record.sh` must determine session-batch identity by itself, when its own stdin is occupied by the guard's output and it can therefore never read the SessionStart payload that actually carries `session_id`. **The owner ruled option d: the push mechanism is DELETED, not revised a third time.** `.claude/hooks/session-start-record.sh` is removed; the four guard lines in `.claude/settings.json` revert to the bare intersection dialect (the shape this row already found "the four shop guards exit 0 under `sh` with correct output" - working, just silent on Copilot); the fifth line's Task-1 fix (`session-start-entire.sh`) is unaffected by this ruling. In its place: `.claude/hooks/run-session-start-guards.sh` (#50), a plain sequential runner with no shared mutable file, no truncation, no race, no mutex - any agent whose runtime does not inject SessionStart stdout runs it as its FIRST action per the arrival docs and reads the output directly (agent-pull, not push). **The reliance is UNCHANGED from the file-based design, not removed** - both depend on the agent following its arrival doc; only the mechanism sitting between "guard runs" and "agent reads" is gone. Verifying that reliance holds under a live Copilot session is issue **#55** (backlogged by the same owner ruling, triggered on the next Copilot session, "a minor tooling gap for a very specific case") - this row's own RESTART-GATED TRIGGER is superseded by #55 for the delivery-mechanism half; the fifth-line and four-guards-execute-under-Copilot claims above remain open on their own terms. `docs/setup.md`'s delivery-mechanism paragraph is replaced (not merely amended) in the same commit, since it described a mechanism that no longer exists.
 
+**AMENDMENT (Claude-leg closure, #47, conductor, 2026-07-26 - the first Claude Code
+session after landing, which is what both open Claude legs above were waiting for).**
+Row "P1 for Claude Code" SETTLED: five car dispatches and three review dispatches this
+session each carried a shop-minted id in the brief (`tooling-50-32-car-r1`..`-r5`,
+`tooling-50-32-review-r1`..`-r5`); the Claude Agent tool's launch input carries NO
+operator-label field at all (its schema takes description/prompt/subagent_type only), so
+no launch-side label carrier exists and **mode (b) remains the Claude adapter's correct
+mode by observed tool schema, not by unfinished probing** - the minted id landed on every
+`returned` record as `task_id` via the envelope echo (observed: subject
+`af5f0b4f753a8f9d7`, `subject_basis: runtime-id`, `task_id: tooling-50-32-car-r1`;
+pairing held dispatched-to-returned on every dispatch, zero aliases, zero manual records,
+honoring the #54 ruling by construction). Row "intersection-dialect SessionStart lines"
+Claude leg SETTLED: at this session's start all five SessionStart lines executed under
+Claude Code AND their stdout reached the agent context ([retro] and [ci-baseline] blocks
+observed in-context; checkpoint-reconcile and goodnight-resume silent on their
+in-sync/no-packet branches by design - four guards heard, none decorative). Honest
+boundary, one item narrower than the row: the session started at `e403113`, so the fifth
+line observed live was the OLD inline form; the four guard lines observed live are
+byte-identical to the merged state (the round-4 revert restored exactly the pre-train
+shape - `settings.json` is a one-line diff vs `5ea6c0c`, the fifth line only), and the
+new `session-start-entire.sh` form's behavior is pinned byte-identical by
+`SessionStartWiring.Tests.ps1`, verifiable live at the next Claude Code session start.
+**#47's Claude-side verification is complete; the ticket closes on this amendment.**
+
 ## §3 - The problem (ratified statement, owner 2026-07-24, #47)
 
 **Outcome:** the repo bounces between agent families with zero friction - any agent finds
