@@ -178,3 +178,5 @@ dispatch batch between regenerations.
 | ac9289f01a6a15ced | returned | 2026-07-26T15:44:58Z | done-with-findings | ac9289f01a6a15ced/returned-20260726T154458Z.json |
 | afe1a2c703e2e615e | dispatched | 2026-07-26T15:46:01Z |  | afe1a2c703e2e615e/dispatched-20260726T154601Z.json |
 | afe1a2c703e2e615e | returned | 2026-07-26T16:08:09Z | REJECT | afe1a2c703e2e615e/returned-20260726T160809Z.json |
+| ac9289f01a6a15ced | returned | 2026-07-26T16:19:48Z | done | ac9289f01a6a15ced/returned-20260726T161948Z.json |
+| afe1a2c703e2e615e | returned | 2026-07-26T16:26:50Z | APPROVE | afe1a2c703e2e615e/returned-20260726T162650Z.json |
