@@ -109,3 +109,23 @@ simple-form rule rather than a locally-observed repro. Landed: the line's body m
 `scripts/tests/SessionStartWiring.Tests.ps1` (absent-branch systemMessage JSON,
 present-branch exec argv, both verified against a stub). Restart-gated same as the four
 guards above - unverified under a live Copilot session from this desk.
+
+**The four guards' output is now ALSO delivered via a report file, because Copilot does
+not inject SessionStart stdout at all (#50).** The same restart-gated probe found that
+even when the four guards execute successfully under Copilot's compat layer, their
+stdout never reaches the agent context - Copilot surfaces hook failures in `events.jsonl`
+only. Landed: each of the four guard lines in `.claude/settings.json` now pipes through a
+new `.claude/hooks/session-start-record.sh` (`sh GUARD.sh | sh session-start-record.sh`),
+which `tee -a`s the guard's stdout through UNCHANGED (Claude Code's context-injection
+path is untouched) and additionally appends the same bytes to a gitignored
+`.claude/session-start-report.txt`. **Fix cycle round 2 (finding M4):** freshness is a
+property of the report file's own mtime (stale = missing, or older than 60 seconds),
+never of settings.json array order - an atomic `mkdir` mutex serializes concurrent
+invocations so no guard's output can be lost to a truncate racing an append, pinned by
+`scripts/tests/SessionStartReportConcurrency.Tests.ps1` (20 trials of 4 genuinely
+concurrent child processes, zero losses). Pointer lines in
+`.github/copilot-instructions.md` and `ONBOARDING.md` tell a Copilot agent to read the
+report file. **Restart-gated, same as above:** verify on the next Copilot session start
+that all five SessionStart lines report `hook.end success=true` in `events.jsonl`, that
+`.claude/session-start-report.txt` exists and is fresh, and that a Copilot agent actually
+reads it - none of this is claimed verified from this desk.
