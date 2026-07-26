@@ -182,7 +182,11 @@ pins these shapes executably at the spec rung, which then becomes the single own
   - **Rule 3:** rendered age always comes from the server (`ageBucketMs`, quantised,
     included in change detection); the client never computes age from its own clock.
   - **Rule 4:** the detector's register is `needs-attention`, deliberately - the one
-    alarm that is about the board rather than the yard.
+    alarm that is about the board rather than the yard. **`[SUPERSEDED, issue #30,
+    2026-07-26 - see §12b]`**: this held only while every board-condition class shared
+    one register; #30 ruled severity PER CLASS, so this rule no longer states the
+    detector's actual behaviour. §12b's #30 amendment is the corrected text -
+    read it before relying on this line.
 - **Completeness guards** - every registered lane in every snapshot on every code path
   including pre-first-poll; the lane-id set pinned by a fixture-backed test (shrink =
   red); lane count rendered in chrome and ledgered.
@@ -469,6 +473,71 @@ as the substrate probe it is.
 2. **`statePathDisplay` renamed `storePathDisplay`** `[spec §3 deviation]`: the rev 3
    relic named the retired state file; the field displays the STORE path. The wire
    schema (`schema/yard-snapshot.schema.json`) carries the authoritative name.
+
+**Amendment (2026-07-26, issue #30 owner ruling - board-condition severity per
+class; SUPERSEDES §5.2 Rule 4 and, IN PART, §6's row on unrecognised
+`kind`/`outcome`/`position`/role; corrected 2026-07-26 in fix-cycle round 2 after
+review round 1's MAJOR-1/MAJOR-2 - the round-1 text over-scoped, see below):**
+
+**Scope of what actually changed - the board-condition REGISTER for `kind` and
+`outcome` discoveries only.** §6's row reads "Unrecognised `kind`/`outcome`/
+`position`/role, vocabularies loaded | Detector fires: rendered loudly BY NAME,
+register `needs-attention` - a discovery, not a bug", and Rule 4 (§5.2, above)
+generalised the same claim to "the detector's register is `needs-attention`,
+deliberately." Both are corrected, precisely:
+
+- **`kind` and `outcome`** are the ONLY values `board/fold/algorithm.go:110-122`
+  ever mints a "discovery" BOARD CONDITION for (deduplicated by detail string,
+  `:113,119`). For exactly these two, a "discovery" is now the design's own
+  named example of a NOTE-tier board-condition CLASS (an expected pattern,
+  distinct from a FLAG-tier defect), and NOTE-tier renders `nominal`, not
+  `needs-attention` - "rendered loudly BY NAME" still holds (the code and detail
+  are never suppressed, never an ack-list; grouping at the view rolls instances
+  up by code but discards none), only the REGISTER changes.
+- **`position` and `role` are UNCHANGED and render `needs-attention` still.**
+  Round 1 (MAJOR-2) correctly caught that the §6 row's literal text names all
+  four (`kind`/`outcome`/`position`/`role`) and this amendment's first draft
+  superseded the row wholesale, implying position/role went calm too. They did
+  not, and could not have: unrecognised `position`/`role` never mint a
+  board-condition CODE at all (no construction site for them exists in
+  `board/{store,assemble,server}`, so `condition_severity.go` - which classifies
+  board-condition CODES - has no lever over them). Their register comes from an
+  entirely different, VIEW-SIDE path: `board/web/js/vocab.js:31-37`
+  `describeVocab` resolves an unrecognised id to `needs-attention` directly
+  (never through the wire's board-conditions array), reached for positions via
+  `board/web/js/compose.js:30-31` `positionRegister` and
+  `board/web/js/render.js` per-lane composition. This path is untouched by #30
+  and stays pinned green by `describeVocab: an UNRECOGNISED id renders its raw
+  id verbatim as the label, register needs-attention, never guessed as calm`
+  (`board/web/test/vocab.test.js`).
+
+The severity classification for the board-condition codes this DOES cover is
+now ONE owned mapping (`board/store/condition_severity.go`), pinned by
+`board/store/condition_severity_test.go` against every `Code` literal a
+production Go source file under `board/` actually constructs - the #37
+register-taxonomy precedent applied to a second axis.
+
+**`docs/contracts/gating-matrix.md:45`** quotes the pre-#30 Rule 4 verbatim as
+the rationale for why the detector surface is never suppressed; that document
+is amended in the same commit as this one (2026-07-26, fix-cycle round 2) -
+see its own inline amendment. The rationale it protects - the surface is never
+SUPPRESSED - still holds exactly as written; only the register a `kind`/
+`outcome` discovery renders at changed, from always-hot to per-class.
+
+First application (#30 item 4, "quiet by declaration"): the cross-family
+outcome words `completed` and `approve-for-merge` are declared in
+`schema/vocab/outcomes.json` and `schema/vocab/board-defs.json`, so their
+"discovery" BOARD CONDITION disappears because it stopped being true, never
+because it was suppressed. Counts, disambiguated (round 1 MIN-4: the original
+text's "x1"/"x1" was readable two ways and this repo holds ambiguity to be a
+finding): as of this car's base (`4f0182d`), the live store held exactly ONE
+board-condition INSTANCE of `discovery` for each of `outcome: completed` and
+`outcome: approve-for-merge` (the fold dedups discoveries by detail string,
+`board/fold/algorithm.go:113,119`, so one instance regardless of how many
+records share the value) - but the underlying RETURNED RECORDS carrying those
+outcome values numbered **4** (`completed`) and **5** (`approve-for-merge`)
+respectively, matching `schema/vocab/outcomes.json`'s own `$comment` exactly.
+One board condition per distinct value; four and five records behind it.
 
 ## §13 - Revision history
 

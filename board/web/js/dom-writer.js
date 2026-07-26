@@ -64,15 +64,48 @@ function renderChrome(doc, vm, connection) {
   const laneCountText = `${vm.laneCompleteness.observed} of ${vm.laneCompleteness.declared} lanes`;
   chrome.appendChild(el(doc, 'div', 'lane-count', laneCountText));
 
-  if (vm.boardConditions.length > 0) {
-    const strip = el(doc, 'ul', 'board-conditions');
-    for (const bc of vm.boardConditions) {
-      strip.appendChild(el(doc, 'li', `board-condition ${registerClass(bc.register)}`, `${bc.code}: ${bc.detail}`));
-    }
-    chrome.appendChild(strip);
+  if (vm.boardConditionGroups.length > 0) {
+    chrome.appendChild(renderBoardConditionsStrip(doc, vm));
   }
 
   return chrome;
+}
+
+// #30: CHROME, not headline (item 3) - a native <details>/<summary> pair
+// needs zero JS to expand/collapse, so this is the smallest DOM surface
+// that satisfies "a single summary line that expands" without adding a
+// click handler. COLLAPSED BY DEFAULT (no "open" attribute set) always,
+// regardless of severity - even an all-FLAG board never auto-expands the
+// strip, because the yard lanes staying above the fold is the whole point
+// of placing this in chrome rather than as a headline.
+function renderBoardConditionsStrip(doc, vm) {
+  const strip = el(doc, 'details', `board-conditions-strip ${registerClass(vm.boardConditionsRegister)}`);
+  strip.appendChild(el(doc, 'summary', `board-conditions-summary ${registerClass(vm.boardConditionsRegister)}`, vm.boardConditionSummary));
+
+  const groups = el(doc, 'ul', 'board-condition-groups');
+  for (const group of vm.boardConditionGroups) {
+    groups.appendChild(renderBoardConditionGroup(doc, group));
+  }
+  strip.appendChild(groups);
+  return strip;
+}
+
+// #30 (GROUP BY CLASS): one row per condition CODE, itself a <details> -
+// "expandable to per-instance details" - collapsed by default for the same
+// reason the outer strip is.
+function renderBoardConditionGroup(doc, group) {
+  const item = el(doc, 'li', `board-condition-group ${registerClass(group.register)}`);
+  const details = el(doc, 'details');
+  details.appendChild(el(doc, 'summary', 'board-condition-group-summary', `${group.code} (x${group.count})`));
+  const instances = el(doc, 'ul', 'board-condition-instances');
+  for (const instance of group.instances) {
+    // VERBATIM - never translated, the same posture as every other
+    // detector-owned string this repo renders (state words, outcome words).
+    instances.appendChild(el(doc, 'li', `board-condition-instance ${registerClass(instance.register)}`, instance.detail));
+  }
+  details.appendChild(instances);
+  item.appendChild(details);
+  return item;
 }
 
 function renderLane(doc, lane) {

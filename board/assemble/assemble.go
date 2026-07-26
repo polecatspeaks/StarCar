@@ -51,7 +51,7 @@ func Assemble(in Input) Result {
 		result.Conditions = append(result.Conditions, store.BoardCondition{
 			Code:     "subject-namespace-collision",
 			Detail:   fmt.Sprintf("subject %q appears in both fold.dispatches and fold.intents - the train: partition rule should make this impossible", s),
-			Register: "needs-attention",
+			Register: store.RegisterForCode("subject-namespace-collision"),
 		})
 	}
 
@@ -71,7 +71,7 @@ func Assemble(in Input) Result {
 			result.Conditions = append(result.Conditions, store.BoardCondition{
 				Code:     "manifest-record-not-found",
 				Detail:   fmt.Sprintf("the fold named %q at %q as the winning manifest, but no matching raw record was found", intent.Subject, intent.At),
-				Register: "needs-attention",
+				Register: store.RegisterForCode("manifest-record-not-found"),
 			})
 			continue
 		}
@@ -81,7 +81,7 @@ func Assemble(in Input) Result {
 			result.Conditions = append(result.Conditions, store.BoardCondition{
 				Code:     "manifest-payload-unreadable",
 				Detail:   fmt.Sprintf("%q's manifest payload could not be read", intent.Subject),
-				Register: "needs-attention",
+				Register: store.RegisterForCode("manifest-payload-unreadable"),
 			})
 			continue
 		}
@@ -140,7 +140,7 @@ func Assemble(in Input) Result {
 		result.Conditions = append(result.Conditions, store.BoardCondition{
 			Code:     "manifest-membership-collision",
 			Detail:   fmt.Sprintf("dispatch %q is claimed by more than one manifest: %s", subj, strings.Join(trains, ", ")),
-			Register: "needs-attention",
+			Register: store.RegisterForCode("manifest-membership-collision"),
 		})
 	}
 
@@ -153,7 +153,7 @@ func Assemble(in Input) Result {
 			result.Conditions = append(result.Conditions, store.BoardCondition{
 				Code:     "dispatch-render-failed",
 				Detail:   fmt.Sprintf("subject %q could not be rendered to the wire shape: %v", d.Subject, err),
-				Register: "needs-attention",
+				Register: store.RegisterForCode("dispatch-render-failed"),
 			})
 			continue
 		}

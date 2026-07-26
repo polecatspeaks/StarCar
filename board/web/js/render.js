@@ -3,7 +3,7 @@
 // impure consumer) walks this shape. No DOM here on purpose: this keeps
 // the composition-and-vocabulary logic testable in Node against real
 // captured payloads (board/web/test/fixtures/real-snapshot.json).
-import { composeRegister, composeLines } from './compose.js';
+import { composeRegister, composeLines, mostSevereRegister } from './compose.js';
 import { hasRendererFor } from './lanes.js';
 import { describeVocab } from './vocab.js';
 
@@ -18,6 +18,71 @@ export function checkLaneCompleteness(snapshot) {
   const declared = snapshot.config.laneCount;
   const observed = snapshot.lanes.length;
   return { declared, observed, mismatch: declared !== observed };
+}
+
+/**
+ * #30 (GROUP BY CLASS): one row per condition CODE, with a count and every
+ * per-instance detail preserved (never discarded - "expandable to
+ * per-instance details" per the owner-ruled design). Register stays
+ * authoritative from the server per instance (Rule 4); the roll-up to one
+ * register PER GROUP uses mostSevereRegister only as a defensive combinator
+ * for the (never-expected-in-production) case of one code carrying mixed
+ * registers - board/store/condition_severity.go is the ONE owned mapping
+ * from code to tier, so in practice every instance of a given code already
+ * shares one register.
+ *
+ * @param {Array<{code:string, detail:string, register:string}>} boardConditions
+ */
+export function groupBoardConditions(boardConditions) {
+  const order = [];
+  const byCode = new Map();
+  for (const bc of boardConditions) {
+    if (!byCode.has(bc.code)) {
+      byCode.set(bc.code, { code: bc.code, register: bc.register, instances: [] });
+      order.push(bc.code);
+    }
+    const group = byCode.get(bc.code);
+    group.register = mostSevereRegister(group.register, bc.register);
+    group.instances.push({ detail: bc.detail, register: bc.register });
+  }
+  return order.map((code) => {
+    const group = byCode.get(code);
+    return { code: group.code, register: group.register, count: group.instances.length, instances: group.instances };
+  });
+}
+
+// #30 (HAVAGLANCE): the most-severe register across every group, so the
+// COLLAPSED strip's own summary line can carry a color signal - "total
+// transmission in a single look" (HAVAGLANCE) fails if a FLAG-tier
+// condition is invisible until the reader expands the chrome. Defaults to
+// 'nominal' (calm) when there are no groups at all - honest-empty, the same
+// posture the rest of this repo gives a zero-of-zero state.
+export function overallBoardConditionsRegister(groups) {
+  return groups.reduce((worst, group) => mostSevereRegister(worst, group.register), 'nominal');
+}
+
+// #30 (SEVERITY PER CLASS -> PLACEMENT): the two-tier vocabulary this
+// summary line speaks - NOTE-tier groups (register 'nominal' or
+// 'in-progress', though in practice only 'nominal' is emitted server-side)
+// count as "note(s)"; FLAG-tier groups (register 'needs-attention') count
+// as "FLAG(S)". Counting INSTANCES (not distinct classes) - "1 FLAG + 2
+// notes" reads as "how many things need attention", the HAVAGLANCE
+// question a glance at chrome is meant to answer, not "how many kinds of
+// thing".
+export function summariseBoardConditionGroups(groups) {
+  let flagCount = 0;
+  let noteCount = 0;
+  for (const group of groups) {
+    if (group.register === 'needs-attention') {
+      flagCount += group.count;
+    } else {
+      noteCount += group.count;
+    }
+  }
+  const parts = [];
+  if (flagCount > 0) parts.push(`${flagCount} FLAG${flagCount === 1 ? '' : 'S'}`);
+  if (noteCount > 0) parts.push(`${noteCount} note${noteCount === 1 ? '' : 's'}`);
+  return parts.length > 0 ? parts.join(' + ') : 'no conditions';
 }
 
 /**
@@ -42,6 +107,9 @@ export function buildBoardViewModel(snapshot, clientConditions = []) {
       register: 'needs-attention'
     });
   }
+  const boardConditionGroups = groupBoardConditions(boardConditions);
+  const boardConditionSummary = summariseBoardConditionGroups(boardConditionGroups);
+  const boardConditionsRegister = overallBoardConditionsRegister(boardConditionGroups);
 
   const lanes = snapshot.lanes.map((lane) => {
     const hasRenderer = hasRendererFor(lane);
@@ -62,6 +130,9 @@ export function buildBoardViewModel(snapshot, clientConditions = []) {
     demoMode: Boolean(snapshot.config.demoMode),
     laneCompleteness: completeness,
     boardConditions,
+    boardConditionGroups,
+    boardConditionSummary,
+    boardConditionsRegister,
     lanes
   };
 }

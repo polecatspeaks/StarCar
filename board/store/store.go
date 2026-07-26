@@ -200,7 +200,7 @@ func (a *Adapter) Scan(storeRoot string, now time.Time) (ScanResult, error) {
 			result.Conditions = append(result.Conditions, BoardCondition{
 				Code:     "record-quarantined",
 				Detail:   fmt.Sprintf("%s: %s", rel, quarantineReason),
-				Register: "needs-attention",
+				Register: RegisterForCode("record-quarantined"),
 			})
 			continue
 		}
@@ -216,7 +216,7 @@ func (a *Adapter) Scan(storeRoot string, now time.Time) (ScanResult, error) {
 		result.Conditions = append(result.Conditions, BoardCondition{
 			Code:     "all-records-quarantined",
 			Detail:   fmt.Sprintf("%d of %d records quarantined", len(result.Quarantined), len(paths)),
-			Register: "needs-attention",
+			Register: RegisterForCode("all-records-quarantined"),
 		})
 	}
 
@@ -311,7 +311,7 @@ func (a *Adapter) readOne(path, rel string, now time.Time) (Record, *BoardCondit
 		cond := BoardCondition{
 			Code:     "record-unrecognised-fields",
 			Detail:   fmt.Sprintf("%s: record carries %d unrecognised field(s): %s", rel, len(unknown), strings.Join(unknown, ", ")),
-			Register: "needs-attention",
+			Register: RegisterForCode("record-unrecognised-fields"),
 		}
 		return rec, &cond, ""
 	}
