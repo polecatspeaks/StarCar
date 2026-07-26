@@ -194,3 +194,24 @@ overlap found.
   one extra review round, cheap - the cap fired BEFORE a third mechanism was written, which
   is the exact failure the doctrine was built from (the harness-design 4-round scar).
   Class: the reviewer-held cap works; a conductor cannot detect its own churn, and did not.
+
+- 2026-07-26 (reviewer-disclosed, blob-level restoration proven): PWSH .NET STATIC FILE
+  APIS IGNORE Set-Location. The round-4 reviewer's first injection wrote to the SHARED
+  CHECKOUT instead of its worktree: [System.IO.File]::* resolves relative paths against
+  [Environment]::CurrentDirectory, which Set-Location does not change. Restored and proven
+  (working blob == HEAD blob, git status clean); the meaningless injection result was
+  discarded rather than reported. Cost: one wasted injection cycle plus a transient
+  shared-checkout mutation. Class: pwsh maintains TWO current directories; any .NET static
+  API call in a worktree context must use absolute paths. Same family as the MSYS path
+  leak (07-22) - the shell's implicit path resolution is invisible until run.
+
+- 2026-07-26 (rotation-drill outcome + the round-4 root cause): GREEN IN THE AUTHOR'S
+  ENVIRONMENT IS A CLAIM ABOUT THAT ENVIRONMENT ONLY. Both round-4 Majors (a test red
+  under detached HEAD - the exact state of PR CI and every reviewer worktree; a runner
+  emitting a confident falsehood when CLAUDE_PROJECT_DIR is unset - the exact state of
+  every non-Claude-Code shell) were invisible from the car's attached, Claude-flavored
+  worktree and 100% reproducible in the environments the feature targets. The rotation
+  drill itself PASSED: a fresh reviewer reconstructed the four-round series from landed
+  verdicts alone, replicated the prior reviewer's injections by name, honored the r2 cap
+  correctly, and caught what continuation plausibly would have caught plus the
+  environment class - the verdict template carries everything it claims to.

@@ -163,3 +163,6 @@ dispatch batch between regenerations.
 | ad18f715d2df17fe5 | returned | 2026-07-26T13:01:18Z | REJECT | ad18f715d2df17fe5/returned-20260726T130118Z.json |
 | af5f0b4f753a8f9d7 | returned | 2026-07-26T13:15:18Z | done | af5f0b4f753a8f9d7/returned-20260726T131518Z.json |
 | ad18f715d2df17fe5 | returned | 2026-07-26T13:25:24Z | APPROVE | ad18f715d2df17fe5/returned-20260726T132524Z.json |
+| af5f0b4f753a8f9d7 | returned | 2026-07-26T13:41:01Z | done | af5f0b4f753a8f9d7/returned-20260726T134101Z.json |
+| a5234897d26a4e293 | dispatched | 2026-07-26T13:42:24Z |  | a5234897d26a4e293/dispatched-20260726T134224Z.json |
+| a5234897d26a4e293 | returned | 2026-07-26T13:56:54Z | REJECT | a5234897d26a4e293/returned-20260726T135654Z.json |
