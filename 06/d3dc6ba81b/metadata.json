@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "06d3dc6ba81b",
+  "strategy": "manual-commit",
+  "branch": "dev",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "artifacts/reviews/2026-07-26-adapters-49-review-round1-APPROVE.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/06/d3dc6ba81b/0/metadata.json",
+      "transcript": "/06/d3dc6ba81b/0/full.jsonl",
+      "compact_transcript": "/06/d3dc6ba81b/0/transcript.jsonl",
+      "content_hash": "/06/d3dc6ba81b/0/content_hash.txt",
+      "prompt": "/06/d3dc6ba81b/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 300,
+    "cache_creation_tokens": 1163729,
+    "cache_read_tokens": 45634225,
+    "output_tokens": 183652,
+    "api_call_count": 161
+  }
+}
