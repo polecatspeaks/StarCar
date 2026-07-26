@@ -23,7 +23,7 @@
     },
     "freshness": {
       "type": "object",
-      "description": "Closed by mechanism (design rev 5 section 5.2): an adapter is attached or not; if attached it has run or not; if run it succeeded or failed.",
+      "description": "Closed by mechanism (design rev 5 section 5.2, amended #29 2026-07-26): an adapter is attached or not; if attached it has run or not; if run it succeeded or failed; if it succeeded but the data is old, something is IN FLIGHT and stalled (stale) or nothing is (idle) - a yard at rest is not stale.",
       "oneOf": [
         { "properties": { "kind": { "const": "not-applicable" } }, "required": ["kind"] },
         { "properties": { "kind": { "const": "never-polled" } }, "required": ["kind"] },
@@ -41,6 +41,15 @@
             "ageBucketMs": { "type": "integer", "description": "QUANTISED server-issued age (design rule 3: the client never computes age). Included in change detection." }
           },
           "required": ["kind", "asOf", "ageBucketMs"]
+        },
+        {
+          "properties": {
+            "kind": { "const": "idle" },
+            "asOf": { "type": "string" },
+            "ageBucketMs": { "type": "integer", "description": "#29: same QUANTISED server-issued age mechanism as 'stale' - an idle yard still honestly discloses its age, calmly. Included in change detection, exactly like 'stale''s ageBucketMs." }
+          },
+          "required": ["kind", "asOf", "ageBucketMs"],
+          "description": "#29: data is older than stalenessMs, but NOTHING is in flight (every dispatch has returned or is presumed-lost, or there are no dispatch subjects at all) - a yard at rest, rendered calm/nominal, never confused with a broken pipeline ('stale', reserved for old data WHILE something is in flight and not moving)."
         },
         {
           "properties": {

@@ -28,7 +28,7 @@
 //     a Windows sandbox, and the ubuntu-latest CI leg is the actual
 //     cross-platform measurement of it.
 import { spawn, spawnSync } from 'node:child_process';
-import { mkdtempSync, existsSync } from 'node:fs';
+import { mkdtempSync, existsSync, cpSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -37,6 +37,49 @@ import http from 'node:http';
 // board/web/test/support/real-board-server.js -> repo root is 4 levels up.
 const REPO_ROOT = fileURLToPath(new URL('../../../../', import.meta.url));
 const BOARD_DIR = join(REPO_ROOT, 'board');
+
+// buildScratchStoreWithInFlightDispatch (#29) copies the REAL repo
+// artifacts/ store into a scratch temp directory - every committed record,
+// byte-identical, never a synthetic replacement - and adds exactly ONE
+// additional, genuinely IN-FLIGHT "dispatched" record (no returned or
+// presumed-lost successor), dated far enough in the past to be stale under
+// any reasonable stalenessMs.
+//
+// WHY THIS EXISTS (disclosed, #29): board/server/poll.go's computeLiveFreshness
+// used to render "stale" for ANY old data, so the ambient repo store (whose
+// records only ever get OLDER relative to "now") reliably reproduced issue
+// #31's needs-attention-lane-with-a-nominal-row shape forever, with zero
+// fixture maintenance. #29's fix makes "stale" require something IN FLIGHT
+// (never just old data) - a yard where every dispatch has already returned
+// is now correctly "idle" (calm), and a repo-wide scan of this repo's own
+// artifacts/ store (this car's report) found ZERO subjects still in flight.
+// The #31 regression guard therefore needs its OWN reliably-stale fixture
+// rather than depending on the ambient repo's history, which #29 makes
+// permanently idle by design (every merged dispatch has returned).
+export function buildScratchStoreWithInFlightDispatch() {
+  const storeDir = mkdtempSync(join(tmpdir(), 'starcar-board-scratch-store-'));
+  cpSync(join(REPO_ROOT, 'artifacts'), storeDir, { recursive: true });
+  const subjectDir = join(storeDir, 'browser-cascade-in-flight-probe');
+  mkdirSync(subjectDir, { recursive: true });
+  writeFileSync(
+    join(subjectDir, 'dispatched-1.json'),
+    JSON.stringify(
+      {
+        schema: 'starcar-artifact/1',
+        kind: 'dispatched',
+        subject: 'browser-cascade-in-flight-probe',
+        session_id: 'browser-cascade-probe-session',
+        at: '2020-01-01T00:00:00Z',
+        normalisation: [],
+        integrity: 'sha256:0000000000000000000000000000000000000000000000000000000000000000'
+      },
+      null,
+      2
+    ),
+    'utf8'
+  );
+  return storeDir;
+}
 
 function goBinary() {
   // CI (docs/setup.md's Go toolchain row): actions/setup-go puts `go` on
@@ -104,7 +147,15 @@ async function waitForHttpReady(port, timeoutMs) {
 // production default (1000ms) for the FIRST real poll of the store to
 // land - composeRegister's "stale" freshness (and therefore the #31
 // reproduction) only appears after at least one successful poll.
-export async function startRealBoardServer({ port, pollMs = 50 } = {}) {
+//
+// storePath (#29) is an OPTIONAL override, via the server's own
+// STARCAR_STORE_PATH env var (board/server/config.go's applyEnvOverrides) -
+// never a second store-selection mechanism. Every caller before #29 left
+// this unset and got the real repo artifacts/ store (REPO_ROOT's cwd,
+// board/server's own default StorePath resolution); that behavior is
+// UNCHANGED when storePath is omitted. buildScratchStoreWithInFlightDispatch
+// below is the one reason a caller would ever set it.
+export async function startRealBoardServer({ port, pollMs = 50, storePath } = {}) {
   const binPath = buildServerBinary();
   const resolvedPort = port ?? 4700 + (process.pid % 200);
 
@@ -114,7 +165,8 @@ export async function startRealBoardServer({ port, pollMs = 50 } = {}) {
       ...process.env,
       STARCAR_PORT: String(resolvedPort),
       STARCAR_HOST: '127.0.0.1',
-      STARCAR_POLL_MS: String(pollMs)
+      STARCAR_POLL_MS: String(pollMs),
+      ...(storePath ? { STARCAR_STORE_PATH: storePath } : {})
     },
     stdio: ['ignore', 'pipe', 'pipe']
   });

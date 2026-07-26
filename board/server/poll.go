@@ -305,7 +305,7 @@ func (s *Server) buildSnapshot(scanResult *store.ScanResult, scanErr error, poll
 
 		nowStr := now.UTC().Format(time.RFC3339)
 		newLastGood = &nowStr
-		liveFreshnessVal = computeLiveFreshness(scanResult.Records, now, int64(s.cfg.StalenessMs), nowStr)
+		liveFreshnessVal = computeLiveFreshness(scanResult.Records, out.Dispatches, now, int64(s.cfg.StalenessMs), nowStr)
 	}
 
 	if newLastGood != nil {
@@ -373,11 +373,30 @@ func (s *Server) storePathDisplayValue() string {
 // computeLiveFreshness implements design S5.2's freshness rule for the live
 // lanes (dispatches/gates/trains all share one scan, hence one freshness):
 // an honest-empty store (zero records) is always fresh - there is no data
-// to be stale about (DR3-5a). Otherwise, staleness is DATA age (now minus
-// the newest observed record's "at"), never scan-cadence health - proven
-// deliberately by spec YB-15 (staleness still fires on unchanging demo
-// data even though the scan itself keeps succeeding on schedule).
-func computeLiveFreshness(records []store.Record, now time.Time, stalenessMs int64, nowStr string) Freshness {
+// to be stale about (DR3-5a). Otherwise, DATA age (now minus the newest
+// observed record's "at") past stalenessMs still never means the SCAN is
+// unhealthy (spec YB-15: staleness still fires on unchanging demo data even
+// though the scan itself keeps succeeding on schedule) - but issue #29's
+// fix means old data alone is no longer sufficient for the alarming "stale"
+// kind. Old data splits two ways, per the fold's own dispatch entries
+// (dispatches, out.Dispatches from buildSnapshot's Fold call):
+//
+//   - Something is IN FLIGHT (a "dispatched"/"overdue" winner, not yet
+//     returned) and the data has stopped moving: "stale" - the genuine
+//     alarm, something SHOULD be updating and is not.
+//   - Nothing is in flight (every dispatch has returned, or is
+//     presumed-lost, or the store holds no dispatch subjects at all): the
+//     yard is simply AT REST. "idle" - calm, nominal register
+//     (board/web/js/compose.js), its age still honestly disclosed via the
+//     SAME ageBucketMs mechanism "stale" carries; never rendered as broken
+//     just because nothing has happened in a while (Law 1 - "a yard at rest
+//     is not stale", issue #29's own framing).
+//
+// Before this fix, EVERY old-data case rendered "stale" regardless of
+// activity - a confident falsehood discovered live the first time a real
+// (non-hand-edited) store sat quiet overnight (docs/screenshots/2026-07-23-
+// first-light.png).
+func computeLiveFreshness(records []store.Record, dispatches []fold.DispatchEntry, now time.Time, stalenessMs int64, nowStr string) Freshness {
 	if len(records) == 0 {
 		return Freshness{Kind: "fresh", AsOf: &nowStr}
 	}
@@ -402,7 +421,25 @@ func computeLiveFreshness(records []store.Record, now time.Time, stalenessMs int
 		return Freshness{Kind: "fresh", AsOf: &nowStr}
 	}
 	bucket := (age.Milliseconds() / ageBucketMsGranularity) * ageBucketMsGranularity
-	return Freshness{Kind: "stale", AsOf: &nowStr, AgeBucketMs: &bucket}
+	if hasInFlightDispatch(dispatches) {
+		return Freshness{Kind: "stale", AsOf: &nowStr, AgeBucketMs: &bucket}
+	}
+	return Freshness{Kind: "idle", AsOf: &nowStr, AgeBucketMs: &bucket}
+}
+
+// hasInFlightDispatch (#29) reports whether any dispatch subject's fold
+// winner is still IN FLIGHT - state "dispatched" or "overdue" (algorithm.go
+// promotes "dispatched" to "overdue" past budget; both mean "not yet
+// returned"). A "returned" or "presumed-lost" winner is NOT in flight: the
+// former succeeded, the latter has already been given up on - neither is
+// something the yard is still waiting to hear from.
+func hasInFlightDispatch(dispatches []fold.DispatchEntry) bool {
+	for _, d := range dispatches {
+		if d.State == "dispatched" || d.State == "overdue" {
+			return true
+		}
+	}
+	return false
 }
 
 func toWireCondition(c store.BoardCondition) WireBoardCondition {

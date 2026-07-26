@@ -24,29 +24,42 @@
 // pattern matches the literal text "color: inherit" without knowing what a
 // browser resolves it to) - issue #35's argument for this test's existence,
 // made concrete.
+//
+// #29 UPDATE (2026-07-26): this test used to rely on the AMBIENT repo
+// artifacts/ store reading "stale" forever, on the premise that its
+// committed records only get OLDER relative to "now". Issue #29 makes
+// "stale" require something IN FLIGHT, never just old data (a yard where
+// everything has already returned is "idle"/calm, not "stale"/hot) - and a
+// repo-wide scan of this repo's OWN artifacts/ store found every one of its
+// subjects has already returned (zero in flight), which #29's fix makes a
+// PERMANENT idle state for this committed snapshot, not a transient one.
+// The ambient-staleness premise is gone by construction. This test now uses
+// buildScratchStoreWithInFlightDispatch (real-board-server.js): a scratch
+// copy of the SAME real committed records, byte-identical, plus one
+// additional genuinely in-flight dispatched fixture - still the real Go
+// binary, the real board/web static files, a real browser resolving real
+// CSS (the #33 amendment's actual constraints), just no longer dependent on
+// this repo's dispatch history staying empty forever.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
-import { startRealBoardServer } from './support/real-board-server.js';
+import { startRealBoardServer, buildScratchStoreWithInFlightDispatch } from './support/real-board-server.js';
 
 let server;
 let browser;
 let page;
 
 before(async () => {
-  server = await startRealBoardServer();
+  server = await startRealBoardServer({ storePath: buildScratchStoreWithInFlightDispatch() });
   browser = await chromium.launch();
   page = await browser.newPage();
   await page.goto(`${server.baseUrl}/`);
-  // The real store's committed records (artifacts/) all carry "at"
-  // timestamps from the session that produced them - hours in the past
-  // relative to whenever this test actually runs, and only ever MORE stale
-  // as time passes (board/server/poll.go's computeLiveFreshness compares
-  // against the wall clock at poll time). That guarantees the live lanes
-  // resolve "stale" -> register-needs-attention (compose.js's
-  // mostSevereRegister), regardless of what date this test runs on - the
-  // exact #31 shape (a needs-attention lane containing per-item nominal
-  // rows) requires no synthetic data and no clock injection.
+  // The scratch store's seeded in-flight dispatch (2020-01-01, no
+  // returned/presumed-lost successor) guarantees the live lanes resolve
+  // "stale" -> register-needs-attention (compose.js's mostSevereRegister)
+  // regardless of what date this test runs on or how this repo's own
+  // dispatch history evolves - the exact #31 shape (a needs-attention lane
+  // containing per-item nominal rows) requires no ambient-store assumption.
   await page.waitForSelector('.lane-dispatches .solari-row.register-nominal', { timeout: 15000 });
 });
 
