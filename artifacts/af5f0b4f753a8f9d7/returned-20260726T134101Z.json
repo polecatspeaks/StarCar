@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "af5f0b4f753a8f9d7",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-26T13:41:01Z",
+  "outcome": "done",
+  "findings": "All four tasks completed with red-first evidence and green confirmation. The push-delivery mechanism (session-start-record.sh, its settings.json wiring, both test files) is fully deleted; the agent-pull replacement (run-session-start-guards.sh) is landed and tested; arrival pointers and design/setup documentation are trued up in the same commit as the deletion, with the historical narrative confined to the design doc's amendment history (verified by grep) rather than restated on live surfaces. No outstanding disclosures beyond issue #55, which is explicitly out of this car's scope by the owner's own trigger.",
+  "abstract": "Fix cycle round 4 on car/tooling-50-32-car-r4, same worktree/branch, base 7abfec8. Two commits. Commit d4d7b6d lands Task 2 standalone: .claude/hooks/run-session-start-guards.sh, a plain sequential agent-pull runner for the four SessionStart guards, red-first tested (5/5) including a fault-injected failing-guard case proving its non-fatal shape. Commit c225d80 executes Tasks 1, 3, and 4 together: deletes .claude/hooks/session-start-record.sh and its two test files, reverts the four settings.json guard lines to bare intersection dialect (the fifth line's Task-1 fix untouched), simplifies SessionStartWiring.Tests.ps1's whitelist back to pure bare form while keeping the mechanism-agnostic adversarial-injection guard, removes the now-dead .gitignore line, rewrites both arrival-doc pointers to the new agent-pull instruction, and trues up the design document (append-only amendments recording the owner ruling and issue #55) and docs/setup.md (mechanism paragraph replaced, historical narrative deliberately left in the design doc rather than restated on a live surface). Grep-verified: only the design doc's amendment history still names the retired mechanism. Final suite totals: scripts/tests 180/180 (185 round-3 base minus 11 deleted plus 1 Wiring addition plus 5 new runner tests), scripts/store-checks 159/159 unchanged, scripts/probes 24/24 unchanged.",
+  "subject_basis": "runtime-id",
+  "task_id": "tooling-50-32-car-r4",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:06ef764495cb38063f4f9c59be2fb88064a382a04548e7826278ee971a438ace"
+}
