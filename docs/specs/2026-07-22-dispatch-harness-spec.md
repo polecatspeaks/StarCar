@@ -106,7 +106,7 @@ only ever *raises*. A human backfilling is that same single writer acting delibe
 
 | Record | Hook | Verified |
 |---|---|---|
-| `dispatched` | `PostToolUse` matcher `Task` | Fires at launch, `status: async_launched`, no body - `docs/reviews/2026-07-22-harness-design-round1-REJECT.md:66` |
+| `dispatched` | `PostToolUse` matcher `Task` | Fires at launch, `status: async_launched`, no body - `artifacts/reviews/2026-07-22-harness-design-round1-REJECT.md:66` |
 | `returned` | `SubagentStop` | Fires **exactly once per subagent** - 74 firings / 74 distinct `agent_id`s (amendment A1) |
 
 ### 2.2 Filtering — `agent_type` ONLY [M5, folded; ruling 2]
