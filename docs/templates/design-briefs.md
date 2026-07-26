@@ -111,16 +111,41 @@ re-review, not a fresh review - you have the context, do not rebuild it.
 SCOPE: commits <shas> against your own findings. For EACH finding you raised, rule:
 CLOSED / PARTIALLY CLOSED / NOT CLOSED, with the evidence you checked.
 
+BASE-DELTA (#13): state the SHA you are reviewing now and the SHA your round-<N> verdict
+reviewed, plus the diff range between them (`git diff <round-N-sha>..<this-sha> --stat`).
+Carry this even though you are the SAME reviewer with context intact - the LANDED VERDICT
+is what a rotation reviewer or auditor reads later, and it should not have to infer the
+delta from a memory it does not have.
+
+[WHY: the rotation drill that named this ticket found the opposite gap - the landed
+verdict pinned only ITS OWN base, so a rotation reviewer picking up the series cold could
+not confirm from the document alone what a revision had actually changed
+(`artifacts/reviews/2026-07-22-car2-plan-review-round2-drill.md:103`). Recording the delta
+here costs nothing when you already know it; it is what makes the SAME check possible for
+whoever reads the verdict without your memory.]
+
 Verify closures by the mechanism, not by the author's summary table - a claim that a
 finding is closed is exactly the claim most worth distrusting.
 
 New material introduced BY the fixes is in scope. Everything you already approved is not.
 
-[WHY: fresh full re-reviews cost roughly 110k tokens each and rebuild context the previous
-reviewer already had. Five of them were spent on one design where deltas would have
-served. The ancestor shop's fix cycle goes to the SAME agent for exactly this reason.]
+UNREPRODUCIBLE-EVIDENCE CALLOUT (#13): if closing any finding rests on evidence you
+cannot hand to a future reader unchanged (a gitignored log, a scratch repro since
+deleted, a claim only your own transcript can prove) - name it as such in its own line,
+never folded into the CLOSED/PARTIALLY CLOSED/NOT CLOSED table.
 
-VERDICT: APPROVE, or REJECT with the specific findings still open.
+[WHY: the same drill found this hiding in a table cell - a finding built on a gitignored
+probe log was recorded as closed with no flag that the closure itself was unverifiable by
+anyone else (`.../drill.md:110`). A standing callout would have pointed the drill reviewer
+straight at its own hardest finding instead of making it re-derive the gap by hand.]
+
+[WHY (fresh full re-reviews): fresh full re-reviews cost roughly 110k tokens each and
+rebuild context the previous reviewer already had. Five of them were spent on one design
+where deltas would have served. The ancestor shop's fix cycle goes to the SAME agent for
+exactly this reason.]
+
+VERDICT: APPROVE, or REJECT with the specific findings still open; BASE-DELTA and any
+UNREPRODUCIBLE-EVIDENCE callout stated explicitly (#13).
 ```
 
 ## 3. The design car brief (dispatching an agent to WRITE a design)

@@ -34,8 +34,16 @@ ATTACK SURFACE (all mandatory):
 (g) YAGNI: anything not earning its place.
 (h) Constitution check.
 
+BASE-DELTA (#13, when round > 1): state the SHA you reviewed and the prior round's
+reviewed SHA, plus the diff range between them - a rotation reviewer inherits your
+verdict, never your memory.
+UNREPRODUCIBLE-EVIDENCE CALLOUT (#13): any finding resting on evidence you cannot hand
+to a future reader unchanged (a gitignored log, a deleted scratch repro) is named as
+such, never folded into a table cell.
+
 VERDICT: APPROVED-WITH-FINDINGS or NEEDS-REWORK; findings by severity with file:line;
-the hop trace for (a); the caller enumeration for (c). Your findings FOLD INTO THE SPEC
+the hop trace for (a); the caller enumeration for (c); BASE-DELTA and any
+UNREPRODUCIBLE-EVIDENCE callout, when applicable. Your findings FOLD INTO THE SPEC
 - be specific enough that the spec author can act without re-deriving.
 ```
 
@@ -61,8 +69,14 @@ DIMENSIONS (all mandatory):
     citation that would send a car to the wrong code is a Major.
 (e) LIFECYCLE: the lifecycle section covers EVERY piece of state the spec introduces.
 
+BASE-DELTA (#13, when round > 1): state the SHA you reviewed and the prior round's
+reviewed SHA, plus the diff range between them.
+UNREPRODUCIBLE-EVIDENCE CALLOUT (#13): any finding resting on evidence you cannot hand
+to a future reader unchanged is named as such, never folded into a table cell.
+
 VERDICT: APPROVED or NEEDS-REWORK; findings by severity with spec-line + file:line
-evidence; the fidelity table (one row per design finding: present/absent/drifted).
+evidence; the fidelity table (one row per design finding: present/absent/drifted);
+BASE-DELTA and any UNREPRODUCIBLE-EVIDENCE callout, when applicable.
 ```
 
 [WHY separate from design review: a flawed spec is the most expensive document in the
@@ -83,11 +97,28 @@ inter-task interface consistency - Consumes/Produces agree across tasks; (c) THE
 SENTENCE CHECK ON EVERY SNIPPET - open the real file; every API a snippet calls exists
 with that signature at the dispatch tip; (d) red validity - each stated red fails for
 its STATED reason at its point in the sequence; (e) amendment/LOCKED-block fidelity to
-the spec, not re-derived. If every defect is mechanical (line drift, count rebases,
+the spec, not re-derived; (f) BASE-DELTA (#13, on any round after the first, or any
+rotation to a fresh reviewer): state the SHA you reviewed and the prior round's
+reviewed SHA, plus the diff range between them (`git diff <prior-sha>..<this-sha>
+--stat`) - the plan's own HEAD-may-be-newer-than-base note above is the drift a
+FRESH reviewer sees; this field is what lets a rotation reviewer confirm the delta
+from the verdict alone, without inheriting the prior reviewer's memory; (g)
+UNREPRODUCIBLE-EVIDENCE CALLOUT (#13): any finding resting on evidence you cannot
+hand to a future reader unchanged (a gitignored probe log, a fault-injection repro in
+a scratch dir since deleted) is named as such, in its own line, never folded into a
+disposition table cell. If every defect is mechanical (line drift, count rebases,
 stale baselines) with NO structural/API breaks, you may verdict
 APPROVE-WITH-REBASE-LIST: enumerate the fixes; the conductor applies them as a binding
 addendum and cars dispatch without another round. ANY snippet calling a nonexistent
 API stays a REJECT.
+
+[WHY (f) and (g) land here specifically: this is the rung where the rotation drill
+that produced #13 actually ran - a fresh reviewer picking up Car 2's plan at round 2
+found the landed verdict pinned only its own base
+(`artifacts/reviews/2026-07-22-car2-plan-review-round2-drill.md:103`) and a Major
+resting on a gitignored probe log with no standing flag that it was unreproducible
+(`.../drill.md:110`). The obligation these two fields discharge was born on THIS
+template; it does not just visit here.]
 ```
 
 ## 4. The whole-branch gate (the LAST review - reads the train as one sentence)
@@ -118,9 +149,15 @@ GATE CHECKS (all mandatory):
 7. RESIDUALS HONESTY: every disclosed open item - confirm each is genuinely ticketed
    and none is a Major in disguise.
 8. Constitution check, all laws, one line of evidence each.
+9. BASE-DELTA (#13, when this gate has run before on an earlier state of the train):
+   state the SHA you reviewed and the prior gate's reviewed SHA, plus the diff range.
+10. UNREPRODUCIBLE-EVIDENCE CALLOUT (#13): any finding resting on evidence you cannot
+    hand to a future reader unchanged (a gitignored log, a deleted fault-injection
+    scratch repro) is named as such, never folded into the residuals or ledger table.
 
 VERDICT: Ready-to-ship or NOT-ready; findings; the cross-car trace IN FULL; the
-invariant statement; ledger replay table; observed counts; residuals table; laws check.
+invariant statement; ledger replay table; observed counts; residuals table; laws check;
+BASE-DELTA and any UNREPRODUCIBLE-EVIDENCE callout, when applicable.
 If Ready: PRE-SHIP CAUTIONS the owner should know (the latent items, in plain words).
 ```
 

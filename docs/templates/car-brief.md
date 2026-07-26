@@ -96,12 +96,14 @@ reviewed - rotation and delta re-reviews): state the SHA you reviewed AND the pr
 round's reviewed base SHA, plus the diff range between them (`git diff
 <prior-base>..<this-base> --stat`) - so a rotation reviewer can confirm from carriers
 alone what the revision actually changed, without trusting the brief's word for it.
-Rotation-drill finding: the round-2 drill reviewer of Car 2's plan could reconstruct
-every prior finding from the landed verdict except one thing - "the verdict pins round
-1's base (`efb7e67`) but not the delta to my base (`6c32ff50`); from carriers alone I
-could not confirm what changed between the reviewed base and rev-2's base and had to
-trust the brief's pin"
-(`artifacts/reviews/2026-07-22-car2-plan-review-round2-drill.md:103`).
+Rotation-drill finding: the round-2 drill reviewer of Car 2's plan named TWO template
+gaps, not one - this is the first of them: "the verdict pins round 1's base (`efb7e67`)
+but not the delta to my base (`6c32ff50`); from carriers alone I could not confirm what
+changed between the reviewed base and rev-2's base and had to trust the brief's pin"
+(`artifacts/reviews/2026-07-22-car2-plan-review-round2-drill.md:103`). The second gap -
+findings resting on evidence the drill reviewer could not itself re-derive - is a
+DIFFERENT failure and gets its own field below (UNREPRODUCIBLE-EVIDENCE CALLOUT); the
+same commit adds both because the drill produced both.
 VERIFY: <the specific claims from the car's report, each with how to check it>.
 THE SENTENCE CHECK: <any cross-boundary value in this diff> - trace producer to final
 consumer, every hop file:line, every hand-maintained mirror checked.
@@ -164,13 +166,15 @@ structurally could NOT re-derive yourself - a gitignored log, a since-deleted sc
 artifact, a claim only the author's own transcript can prove - is flagged AS SUCH, in its
 own line, never folded silently into a table cell. This is the single most important
 property to hand the next reviewer, and its absence is what cost the round-2 drill
-reviewer the fastest path to that round's own Major: "a 'findings on unreproducible
-evidence' flag would have pointed me straight at C2R2-M1... M3/M4 were unverifiable-by-
-construction (gitignored probe)... it lives buried in a table cell"
+reviewer the fastest path to that round's own Major: "M3/M4 were unverifiable-by-
+construction (gitignored probe), which is the single most important property to hand a
+delta reviewer, yet it lives buried in a table cell. A 'findings on unreproducible
+evidence' flag would have pointed me straight at C2R2-M1"
 (`artifacts/reviews/2026-07-22-car2-plan-review-round2-drill.md:110`).
 
 VERDICT: APPROVE or REJECT up top; findings by severity with file:line; BASE-DELTA (#13)
-and any UNREPRODUCIBLE-EVIDENCE callouts (#13) stated explicitly, not folded into a table.
+WHEN THIS IS A RE-REVIEW, and any UNREPRODUCIBLE-EVIDENCE callouts (#13), stated
+explicitly, not folded into a table.
 
 END YOUR REPORT WITH THE ARTIFACT ENVELOPE (mandatory - your verdict is a `returned`
 dispatch too): a fenced block, info string starcar-artifact, fields outcome (APPROVE /
