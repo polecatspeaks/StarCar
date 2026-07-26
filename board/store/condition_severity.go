@@ -66,6 +66,12 @@ var conditionSeverity = map[string]ConditionTier{
 	"manifest-payload-unreadable":   TierFlag,
 	"manifest-membership-collision": TierFlag,
 	"dispatch-render-failed":        TierFlag,
+	// gate-findings-record-not-found (#28/#12 fix cycle round 2 MAJOR-4):
+	// the fold named a "returned" gate winner but no raw record actually
+	// matches subject+kind="returned"+at - a data-integrity contradiction
+	// (the fold is built FROM these same records), same FLAG-tier family as
+	// manifest-record-not-found above.
+	"gate-findings-record-not-found": TierFlag,
 
 	// board/assemble/boarddefs.go: presentational-config load/parse
 	// failures - a misconfiguration, not a data discovery.

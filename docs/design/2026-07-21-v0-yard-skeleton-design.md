@@ -608,7 +608,11 @@ this repo's dispatch history staying empty - same car, same commit.
 **The undone half, disclosed (round-1 review m1, 2026-07-26):** issue #29's own text
 asked for two things; this amendment does the first (the taxonomy split) and leaves the
 second - "Also retune stalenessMs against measured reality" - untouched. Consequence,
-measured: `StalenessMs` ships at `15000` (`board/server/config.go:42`) against a shop
+measured: `StalenessMs` ships at `15000` (`board/server/config.go`'s `DefaultConfig()`
+function - cited by SYMBOL, not line, #28/#12 fix cycle round 2 MAJOR-2: this citation's
+own prior line coordinate was falsified when a LATER commit in this same train grew
+`Config` by roughly 21 lines, exactly the trap `poll.go`'s own "cited by symbol, not
+line" convention exists to avoid) against a shop
 default budget of `1800` seconds (`config/harness-defaults.json`), so `stale` now fires
 **15 seconds into every healthy 30-minute dispatch** and stays lit until it returns -
 identical to base behaviour, NOT a regression this fix introduced, but this amendment's
@@ -624,8 +628,15 @@ same-commit-schema-plus-code shape):**
 
 **#28, clickable provenance.** The wire's OPEN `additionalProperties` posture (already
 exercised by #26/#30/#29) absorbs this without a schema version bump. Four new,
-optional fields, each "" (or absent) when unconfigured/unresolvable - never a broken
-link, never a hardcoded repo identity (Law 7):
+optional fields - never a broken link, never a hardcoded repo identity (Law 7).
+CORRECTED (#28/#12 fix cycle round 2 MINOR-1): these do NOT all share one "unconfigured"
+condition - `githubRepoUrl` is "" exactly when `GitHubRepo` is unset; `githubRef`
+DEFAULTS to `"dev"` (`DefaultConfig`) and is observed non-empty on every real wire
+snapshot regardless of whether a repo is configured; `githubArtifactsPrefix` degrades on
+`RepoRoot`/`StorePath` alone, independent of `GitHubRepo`, and is observed `"artifacts"`
+on this repo's own default layout even with no GitHub repo configured at all. The view
+(`links.js`) still gates every link on `githubRepoUrl` being non-empty, so "no link,
+never a broken one" holds regardless:
 
 - `config.githubRepoUrl`/`config.githubRef` (`board/server/config.go`'s new
   `GitHubRepo`/`GitHubRef` fields, `STARCAR_GITHUB_REPO`/`STARCAR_GITHUB_REF`) - the
@@ -641,7 +652,7 @@ link, never a hardcoded repo identity (Law 7):
   would silently produce `"../artifacts"`, a GitHub tree link pointing outside the repo.
 - `recordDir` (on `trainsPayload`'s car entries, `gatesPayload`'s gate entries, and
   `dispatchesPayload`'s dispatch entries) - each subject's record directory, RELATIVE TO
-  THE STORE ROOT, single-sourced from `store.Record.Path` (`board/assemble.go`'s new
+  THE STORE ROOT, single-sourced from `store.Record.Path` (`board/assemble/assemble.go`'s new
   `recordDirBySubject`) rather than re-derived from `subject` client-side. **Why this
   matters, measured live during this car's own visual verification:** the real
   committed store's `train:board-v0` manifest record sits under directory
@@ -661,8 +672,11 @@ link, never a hardcoded repo identity (Law 7):
 or `.../issues/N` URL (repo-relative paths, GitHub URLs, never a `localhost` file route
 or an absolute local path - the conductor's own ruling on this issue) or `null`.
 `board/web/js/dom-writer.js`'s `factOrLink` renders an `<a class="... provenance-link">`
-when a link is available, or the SAME element as plain text otherwise - identical
-className either way, so nothing downstream needs to know which. `board.css`'s
+when a link is available, or the same element as plain text otherwise - CORRECTED
+(#28/#12 fix cycle round 2 MINOR-2: "identical className either way" was literally
+false) - the BASE className is preserved either way, with `provenance-link` APPENDED
+only on the linked form, so a caller's `querySelectorAll('.car-subject')` finds the
+element regardless of which tag it rendered as. `board.css`'s
 `.provenance-link` is a quiet, dotted-underline affordance (`color: inherit`, never a
 structural color declaration - avoids re-creating issue #31's cascade-bleed class) that
 solidifies and brightens only on hover/focus.
@@ -679,10 +693,17 @@ own `findings` field, VERBATIM - the raw free text, never re-derived Go-side).
 `board/web/js/findings.js` is the ONE place this text is parsed: `parseFindingsCounts`
 recognises ONLY the unambiguous head-anchored `"N Major(s), M Minor(s)"` shape (Law 1 -
 everything else, including text that merely MENTIONS a count mid-sentence, renders
-UNKNOWN, never a guessed number) - calibrated against a sample of this repo's OWN real
-`findings` text (see this car's final report for the exact records read).
+UNKNOWN, never a guessed number) - calibrated directly against this repo's OWN
+`artifacts/` store, method and count both reproducible (CORRECTED #28/#12 fix cycle
+round 2 MINOR-4: was cited to "this car's final report", not a durable artifact): of
+207 store records, 136 carry a `findings` field, the parser recognises 38 of them and
+renders the remaining 98 UNKNOWN - re-derivable any time by walking `artifacts/**/*.json`
+and counting matches against `board/web/js/findings.js`'s own pattern.
 `familyKey(subject)` groups a car's review rounds by stripping a trailing `-rN` suffix
-(`docs/CLAUDE.md`'s own worked example: `tooling-50-32-review-r1/-r2/-r3`);
+(issue #12's own worked example: `tooling-50-32-review-r1/-r2/-r3` - CORRECTED #28/#12
+fix cycle round 2 MAJOR-3: was misattributed to a nonexistent `docs/CLAUDE.md`; root
+`CLAUDE.md` exists but contains neither this string nor the `3 -> 4 -> 4` string below -
+its own, DIFFERENT swirl-scar series is `3 -> 4 -> 5`, never conflated with this one);
 `computeHealthTrends` sorts each family CHRONOLOGICALLY (by `at`, never subject lexical
 order - `r10` would otherwise sort before `r2`) and derives ONE trend, attached ONLY to
 the family's LATEST round: `converged` (latest Majors = 0, healthy regardless of the

@@ -439,3 +439,110 @@ func TestAssembleRecordDirSingleSourcedFromStorePath(t *testing.T) {
 		t.Errorf("orphan-1 recordDir = %q, want orphan-1", orphanDir)
 	}
 }
+
+// TestAssembleGateFindingsMatchesFoldWinnerNotFirstScanOrder is MAJOR-4's
+// red-first pin (review round 1, 2026-07-26, #28/#12 fix cycle round 2):
+// findingsForReturnedSubject used to return the FIRST subject-matching
+// returned record in whatever order in.Records happened to arrive (in
+// production, store.go's sort.Strings on PATH, which puts an earlier
+// timestamp-in-filename first) - while the fold's own winner
+// (algorithm.go's parseInstant .After comparison) is the NEWEST at. This
+// test constructs an OLDER (superseded, REJECT, "3 Major, 1 Minor") record
+// BEFORE a NEWER (winning, APPROVE, "0 Major, 0 Minor") one in in.Records,
+// reproducing exactly the shape the reviewer found live in the real store
+// (30 subjects there carry 2-5 returned records - the dominant shape, not
+// an edge case).
+func TestAssembleGateFindingsMatchesFoldWinnerNotFirstScanOrder(t *testing.T) {
+	records := []store.Record{
+		manifestIntent("train:board-v0", "2026-07-26T09:00:00Z", "T", []map[string]any{
+			{"subject": "gate-1", "role": "gate", "gate": "design review round 1"},
+		}),
+		recAt("gate-1/returned-1-earlier.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "returned", "subject": "gate-1",
+			"session_id": "s1", "at": "2026-07-26T10:00:00Z", "outcome": "REJECT",
+			"findings": "3 Major, 1 Minor", "abstract": "a",
+			"normalisation": []any{}, "integrity": "sha256:0",
+		}),
+		recAt("gate-1/returned-2-later.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "returned", "subject": "gate-1",
+			"session_id": "s1", "at": "2026-07-26T11:00:00Z", "outcome": "APPROVE",
+			"findings": "0 Major, 0 Minor", "abstract": "a",
+			"normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+
+	if len(result.Gates.Gates) != 1 {
+		t.Fatalf("expected 1 gate, got %d", len(result.Gates.Gates))
+	}
+	gate := result.Gates.Gates[0]
+	if gate.Outcome != "APPROVE" {
+		t.Fatalf("test setup: expected the fold's winner to be the NEWER (APPROVE) record, got outcome %q - fold precedence assumption broken, not the fix under test", gate.Outcome)
+	}
+	if gate.At != "2026-07-26T11:00:00Z" {
+		t.Fatalf("test setup: expected the fold's winner At to be the NEWER 11:00 record, got %q", gate.At)
+	}
+	if gate.Findings != "0 Major, 0 Minor" {
+		t.Errorf("gate.Findings = %q, want the WINNING (newer, APPROVE, 11:00) record's findings %q - not the superseded 10:00 REJECT record's %q",
+			gate.Findings, "0 Major, 0 Minor", "3 Major, 1 Minor")
+	}
+}
+
+// TestAssembleGateFindingsRecordNotFoundDisclosed is the Go-side ASSERTION
+// the round-1 review asked for (MAJOR-4): if the fold ever names a
+// "returned" gate winner whose subject+at has no matching raw record (a
+// data-integrity contradiction that should be unreachable in production,
+// since the fold is built FROM the same records Assemble receives), that
+// is disclosed as its own board condition rather than silently rendering
+// an empty Findings string as if the record simply carried none. This
+// test constructs the contradiction directly (a hand-built fold.Output
+// naming a winner at an "at" no raw record actually carries) - the only
+// way to reach this path, since fold.Fold itself cannot produce it from
+// consistent input.
+func TestAssembleGateFindingsRecordNotFoundDisclosed(t *testing.T) {
+	records := []store.Record{
+		manifestIntent("train:board-v0", "2026-07-26T09:00:00Z", "T", []map[string]any{
+			{"subject": "gate-1", "role": "gate", "gate": "design review round 1"},
+		}),
+		// The only returned record for gate-1 is at 10:00 - the hand-built
+		// fold output below claims a DIFFERENT (11:00) winner timestamp,
+		// which no raw record matches.
+		recAt("gate-1/returned-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "returned", "subject": "gate-1",
+			"session_id": "s1", "at": "2026-07-26T10:00:00Z", "outcome": "REJECT",
+			"findings": "3 Major, 1 Minor", "abstract": "a",
+			"normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	handBuiltOut := fold.Output{
+		Intents: []fold.IntentEntry{{Subject: "train:board-v0", At: "2026-07-26T09:00:00Z"}},
+		Dispatches: []fold.DispatchEntry{
+			{Subject: "gate-1", State: "returned", At: "2026-07-26T11:00:00Z", Outcome: "APPROVE"},
+		},
+	}
+	result := Assemble(Input{Records: records, Fold: handBuiltOut})
+
+	if len(result.Gates.Gates) != 1 {
+		t.Fatalf("expected 1 gate, got %d", len(result.Gates.Gates))
+	}
+	if result.Gates.Gates[0].Findings != "" {
+		t.Errorf("Findings = %q, want empty (Law 1: never a guessed value when no matching record was found)", result.Gates.Gates[0].Findings)
+	}
+
+	var found bool
+	for _, cond := range result.Conditions {
+		if cond.Code == "gate-findings-record-not-found" {
+			found = true
+			if cond.Register != "needs-attention" {
+				t.Errorf("condition register = %q, want needs-attention", cond.Register)
+			}
+			if !strings.Contains(cond.Detail, "gate-1") {
+				t.Errorf("condition detail must name the subject, got %q", cond.Detail)
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected a gate-findings-record-not-found board condition, got %v", result.Conditions)
+	}
+}

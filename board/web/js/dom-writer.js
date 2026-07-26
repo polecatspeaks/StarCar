@@ -42,12 +42,14 @@ function registerClass(register) {
 }
 
 // #28: renders an <a> (quiet provenance affordance, board.css's
-// .provenance-link) when href is truthy, or the same className as a plain
-// element otherwise - "no link, never a broken one" (issue #28's own
-// escape hatch). The className is IDENTICAL either way (a caller's
-// querySelectorAll('.car-subject') finds the element regardless of which
-// tag it rendered as), with 'provenance-link' appended only on the linked
-// form so board.css's quiet-affordance styling applies only there.
+// .provenance-link) when href is truthy, or a plain element otherwise -
+// "no link, never a broken one" (issue #28's own escape hatch). CORRECTED
+// (#28/#12 fix cycle round 2 MINOR-2: "the className is IDENTICAL either
+// way" was literally false): the BASE className is preserved either way (a
+// caller's querySelectorAll('.car-subject') finds the element regardless
+// of which tag it rendered as), but 'provenance-link' is APPENDED only on
+// the linked form so board.css's quiet-affordance styling applies only
+// there - the two className strings differ by exactly that one token.
 function factOrLink(doc, className, text, href) {
   if (href) {
     const anchor = el(doc, 'a', `${className} provenance-link`, text);
@@ -147,12 +149,17 @@ function renderChrome(doc, vm, connection) {
 // #62: the footer status strip (shared across every mockup variant) - moved
 // here from the top chrome: registry lane completeness, the real
 // storePathDisplay wire field (never rendered anywhere before this pass -
-// already publication-safe per schema/yard-snapshot.schema.json:191), and
-// the #30 board-conditions strip. Store-record/fold counts ("store: 65 ->
-// 17 dispatches") appear in the mockups too but carry NO wire field
-// (schema/yard-snapshot.schema.json has no such field) - inventing one
-// client-side would be a second copy of server-owned arithmetic (Law 6) and
-// adding one server-side is a wire change, out of this ticket's scope.
+// already publication-safe per schema/yard-snapshot.schema.json's
+// config.storePathDisplay property - cited by SYMBOL, not line, #28/#12 fix
+// cycle round 2 MAJOR-1: this comment's own "  :191" line citation was
+// falsified by a LATER commit in this same train that grew the schema file,
+// exactly the trap poll.go's own "cited by symbol, not line" convention
+// exists to avoid), and the #30 board-conditions strip. Store-record/fold
+// counts ("store: 65 -> 17 dispatches") appear in the mockups too but
+// carry NO wire field (schema/yard-snapshot.schema.json has no such field)
+// - inventing one client-side would be a second copy of server-owned
+// arithmetic (Law 6) and adding one server-side is a wire change, out of
+// this ticket's scope.
 // CORRECTED (#62 fix cycle round 2, review round 1 MINOR-1 - this comment
 // used to say "routed to issue #1" while nothing had actually been posted
 // there, a carrier-rule miss): now actually routed - see issue #1, comment

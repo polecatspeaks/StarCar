@@ -11,8 +11,14 @@
 // from the exact canonical form ("2 Major, 2 Minor") through prose that
 // merely MENTIONS a count mid-sentence ("none outstanding — all 2 Major, 4
 // Minor...") to free-form narrative with no count at all - the conservative
-// pattern below was calibrated against a sample of real findings text (see
-// this car's final report for the exact records read).
+// pattern below was calibrated directly against this repo's own artifacts/
+// store, method and count both reproducible (CORRECTED #28/#12 fix cycle
+// round 2 MINOR-4: this comment used to cite "this car's final report", not
+// a durable artifact): walk artifacts/**/*.json, read each record's
+// `findings` field, count matches against this exact pattern. Observed at
+// this fix cycle's HEAD: 207 store records, 136 carry a `findings` field,
+// this pattern PARSES 38 of them and renders the remaining 98 UNKNOWN
+// (never a guessed count) - re-run any time the store grows to reconfirm.
 const FINDINGS_HEAD_PATTERN = /^\s*(\d+)\s+majors?\s*,\s*(\d+)\s+minors?\b/i;
 
 /**
@@ -29,8 +35,12 @@ export function parseFindingsCounts(text) {
 
 // A review-round family shares every subject segment up to a trailing round
 // number ("51-fix-review-r1", "-r2", "-r3" -> family "51-fix-review",
-// docs/CLAUDE.md's own worked example: "tooling-50-32-review-r1/-r2/-r3"). A
-// subject with no such suffix is its own singleton family (round 1 of 1).
+// issue #12's own worked example: "tooling-50-32-review-r1/-r2/-r3" -
+// CORRECTED #28/#12 fix cycle round 2 MAJOR-3: this used to misattribute
+// the example to "docs/CLAUDE.md", a file that does not exist; the string
+// lives in issue #12's body, not in the root CLAUDE.md (whose own,
+// DIFFERENT swirl-scar series is "3 -> 4 -> 5" - never conflate the two).
+// A subject with no such suffix is its own singleton family (round 1 of 1).
 const ROUND_SUFFIX_PATTERN = /-r\d+$/i;
 
 /**
@@ -62,9 +72,10 @@ export function familyKey(subject) {
  *     signature (3 -> 4 -> 4, clustered) - needs-attention, the one case
  *     this surface actually alarms on.
  *   - 'first-round': exactly one round observed so far - no trend exists
- *     yet. Never alarming on its own (a REJECT with Majors is normal
- *     traffic in this shop, per CLAUDE.md's own review-calibration
- *     framing) - rendered neutral, not calm-green and not hot-red.
+ *     yet. Never alarming on its own - root CLAUDE.md's GUIDE STAR section
+ *     names a REJECT itself as "a success outcome for the process," and a
+ *     single round of Majors carries no trend information at all yet -
+ *     rendered neutral, not calm-green and not hot-red.
  *   - 'unknown': ANY round in the family has unparseable findings text -
  *     Law 1, the whole family's trend is withheld rather than computed
  *     from a partial, guessed series.
