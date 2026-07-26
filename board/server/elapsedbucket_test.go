@@ -23,9 +23,11 @@ import (
 // (mirroring ageBucketMs's own precedent, the `ageBucketMsGranularity` const
 // just above `elapsedSecondsBucketGranularity` in poll.go) - order-of-minutes
 // granularity (elapsedSecondsBucketGranularity, poll.go). The WIRE value
-// stays exact whenever a snapshot IS served fresh: board/web/js/dom-
-// writer.js:201 renders elapsed_seconds verbatim to the second, never a
-// rounded bucket number - proven at the bucket crossing below (snap3, 65s
+// stays exact whenever a snapshot IS served fresh: dom-writer.js's
+// renderDispatches solari-elapsed span renders elapsed_seconds verbatim to
+// the second (cited by symbol, not line - a prior line-wrapped citation
+// here, "dom-writer.js:201", went stale and defeated a basename grep for
+// it), never a rounded bucket number - proven at the bucket crossing below (snap3, 65s
 // exact, not rounded to 60). Between crossings, `PollOnce`'s own doc comment
 // already governs what a "no real change" poll serves ("the prior snapshot
 // stands unchanged" - cited by symbol, not line: this comment shifts every

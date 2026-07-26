@@ -700,10 +700,7 @@ round 2 MINOR-4: was cited to "this car's final report", not a durable artifact)
 renders the remaining 98 UNKNOWN - re-derivable any time by walking `artifacts/**/*.json`
 and counting matches against `board/web/js/findings.js`'s own pattern.
 `familyKey(subject)` groups a car's review rounds by stripping a trailing `-rN` suffix
-(issue #12's own worked example: `tooling-50-32-review-r1/-r2/-r3` - CORRECTED #28/#12
-fix cycle round 2 MAJOR-3: was misattributed to a nonexistent `docs/CLAUDE.md`; root
-`CLAUDE.md` exists but contains neither this string nor the `3 -> 4 -> 4` string below -
-its own, DIFFERENT swirl-scar series is `3 -> 4 -> 5`, never conflated with this one);
+(e.g. `tooling-50-32-review-r1/-r2/-r3`);
 `computeHealthTrends` sorts each family CHRONOLOGICALLY (by `at`, never subject lexical
 order - `r10` would otherwise sort before `r2`) and derives ONE trend, attached ONLY to
 the family's LATEST round: `converged` (latest Majors = 0, healthy regardless of the
