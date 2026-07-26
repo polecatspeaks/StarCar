@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a19ef853c23ba9742",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-26T20:33:11Z",
+  "outcome": "done",
+  "findings": "All four review round-1 findings addressed at commit 2f57022986a2ccfcc52716fd8cfa8eda54ab7d92: M1 (CodeCitationPolicy .png gate) fixed by adding a declared exemption with inline reason, reproduced red (12/1) then green (13/13), full scripts/tests now 195/195 clean. M2 (undisclosed HAVAGLANCE hole, inverted #30 analogy) fixed by rewriting board.css's justification to state the true, measured trade and by choosing to keep the current bound rather than lift or raise it, with the reasoning why both alternatives were rejected written into the comment; the underlying register-semantics fix stays correctly out of scope, routed to issue #1 comment 5085235534. M3 (two dead path citations) fixed by repointing both to the real, verified-existing evidence path. MINOR-1 (carrier rule) fixed by verifying the routing comment actually exists on issue #1 before citing it in both dom-writer.js and render.js. Optional N3 accepted and implemented red-first (empty gates lane states its absence). One honest, fully-traced discrepancy disclosed: my scripts/tests pass/skip split (194/1/0) differs from the reviewer's (193/1/1) by one test's environment-conditional skip (SessionStartGuardRunner.Tests.ps1:96, detached-HEAD-only) - same 195 total, same single real failure, not a defect.",
+  "abstract": "Fix cycle round 2 for issue #62's board visual pass, addressing review round 1's REJECT (3 Major, 1 Minor, 4 Notes). Fixed the CI-blocking CodeCitationPolicy .png gate (with red-first reproduction), corrected an inverted Law-1 justification in board.css to honestly disclose a measured HAVAGLANCE gap (a presumed-lost row can render with zero hot pixels board-wide) rather than falsely claiming it was covered by the #30 precedent, reasoned through and rejected both alternative CSS-only remedies (lifting or raising the scroll clip) in favor of keeping the current bound with full disclosure, repointed two dead evidence citations to the real screenshot path, closed a carrier-rule gap by verifying and correctly citing the conductor's actual issue #1 routing comment, and implemented the optional gates-empty-lane disclosure red-first. All required suites green at the final commit: node --test 81/81, Go 73/73 unchanged, scripts/tests 195/195 clean, store-checks 204/204, probes 24/24. Committed at 2f57022986a2ccfcc52716fd8cfa8eda54ab7d92 on car/view-62, parent 45b0e12.",
+  "subject_basis": "runtime-id",
+  "task_id": "view-62-car-r2",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:7ac64bc71b7ce9e60e559c790bd2821b7dd841535ecfccd22afe0e1cb95e75b0"
+}
