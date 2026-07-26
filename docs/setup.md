@@ -87,9 +87,47 @@ in-flight `dispatched` is refused. The stop-path/`events.jsonl` INTAKE for Copil
 for `post-task` only; the SubagentStop-side compat shape for a Copilot stop remains an
 honest boundary (its OBSERVED payload is not in-repo - see `schema/vectors/adapter/README.md`).
 
-**Still restart-gated (NOT claimed verified here).** The four SessionStart hook lines in
+**Still restart-gated (NOT claimed verified here).** The four SessionStart guard lines in
 `.claude/settings.json` were moved to an intersection dialect and `subagent-stop-probe.sh`'s
 key read corrected to `transcript_path` (#47 item 11); SessionStart config is session-cached,
 so this box cannot self-verify it mid-session (design §2c) - verification is gated on the next
 restart. Until a dispatch lands a record under Copilot, the manual backfill path
 (`Land-Verdict.ps1`) remains available.
+
+**The fifth SessionStart line (entire-CLI wrapper) fixed to the same dialect (#50).**
+The restart-gated probe (design §2c row, `docs/design/2026-07-24-family-agnostic-harness-
+design.md` line 65) found the fifth line - an inline `sh -c '...'` wrapper carrying an
+escaped-JSON printf fallback - was the ONE structural outlier still breaking under
+Copilot's compat layer: `syntax error: unexpected end of file from 'if' command`
+(`docs/friction-log.md`, 2026-07-24), while the four sibling guards executed fine. Local
+reproduction was attempted (this car, 2026-07-26) and did NOT reproduce the parse error -
+the extracted command string passed `sh -n`/`dash -n` (exit 0 both) and executed
+correctly under both shells on this box - so the fix stands on the design's own
+simple-form rule rather than a locally-observed repro. Landed: the line's body moved to
+`.claude/hooks/session-start-entire.sh`, `.claude/settings.json`'s fifth line now reads
+`sh .claude/hooks/session-start-entire.sh`, byte-identical behavior pinned by
+`scripts/tests/SessionStartWiring.Tests.ps1` (absent-branch systemMessage JSON,
+present-branch exec argv, both verified against a stub). Restart-gated same as the four
+guards above - unverified under a live Copilot session from this desk.
+
+**Guard delivery to Copilot is AGENT-PULL, not push (#50, owner ruling 2026-07-26,
+option d).** The same restart-gated probe found that even when the four guards execute
+successfully under Copilot's compat layer, their stdout never reaches the agent context
+- Copilot surfaces hook failures in `events.jsonl` only. Two push-based delivery
+mechanisms were built, reviewed, and retired across three fix-cycle rounds (the full
+narrative - what each one was, exactly which defects each reproduced, and the escalated
+premise underneath both - lives in `docs/design/2026-07-24-family-agnostic-harness-
+design.md`'s §2c and D5 amendment history, a record kept intact rather than restated
+here). **The owner ruled option d: delete the push mechanism rather than revise it a
+third time.** The four guard lines in `.claude/settings.json` are back to bare
+intersection dialect. In its place: `.claude/hooks/run-session-start-guards.sh` (#50) -
+any agent whose runtime does not inject SessionStart stdout runs it as its FIRST action
+per the arrival docs (`.github/copilot-instructions.md`, `ONBOARDING.md`) and reads the
+output directly. No shared mutable file, no truncation, no race, no mutex - the reliance
+on the agent following its arrival doc is UNCHANGED from the earlier design, only the
+machinery between "guard runs" and "agent reads" is gone. **Verification carrier: issue
+#55**, triggered on the next Copilot session ("a minor tooling gap for a very specific
+case," owner framing) - verify the session runs the guard runner as its first action,
+that the output lands in its context, and only then judge whether instruction-tier
+delivery suffices. Until that observation, no further mechanism work (the prior cap's
+own spirit: do not harden the unobservable).

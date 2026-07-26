@@ -73,3 +73,35 @@ Describe 'Substrate floor - text fidelity' {
         $null -eq $r | Should -BeTrue
     }
 }
+
+Describe 'Substrate floor - sh resolution from pwsh (#50, fix cycle round 2, minor m5)' {
+    # LANDED (round-1 REJECT, adjudication A3): "the PowerShell tool's pwsh lacks sh on
+    # PATH" was a genuine friction-log entry (docs/friction-log.md 2026-07-23) at the
+    # time it was written, but a machine-level PATH fix (a `sh.cmd` scoop shim plus
+    # Git\bin on PATH) landed afterward and the claim is now FALSE - reported in prose
+    # only until this probe (round-1 reviewer, adjudication A3: "`Get-Command sh -All`
+    # returns `~\scoop\shims\sh.cmd` and `C:\Program Files\Git\bin\sh.exe`"). A substrate
+    # fact reported only in prose is exactly the vigilance-tier memory the probe
+    # doctrine (CLAUDE.md, "NO HEADERS HERE") exists to replace with a landed test.
+    #
+    # CONSUMER: every Pester test under scripts/tests that invokes `sh` directly from
+    # pwsh - SessionStartWiring.Tests.ps1, SessionStartReport.Tests.ps1,
+    # SessionStartReportConcurrency.Tests.ps1 - all assume `sh` resolves without the
+    # Bash tool. If this probe reds, every one of those suites' claims about running
+    # from "either the PowerShell-tool or Bash-tool environment" goes suspect.
+
+    It '`sh` resolves from this pwsh process (CONSUMER: SessionStartWiring/SessionStartReport*.Tests.ps1)' {
+        (Get-Command sh -ErrorAction SilentlyContinue) | Should -Not -BeNullOrEmpty
+    }
+
+    It '`sh` still resolves with scoop\shims stripped from PATH - the PATH-manipulation technique those same tests rely on to hide `entire` while keeping `sh` reachable' {
+        $filtered = ($env:PATH -split ';' | Where-Object { $_ -notlike '*scoop\shims*' }) -join ';'
+        $origPath = $env:PATH
+        try {
+            $env:PATH = $filtered
+            (Get-Command sh -ErrorAction SilentlyContinue) | Should -Not -BeNullOrEmpty
+        } finally {
+            $env:PATH = $origPath
+        }
+    }
+}

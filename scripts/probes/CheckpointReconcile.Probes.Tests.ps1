@@ -40,9 +40,17 @@
 # .claude/skills/goodnight/SKILL.md step 3 (where the marker-pinning instruction lands),
 # .claude/settings.json (SessionStart wiring).
 #
-# INVOCATION: pwsh -NoProfile -Command "Invoke-Pester -Path ./scripts/probes" -- run from
-# the Bash-tool environment (sh is on PATH there; the PowerShell tool's pwsh lacks sh on
-# PATH per docs/friction-log.md 07-23, and this suite invokes the hook via `sh`).
+# INVOCATION: pwsh -NoProfile -Command "Invoke-Pester -Path ./scripts/probes" -- can be run
+# from either the PowerShell-tool or Bash-tool environment on this box (this suite invokes
+# the hook via `sh`). CORRECTED (fix cycle round 2, #50, minor m6): this comment previously
+# claimed "the PowerShell tool's pwsh lacks sh on PATH per docs/friction-log.md 07-23" as a
+# standing fact. Round-1 adversarial review observed that false TODAY: `Get-Command sh -All`
+# resolves both `~\scoop\shims\sh.cmd` and `C:\Program Files\Git\bin\sh.exe` from the
+# PowerShell tool's own pwsh (a machine-level PATH fix landed after the 07-23 friction-log
+# entry, per that entry's own text: "Git bin on user PATH + sh.cmd shim machine-level"). The
+# 07-23 friction-log entry is HISTORICAL (the gap it describes, not a standing constraint) -
+# this suite already ran green under both matrix legs in CI before this correction, which is
+# itself evidence the claim was stale rather than load-bearing.
 
 Describe 'Checkpoint reconciliation hook (#46) - fires on stale base, silent on current, honest on unresolvable' {
     BeforeAll {
