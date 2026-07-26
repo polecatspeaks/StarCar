@@ -240,5 +240,16 @@ if ($gaps.Count -gt 0) {
     exit 1
 }
 
-"[reconcile] no gaps - every would-have-adapted probe firing has a matching returned record"
+# N5 (round-2 REJECT, minor): this line used to print unconditionally, claiming
+# "every ... firing has a matching returned record" even when firings were EXCLUDED
+# as pre-epoch and NONE of them matched a store record - an excluded firing was never
+# checked against one, so that claim was false in exactly the composition the NOTE
+# line above it exists to describe (Law 1: the NOTE does not repair the false claim
+# in the sentence below it). The unconditional wording is correct ONLY when nothing
+# was excluded.
+if ($preEpochCount -gt 0) {
+    "[reconcile] no gaps - every NON-EXCLUDED would-have-adapted probe firing has a matching returned record ($preEpochCount excluded as pre-producer-epoch, see NOTE above)"
+} else {
+    "[reconcile] no gaps - every would-have-adapted probe firing has a matching returned record"
+}
 exit 0

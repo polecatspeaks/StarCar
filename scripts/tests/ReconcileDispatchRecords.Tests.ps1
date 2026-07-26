@@ -215,10 +215,24 @@ Describe 'Reconcile-DispatchRecords.ps1 rule agrees with Produce-Artifact.ps1 (#
         # agent_type "car") must NOT be reported as a gap against the store the
         # producer just wrote to - if the reconciler's subject/would-have-adapted
         # rule drifted from the producer's, this would go red.
+        #
+        # FIX CYCLE ROUND 3, N4 (Major): LoggedAt is deliberately AFTER the producer's
+        # own -Now ('2026-07-23T10:00:00Z' below, which becomes this store's derived
+        # epoch floor once the record lands). Round 2 adversarial review caught this
+        # test using a PRE-floor LoggedAt ('09:00:00Z') - the M5 epoch floor then
+        # excluded this line as pre-epoch on EVERY run, so the "not a gap" assertion
+        # passed vacuously whether or not the subject rule actually agreed with the
+        # producer's, and producer-side subject drift (round-1 injection C:
+        # Produce-Artifact.ps1:165 agent_id -> session_id) went uncaught (14/14 green
+        # under the injection, was 8/1 failed-by-name in round 1). A post-floor
+        # LoggedAt forces this test through the ACTUAL subject-matching path instead
+        # of the epoch-exclusion path - this car reproduced the injection by hand
+        # after this fix (see this car's report) and confirmed the pin fails by name
+        # again, then reverted Produce-Artifact.ps1 byte-identical.
         $probeLogDir = Join-Path ([System.IO.Path]::GetTempPath()) ("reconcile-divergence-log-" + [guid]::NewGuid().ToString('N'))
         New-Item -ItemType Directory -Path $probeLogDir -Force | Out-Null
         $probeLog = Join-Path $probeLogDir 'subagent-stop.jsonl'
-        Set-Content -Path $probeLog -Value (New-ProbeLineFromFixture -FixtureName 'stop-car.json' -LoggedAt '2026-07-23T09:00:00Z') -Encoding utf8
+        Set-Content -Path $probeLog -Value (New-ProbeLineFromFixture -FixtureName 'stop-car.json' -LoggedAt '2026-07-23T11:00:00Z') -Encoding utf8
 
         $recon = Invoke-Reconcile -ProbeLog $probeLog -StoreRoot $store
         $recon.ExitCode | Should -Be 0
@@ -263,6 +277,72 @@ Describe 'Reconcile-DispatchRecords.ps1 rule agrees with Produce-Artifact.ps1 (#
         $recon = Invoke-Reconcile -ProbeLog $probeLog -StoreRoot $store
         $recon.ExitCode | Should -Be 0
         $recon.Output | Should -Not -Match 'ad3814d978427e657'
+    }
+
+    It 'PRODUCER-SIDE SUBJECT DRIFT is caught: if Produce-Artifact.ps1''s Claude-returned subject field ever changes, the pin reports a gap instead of going silent (#32, fix cycle round 3, N4)' {
+        # Round-2 adversarial review (artifacts/reviews/2026-07-26-tooling-50-32-review-
+        # round2-REJECT-CAPPED.md, finding N4): the M5 epoch floor made the ABOVE pin
+        # test vacuous - its probe line was always pre-epoch, always excluded, so the
+        # "not a gap" assertion passed regardless of whether the subject rules actually
+        # agreed. Round-1 injection C (Produce-Artifact.ps1:165, `agent_id` -> `session_id`)
+        # went from 8 passed/1 failed-by-name to 14/14 green. The car reproduced that
+        # injection BY HAND against the real, tracked file after fixing the pin's
+        # fixture LoggedAt above, observed it fail by name again (13/14, the SAME test
+        # above), then reverted Produce-Artifact.ps1 byte-identical (git diff empty,
+        # SHA-256 a8eba4a3...db43f both before and after) - see this car's report for
+        # the transcript of that one-time verification.
+        #
+        # THIS test is the LANDED, PERMANENT form of that same proof: it NEVER commits
+        # or leaves behind a change to the real, tracked Produce-Artifact.ps1 (mutating
+        # a shipped, latency-critical, heavily-tested script during automated test
+        # execution - even with a revert - is the fragile pattern this design avoids: a
+        # crashed test run could leave it corrupted for every run after). Instead it
+        # copies the real file's TEXT, applies the SAME textual drift to a SIBLING
+        # file (same directory as the real script, so its own `$PSScriptRoot`-relative
+        # module imports - Envelope.psm1, Artifact.psm1 - still resolve), invokes that
+        # copy as the producer, and deletes it in a `finally` block that runs even if
+        # an assertion above throws. If a future edit removes the divergence pin's
+        # sensitivity again (whether by another epoch-floor-shaped bug or by any other
+        # means), THIS test goes red by name without anyone needing to hand-inject
+        # anything.
+        $repo = New-FixtureRepo
+        $store = Join-Path $repo 'artifacts'
+
+        $originalText = Get-Content $script:ProducerScript -Raw
+        $needle = "`$subject = Get-Prop `$payload 'agent_id'   # mode (b): the runtime's stable pairing id"
+        $originalText | Should -Match ([regex]::Escape($needle))   # sanity: the injection point still exists verbatim
+        $driftedText = $originalText.Replace($needle, "`$subject = Get-Prop `$payload 'session_id'   # [TEST-ONLY INJECTED DRIFT, N4 regression guard]")
+        $driftedText | Should -Not -Be $originalText   # sanity: the replace actually changed something
+
+        $driftedProducerPath = Join-Path (Split-Path $script:ProducerScript -Parent) ("Produce-Artifact-drifted-test-copy-" + [guid]::NewGuid().ToString('N') + '.ps1')
+        try {
+            Set-Content -Path $driftedProducerPath -Value $driftedText -Encoding utf8
+
+            $out = (Get-Payload 'stop-car.json') | & $driftedProducerPath -Kind 'returned' -StoreRoot $store -Now '2026-07-23T10:00:00Z' 2>&1
+            $driftedProducerExit = $LASTEXITCODE
+            $driftedProducerExit | Should -Be 0
+
+            $probeLogDir = Join-Path ([System.IO.Path]::GetTempPath()) ("reconcile-divergence-log-" + [guid]::NewGuid().ToString('N'))
+            New-Item -ItemType Directory -Path $probeLogDir -Force | Out-Null
+            $probeLog = Join-Path $probeLogDir 'subagent-stop.jsonl'
+            # Post-floor LoggedAt (N4's own fix, same reasoning as the pin test above) -
+            # this line must go through the ACTUAL subject-matching path, never the
+            # epoch-exclusion path.
+            Set-Content -Path $probeLog -Value (New-ProbeLineFromFixture -FixtureName 'stop-car.json' -LoggedAt '2026-07-23T11:00:00Z') -Encoding utf8
+
+            # THE PIN: under drift, the drifted producer wrote `subject` = the payload's
+            # session_id (a completely different value from agent_id), so the reconciler
+            # - which still derives subject = agent_id, per its OWN undrifted copy of the
+            # rule - must report this as an unmatched gap. If it does not, the two rules
+            # have silently diverged and gone uncaught.
+            $recon = & $script:ReconcileScript -ProbeLog $probeLog -StoreRoot $store 2>&1
+            $reconExit = $LASTEXITCODE
+            $reconOutput = ($recon -join "`n")
+            $reconExit | Should -Not -Be 0
+            $reconOutput | Should -Match 'a88e7dadda60940ac'
+        } finally {
+            Remove-Item -Path $driftedProducerPath -Force -ErrorAction SilentlyContinue
+        }
     }
 }
 
@@ -405,5 +485,37 @@ Describe 'Reconcile-DispatchRecords.ps1 - the producer-epoch floor (#32, fix cyc
         $r = Invoke-Reconcile -ProbeLog $probeLog -StoreRoot $store -Since '2026-07-22T16:40:01Z'
         $r.ExitCode | Should -Be 0
         $r.Output | Should -Match '2.*pre-producer-epoch'
+    }
+
+    It 'an all-excluded run (fix cycle round 3, N5) never claims "every ... firing has a matching returned record" - neither of these two HAS a record, they were excluded' {
+        # Round-2 adversarial review, minor N5: Reconcile-DispatchRecords.ps1's trailing
+        # summary line was UNCONDITIONAL - "no gaps - every would-have-adapted probe
+        # firing has a matching returned record" printed even when every firing was
+        # EXCLUDED as pre-epoch and NONE matched a store record. That sentence is false
+        # in this composition: an excluded firing has no record either, it was simply
+        # never checked against one. The NOTE line above it does not repair the false
+        # claim in the line below it (Law 1).
+        $dir = New-FixtureDir
+        $probeLog = Join-Path $dir 'subagent-stop.jsonl'
+        $store = Join-Path $dir 'artifacts'
+        New-Item -ItemType Directory -Path $store -Force | Out-Null
+        Add-ProbeLine -ProbeLogPath $probeLog -AgentId 'pre-epoch-only-a' -AgentType 'car' -LoggedAt '2026-07-22T14:00:00+00:00'
+        Add-ProbeLine -ProbeLogPath $probeLog -AgentId 'pre-epoch-only-b' -AgentType 'car' -LoggedAt '2026-07-22T15:00:00+00:00'
+
+        $r = Invoke-Reconcile -ProbeLog $probeLog -StoreRoot $store -Since '2026-07-22T16:40:01Z'
+        $r.ExitCode | Should -Be 0
+        $r.Output | Should -Not -Match 'no gaps - every would-have-adapted probe firing has a matching returned record'
+    }
+
+    It 'a run with ZERO firings at all (no exclusions, no gaps) keeps the unconditional "every firing has a matching record" claim - it is TRUE in this composition' {
+        $dir = New-FixtureDir
+        $probeLog = Join-Path $dir 'subagent-stop.jsonl'
+        $store = Join-Path $dir 'artifacts'
+        New-Item -ItemType Directory -Path $store -Force | Out-Null
+        # No probe lines at all - vacuously, every (zero) firing has a matching record.
+
+        $r = Invoke-Reconcile -ProbeLog $probeLog -StoreRoot $store
+        $r.ExitCode | Should -Be 0
+        $r.Output | Should -Match 'no gaps - every would-have-adapted probe firing has a matching returned record'
     }
 }
