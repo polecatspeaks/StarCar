@@ -87,9 +87,25 @@ in-flight `dispatched` is refused. The stop-path/`events.jsonl` INTAKE for Copil
 for `post-task` only; the SubagentStop-side compat shape for a Copilot stop remains an
 honest boundary (its OBSERVED payload is not in-repo - see `schema/vectors/adapter/README.md`).
 
-**Still restart-gated (NOT claimed verified here).** The four SessionStart hook lines in
+**Still restart-gated (NOT claimed verified here).** The four SessionStart guard lines in
 `.claude/settings.json` were moved to an intersection dialect and `subagent-stop-probe.sh`'s
 key read corrected to `transcript_path` (#47 item 11); SessionStart config is session-cached,
 so this box cannot self-verify it mid-session (design §2c) - verification is gated on the next
 restart. Until a dispatch lands a record under Copilot, the manual backfill path
 (`Land-Verdict.ps1`) remains available.
+
+**The fifth SessionStart line (entire-CLI wrapper) fixed to the same dialect (#50).**
+The restart-gated probe (design §2c row, `docs/design/2026-07-24-family-agnostic-harness-
+design.md` line 65) found the fifth line - an inline `sh -c '...'` wrapper carrying an
+escaped-JSON printf fallback - was the ONE structural outlier still breaking under
+Copilot's compat layer: `syntax error: unexpected end of file from 'if' command`
+(`docs/friction-log.md`, 2026-07-24), while the four sibling guards executed fine. Local
+reproduction was attempted (this car, 2026-07-26) and did NOT reproduce the parse error -
+the extracted command string passed `sh -n`/`dash -n` (exit 0 both) and executed
+correctly under both shells on this box - so the fix stands on the design's own
+simple-form rule rather than a locally-observed repro. Landed: the line's body moved to
+`.claude/hooks/session-start-entire.sh`, `.claude/settings.json`'s fifth line now reads
+`sh .claude/hooks/session-start-entire.sh`, byte-identical behavior pinned by
+`scripts/tests/SessionStartWiring.Tests.ps1` (absent-branch systemMessage JSON,
+present-branch exec argv, both verified against a stub). Restart-gated same as the four
+guards above - unverified under a live Copilot session from this desk.
