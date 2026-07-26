@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "af5f0b4f753a8f9d7",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-26T14:07:31Z",
+  "outcome": "done",
+  "findings": "Both Majors (R4-1, R4-2) and both Minors (m-a, m-b) fixed with red-first evidence reproduced in the actual target environments (detached HEAD, CLAUDE_PROJECT_DIR unset) rather than only the author's attached worktree. The binding acceptance condition was satisfied in both parts, verbatim, in the same detached-HEAD state the fix commit was checked out into.",
+  "abstract": "Fix cycle round 5 on car/tooling-50-32-car-r5, same worktree/branch, base c225d80, one new commit 8ccd4e4. R4-1: SessionStartGuardRunner.Tests.ps1 falsely asserted [ci-baseline] was an always-emitting guard; reproduced red in a detached-HEAD checkout (179/1/180, matching the reviewer's exact observation) before fixing by splitting the assertion into an unconditional [retro] check and a conditional, honestly-skipped [ci-baseline] check. R4-2: run-session-start-guards.sh never exported CLAUDE_PROJECT_DIR, so session-start-retro.sh told an arriving agent to create a friction log holding 61 real entries; reproduced red with env -u CLAUDE_PROJECT_DIR before fixing via an override-with-default export anchored on git rev-parse --show-toplevel. m-a fixed a citation and anchored GUARD_DIR on the new CLAUDE_PROJECT_DIR export. m-b added AfterAll cleanup for fixture temp directories (20 pre-existing leftovers found and removed, zero after a fresh run). The binding acceptance condition was satisfied verbatim: detached-HEAD scripts/tests observed 181 passed / 0 failed / 1 skipped (182 total), and the runner with CLAUDE_PROJECT_DIR unset in that same detached state printed the true entry count rather than the false create-it line. Attached-worktree totals: scripts/tests 182/182, store-checks 159/159, probes 24/24 - all unchanged or improved from round 4's baseline, with the fix independently re-verified in the two environments the round-4 reviewer named as previously unexercised.",
+  "subject_basis": "runtime-id",
+  "task_id": "tooling-50-32-car-r5",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:45006849becfc0535b102c2e83ddba32a288c0d4d8c4400d416770e279265962"
+}
