@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "acb10c126ac3a7488",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-26T22:41:46Z",
+  "outcome": "done",
+  "findings": "All three capped-round items addressed by deletion or narrowing rather than re-attribution, per the reviewer's governing rule. No new citation-truth defect introduced in this round (self-checked line-by-line over the round-3 diff alone, per requirement). The round-3 commit message states what round 2's citation sweep actually covered and discloses, as fact with no completeness adjective, that the elapsedbucket_test.go line-wrapped citation predates this train and evaded round 2's text search due to being split across a comment line wrap - it does not claim this round's own sweep is exhaustive either. No suite regressions; Go/Node/Pester/probes/schema-probe/citation-gate all re-verified green at the new HEAD.",
+  "abstract": "Round 3 (capped) fix cycle for issues #28/#12 addressed the round-2 delta review's REJECT (2 Major, 1 Minor). MAJOR-R2-1 deleted a measured-false attribution of the worked example \"tooling-50-32-review-r1/-r2/-r3\" to issue #12's body at three sites, replacing it with a bare illustrative string carrying no provenance claim, while leaving the separately-measured-true \"3 -> 4 -> 4\" attribution to issue #12 untouched. MAJOR-R2-2 fixed a line-wrapped stale citation in board/server/elapsedbucket_test.go (which had evaded round 2's text-based sweep because its filename was split across a comment line wrap) to a symbol-based citation, and the commit message states plainly and non-exhaustively what round 2's sweep covered. MINOR-R2-1 restored round-1's correct \"per CLAUDE.md's own review-calibration framing\" wording in place of a round-2 misquote attributed to the wrong CLAUDE.md section. Exactly three files touched, matching the brief's scope constraint; Go 85/85, Node 129/129, Pester 195/195, probes 24/24, schema probe PASS, citation-policy gate 13/13 - all green at final HEAD 87f929cf305409117ba627335d6b54f110a5738c.",
+  "subject_basis": "runtime-id",
+  "task_id": "view-28-12-car-r3",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:58551c4c7e732fa6bf9933a07b547731fc403455eee0eadd4aa85ab60904dc39"
+}
