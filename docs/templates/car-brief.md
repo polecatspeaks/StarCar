@@ -91,6 +91,17 @@ commit nothing, push nothing. Work ONLY in the detached worktree at <path> (HEAD
 <sha> - verify first, STOP if not).
 
 SCOPE: <commits> against <plan/spec sections>.
+BASE-DELTA (#13, mandatory whenever this round reviews a base a PRIOR round already
+reviewed - rotation and delta re-reviews): state the SHA you reviewed AND the prior
+round's reviewed base SHA, plus the diff range between them (`git diff
+<prior-base>..<this-base> --stat`) - so a rotation reviewer can confirm from carriers
+alone what the revision actually changed, without trusting the brief's word for it.
+Rotation-drill finding: the round-2 drill reviewer of Car 2's plan could reconstruct
+every prior finding from the landed verdict except one thing - "the verdict pins round
+1's base (`efb7e67`) but not the delta to my base (`6c32ff50`); from carriers alone I
+could not confirm what changed between the reviewed base and rev-2's base and had to
+trust the brief's pin"
+(`artifacts/reviews/2026-07-22-car2-plan-review-round2-drill.md:103`).
 VERIFY: <the specific claims from the car's report, each with how to check it>.
 THE SENTENCE CHECK: <any cross-boundary value in this diff> - trace producer to final
 consumer, every hop file:line, every hand-maintained mirror checked.
@@ -144,8 +155,18 @@ of - Majors not declining, findings clustering in one section, or findings that 
 the previous round's fixes created - then SET A CAP: name what the next revision must
 demonstrate, and state that failing it escalates to the owner rather than to another round.
 CONSTITUTION CHECK: name each law the diff implicates, one line of evidence each.
+UNREPRODUCIBLE-EVIDENCE CALLOUT (#13): any finding that rests on evidence you
+structurally could NOT re-derive yourself - a gitignored log, a since-deleted scratch
+artifact, a claim only the author's own transcript can prove - is flagged AS SUCH, in its
+own line, never folded silently into a table cell. This is the single most important
+property to hand the next reviewer, and its absence is what cost the round-2 drill
+reviewer the fastest path to that round's own Major: "a 'findings on unreproducible
+evidence' flag would have pointed me straight at C2R2-M1... M3/M4 were unverifiable-by-
+construction (gitignored probe)... it lives buried in a table cell"
+(`artifacts/reviews/2026-07-22-car2-plan-review-round2-drill.md:110`).
 
-VERDICT: APPROVE or REJECT up top; findings by severity with file:line.
+VERDICT: APPROVE or REJECT up top; findings by severity with file:line; BASE-DELTA (#13)
+and any UNREPRODUCIBLE-EVIDENCE callouts (#13) stated explicitly, not folded into a table.
 
 END YOUR REPORT WITH THE ARTIFACT ENVELOPE (mandatory - your verdict is a `returned`
 dispatch too): a fenced block, info string starcar-artifact, fields outcome (APPROVE /
