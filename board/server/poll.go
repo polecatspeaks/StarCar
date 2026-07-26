@@ -109,7 +109,7 @@ func NewServer(cfg Config) (*Server, error) {
 		s.vocabLoadCondition = &store.BoardCondition{
 			Code:     "recognition-vocabulary-unreadable",
 			Detail:   "could not load the kind/outcome recognition vocabulary: " + err.Error(),
-			Register: "needs-attention",
+			Register: store.RegisterForCode("recognition-vocabulary-unreadable"),
 		}
 	}
 	s.vocab = vocab
@@ -126,7 +126,7 @@ func NewServer(cfg Config) (*Server, error) {
 			s.defaultBudgetCond = &store.BoardCondition{
 				Code:     "shop-default-budget-unreadable",
 				Detail:   "could not load the shop-default dispatch budget: " + err.Error(),
-				Register: "needs-attention",
+				Register: store.RegisterForCode("shop-default-budget-unreadable"),
 			}
 		}
 	}
@@ -264,10 +264,10 @@ func (s *Server) buildSnapshot(scanResult *store.ScanResult, scanErr error, poll
 		// unrecognised kind/outcome is a DISCOVERY, rendered loudly BY NAME
 		// (Law 1 - never silently computed and then thrown away).
 		for _, f := range out.Faults {
-			conditions = append(conditions, WireBoardCondition{Code: "fold-fault", Detail: f, Register: "needs-attention"})
+			conditions = append(conditions, WireBoardCondition{Code: "fold-fault", Detail: f, Register: store.RegisterForCode("fold-fault")})
 		}
 		for _, d := range out.Discoveries {
-			conditions = append(conditions, WireBoardCondition{Code: "discovery", Detail: d, Register: "needs-attention"})
+			conditions = append(conditions, WireBoardCondition{Code: "discovery", Detail: d, Register: store.RegisterForCode("discovery")})
 		}
 		assembled = assemble.Assemble(assemble.Input{Records: scanResult.Records, Fold: out})
 		for _, c := range assembled.Conditions {

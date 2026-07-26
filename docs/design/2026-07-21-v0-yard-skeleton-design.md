@@ -470,6 +470,26 @@ as the substrate probe it is.
    relic named the retired state file; the field displays the STORE path. The wire
    schema (`schema/yard-snapshot.schema.json`) carries the authoritative name.
 
+**Amendment (2026-07-26, issue #30 owner ruling - board-condition severity per
+class, SUPERSEDES §6):** §6's row "Unrecognised `kind`/`outcome`/`position`/role,
+vocabularies loaded | Detector fires: rendered loudly BY NAME, register
+`needs-attention` - a discovery, not a bug" is amended: a "discovery" is now the
+design's own named example of a NOTE-tier board-condition CLASS (an expected
+pattern, distinct from a FLAG-tier defect), and NOTE-tier renders `nominal`, not
+`needs-attention` - "rendered loudly BY NAME" still holds (the code and detail are
+never suppressed), only the register changes. The severity classification for
+every board-condition code is now ONE owned mapping
+(`board/store/condition_severity.go`), pinned by
+`board/store/condition_severity_test.go` against every `Code` literal a
+production Go source file under `board/` actually constructs - the #37
+register-taxonomy precedent applied to a second axis. First application (#30 item
+4, "quiet by declaration"): the cross-family outcome words `completed` and
+`approve-for-merge` (observed live in the real store, `outcome: completed` x1,
+`outcome: approve-for-merge` x1 as of this car's base) are declared in
+`schema/vocab/outcomes.json` and `schema/vocab/board-defs.json`, so their
+"discovery" condition disappears because it stopped being true, never because it
+was suppressed.
+
 ## §13 - Revision history
 
 - **Rev 1** (2026-07-21): REJECT, 9 Major. **Rev 2** (2026-07-22): REJECT, 8 Major -
