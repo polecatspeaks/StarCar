@@ -82,6 +82,7 @@ change is itself a process failure (the autoimmune mode - see the Healing Loop's
 | Tracking | Every piece of work gets an issue; one area label; every new code addition cites its `#N` in a comment. Owner-ruling doctrine is CARVED OUT - it carries the why instead, and if you do not know the why, ask before committing |
 | Session starts | The tooling retro; log friction as it happens; never drop a tooling request; doctrine dedup check |
 | Session ends | A decision point: triage in-flight work, checkpoint in writing, three closing sentences |
+| Chaos drills | Unannounced disruption is standing practice: opportunistic by default, owner-sprung at will; score = what the next session reconstructs from durable artifacts alone; counts only if something LANDS |
 
 ## NORTH STAR: documentation ranks equal to code
 
@@ -1109,6 +1110,32 @@ session. Triage in-flight work first (wait for the car-and-review unit, or write
 packet that is a re-dispatch spec, not a bookmark), sweep pushes, checkpoint state in
 writing, sync the board, state CI's disposition, and close with three sentences: what
 landed, what is parked, what happens first tomorrow.
+
+## Chaos-monkey drills (standing practice, owner-ratified 2026-07-26, #34)
+
+Unannounced disruption is a standing instrument, the complement to the planned drill
+ladder (#21, run through baseline 2026-07-23 with zero divergence). Two modes, both live:
+
+- **OPPORTUNISTIC (the default):** every REAL disruption - a credit-limit kill, a crashed
+  session, a dead tool - is converted into a graded drill instead of smoothed over. Costs
+  nothing extra; the universe supplies the chaos.
+- **DELIBERATE (owner-sprung):** the owner may kill, break, or degrade anything, at any
+  time, unannounced. No schedule and no published target list, because a list would
+  un-chaos the monkey. Any anomaly a session hits may be a drill, and the correct
+  response is identical either way: stop on contradictions, reconstruct from durable
+  artifacts, grade honestly.
+
+**THE RUBRIC:** after the disruption, can the next session reconstruct the true state
+from durable artifacts ALONE - and what was lost is the score. The anti-gaming guard
+binds: a drill counts only if something LANDS (a corrected record, a filed defect, a
+changed mechanism); nothing landed means it was not a drill, it was cost.
+
+*Founding scar (2026-07-23, the first instance - not planned by anyone): a credit-limit
+kill at 16:21 left a branch and worktree with no checkpoint. The next conductor invented
+a benign story for the debris and improvised past a visible contradiction - and the
+drill landed #32, #33, two corrected friction rows, and the continuous-checkpoint
+practice. None of it was reachable by the planned gentle drill, which grades the
+graceful case - the easy one, the one the process was designed for.*
 
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
