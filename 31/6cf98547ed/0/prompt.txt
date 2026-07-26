@@ -11,3 +11,15 @@ Good morning Claude. It's 26 July 26. Open up the yard please. Then review the r
 ---
 
 1b recommendation approved. Dangling thread: that got resolved in with copilot, we can close that.
+
+---
+
+ok anything in the queue that needs my input or design work?
+
+---
+
+#8 you're authorized. copilot leg: understood. ok let's do the 30, 34 and 21 after this next train. I'll have the web ui and check on it there and there, I'm interested to see the changes as they land. while you work, I'll be away from the computer for a while. ping me if you need anything.
+
+---
+
+continue, that was a typo on my end
