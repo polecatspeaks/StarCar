@@ -1023,20 +1023,39 @@ test - the nearest surface that can hold prose without altering the subject.
 producer, not by a person, and is data rather than code. A generator citing a ticket in
 every record it stamps would be noise, and the record already carries its own provenance.
 
-*Mechanism, LANDED (#42, 2026-07-26): `docs/templates/repo-policy-check-patterns.md` §1's
-gate pattern - already ported as `scripts/tests/DocPolicy.Tests.ps1`, which enforces the
-docs `Status:` line - is now also ported as `scripts/tests/CodeCitationPolicy.Tests.ps1`,
-aimed at new code files instead of docs. It walks files added after the boundary commit
+*Mechanism, LANDED (#42, 2026-07-26, corrected round 2 after REJECT):
+`docs/templates/repo-policy-check-patterns.md` §1's gate pattern - already ported as
+`scripts/tests/DocPolicy.Tests.ps1`, which enforces the docs `Status:` line - is now also
+ported as `scripts/tests/CodeCitationPolicy.Tests.ps1`, aimed at new code files instead of
+docs. It walks files added after the boundary commit
 `d4db6f5baf2bd31bf41f9dc5804684334797cb35`, checks extensions `.ps1 .psm1 .go .js .mjs .sh`
-(derived from the real post-boundary corpus at landing), skips `artifacts/**` and `.json`/
-`.md` (config, fixtures, and docs are out of this gate's scope for the reasons stated
-above and in the test file's header), and fails listing every violator by name if any
-post-boundary code file lacks a bare `#N` marker. It runs wherever `scripts/tests` runs -
-`.github/workflows/ci.yml`'s "Run board tooling tests" step already invokes
-`Invoke-Pester -Path ./scripts/tests`, so no CI wiring change was needed. Calibrated
-against the real corpus at landing: all 21 post-boundary code files already carried
-citations (the "already the house habit" signal below held), so the gate landed green
-with zero fixes required. This closes the parked bullet in #3/#4's queue for THIS one
+(derived from the real post-boundary corpus at landing) against a CLOSED set - checked
+extensions plus a `.json`/`.md` declared-exempt list, each with a stated reason (config/
+fixture-mutation risk, and DocPolicy's own Status-line gate, respectively) - and a
+self-calibrating test asserts every extension actually observed post-boundary is in that
+closed set, reding BY NAME if a new language (e.g. `.py`, `.css`, `.ts` - all fault-
+injected in round-1 review and measured silently green before this fix) ever arrives
+unaccounted for. It fails listing every violator by name if any post-boundary code file
+lacks a bare `#N` marker. **CI WIRING WAS REQUIRED, corrected from round 1's false claim:**
+round-1 review simulated a depth-1 shallow clone (`actions/checkout@v4`'s default) and
+found the gate's boundary-commit diff fails with `fatal: bad object` there, which the
+non-vacuity guard turned into a misleading "0 files found" rather than naming the real
+cause - CI would have reded on the first push for a non-violation, never observed because
+the round-1 commit reached no remote branch. Fixed: `.github/workflows/ci.yml`'s checkout
+step now carries `fetch-depth: 0`, and the gate itself carries a pinned assertion that the
+boundary commit resolves, failing with a named "shallow clone? fetch-depth needed" message
+if it does not - belt and suspenders, so a future workflow edit that drops `fetch-depth`
+fails loud instead of silently reproducing the round-1 defect. Real-CI green from this
+fix is observable only post-merge (the conductor watches the run); it is not claimed here.
+The fixture clause (citation for a comment-incapable file goes in a sibling README.md or
+the consuming test) has NO mechanical check anywhere in this repo and stays attention-tier,
+same as the whole standard did before this gate - disclosed, not solved, and out of this
+gate's scope (it targets code files that CAN carry a comment). Calibrated against the real
+corpus at landing: 22 post-boundary code files exist at the landing commit (21 pre-existing
+plus the gate's own test file, itself `#42`-cited) and all 22 already carried citations
+(the "already the house habit" signal below held), so the gate landed green with zero
+fixes required to the checked corpus. This closes the parked bullet in #3/#4's queue for
+THIS one
 check; #3 (area-label presence) and #4 (PR docs review) remain open, unaffected.*
 
 **NO BACKFILL. THE BOUNDARY IS THE POINT (owner ruling, 2026-07-23).** Code that predates

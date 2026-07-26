@@ -116,7 +116,18 @@ jobs:
         os: [windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
+      # fetch-depth: 0 (full history), not the actions/checkout@v4 default depth-1 shallow
+      # clone (#42 round 2 MAJOR-1): CodeCitationPolicy.Tests.ps1's gate diffs against a
+      # fixed boundary commit (d4db6f5, 2026-07-23) that a depth-1 clone does not contain -
+      # simulated with `git clone --depth 1`, `git diff --diff-filter=A` failed with
+      # "fatal: bad object", which the gate's own non-vacuity guard turned into a
+      # misleading "Expected greater than 0, but got 0" (CI would have reded on the first
+      # push for a non-violation). Full history is simplest and cheap at this repo's size;
+      # a bounded fetch-depth would need to grow every time the boundary ages further from
+      # HEAD, which is the kind of silent-drift knob this repo avoids.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Fetch the Entire checkpoint branch (non-fatal if absent)
         shell: pwsh
