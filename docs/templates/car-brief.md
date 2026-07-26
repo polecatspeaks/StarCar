@@ -112,9 +112,31 @@ DOC SENTENCE CHECK (if user-facing docs, or code they describe, are touched): <t
 at issue> - trace each from prose to the command it names to the code that runs to what a
 stranger observes, file:line at every hop, and state the trace. This is the PR-stage gate
 for user-facing documentation; an untraceable claim is a finding.
+RENDERING CHECK (#40, mandatory when this diff touches a RENDERED surface - board/web
+CSS/JS, register assignments, anything a user SEES): any claim about what the diff
+RENDERS is settled by computed-style evidence from a REAL browser against the real served
+board - name which registers, which elements, and which collapsed/expanded states you
+drove `getComputedStyle` against - never by reading CSS or reasoning about the cascade.
+THIS IS A FLOOR, NOT A REPLACEMENT FOR JUDGMENT: measurement establishes what the board
+IS rendering; you still RULE on whether that is CORRECT against the design authority
+(the mockup brief, the three-register law, the issue's own text) - a verdict that reports
+colours without ruling on them is a spelling check with better instrumentation.
+Provenance: #33's Car 31 reviewer had to hand-build a browser model to catch a live
+defect 50 passing DOM tests missed - enumerating all 11 `color:` declarations in
+board.css and walking 216 text-bearing elements by hand to compute the cascade itself;
+that is a SIMULATION of a cascade, not a measurement of one. The worked example of the
+floor being met is `artifacts/reviews/2026-07-26-view-30-review-round1-REJECT.md`'s "THE
+COMPUTED-STYLE GATE" section (`:137-176`): a real Chromium drove the real server,
+`getComputedStyle` returned `rgb(217, 213, 201)` for a NOTE group nested inside a
+`register-needs-attention` strip, proving `.board-condition-instance` relies on its own
+`register-*` class rather than inheriting - "the finding a DOM test could never have
+produced... the #31 cascade-inheritance defect does not recur" (`:173`).
 GUARD CHECK: <any gate, guard, or protection this diff installs> - has anyone WATCHED it
 fire? A config read-back or a passing-on-arrival test is an assertion, not an
-observation; demand the fault-injection evidence or raise its absence as a finding.
+observation; demand the fault-injection evidence or raise its absence as a finding. FOR A
+VISUAL GUARD (#40): the fault injection must be driven THROUGH A REAL BROWSER
+(computed-style, not a DOM-class or regex assertion) - #31 proved a text-level guard can
+pass while the defect is live on screen.
 CONVERGENCE CHECK (re-reviews only): <prior rounds' Major counts and the sections they
 clustered in - the conductor MUST supply these; a fresh reviewer cannot know them>. Rule on
 whether this series is converging, not only on whether this document is correct. If any two
