@@ -34,13 +34,36 @@
 # stop the runner - the next guard still runs, and this script's own exit code is
 # always 0 regardless. All four guards are exit-0-by-design today (each has its own
 # "strictly non-fatal" header), but this runner does not depend on that continuing to
-# be true - deliberately no `set -e`, no `||` chaining, no early return.
+# be true - deliberately no `set -e`, no `||` chaining, no early return. Round-4
+# adversarial review independently fault-injected a MIDDLE guard exiting nonzero and a
+# MISSING guard (not just a first-position failure, the only case this script's own
+# test exercised) and confirmed later guards still ran both times.
+#
+# CLAUDE_PROJECT_DIR (fix cycle round 5, finding R4-2): established and EXPORTED here,
+# override-with-default, because session-start-retro.sh:10 reads it directly
+# (`LOG="$CLAUDE_PROJECT_DIR/docs/friction-log.md"`) and this runner is precisely the
+# vehicle for invoking that guard from a shell where Claude Code has not already set
+# it - a plain shell, or a Copilot session, the entire target audience of this script.
+# Round-4 review observed the confident-falsehood failure mode directly: unset, LOG
+# resolves to "/docs/friction-log.md", the guard's `else` branch fires, and an
+# arriving agent is told to CREATE a file that already holds dozens of entries -
+# exactly the unanchored-path class round 1's m2 fixed in the now-deleted delivery
+# script (session-start-record.sh:76) and this replacement re-introduced one file
+# over. `git rev-parse --show-toplevel` gives the real repo root when run from
+# anywhere inside it; the `|| echo .` fallback degrades to the historical bare-relative
+# behavior (never fatal) if git itself is ever unavailable.
 #
 # GUARD_DIR may be overridden for tests (same override-with-default shape as
-# CHECKPOINT_FILE in session-start-checkpoint-reconcile.sh:50) - points at a fixture
-# directory carrying the same four filenames instead of the real .claude/hooks/.
+# CHECKPOINT_FILE in session-start-checkpoint-reconcile.sh:54 - the ASSIGNMENT line;
+# :50-52 is that file's TEST OVERRIDE comment block, the citation this header
+# previously pointed at imprecisely, m-a). Fix cycle round 5 also anchors GUARD_DIR's
+# own default on the now-exported CLAUDE_PROJECT_DIR rather than a bare relative path,
+# closing the same class of cwd-dependence for this variable too (m-a) - the
+# precedent's ABSOLUTE default is now actually matched, not just cited.
 
-GUARD_DIR="${GUARD_DIR:-.claude/hooks}"
+CLAUDE_PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || echo .)}"
+export CLAUDE_PROJECT_DIR
+GUARD_DIR="${GUARD_DIR:-$CLAUDE_PROJECT_DIR/.claude/hooks}"
 
 for guard in goodnight-resume-check.sh session-start-checkpoint-reconcile.sh session-start-ci-baseline.sh session-start-retro.sh; do
   sh "$GUARD_DIR/$guard"
