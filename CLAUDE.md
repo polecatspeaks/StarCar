@@ -78,7 +78,7 @@ change is itself a process failure (the autoimmune mode - see the Healing Loop's
 | CARRIER rule | Obligations cross rungs in documents with IDs, never by memory; receivers refuse delivery without them |
 | Living contracts | State changes update the ledger in the same commit |
 | Rewrite vs extend | Optimize for least NEW code reviewed; rewrites lose encoded incident knowledge |
-| Cost discipline | Spend approved before dispatch; a car and its review are one unit |
+| Cost discipline | Spend approved before dispatch; a car and its review are one unit; owner-set tempo (low idle / lighter default / heavy); size classes small ≤3, medium ≤8, heavy >8, medium+ wants a fresh meter reading |
 | Tracking | Every piece of work gets an issue; one area label; every new code addition cites its `#N` in a comment. Owner-ruling doctrine is CARVED OUT - it carries the why instead, and if you do not know the why, ask before committing |
 | Session starts | The tooling retro; log friction as it happens; never drop a tooling request; doctrine dedup check |
 | Session ends | A decision point: triage in-flight work, checkpoint in writing, three closing sentences |
@@ -911,6 +911,33 @@ Every train proposal carries a cost line: expected dispatch count, model mix, si
 The budget owner approves spend along with scope; exceeding a usage window is a decision
 made before dispatch, never a discovery on the bill. Split work at clean boundaries only -
 a car and its review are one unit; never start a car whose review will not also fit.
+
+**Operating tempo (owner port from the sibling shop, 2026-07-26).** The shop runs at an
+owner-set throttle with three named levels, and the mode is OWNER-SET, never inferred:
+
+- **Low idle** - parked; process only drops and P1-class breakage.
+- **Lighter default** - the normal day: riders and small/medium trains, sequential
+  car-plus-review units, conservative dispatch counts. Applies whenever no mode is
+  declared.
+- **Heavy (owner-declared)** - pre-approved heavy multi-agent burn, including dipping
+  into extra usage, ONLY inside a window the owner declares. (The sibling's standing
+  form is "race-critical heavy"; StarCar generalizes the trigger to any owner-declared
+  window, because this shop has no race calendar to key on.)
+
+**Size classes, sharpened by the same port:** the cost line classes every train
+**small (up to 3 dispatches), medium (up to 8), or heavy (more than 8)**, with the
+model mix stated per dispatch. Medium and heavier want a **fresh meter reading at
+wave-out** - the conductor cannot read the usage meter, so the reading is
+owner-supplied (a screenshot or a statement such as "we have fresh limits"), and a
+stale reading is a cost-line defect, not a formality.
+
+*Provenance: this is the owner's "cruise / push" vocabulary, asked-for rather than
+inferred (the standing vocabulary rule doing its job - the conductor's archive search
+came up empty because the conversation lived in the sibling project, and the empty
+search was treated as a trigger to ask, not an answer). The sibling's third leg -
+reviewers on Sonnet, Opus only at whole-branch gates - was NOT adopted silently: it
+contradicts StarCar's standing per-car-Opus-review topology and awaits an explicit
+owner ruling, recorded here when made.*
 
 ## Tracking
 
