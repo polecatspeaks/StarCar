@@ -1023,20 +1023,31 @@ test - the nearest surface that can hold prose without altering the subject.
 producer, not by a person, and is data rather than code. A generator citing a ticket in
 every record it stamps would be noise, and the record already carries its own provenance.
 
-*Mechanism, LANDED (#42, 2026-07-26, corrected round 2 after REJECT):
+*Mechanism, LANDED (#42, 2026-07-26, corrected rounds 2 and 3 after REJECT):
 `docs/templates/repo-policy-check-patterns.md` §1's gate pattern - already ported as
 `scripts/tests/DocPolicy.Tests.ps1`, which enforces the docs `Status:` line - is now also
 ported as `scripts/tests/CodeCitationPolicy.Tests.ps1`, aimed at new code files instead of
 docs. It walks files added after the boundary commit
 `d4db6f5baf2bd31bf41f9dc5804684334797cb35`, checks extensions `.ps1 .psm1 .go .js .mjs .sh`
-(derived from the real post-boundary corpus at landing) against a CLOSED set - checked
-extensions plus a `.json`/`.md` declared-exempt list, each with a stated reason (config/
-fixture-mutation risk, and DocPolicy's own Status-line gate, respectively) - and a
-self-calibrating test asserts every extension actually observed post-boundary is in that
-closed set, reding BY NAME if a new language (e.g. `.py`, `.css`, `.ts` - all fault-
-injected in round-1 review and measured silently green before this fix) ever arrives
-unaccounted for. It fails listing every violator by name if any post-boundary code file
-lacks a bare `#N` marker. **CI WIRING WAS REQUIRED, corrected from round 1's false claim:**
+plus EXTENSIONLESS files (Dockerfile, Makefile, CODEOWNERS, shebang scripts with no
+suffix - decided round 3: as comment-capable as any `.sh` file, so the standard applies
+to them the same way) (derived from the real post-boundary corpus at landing) against a
+CLOSED set - checked extensions plus a `.json`/`.md` declared-exempt list, each with a
+stated reason (config/fixture-mutation risk, and DocPolicy's own Status-line gate,
+respectively) - and a self-calibrating test asserts every extension actually observed
+post-boundary, INCLUDING the extensionless case, is in that closed set, reding BY NAME
+(the empty extension rendered as a readable `(no extension)` sentinel) if a new language
+(e.g. `.py`, `.css`, `.ts` - all fault-injected in round-1 review and measured silently
+green before that fix) or an unaccounted extensionless file ever arrives. **Round 3
+correction:** the round-2 completeness test computed the unaccounted set correctly but
+then asserted on a `-join`ed STRING (`Should -BeNullOrEmpty`), which silently passed
+whenever the only unaccounted extension was the empty string - a joined single empty
+string is still an empty string. Measured: an uncited extensionless Dockerfile passed
+10/10 green. Fixed by asserting on `.Count`, never on the joined text, and this sentence
+and the test header were both corrected to state exactly what the guard now delivers
+rather than restating the round-2 overclaim. It fails listing every violator by name if
+any post-boundary code file lacks a bare `#N` marker. **CI WIRING WAS REQUIRED, corrected
+from round 1's false claim:**
 round-1 review simulated a depth-1 shallow clone (`actions/checkout@v4`'s default) and
 found the gate's boundary-commit diff fails with `fatal: bad object` there, which the
 non-vacuity guard turned into a misleading "0 files found" rather than naming the real

@@ -51,14 +51,38 @@
 #     is scoped by this gate to code; docs are not double-gated here.
 #   - artifacts/** is NOT checked at all (any extension). CLAUDE.md states the exemption
 #     verbatim: "Exempt: machine-generated records... is data rather than code."
+#   - EXTENSIONLESS FILES (Dockerfile, Makefile, CODEOWNERS, shebang scripts with no
+#     suffix) are CHECKED, not exempt: `''` (the empty string `[System.IO.Path]::
+#     GetExtension` returns for these) is a member of $CodeExtensions below. Decided,
+#     not defaulted (#42 round 3, REJECT MAJOR-3): every real-world extensionless file a
+#     git repo hand-writes - Dockerfile, Makefile, CODEOWNERS, a shebang script someone
+#     chmod +x'd instead of naming `.sh` - uses `#`-style comments and is exactly as
+#     comment-capable as a `.sh` file, so the standard applies to it the same way. This
+#     is NOT the same class as the `.json`/`.md` exemptions above, which are exempt
+#     because the FORMAT cannot hold a comment without mutating the artifact (JSON) or
+#     because a DIFFERENT gate already owns them (docs). No post-boundary extensionless
+#     file exists in this repo today (probed: `git diff --diff-filter=A` on this corpus
+#     yields zero extensionless paths), so this is prospective, same footing as `.psm1`
+#     having no instance yet. DISCLOSED EDGE: a genuinely comment-incapable extensionless
+#     file (e.g. a raw binary fixture with no extension) would need a PATH-level
+#     exemption if one ever appears - never an extension-level one, since exempting `''`
+#     wholesale would silently swallow every future Dockerfile/Makefile too, reproducing
+#     this exact round's defect one layer up. None exists today; calibrate then.
 #   - THE CLOSED SET (matching DocPolicy.Tests.ps1:26's framing): "checked" and
 #     "declared exempt" together are the closed set. Growing either is a deliberate
 #     decision, never a convenience. A THIRD Describe block below asserts this
 #     mechanically - every extension actually observed in the post-boundary,
-#     non-artifacts corpus must be in checked-union-exempt, or the suite reds BY NAME
-#     naming the unaccounted extension (#42 round 2, REJECT M2: a hardcoded six-extension
-#     allowlist with nothing asserting completeness let .py/.css/.ts through silently -
-#     fault-injected and measured 7/7 green in round 1).
+#     non-artifacts corpus, INCLUDING THE EMPTY EXTENSIONLESS CASE, must be in
+#     checked-union-exempt, or the suite reds BY NAME (empty string rendered as a
+#     readable `(no extension)` sentinel, never silently joined away) naming the
+#     unaccounted extension. History of this guard, both rounds real Majors:
+#     round 2 (REJECT M2) - a hardcoded six-extension allowlist with nothing asserting
+#     completeness let .py/.css/.ts through silently, fault-injected and measured 7/7
+#     green. Round 3 (REJECT MAJOR-3) - round 2's own remedy computed the unaccounted set
+#     correctly (Count 1, element `''`) and then discarded it one line later via
+#     `-join ', ' | Should -BeNullOrEmpty`, because an empty string joined with anything
+#     is still an empty string; an uncited extensionless Dockerfile passed 10/10 green.
+#     Fixed by asserting on `$unaccounted.Count` directly, never on the joined string.
 #
 # ASSERTION: presence of a bare `#[0-9]+` marker anywhere in the file is the mechanical
 # floor, per the standard's own text. This gate does NOT verify the cited ticket number
@@ -104,7 +128,15 @@ BeforeAll {
         param(
             [Parameter(Mandatory)] [string]   $RepoRoot,
             [Parameter(Mandatory)] [string]   $BoundarySha,
-            [Parameter(Mandatory)] [string[]] $CodeExtensions,
+            # NOT [Parameter(Mandatory)] on $CodeExtensions, deliberately (#42 round 3):
+            # PowerShell's Mandatory attribute rejects an EMPTY-STRING ELEMENT inside a
+            # [string[]] argument (probed: "Cannot bind argument to parameter
+            # 'CodeExtensions' because it is an empty string" - the whole array bind
+            # fails, not just that element), and '' is exactly how extensionless files
+            # (Dockerfile, Makefile, CODEOWNERS) must be represented in this list once
+            # they join the checked set. Every call site below still always passes it;
+            # this only removes a validation that actively broke the round-3 decision.
+            [string[]]                        $CodeExtensions,
             [string]                          $HeadRef = 'HEAD'
         )
         $added = git -C $RepoRoot diff --name-only --diff-filter=A $BoundarySha $HeadRef
@@ -135,6 +167,22 @@ BeforeAll {
         return [bool]($text -match $Pattern)
     }
 
+    function Get-UnaccountedExtensions {
+        # #42 round 3 MAJOR-3: extracted so the fix (assert on .Count, never on a
+        # `-join`ed string) is provable in isolation against a SYNTHETIC extensionless
+        # case, independent of whether '' happens to be in $CoveredExtensions for this
+        # repo's real corpus today. The round-3 bug: a caller that did
+        # `(Get-UnaccountedExtensions ...) -join ', ' | Should -BeNullOrEmpty` would
+        # silently pass here whenever the only unaccounted extension was '', because
+        # joining a single empty string produces '' again. Callers must assert on
+        # `.Count`, never on the joined text - proven by the unit test below.
+        param(
+            [string[]] $ObservedExtensions,
+            [string[]] $CoveredExtensions
+        )
+        return @($ObservedExtensions | Where-Object { $CoveredExtensions -notcontains $_ })
+    }
+
     function Test-BoundaryResolvable {
         # #42 round 2 MAJOR-1: a shallow clone (CI's default) does not contain the
         # boundary commit, and the raw `git diff` failure ("fatal: bad object") was
@@ -154,7 +202,11 @@ Describe 'Repo policy: code files added after the citation standard cite their t
     BeforeAll {
         $script:RepoRoot       = (git rev-parse --show-toplevel)
         $script:BoundarySha    = 'd4db6f5baf2bd31bf41f9dc5804684334797cb35'
-        $script:CodeExtensions = @('.ps1', '.psm1', '.go', '.js', '.mjs', '.sh')
+        # '' (extensionless) is CHECKED, not exempt (#42 round 3, REJECT MAJOR-3): a
+        # Dockerfile, Makefile, CODEOWNERS, or shebang script with no suffix is exactly as
+        # comment-capable as a .sh file. See the header's EXTENSIONLESS FILES note for
+        # the reasoning and the disclosed genuinely-comment-incapable edge case.
+        $script:CodeExtensions = @('.ps1', '.psm1', '.go', '.js', '.mjs', '.sh', '')
         # The closed set's other half (#42 round 2 MAJOR-2): every declared exemption
         # carries its reason inline, same discipline as the header's SCOPE section.
         $script:DeclaredExemptExtensions = [ordered]@{
@@ -164,10 +216,18 @@ Describe 'Repo policy: code files added after the citation standard cite their t
 
         $script:BoundaryResolvable = Test-BoundaryResolvable -RepoRoot $script:RepoRoot -BoundarySha $script:BoundarySha
         if ($script:BoundaryResolvable) {
-            $script:AddedCodeFiles        = Get-AddedCodeFiles -RepoRoot $script:RepoRoot `
-                -BoundarySha $script:BoundarySha -CodeExtensions $script:CodeExtensions
-            $script:AllAddedNonArtifact   = Get-AddedNonArtifactFiles -RepoRoot $script:RepoRoot `
-                -BoundarySha $script:BoundarySha
+            # @(...) wrapping at the CALL SITE is load-bearing, not decoration (found
+            # while fixing #42 round 3): PowerShell unwraps a function's pipeline output
+            # to a bare scalar (or $null) when exactly one (or zero) items were written,
+            # regardless of the `return @(...)` inside the function - probed directly:
+            # `function F { return @('') }; $r = F` leaves $r a scalar empty STRING, not
+            # a 1-element array (`$r.GetType()` is `string`). Every call site of these
+            # helpers wraps with @() so a corpus that happens to add exactly one file
+            # never silently degrades $script:AddedCodeFiles from an array to a scalar.
+            $script:AddedCodeFiles        = @(Get-AddedCodeFiles -RepoRoot $script:RepoRoot `
+                -BoundarySha $script:BoundarySha -CodeExtensions $script:CodeExtensions)
+            $script:AllAddedNonArtifact   = @(Get-AddedNonArtifactFiles -RepoRoot $script:RepoRoot `
+                -BoundarySha $script:BoundarySha)
         }
         else {
             # Do not attempt the diff against an unresolvable boundary: that is exactly
@@ -210,20 +270,53 @@ Describe 'Repo policy: code files added after the citation standard cite their t
         $script:AddedCodeFiles | Should -Not -Contain 'board/board.go'
     }
 
-    It 'every extension in the post-boundary corpus is checked or a declared exemption (the closed set - #42 round 2 MAJOR-2)' {
+    It 'every extension in the post-boundary corpus, INCLUDING extensionless, is checked or a declared exemption (the closed set - #42 round 3 MAJOR-3)' {
         $observedExtensions = @($script:AllAddedNonArtifact |
             ForEach-Object { [System.IO.Path]::GetExtension($_) } |
             Sort-Object -Unique)
         $covered = @($script:CodeExtensions) + @($script:DeclaredExemptExtensions.Keys)
-        $unaccounted = @($observedExtensions | Where-Object { $covered -notcontains $_ })
-        # A NEW extension arriving post-boundary (e.g. .py, .css, .ts - all fault-injected
-        # and measured silently-green in round 1) must force a deliberate decision: add it
-        # to $CodeExtensions (checked) or to $DeclaredExemptExtensions (exempt, with a
-        # reason). Silence is never an acceptable third option.
-        $unaccounted -join ', ' | Should -BeNullOrEmpty -Because (
-            "extension(s) [$($unaccounted -join ', ')] appeared in the post-boundary " +
+        $unaccounted = @(Get-UnaccountedExtensions -ObservedExtensions $observedExtensions -CoveredExtensions $covered)
+        # #42 round 3 MAJOR-3: asserting on the JOINED string (`-join ', ' | Should
+        # -BeNullOrEmpty`) is the bug this round fixed - an unaccounted extensionless
+        # file makes $unaccounted hold one element, the empty string '', and joining
+        # a single empty string with anything produces '' again, which -BeNullOrEmpty
+        # then passes. An uncited extensionless Dockerfile measured 10/10 green under
+        # that idiom. Asserting on .Count is immune to that: an empty-string ELEMENT
+        # still makes the array non-empty and the count nonzero. (Proven in isolation,
+        # independent of this repo's real corpus, by the synthetic unit test below.)
+        $rendered = @($unaccounted | ForEach-Object { if ($_ -eq '') { '(no extension)' } else { $_ } })
+        $unaccounted.Count | Should -Be 0 -Because (
+            "extension(s) [$($rendered -join ', ')] appeared in the post-boundary " +
             "corpus with no citation check and no declared exemption - decide: extend " +
             "`$CodeExtensions or `$DeclaredExemptExtensions, do not leave it silent")
+    }
+}
+
+Describe 'Closed-set completeness mechanism (synthetic, proves the round-3 fix independent of the real corpus)' {
+    # This repo's real corpus has no unaccounted extensionless file today (extensionless
+    # is CHECKED, per the decision above), so the production Describe's completeness test
+    # never actually exercises the "an unaccounted extension IS the empty string" branch
+    # that round 3's bug lived in. This Describe proves the FIXED mechanism against a
+    # synthetic case that isolates exactly that branch, so the remedy is verified rather
+    # than merely coincidentally unexercised.
+
+    It 'detects a genuinely unaccounted extensionless file (Count 1, element is empty string)' {
+        $unaccounted = @(Get-UnaccountedExtensions -ObservedExtensions @('.go', '') -CoveredExtensions @('.go'))
+        $unaccounted.Count | Should -Be 1
+        $unaccounted -contains '' | Should -BeTrue
+    }
+
+    It 'the round-3 bug reproduced: joining a single empty-string element passes -BeNullOrEmpty (the defect this round fixed)' {
+        # Documents the exact failure mode, on the synthetic case, so the class stays
+        # legible even after the production code no longer contains the bad idiom.
+        $unaccounted = @(Get-UnaccountedExtensions -ObservedExtensions @('.go', '') -CoveredExtensions @('.go'))
+        ($unaccounted -join ', ') | Should -BeNullOrEmpty  # the OLD (buggy) idiom: false negative
+        $unaccounted.Count | Should -Not -Be 0             # the NEW (fixed) idiom: true positive
+    }
+
+    It 'reports zero unaccounted once the extensionless case is declared (no false positive noise)' {
+        $unaccounted = @(Get-UnaccountedExtensions -ObservedExtensions @('.go', '') -CoveredExtensions @('.go', ''))
+        $unaccounted.Count | Should -Be 0
     }
 }
 
@@ -265,8 +358,11 @@ Describe 'Citation detection logic (scratch repo, proves the boundary and the fa
         git -C $script:Scratch commit -q -m 'post-boundary: uncited file (the fault)' | Out-Null
 
         $script:CodeExtensions = @('.sh')
-        $script:AddedCodeFiles = Get-AddedCodeFiles -RepoRoot $script:Scratch `
-            -BoundarySha $script:BoundarySha -CodeExtensions $script:CodeExtensions
+        # @() wrapping here too, for the same reason as the production Describe's call
+        # site above - this scratch corpus always has 2 files today, so the collapse
+        # never manifests, but the call site should not depend on that staying true.
+        $script:AddedCodeFiles = @(Get-AddedCodeFiles -RepoRoot $script:Scratch `
+            -BoundarySha $script:BoundarySha -CodeExtensions $script:CodeExtensions)
     }
 
     AfterAll {
