@@ -14,8 +14,23 @@ gate - the landed computed-style regression guard is
 
 - `calm-yard.png` - the nominal register across all five lanes, idle
   freshness.
-- `hot-yard.png` - the same board with one genuinely in-flight dispatch,
-  freshness flipped to stale (both lanes carrying that dispatch render red).
+- `hot-yard.png` - the same board with one genuinely in-flight dispatch;
+  opened and reconfirmed (fix cycle round 3, R2-m3): all THREE live lanes
+  (DISPATCHES, GATES, TRAINS) render red, each labelled "Live / stale,
+  3060s" - not two. They render red together not because each "carries"
+  the in-flight probe (it is unassigned yard inventory, present only in
+  the dispatches lane's own data,
+  `board/web/test/support/real-board-server.js`'s
+  `buildScratchStoreWithInFlightDispatch` doc comment) - it is because
+  `board/server/poll.go`'s `computeLiveFreshness` is a SINGLE board-global
+  computation over every record and every dispatch, and its one result is
+  assigned to every `position: "live"` lane alike (`poll.go`'s poll loop,
+  the `case "live": lane.Freshness = liveFreshnessVal` assignment). FREIGHT
+  ("Dark") and FUEL ("Bagged") are declared `position: "dark"`/`"bagged"`
+  in `board/server`'s lane registry, never `"live"`, so the SAME poll loop's
+  `default:` branch assigns them a fixed `Freshness{Kind: "not-applicable"}`
+  instead of `computeLiveFreshness`'s result - a constant, never computed
+  from record age - which is why they render unchanged in both images.
 
 These remain accurate evidence for what they were captured to show (#62's
 shared visual language: lane plates, register colors, the Solari-board

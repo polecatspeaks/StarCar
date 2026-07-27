@@ -1,11 +1,12 @@
 // browser-dispatch-row-taskid.test.js (#75) - RENDERED-SURFACE proof that
 // the task-id fallback treatment is real in a browser, not just a passing
 // minidom.js unit test (minidom.js has no CSS engine, so it cannot prove a
-// long task-id still gets .solari-subject's ellipsis truncation, and it
-// cannot prove board.css's `title` attribute actually renders as a native
-// hover tooltip). Follows browser-dispatch-row-geometry.test.js's pattern
-// (#71 fix cycle r3): playwright the LIBRARY inside plain `node --test`, a
-// real board/server/ Go binary, a real scratch store.
+// task-id wider than its own box still gets .solari-subject's ellipsis
+// truncation, and it cannot prove board.css's `title` attribute actually
+// renders as a native hover tooltip). Follows browser-dispatch-row-
+// geometry.test.js's pattern (#71 fix cycle r3): playwright the LIBRARY
+// inside plain `node --test`, a real board/server/ Go binary, a real
+// scratch store.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
@@ -39,11 +40,13 @@ async function dispatchRowBySubjectHash(subjectHash) {
       title: el.getAttribute('title'),
       overflow: style.overflow,
       textOverflow: style.textOverflow,
-      // fix cycle r2 (R1-m2): scrollWidth > clientWidth is the GENUINE,
-      // length-dependent truncation signal - overflow/text-overflow being
-      // computed correctly is necessary but not sufficient (an id short
-      // enough to fit never actually truncates even with both properties
-      // set).
+      // fix cycle r2 (R1-m2), corrected fix cycle r3 (R2-m1: this used to
+      // say "length-dependent" - measurement showed it is BOX-width-
+      // dependent, not length-dependent, since even a 14-char id overflows
+      // this fixture's narrow box): scrollWidth > clientWidth is the
+      // GENUINE overflow signal - overflow/text-overflow being computed
+      // correctly is necessary but not sufficient (an id short enough to
+      // fit never actually truncates even with both properties set).
       scrollWidth: el.scrollWidth,
       clientWidth: el.clientWidth
     };
@@ -76,20 +79,35 @@ test('#75: a dispatch row whose winning record carries NO task_id falls back hon
   assert.equal(row.title, 'view-75-without-task-id');
 });
 
-test('#75 fix cycle r2 (R1-m2): a GENUINELY long task-id (79 chars, longer than the hash it replaces) actually truncates via .solari-subject\'s ellipsis - not just computed style, but real overflow', async () => {
+// CORRECTED, fix cycle r3 (R2-m1: R1-m2 was ruled DRIFTED, not closed - the
+// substance never moved). This test used to be named for a "GENUINELY long
+// (79 chars)" task-id, on the theory that LENGTH is what makes it overflow
+// and truncate. Measured, out of repo, by the round-2 reviewer and
+// reproduced here: `.solari-subject`'s own box in this fixture's viewport is
+// only ~123px wide (a 13rem `auto-fill` grid column) - round-1's ORIGINAL
+// 14-char id (`view-75-car-r1`) ALSO overflows it (scrollWidth 131 vs
+// clientWidth 123) and would ALSO pass this assertion. The box is narrow
+// enough that virtually any plausible task-id overflows it; length is not
+// the discriminating variable, and the old name promised a distinction this
+// fixture cannot construct (a short id that fits). Renamed to what the test
+// actually proves: a task-id wider than its own box truncates via ellipsis
+// rather than wrapping.
+test('#75: a task-id wider than .solari-subject\'s own (narrow) box truncates via ellipsis rather than wrapping - real overflow, not just computed style', async () => {
   const row = await dispatchRowBySubjectHash('view-75-with-task-id');
   assert.ok(row, 'test precondition not met');
   assert.equal(row.overflow, 'hidden', 'REGRESSION (#75): .solari-subject must still compute overflow:hidden for a task-id-titled row');
   assert.equal(row.textOverflow, 'ellipsis', 'REGRESSION (#75): .solari-subject must still compute text-overflow:ellipsis for a task-id-titled row');
-  // The instrument-honesty finding (fix cycle r2, R1-m2): overflow/text-
-  // overflow being computed correctly is necessary but not sufficient - an
-  // id short enough to fit inside .solari-subject's own width would compute
-  // the identical style while never actually truncating anything. Assert
-  // the GENUINE, length-dependent signal too: the element's own content is
-  // wider than its box.
+  // overflow/text-overflow being computed correctly is necessary but not
+  // sufficient - an id short enough to fit inside .solari-subject's own
+  // width would compute the identical style while never actually
+  // truncating anything. Assert the GENUINE overflow signal too: the
+  // element's own content is wider than its box. (This does not prove the
+  // fixture's id is exceptionally LONG - see the comment above - only that
+  // this specific box's content overflows it, which is the property the
+  // ellipsis CSS actually needs to have something to do.)
   assert.ok(
     row.scrollWidth > row.clientWidth,
-    `REGRESSION (R1-m2): the fixture's task-id (79 chars) must genuinely overflow .solari-subject's box (scrollWidth ${row.scrollWidth} vs clientWidth ${row.clientWidth}) - otherwise this test cannot tell a truncating id from a merely-computed-style one`
+    `REGRESSION: the fixture's task-id must genuinely overflow .solari-subject's box (scrollWidth ${row.scrollWidth} vs clientWidth ${row.clientWidth}) - otherwise this test cannot tell a truncating id from a merely-computed-style one`
   );
 });
 

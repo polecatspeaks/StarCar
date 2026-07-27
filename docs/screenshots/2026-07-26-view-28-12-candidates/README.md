@@ -18,13 +18,29 @@ computed-style regression guard is
 
 - `calm-yard.png` / `hot-yard.png` - the nominal/stale register pair, same
   posture as the #62 register-check directory's own pair.
-- `health-trend-and-provenance.png` - the #28 ticket-link/record-dir
-  provenance anchors and the #12 car health-trend badge, both rendering
-  against a controlled review-round fixture.
+- `health-trend-and-provenance.png` - **CORRECTED (fix cycle round 3,
+  R2-M1):** opened and reconfirmed before writing this sentence. The `#28`
+  TICKET link renders as a real anchor (visibly underlined under the train
+  title, `#12`) and the `#12` car health-trend badges render (`▼ converged
+  (3→0)`, `● stalled (3→4→4)`, the latter in red). Record-dir provenance
+  anchors do **NOT** render anywhere in this image - every dispatch-row
+  subject (`conv-review-r1`, `stall-review-r1/r2/r3`) and every train
+  car-chip (`conv-review-r1 Gate returned REJECT round 1`, etc.) is plain
+  text, no anchor affordance, in visible contrast to the underlined `#12`
+  ticket link in the same frame. `board/web/verify-registers.mjs`'s own
+  DISCLOSED comment immediately above this capture's call site says why:
+  the scratch store lives under `os.tmpdir()`, outside the repo root, so
+  `config.githubArtifactsPrefix` resolves empty, and record-dir links
+  degrade honestly to plain text for that reason alone - the in-repo proof
+  that they CAN render, given a real repo-rooted store, is
+  `board/server`'s `TestBuildSnapshotGitHubConfigConfigured` and this
+  repo's own `dom-writer.test.js` suite (both named in that same comment),
+  never this screenshot.
 
-These remain accurate evidence for what they were captured to show (#28's
-clickable provenance, #12's health-trend badge) - none of that is touched
-by the note below.
+These remain accurate evidence for what they were captured to show: #28's
+TICKET-link half of clickable provenance (never its record-dir-anchor
+half - see the corrected bullet above, R2-M1) and #12's health-trend
+badge - none of that is touched by the note below.
 
 **DISCLOSED STALENESS (#75 fix cycle round 2, R1-M1, 2026-07-27):**
 `calm-yard.png` and `hot-yard.png` both incidentally show dispatch subject

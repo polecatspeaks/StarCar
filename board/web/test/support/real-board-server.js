@@ -468,11 +468,19 @@ export function buildScratchStoreForTaskIdTitles() {
     );
   }
 
-  // (a) with task_id - GENUINELY LONG (79 chars, longer than the 33-char
-  // subject hash it replaces), fix cycle r2 (R1-m2): the sibling ellipsis-
-  // truncation test claims to prove a long id truncates rather than wraps,
-  // so the fixture must actually construct that case rather than merely
-  // overflowing by accident of the grid column's own width.
+  // (a) with task_id - 79 characters, fix cycle r2 (R1-m2), CORRECTED fix
+  // cycle r3 (R2-m2, an unmeasured size claim): this comment used to compare
+  // the 79-char task_id against "the 33-char subject hash it replaces" -
+  // this fixture's own subject, `view-75-with-task-id`, measures 20 chars,
+  // and 33 matched nothing here or in any real record-dir hash (measured:
+  // 17 chars, e.g. store subject `a076bf6c0a94e302f`). Dropped the
+  // comparison rather than re-estimate it. What actually matters, measured
+  // (fix cycle r3, R2-m1): `.solari-subject`'s own box is only ~123px wide
+  // in this fixture's viewport - a 13rem `auto-fill` grid column - so
+  // virtually ANY plausible task-id overflows it, not only an exceptionally
+  // long one; this 79-char value is simply a comfortable, unambiguous
+  // example of that, never proof that LENGTH itself is what causes
+  // overflow.
   write('view-75-with-task-id', 'dispatched', '2026-07-27T09:00:00Z');
   write('view-75-with-task-id', 'returned', '2026-07-27T09:05:00Z', {
     outcome: 'done',
