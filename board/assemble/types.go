@@ -93,6 +93,31 @@ type DispatchesPayload struct {
 	Dispatches []map[string]any `json:"dispatches"`
 }
 
+// Ticket is one freight lane entry (#84): a GitHub Project 6 item currently
+// in Backlog or Todo status (the inbound queue, owner ruling 2026-07-27).
+// Read directly off a raw kind=ticket store record's "ticket" payload key
+// (schema/starcar-ticket.schema.json) - board/fold has no case for this
+// kind (no lifecycle event, no supersession authority to defer to), so
+// Assemble reads these raw, the same way it already reads manifest payloads
+// off intent-kind records via manifestPayload (#84 owner ruling item 3: "the
+// fold is not involved").
+type Ticket struct {
+	Number int    `json:"number"`
+	Title  string `json:"title"`
+	Status string `json:"status"`
+	URL    string `json:"url"`
+	// RecordDir (#28: clickable provenance) - same convention as every other
+	// entry's RecordDir field: this ticket's own record directory, relative
+	// to the store root, single-sourced from store.Record.Path.
+	RecordDir string `json:"recordDir,omitempty"`
+}
+
+// FreightPayload is the freight lane's wire data shape (#84, spec YB-5's
+// sibling def for the newly-live lane).
+type FreightPayload struct {
+	Tickets []Ticket `json:"tickets"`
+}
+
 // Input is everything Assemble consumes: the raw store records (for
 // manifest-payload joins) and the fold's own output (the SOLE supersession
 // and liveness authority - Assemble never re-selects "latest" itself,
@@ -102,12 +127,14 @@ type Input struct {
 	Fold    fold.Output
 }
 
-// Result is the four derived surfaces plus whatever board conditions
+// Result is the five derived surfaces plus whatever board conditions
 // assembly itself raised (manifest-membership-collision, subject-namespace-
-// collision, and any defensive fallback conditions).
+// collision, and any defensive fallback conditions). Freight (#84) joined
+// the other four in the same commit that lit up the lane.
 type Result struct {
 	Trains     TrainsPayload
 	Gates      GatesPayload
 	Dispatches DispatchesPayload
+	Freight    FreightPayload
 	Conditions []store.BoardCondition
 }

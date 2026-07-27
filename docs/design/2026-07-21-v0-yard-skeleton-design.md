@@ -197,8 +197,10 @@ pins these shapes executably at the spec rung, which then becomes the single own
   red); lane count rendered in chrome and ledgered.
 
 v0's lane registry: `dispatches` (live), `gates` (live), `trains` (live), `freight`
-(dark - the ticket queue has no adapter yet), `fuel` (bagged - `cost` fields exist on
-some records, held but not surfaced until #11's cost ledger work). Positions per D11 are
+(**live as of #84, 2026-07-27** - §7's deferred ticket-queue adapter; the ticket queue was
+dark through v0 and stayed that way until this section's own trigger fired and was acted
+on), `fuel` (bagged - `cost` fields exist on some records, held but not surfaced until
+#11's cost ledger work). Positions per D11 are
 deploy-time registry truth.
 
 ### 5.3 The store adapter and the four derived surfaces
@@ -357,10 +359,17 @@ successful store scan; a scan that fails (directory missing, unreadable) is `fai
 
 ## §7 - Out of scope (with triggers)
 
-Git adapter; GitHub board adapter (freight lane) - trigger: first train after v0 ships
-`[Q5, ruling adopted: honest-but-thin first paint is CORRECT for the showcase - a first
-screenshot with loudly-honest dark/bagged lanes demonstrates the Law 4 mechanism working;
-freight stays out]`.
+Git adapter; ~~GitHub board adapter (freight lane) - trigger: first train after v0
+ships~~ **TRIGGER FIRED, LANDED #84 (2026-07-27).** The trigger sat unpicked-up for many
+trains after v0 shipped (the same class this repo's docs/setup.md probes-in-CI row was
+corrected for, same day) - #84 named the satisfied trigger, and the adapter
+(`scripts/Sync-Freight.ps1`) plus the freight lane's render path landed the same day. The
+original entry is struck through rather than deleted so the deferral-and-pickup shape
+stays legible: `[Q5, ruling adopted: honest-but-thin first paint is CORRECT for the
+showcase - a first screenshot with loudly-honest dark/bagged lanes demonstrates the Law 4
+mechanism working; freight stays out]`. Q5's ruling was correct FOR v0; it was never a
+ruling that freight stays out forever, and this section's own header promises exactly
+one thing per entry - a trigger - which this row's now discharged.
 Fuel gauge surfacing - trigger: #11 cost-ledger work. Auth - local-only, stated in README.
 View-side override UI - trigger: the second use of intent-record overrides (Law 2 is
 served by the store path in v0). History/event-log view - the snapshot is current-state;

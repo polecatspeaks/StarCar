@@ -115,3 +115,23 @@ new observation, not one of this round's five named findings, and the swirl
 cap on this ticket weighs against an unscoped same-round fix. Flagged for
 the record; a future ticket could consider `align-items: start` on
 `.solari-rows` if the cosmetic box-stretch is judged worth spending on.
+
+**DISCLOSED DIVERGENCE (#84 fix cycle round 2, R1-M3, 2026-07-27):** opened
+and reconfirmed every image in this directory before writing this
+sentence. Six of the eight show `FREIGHT / the inbound ticket queue / Dark
+/ no equipment on this lane` (lane 4): `collapsed-before-click.png`,
+`expanded-after-click.png`, `survives-dom-rebuild.png`,
+`survives-page-reload.png`, `superseded-collapsed-r2.png`, and
+`superseded-expanded-r2.png`. The two round-3 geometry images
+(`dispatch-rows-multirow-collapsed-r3.png`,
+`dispatch-rows-multirow-expanded-r3.png`) are cropped/scrolled to the
+dispatches lane only and never reach freight - they carry no such note.
+That rendering is no longer current: issue #84 landed a store-mediated
+GitHub ticket adapter (`scripts/Sync-Freight.ps1`) and flipped freight's
+registry position to `live` (`board/server/laneregistry.go`), with three
+distinct freshness states of its own. This is unrelated to what these
+images were captured to evidence (#69/#71's conditions-strip and
+superseded-disclosure mechanisms, still accurate) and they are not
+recaptured - the remedy is this caption, per the car-brief template's own
+instruction, never a fresh screenshot chasing a UI that will keep
+changing.

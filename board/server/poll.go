@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -112,8 +113,15 @@ type Server struct {
 	// three separate times across three later trains, and the disclaimer
 	// did not stop it. Function and field names survive an insertion
 	// anywhere else in this file; a line number does not.
-	lastGoodAsOf     map[string]*string // per live-lane-id, the most recent successful asOf (carried through a failed scan)
-	lastGoodLaneData map[string]any     // #51 C2: per live-lane-id, the most recent successful assembled payload (assemble.DispatchesPayload/GatesPayload/TrainsPayload) - what buildSnapshot assigns to lane.Data on a scan failure, so a failed lane keeps showing its last good content instead of degrading to "no renderer for this payload" (docs/design/2026-07-21-v0-yard-skeleton-design.md section 6 row 1; docs/contracts/state-ledger.md:108 - #52 C51R-4: corrected from :102, which is the `seq` row, not this field's row)
+	// lastGoodAsOf: per live-lane-id, the most recent successful asOf
+	// (carried through a failed scan). Before #84 this only ever held key
+	// "live" (dispatches/gates/trains all share one scan-derived freshness);
+	// #84 added key "freight", tracked independently because freight's
+	// freshness is NOT derived from the whole-store scan the way the other
+	// three lanes' shared "live" freshness is - it is derived from a
+	// kind=ticket-sync record's own "at" (computeFreightFreshness below).
+	lastGoodAsOf     map[string]*string
+	lastGoodLaneData map[string]any // #51 C2: per live-lane-id, the most recent successful assembled payload (assemble.DispatchesPayload/GatesPayload/TrainsPayload) - what buildSnapshot assigns to lane.Data on a scan failure, so a failed lane keeps showing its last good content instead of degrading to "no renderer for this payload" (docs/design/2026-07-21-v0-yard-skeleton-design.md section 6 row 1; docs/contracts/state-ledger.md's `lastGoodLaneData[laneID]` row - CITED BY ROW NAME, NOT LINE (#84 fix cycle round 3, R2-M2): this exact citation drifted TWICE on a line-number form - #52 C51R-4 corrected it from :102 (the seq row) to :108, then #84's own R1-m6 ledger insertion silently shifted :108 onto the table HEADER when it added content above it. board/web/js/lanes.js's own NO_DATA_BY_DESIGN comment names this identical failure class ("a line-number citation into a file this SAME train's commit still edits drifts on every later insertion, and the #65 gate does not check in-range shifts") - this citation now follows that same symbol-form precedent so a THIRD drift is structurally impossible: the row's own first-cell text is a stable anchor no insertion elsewhere in the file can move)
 
 	pollInFlight int32 // atomic; skip-not-queue guard (TryBeginPoll/EndPoll)
 
@@ -294,16 +302,36 @@ func (s *Server) buildSnapshot(scanResult *store.ScanResult, scanErr error, poll
 
 	var assembled assemble.Result
 	var liveFreshnessVal Freshness
+	// freightFreshnessVal (#84) is DELIBERATELY a separate value from
+	// liveFreshnessVal, never a reuse: liveFreshnessVal answers "did the
+	// whole-store scan succeed, and is dispatch/gate/train data moving";
+	// freightFreshnessVal answers "has the freight adapter ever completed a
+	// run, and how old is its last one" - an orthogonal axis computed from a
+	// kind=ticket-sync record's own "at" (computeFreightFreshness below),
+	// never from dispatch activity. The two happen to share the same
+	// "never-polled"/"failed" values in the !polled/scanErr branches below
+	// because THOSE two cases are genuine whole-store facts (the board
+	// itself has not scanned yet, or cannot read the store at all) that
+	// apply identically to every live lane; only the success branch
+	// diverges, which is where Case 1/2/3 (#84's own framing) are actually
+	// distinguished.
+	var freightFreshnessVal Freshness
 	var newLastGood *string
 
 	if !polled {
 		liveFreshnessVal = Freshness{Kind: "never-polled"}
+		freightFreshnessVal = Freshness{Kind: "never-polled"}
 	} else if scanErr != nil {
 		reasonDetail := scanErr.Error()
 		liveFreshnessVal = Freshness{
 			Kind:         "failed",
 			Reason:       &FreshnessReason{Code: "store-unreadable", Detail: reasonDetail},
 			LastGoodAsOf: s.lastGoodAsOf["live"],
+		}
+		freightFreshnessVal = Freshness{
+			Kind:         "failed",
+			Reason:       &FreshnessReason{Code: "store-unreadable", Detail: reasonDetail},
+			LastGoodAsOf: s.lastGoodAsOf["freight"],
 		}
 	} else {
 		for _, c := range scanResult.Conditions {
@@ -332,37 +360,95 @@ func (s *Server) buildSnapshot(scanResult *store.ScanResult, scanErr error, poll
 		nowStr := now.UTC().Format(time.RFC3339)
 		newLastGood = &nowStr
 		liveFreshnessVal = computeLiveFreshness(scanResult.Records, out.Dispatches, now, int64(s.cfg.StalenessMs), nowStr)
+		freightFreshnessVal = computeFreightFreshness(scanResult.Records, now, int64(s.cfg.StalenessMs), nowStr)
+
+		// #84 fix cycle round 2, R1-M2: tickets present with NO heartbeat is
+		// the exact HAVAGLANCE contradiction round 1 measured live in a real
+		// browser - freight reads "not yet polled" (freightFreshnessVal
+		// stays "never-polled" by design; that word is still correct in
+		// isolation, since freight genuinely has not proven a completed
+		// run) while real ticket rows render beside it. This can arise from
+		// a real partial adapter failure (Sync-Freight.ps1 writes ticket
+		// files before the heartbeat - R1-M4) or from a malformed/future-
+		// dated heartbeat record failing store.Scan's own quarantine while
+		// its sibling tickets survive. Rather than inventing a fourth
+		// freshness kind, this raises a board condition that ties the two
+		// facts together - loud, never silent (Law 1).
+		if freightFreshnessVal.Kind == "never-polled" && len(assembled.Freight.Tickets) > 0 {
+			conditions = append(conditions, WireBoardCondition{
+				Code:     "freight-tickets-without-heartbeat",
+				Detail:   fmt.Sprintf("%d ticket record(s) exist but no ticket-sync heartbeat was found - the queue below cannot yet be trusted as the product of a completed run", len(assembled.Freight.Tickets)),
+				Register: store.RegisterForCode("freight-tickets-without-heartbeat"),
+			})
+		}
 	}
 
 	if newLastGood != nil {
 		s.lastGoodAsOf["live"] = newLastGood
+		// #84 fix cycle round 2, R1-M1: freight's lastGood tracking is
+		// gated on the freight adapter having ACTUALLY produced good data
+		// (freightFreshnessVal != never-polled) - unlike "live"
+		// (dispatches/gates/trains), where ANY successful scan is
+		// definitionally good data (DR3-5a's honest-empty rule), freight's
+		// own definition of "good" is deliberately different: it means "a
+		// ticket-sync heartbeat was found" (computeFreightFreshness's own
+		// doc comment). Never gate on Kind != "failed" alone - "stale" is
+		// deliberately STILL good (Case 3: the last-known queue keeps
+		// rendering, never blanked); only "never-polled" (no heartbeat ever
+		// observed) must be excluded, so a lane that has never proven a
+		// single completed run can never later claim "showing last good".
+		if freightFreshnessVal.Kind != "never-polled" {
+			s.lastGoodAsOf["freight"] = newLastGood
+		}
 	}
 
 	for _, spec := range laneRegistry {
 		lane := Lane{ID: spec.ID, Title: spec.Title, Position: spec.Position}
 		switch spec.Position {
 		case "live":
-			lane.Freshness = liveFreshnessVal
-			if polled && scanErr == nil {
-				switch spec.ID {
-				case "dispatches":
-					lane.Data = assembled.Dispatches
-					s.lastGoodLaneData[spec.ID] = assembled.Dispatches
-				case "gates":
-					lane.Data = assembled.Gates
-					s.lastGoodLaneData[spec.ID] = assembled.Gates
-				case "trains":
-					lane.Data = assembled.Trains
-					s.lastGoodLaneData[spec.ID] = assembled.Trains
+			switch spec.ID {
+			case "dispatches", "gates", "trains":
+				lane.Freshness = liveFreshnessVal
+				if polled && scanErr == nil {
+					switch spec.ID {
+					case "dispatches":
+						lane.Data = assembled.Dispatches
+						s.lastGoodLaneData[spec.ID] = assembled.Dispatches
+					case "gates":
+						lane.Data = assembled.Gates
+						s.lastGoodLaneData[spec.ID] = assembled.Gates
+					case "trains":
+						lane.Data = assembled.Trains
+						s.lastGoodLaneData[spec.ID] = assembled.Trains
+					}
+				} else if polled && scanErr != nil {
+					// #51 C2: a scan failure retains the LAST GOOD payload for
+					// this lane (nil if this is the first-ever poll and there is
+					// no prior good data to show - honest-empty, never
+					// fabricated) while freshness.kind stays "failed" with its
+					// coded reason and lastGoodAsOf (design S6 row 1: "Lane
+					// failed, coded reason, lastGood visibly marked").
+					lane.Data = s.lastGoodLaneData[spec.ID]
 				}
-			} else if polled && scanErr != nil {
-				// #51 C2: a scan failure retains the LAST GOOD payload for
-				// this lane (nil if this is the first-ever poll and there is
-				// no prior good data to show - honest-empty, never
-				// fabricated) while freshness.kind stays "failed" with its
-				// coded reason and lastGoodAsOf (design S6 row 1: "Lane
-				// failed, coded reason, lastGood visibly marked").
-				lane.Data = s.lastGoodLaneData[spec.ID]
+			case "freight":
+				lane.Freshness = freightFreshnessVal
+				if polled && scanErr == nil {
+					// lane.Data is ALWAYS the current live payload on a
+					// successful scan (even when never-polled - the R1-M2
+					// board condition above discloses the inconsistency,
+					// this still renders the real tickets honestly). The
+					// LASTGOOD RETENTION MAP below is the one gated on
+					// never-polled (#84 fix cycle round 2, R1-M1) - it
+					// exists only to survive a LATER scan failure, and a
+					// lane that has never proven a completed run must
+					// never later claim it is "showing last good".
+					lane.Data = assembled.Freight
+					if freightFreshnessVal.Kind != "never-polled" {
+						s.lastGoodLaneData[spec.ID] = assembled.Freight
+					}
+				} else if polled && scanErr != nil {
+					lane.Data = s.lastGoodLaneData[spec.ID]
+				}
 			}
 		default:
 			lane.Freshness = Freshness{Kind: "not-applicable"}
@@ -454,6 +540,65 @@ func computeLiveFreshness(records []store.Record, dispatches []fold.DispatchEntr
 		return Freshness{Kind: "stale", AsOf: &nowStr, AgeBucketMs: &bucket}
 	}
 	return Freshness{Kind: "idle", AsOf: &nowStr, AgeBucketMs: &bucket}
+}
+
+// computeFreightFreshness (#84) is freight's own freshness rule - genuinely
+// independent of computeLiveFreshness above, never a reuse of it, because
+// the two lanes answer different questions. Freight has no adapter of its
+// own visible to the SCAN (the freight adapter, scripts/Sync-Freight.ps1, is
+// an external periodic script, never invoked by board/server), so its
+// "has this run" signal is a kind=ticket-sync heartbeat RECORD, written by
+// that adapter on every SUCCESSFUL run - never on a failed one (this car's
+// disclosed design decision: a failed run writes nothing, so a string of
+// failures shows up as ordinary staleness climbing, never a separate
+// fresh-looking "attempted but failed" marker that could itself go stale
+// silently).
+//
+//   - No ticket-sync record anywhere in the store: the adapter has NEVER
+//     completed a run - "never-polled" (Case 1, #84's own framing). This is
+//     the one deliberate divergence from computeLiveFreshness's DR3-5a
+//     honest-empty rule: an EMPTY store there means "nothing to report,
+//     fresh"; here it means "no evidence the adapter exists at all", and
+//     collapsing the two would be exactly the confident falsehood Law 1
+//     forbids ("the queue is empty" vs "we do not know").
+//   - A ticket-sync record within stalenessMs of now: "fresh" (Case 2, a
+//     genuinely-run, possibly-genuinely-empty queue - the tickets array
+//     itself, not this freshness kind, is what discloses empty-vs-populated).
+//   - Older than stalenessMs: "stale" (Case 3), with a quantised ageBucketMs
+//     derived from the RECORD's own "at" - never wall-clock hope (#84's own
+//     explicit requirement, mirrored from computeLiveFreshness's identical
+//     "at"-derived age). Unlike computeLiveFreshness, this never resolves
+//     "idle": a ticket queue has no "yard at rest, nothing in flight" analog
+//     of its own (freight carries no liveness states to check the way
+//     dispatches do via hasInFlightDispatch) - it is either actively synced
+//     or its sync has stalled, so old freight data is always the stale
+//     alarm, never idle's calm reading.
+func computeFreightFreshness(records []store.Record, now time.Time, stalenessMs int64, nowStr string) Freshness {
+	var syncAt time.Time
+	var found bool
+	for _, r := range records {
+		if k, _ := r.Fields["kind"].(string); k != "ticket-sync" {
+			continue
+		}
+		atStr, _ := r.Fields["at"].(string)
+		at, err := time.Parse(time.RFC3339, atStr)
+		if err != nil {
+			continue // already failed store.Scan's own quarantine if malformed; defensive skip only
+		}
+		if !found || at.After(syncAt) {
+			syncAt = at
+			found = true
+		}
+	}
+	if !found {
+		return Freshness{Kind: "never-polled"}
+	}
+	age := now.Sub(syncAt)
+	if age.Milliseconds() <= stalenessMs {
+		return Freshness{Kind: "fresh", AsOf: &nowStr}
+	}
+	bucket := (age.Milliseconds() / ageBucketMsGranularity) * ageBucketMsGranularity
+	return Freshness{Kind: "stale", AsOf: &nowStr, AgeBucketMs: &bucket}
 }
 
 // hasInFlightDispatch (#29) reports whether any dispatch subject's fold

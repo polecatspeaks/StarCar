@@ -25,12 +25,14 @@ gate - the landed computed-style regression guard is
   `board/server/poll.go`'s `computeLiveFreshness` is a SINGLE board-global
   computation over every record and every dispatch, and its one result is
   assigned to every `position: "live"` lane alike (`poll.go`'s poll loop,
-  the `case "live": lane.Freshness = liveFreshnessVal` assignment). FREIGHT
-  ("Dark") and FUEL ("Bagged") are declared `position: "dark"`/`"bagged"`
-  in `board/server`'s lane registry, never `"live"`, so the SAME poll loop's
-  `default:` branch assigns them a fixed `Freshness{Kind: "not-applicable"}`
-  instead of `computeLiveFreshness`'s result - a constant, never computed
-  from record age - which is why they render unchanged in both images.
+  the `case "live": lane.Freshness = liveFreshnessVal` assignment). AT THE
+  TIME OF CAPTURE, FREIGHT ("Dark") and FUEL ("Bagged") were declared
+  `position: "dark"`/`"bagged"` in `board/server`'s lane registry, neither
+  `"live"`, so the SAME poll loop's `default:` branch assigned them a fixed
+  `Freshness{Kind: "not-applicable"}` instead of `computeLiveFreshness`'s
+  result - a constant, never computed from record age - which is why they
+  rendered unchanged in both images. **This is no longer true of FREIGHT -
+  see the DISCLOSED DIVERGENCE note below.**
 
 These remain accurate evidence for what they were captured to show (#62's
 shared visual language: lane plates, register colors, the Solari-board
@@ -53,3 +55,15 @@ this fix's scope, and would drag the ambient store's ever-changing content
 into an unrelated diff) and captioned here per NORTH STAR ("the commit
 that invalidates a document updates that document, in the same commit")
 rather than left to mislead a reader silently.
+
+**DISCLOSED DIVERGENCE (#84 fix cycle round 2, R1-M3, 2026-07-27):** both
+images show `FREIGHT / Dark / no equipment on this lane` - opened and
+reconfirmed before writing this sentence. That rendering is no longer
+current: issue #84 landed a store-mediated GitHub ticket adapter
+(`scripts/Sync-Freight.ps1`) and flipped freight's registry position to
+`live` (`board/server/laneregistry.go`), with three distinct freshness
+states of its own (never-polled / fresh / stale). This is unrelated to
+what these images were captured to evidence (#62's register/staleness
+mechanism, still accurate for the other four lanes) and they are not
+recaptured - the remedy is this caption, per the car-brief template's own
+instruction, never a fresh screenshot chasing a UI that will keep changing.

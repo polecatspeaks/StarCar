@@ -405,6 +405,8 @@ function renderLaneBody(doc, body, linkCfg) {
       return renderGates(doc, body, linkCfg);
     case 'dispatches':
       return renderDispatches(doc, body, linkCfg);
+    case 'freight':
+      return renderFreight(doc, body, linkCfg);
     case 'dark':
       return el(doc, 'div', 'lane-body lane-body-dark', body.text);
     case 'bagged':
@@ -577,6 +579,46 @@ function renderDispatches(doc, body, linkCfg) {
     // cluster's own flex line.
     const supersededDisclosure = renderSupersededDisclosure(doc, 'solari-superseded', 'solari-superseded-entry', d.superseded, d.recordDir, linkCfg);
     if (supersededDisclosure) row.appendChild(supersededDisclosure);
+    rows.appendChild(row);
+  }
+  wrap.appendChild(rows);
+  return wrap;
+}
+
+// FREIGHT: the inbound ticket queue (#84) - one row per queued issue. TWO
+// links per row, deliberately different targets (#84 fix cycle round 2,
+// R1-m3 - recordDir was already carried on the wire but never rendered;
+// this fixes that rather than dropping the field, since the wire schema
+// already advertises it as "#28 clickable provenance"): the TITLE links
+// DIRECTLY to the issue's github.com URL (t.url, verbatim from the wire,
+// never re-derived - Law 6, there is no repo-relative path to assemble for
+// a value the record already states outright); the NUMBER links to the
+// ticket's own STORE record directory via linkCfg/buildRecordLink, the same
+// convention every other lane's subject/name token already uses (#28).
+// Content provenance and store provenance are two different facts about
+// the same row - the trains lane already carries this exact split (a car's
+// subject links to its recordDir, its manifest ticket refs link to
+// github.com issues); freight is the same split on one row instead of two
+// tokens across two lanes.
+//
+// Same "empty-but-live reads as a stated absence, not a rendering hole"
+// posture as renderGates' N3 precedent above: a genuinely empty queue says
+// so, in its own honest line - paired with the lane's OWN freshness
+// secondary line (composeLines, render.js), which is what actually carries
+// the never-run/ran-empty/stale distinction (#84's Law 1 requirement) -
+// this function never re-states or duplicates that distinction itself.
+function renderFreight(doc, body, linkCfg) {
+  const wrap = el(doc, 'div', 'lane-body lane-body-freight');
+  if (body.tickets.length === 0) {
+    wrap.appendChild(el(doc, 'div', 'lane-body-freight-empty', 'no tickets in the queue'));
+    return wrap;
+  }
+  const rows = el(doc, 'div', 'freight-rows');
+  for (const t of body.tickets) {
+    const row = el(doc, 'div', 'freight-row');
+    row.appendChild(factOrLink(doc, 'freight-number', `#${t.number}`, buildRecordLink(linkCfg, t.recordDir)));
+    row.appendChild(factOrLink(doc, 'freight-title', t.title, t.url));
+    row.appendChild(el(doc, 'span', 'freight-status', t.status)); // VERBATIM
     rows.appendChild(row);
   }
   wrap.appendChild(rows);

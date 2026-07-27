@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starcar.dev/schema/starcar-ticket/1",
+  "title": "StarCar freight ticket (ticket-kind record payload)",
+  "description": "#84: the ticket contract LAYERED over starcar-artifact/1 (Law 6 - this file does not restate the base record contract; validators run BOTH schemas against a record, same convention as schema/starcar-manifest.schema.json). A ticket is a kind=ticket record representing ONE GitHub Project 6 item currently in Backlog or Todo status (the inbound queue, owner ruling 2026-07-27) - never a dispatch-lifecycle event, never folded (board/fold has no case for kind=ticket; board/assemble reads these raw, exactly as it already reads manifest payloads off intent-kind records via manifestPayload).",
+  "type": "object",
+  "properties": {
+    "ticket": {
+      "type": "object",
+      "description": "The single new top-level key (design DR3-1 item 4's precedent, ported here per #84's owner ruling: ONE key added to the wire schema and every typed decoder's known key-set, so D17's unknown-field disclosure never fires on a well-formed ticket record).",
+      "properties": {
+        "number": {
+          "type": "integer",
+          "description": "The GitHub issue number - the one identity fact this record exists to carry. The adapter derives subject (ticket-<number>) FROM this at write time; no downstream reader re-parses the subject string back into a number (Law 6 - one direction of derivation only)."
+        },
+        "title": { "type": "string" },
+        "status": {
+          "type": "string",
+          "description": "The project's Status field value at write time (e.g. \"Backlog\", \"Todo\") - open vocabulary (Law 7), never schema-enumerated. In practice always one of Backlog/Todo, because the adapter only ever writes items whose status is one of those two (owner ruling: work accepted but not started); a value outside that pair would mean the adapter's own queue filter regressed, not a schema violation."
+        },
+        "url": {
+          "type": "string",
+          "description": "The issue's github.com URL, verbatim from `gh project item-list`'s content.url - never reconstructed client-side."
+        }
+      },
+      "required": ["number", "title", "status", "url"]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "kind": { "const": "ticket" } },
+        "required": ["kind"]
+      },
+      "then": {
+        "required": ["ticket"]
+      }
+    },
+    {
+      "$comment": "RE2-safe form (schema/starcar-manifest.schema.json's SB-1 precedent, folded here rather than rediscovered): a lookahead-free if/then pair expresses 'a record whose kind is NOT ticket must not carry a ticket key', because Go's RE2 regexp engine rejects negative lookaheads that .NET's Test-Json accepts - a schema only one language could load would break the one-schema-both-languages thesis (Law 6, D15).",
+      "if": {
+        "not": {
+          "properties": { "kind": { "const": "ticket" } },
+          "required": ["kind"]
+        }
+      },
+      "then": {
+        "not": { "required": ["ticket"] }
+      }
+    }
+  ]
+}

@@ -182,3 +182,42 @@ Describe 'Resolve-BoardBatchItems' {
         $result.Missing | Should -Be @(1, 2)
     }
 }
+
+Describe 'Get-BoardQueueItems (#84: freight adapter, the inbound-queue filter)' {
+    # owner ruling (#84, 2026-07-27): the freight lane is issues in Backlog OR
+    # Todo status - work accepted but not started - excluding In Progress
+    # (already visible on the trains lane) and Done. Same item-list JSON
+    # shape scripts/board.ps1 already parses (Find-BoardItemForIssue etc.) -
+    # this is a SECOND view over that same shape, never a second gh call.
+    BeforeEach {
+        $script:items = [pscustomobject]@{
+            items = @(
+                [pscustomobject]@{ content = [pscustomobject]@{ number = 1; title = 'backlog item'; url = 'https://github.com/polecatspeaks/StarCar/issues/1' }; status = 'Backlog' }
+                [pscustomobject]@{ content = [pscustomobject]@{ number = 2; title = 'todo item'; url = 'https://github.com/polecatspeaks/StarCar/issues/2' }; status = 'Todo' }
+                [pscustomobject]@{ content = [pscustomobject]@{ number = 3; title = 'in progress item'; url = 'https://github.com/polecatspeaks/StarCar/issues/3' }; status = 'In Progress' }
+                [pscustomobject]@{ content = [pscustomobject]@{ number = 4; title = 'done item'; url = 'https://github.com/polecatspeaks/StarCar/issues/4' }; status = 'Done' }
+                [pscustomobject]@{ content = [pscustomobject]@{ number = 5; title = 'no status yet'; url = 'https://github.com/polecatspeaks/StarCar/issues/5' } }
+            )
+        }
+    }
+
+    It 'includes ONLY Backlog and Todo items, excluding In Progress, Done, and no-status' {
+        $queue = Get-BoardQueueItems -ItemsResult $script:items
+        $queue.Count | Should -Be 2
+        $queue.Number | Should -Be @(1, 2)
+    }
+
+    It 'each returned item carries Number/Title/Status/Url, normalized from content.*' {
+        $queue = Get-BoardQueueItems -ItemsResult $script:items
+        $backlogItem = $queue | Where-Object { $_.Number -eq 1 }
+        $backlogItem.Title | Should -Be 'backlog item'
+        $backlogItem.Status | Should -Be 'Backlog'
+        $backlogItem.Url | Should -Be 'https://github.com/polecatspeaks/StarCar/issues/1'
+    }
+
+    It 'an empty item-list returns Count 0, never throws' {
+        $empty = [pscustomobject]@{ items = @() }
+        { $script:emptyQueue = Get-BoardQueueItems -ItemsResult $empty } | Should -Not -Throw
+        @($script:emptyQueue).Count | Should -Be 0
+    }
+}
