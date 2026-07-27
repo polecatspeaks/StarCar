@@ -21,6 +21,14 @@
 // survival (and the visible red "error" outcome chip) is this round's #40
 // evidence.
 //
+// #67 FIX CYCLE ROUND 3 (view-67-car-r3 NOTE-3): this script already
+// captured computed color for .history-summary but not for the actual
+// car-outcome chip the round-2 fix is ABOUT - probeLaneFilterEvidence below
+// now also grabs getComputedStyle on the needs-attention-registered outcome
+// chip (dom-writer.js's `car-outcome ${registerClass(car.outcomeRegister)}`
+// span), so this harness is self-sufficient evidence for the #40 floor
+// without depending on a human reading the screenshot's pixel color.
+//
 // Reuses the SAME real-server launcher + fixture builder
 // board/web/test/support/real-board-server.js already provides (Law 6: one
 // hand-rolled "start the real server" implementation, one lane-filter
@@ -62,6 +70,13 @@ async function probeLaneFilterEvidence(page) {
 
     const elapsedEls = [...document.querySelectorAll('.solari-elapsed')];
 
+    // #67 R3 NOTE-3: the round-2 fix is ABOUT this exact chip - a car whose
+    // OUTCOME (not state) is hot. `.register-needs-attention` scopes to the
+    // hot one specifically (the fixture's other car-outcome chips are all
+    // 'done', nominal), so this selector is unambiguous even though the
+    // fixture renders multiple .car-outcome elements.
+    const hotOutcomeChip = document.querySelector('.car-outcome.register-needs-attention');
+
     return {
       solariRowCount: solariRows.length,
       solariRows,
@@ -74,7 +89,10 @@ async function probeLaneFilterEvidence(page) {
       trainsHistorySummaryClass: trainsSummary ? trainsSummary.className : null,
       elapsedTexts: elapsedEls.map((el) => el.textContent),
       dispatchesLaneText: textOf('.lane-dispatches'),
-      trainsLaneText: textOf('.lane-trains')
+      trainsLaneText: textOf('.lane-trains'),
+      hotOutcomeChipText: hotOutcomeChip ? hotOutcomeChip.textContent : null,
+      hotOutcomeChipClass: hotOutcomeChip ? hotOutcomeChip.className : null,
+      hotOutcomeChipColor: hotOutcomeChip ? getComputedStyle(hotOutcomeChip).color : null
     };
   });
 }

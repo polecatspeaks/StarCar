@@ -608,7 +608,16 @@ test('#67: a train with an undelivered manifest member ("queued") always renders
       freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' },
       data: {
         trains: [
-          trainFixture('train:queued-ancient', [carFixture('member', 'returned', '2020-01-01T00:00:00Z')], ['not-yet-dispatched-member']),
+          // #67 R3 MAJOR-R2-1/MINOR-R2-1: 'member' carries outcome 'done' -
+          // a real wire car can never be state 'returned' with no outcome
+          // (assemble.go sets Outcome exactly when state=='returned', and
+          // schema/starcar-artifact.schema.json requires outcome for
+          // kind=returned). Without it this fixture silently vacuated the
+          // declaredNotObserved guard being pinned here (a null
+          // outcomeRegister already forces non-terminal via the outcome
+          // conjunct, so the guard under test could be deleted with this
+          // pin still green).
+          trainFixture('train:queued-ancient', [carFixture('member', 'returned', '2020-01-01T00:00:00Z', 'done')], ['not-yet-dispatched-member']),
           trainFixture('train:t1', [carFixture('c1', 'returned', '2026-07-01T00:00:00Z', 'done')]),
           trainFixture('train:t2', [carFixture('c2', 'returned', '2026-07-02T00:00:00Z', 'done')]),
           trainFixture('train:t3', [carFixture('c3', 'returned', '2026-07-03T00:00:00Z', 'done')]),

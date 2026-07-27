@@ -224,6 +224,22 @@ export function buildBoardViewModel(snapshot, clientConditions = []) {
 // Anything else (rolling, stalled for adjudication, an unrecognised car
 // state or outcome) is conservatively non-terminal - always visible, per
 // this ticket's "when in doubt, show the row" instruction.
+//
+// #67 FIX CYCLE ROUND 3 (view-67-car-r3 SAME-PASS isolation sweep): the
+// `c.stateRegister === 'nominal'` conjunct is DEFENCE-IN-DEPTH, not dead
+// code, even though no WIRE-REALISTIC fixture can fault-inject it in
+// isolation from the outcome conjunct - assemble.go sets Outcome exactly
+// when a dispatch's liveness state is 'returned', and
+// schema/starcar-artifact.schema.json requires outcome for every
+// kind=returned record, so on the real wire outcomeRegister nominal
+// already implies stateRegister nominal (a car can never carry a nominal
+// outcome while its state is anything else). A future round finding this
+// conjunct's own isolated fault injection green must not read that as
+// "this half of the predicate does nothing" - it is protecting against a
+// wire shape the schema forbids today, and removing it would be removing
+// the ONLY thing stopping a future schema relaxation (or a malformed feed)
+// from silently reintroducing MAJOR-R1-1's exact defect for a car whose
+// state was never actually 'returned'.
 function isTrainTerminal(train) {
   if (train.declaredNotObserved.length > 0) return false;
   return (
