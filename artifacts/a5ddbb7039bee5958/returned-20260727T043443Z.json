@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a5ddbb7039bee5958",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-27T04:34:43Z",
+  "outcome": "success",
+  "findings": "none blocking; one disclosed pre-existing test-coverage gap (dispatch-render-failed's RecordDir, structurally untestable from outside board/fold - not introduced by this car, not worsened); one disclosed deliberate deviation from the brief's suggested open-state mechanism (sessionStorage-as-single-source-of-truth instead of DOM-scrape-before-rebuild), stated in-commit and in the design doc amendment; gating-matrix.md considered and deliberately not touched (provenance links and open-state toggling are additive UI affordances, never a truth-suppression surface - the existing Detector/discovery-rendering row's guarantee is unaffected since a collapsed details element still fully renders in the DOM).",
+  "abstract": "Implements issues 69 and 71 in one car. Board-condition entries (discovery and record-scoped classes) now render as provenance links via the existing links.js scheme, extended with a new optional recordDir wire field and a discovery-to-vocab-file link path; superseded entries (trains and dispatches lanes) link through their row's own recordDir with zero wire change. The conditions strip and each condition group now persist open/collapsed state across DOM rebuilds and page refreshes via sessionStorage, read fresh every repaint and written by a capturing-phase toggle listener, preserving the collapsed-by-default rule for any condition class never opened this session. All new behavior is red-first tested and each test was fault-injected to confirm it fails for the stated reason before being restored; a dedicated real-browser script proves the visual and interaction claims against a real Go server and a real Chromium page, with screenshots landed as evidence. Suites: Node 200/200, Go 93/93 plus clean go vet, Pester 223/4-skip/0-fail, probes 24/24, schema probe PASS - all improved or unchanged from base with zero regressions.",
+  "subject_basis": "runtime-id",
+  "task_id": "view-69-71-car-r1",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:bf1d8fd6bf31992667933615533ed563cad21bfe9c2de9bbda526f6b4e80a962"
+}
