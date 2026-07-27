@@ -370,8 +370,37 @@ body {
   margin-left: 0.5rem;
 }
 
+/* #71 fix-cycle r2 (MAJOR-R1-1, owner ruling #69): the superseded block is
+   now nested INSIDE its owner chip/row (dom-writer.js), rendered behind a
+   <details>/<summary> disclosure - same quiet-chrome idiom as
+   .board-conditions-strip (#30) above. COLLAPSED by default (no `open`
+   attribute is ever set - #69/#71-M1's ephemeral choice, see dom-writer.js's
+   renderSupersededDisclosure comment), so the common case (no reader has
+   expanded it) costs one small summary line, never the full list -
+   preserving #67's density argument. flex-basis:100% is the standard
+   "force this flex item onto its own line WITHIN the flex container" hack:
+   .car-chip / .solari-row both stay `display:flex`, and adding
+   `flex-wrap:wrap` here only lets the DISCLOSURE (not the subject/state/
+   elapsed cluster) drop to a second line inside its OWN box - it can never
+   spill into a sibling chip/row's box, because it is no longer a sibling
+   of one. */
+.car-superseded-disclosure,
+.solari-superseded-disclosure {
+  flex-basis: 100%;
+  margin-left: 0.5rem;
+}
+
+.car-superseded-summary,
+.solari-superseded-summary {
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
 .car-chip {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.35rem;
   align-items: center;
   border: 1px solid var(--border);
@@ -584,6 +613,14 @@ body {
 
 .solari-row {
   display: flex;
+  /* #71 fix-cycle r2 (MAJOR-R1-1): flex-wrap:wrap lets ONLY the nested
+     .solari-superseded-disclosure (flex-basis:100% above) drop to a
+     second line WITHIN this row's own box - the subject/state/elapsed
+     cluster below stays one line per row (mockup convention preserved;
+     see the comment on white-space:nowrap immediately below), because
+     none of those three carry flex-basis:100% and .solari-subject's own
+     ellipsis truncation still applies before any of them would wrap. */
+  flex-wrap: wrap;
   gap: 0.6rem;
   padding: 0.1rem 0.3rem;
   border-left: 3px solid currentColor;

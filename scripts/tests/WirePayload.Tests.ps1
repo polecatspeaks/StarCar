@@ -24,6 +24,18 @@ Describe 'Wire snapshot payload $defs (YB-5)' {
               it. Returns $true/$false; throws (surfacing as a Pester failure with a clear
               reason) if the named $def does not exist, so a red test never silently passes
               on a typo'd def name.
+
+              #69/#71 fix cycle round 2 (MINOR-R1-2): the wrapped document now also carries
+              the FULL sibling `$defs` map (not just the one named def), so an inner `$ref`
+              to another def (e.g. `$defs.dispatchSupersededItem`, added this round) still
+              resolves once extracted standalone. Before this fix, any def containing a
+              `$ref` to a sibling def would silently fail here (Test-Json -ErrorAction
+              SilentlyContinue swallows the resolution error, returning $false with no
+              message) - the two new failures THIS round surfaced were exactly that: a
+              latent gap in this helper, not a defect in the schema's use of `$ref` (the
+              same `$ref` idiom the FULL schema document already uses throughout, compiled
+              whole everywhere else - probe-yard-snapshot.mjs, board/web/js/validate.js -
+              which is why only this ONE fragment-extracting helper ever saw it).
             #>
             param(
                 [Parameter(Mandatory)] [string]$DefName,
@@ -33,8 +45,10 @@ Describe 'Wire snapshot payload $defs (YB-5)' {
             if (-not $defs -or -not $defs.ContainsKey($DefName)) {
                 throw "schema/yard-snapshot.schema.json has no `$defs.$DefName yet"
             }
-            $subSchema = $defs[$DefName]
-            $subSchema['$schema'] = 'https://json-schema.org/draft/2020-12/schema'
+            $subSchema = [ordered]@{ '$schema' = 'https://json-schema.org/draft/2020-12/schema'; '$defs' = $defs }
+            foreach ($key in $defs[$DefName].Keys) {
+                $subSchema[$key] = $defs[$DefName][$key]
+            }
             $subSchemaJson = $subSchema | ConvertTo-Json -Depth 20
             Test-Json -Json $SampleJson -Schema $subSchemaJson -ErrorAction SilentlyContinue
         }

@@ -109,15 +109,66 @@ function healthTrendBadgeText(healthTrend) {
 // list) when there is nothing to supersede - matches every other
 // honest-absence convention in this file (declared-not-observed,
 // renderHistorySummary).
-function renderSupersededList(doc, wrapperClassName, entryClassName, superseded, recordDir, linkCfg) {
+//
+// #71 fix-cycle round 2 (MAJOR-R1-1, owner ruling recorded at issue #69,
+// 2026-07-27): round 1 appended this block as a SIBLING of the row/chip
+// into the shared grid/flex container (.solari-rows / .track-cars), so a
+// wrap boundary could land the block next to a DIFFERENT subject's cell -
+// measured live: a 5-line unlabelled timestamp stack wrapped onto the line
+// below the subject that owned it, immediately beside an unrelated
+// subject's own cell. The owner ruling: nest the block INSIDE its owner
+// row/chip (a DOM child, so it can never be laid out by the grid/flex
+// container as an independent cell/item and can never orphan) behind a
+// quiet per-row <details>/<summary> disclosure, COLLAPSED by default - the
+// SAME chrome idiom `renderBoardConditionsStrip` (#30) already uses for
+// exactly this "quiet, expandable, never a headline" posture. This
+// preserves #67's density: a collapsed disclosure is a single summary
+// line, not the raw list.
+//
+// #69/#71-M1 (disclosed, not owner-ruled - see fix-cycle round 2 report):
+// this disclosure's open/closed state is EPHEMERAL, not persisted through
+// condition-open-state.js's sessionStorage mechanism. Chosen as the
+// MINIMAL option: #69's persistence keys by a closed, small vocabulary
+// (the strip + a handful of condition CODES, board/store/condition_
+// severity.go) but a per-row disclosure would need one key per SUBJECT -
+// an open-ended, store-size-dependent key set with no eviction story, on a
+// mechanism (sessionStorage) that already has no size ledger. Ephemeral
+// also matches this file's own render cycle unforced: `renderBoard` clears
+// `root.textContent` on every repaint (line 141), so even a native `open`
+// attribute set by a prior render is already discarded before the next
+// paint - persisting it would require NEW capture-and-reapply plumbing
+// mirroring #69's, not a re-use of it. Reopens on the next click, same as
+// every `<details>` on the web with no persistence wired at all.
+// #69/#71 fix-cycle round 2 (MINOR-R1-2): the wire schema now constrains
+// superseded[] items to {kind: string, at: string} both required
+// (schema/yard-snapshot.schema.json's $defs.dispatchSupersededItem), but
+// this function stays defense-in-depth rather than trusting that
+// constraint alone - ingest.js's validator only runs against a real
+// browser fetch of /schema/yard-snapshot.schema.json (network-reachable at
+// runtime); any other caller of renderBoard (a future test harness, a
+// hand-built view model) is NOT gated by that fetch. A malformed item
+// (missing/non-string kind or at) is skipped, never rendered as literal
+// "undefined undefined" (Law 1: honest-absence over a guessed/garbled
+// fact) - matching this file's other honest-absence conventions
+// (declared-not-observed, renderHistorySummary). If EVERY item in the
+// array is malformed, the whole disclosure renders as absent (no empty
+// <details> with a "0 superseded" summary and nothing inside it) - the
+// same "never an empty list" posture the original honest-absence comment
+// above already commits to.
+function renderSupersededDisclosure(doc, wrapperClassName, entryClassName, superseded, recordDir, linkCfg) {
   if (!superseded || superseded.length === 0) return null;
+  const validItems = superseded.filter((item) => typeof item?.kind === 'string' && typeof item?.at === 'string');
+  if (validItems.length === 0) return null;
+  const details = el(doc, 'details', `${wrapperClassName}-disclosure`);
+  details.appendChild(el(doc, 'summary', `${wrapperClassName}-summary`, `${validItems.length} superseded`));
   const wrap = el(doc, 'div', wrapperClassName);
-  for (const item of superseded) {
+  for (const item of validItems) {
     // VERBATIM kind + at - never translated, same posture as every other
     // detector-owned string this file renders.
     wrap.appendChild(factOrLink(doc, entryClassName, `${item.kind} ${item.at}`, buildRecordLink(linkCfg, recordDir)));
   }
-  return wrap;
+  details.appendChild(wrap);
+  return details;
 }
 
 function healthTrendRegisterClass(trend) {
@@ -394,9 +445,12 @@ function renderTrains(doc, body, linkCfg) {
       if (car.gate) {
         chip.appendChild(el(doc, 'span', 'car-gate', car.gate));
       }
+      // #71 fix-cycle r2 (MAJOR-R1-1): appended INSIDE the chip, never to
+      // `cars` (the flex-wrap container) - the disclosure can only ever
+      // grow ITS OWN chip's box, never bleed onto a neighbouring chip.
+      const supersededDisclosure = renderSupersededDisclosure(doc, 'car-superseded', 'car-superseded-entry', car.superseded, car.recordDir, linkCfg);
+      if (supersededDisclosure) chip.appendChild(supersededDisclosure);
       cars.appendChild(chip);
-      const supersededList = renderSupersededList(doc, 'car-superseded', 'car-superseded-entry', car.superseded, car.recordDir, linkCfg);
-      if (supersededList) cars.appendChild(supersededList);
     }
     track.appendChild(cars);
     if (train.declaredNotObserved.length > 0) {
@@ -473,9 +527,12 @@ function renderDispatches(doc, body, linkCfg) {
       // formatter every duration on this board shares (format.js, Law 6).
       row.appendChild(el(doc, 'span', 'solari-elapsed', formatClockDuration(d.elapsedSeconds)));
     }
+    // #71 fix-cycle r2 (MAJOR-R1-1): appended INSIDE the row, never to
+    // `rows` (the grid container) - the disclosure can only ever grow ITS
+    // OWN row's grid cell, never wrap onto a neighbouring subject's cell.
+    const supersededDisclosure = renderSupersededDisclosure(doc, 'solari-superseded', 'solari-superseded-entry', d.superseded, d.recordDir, linkCfg);
+    if (supersededDisclosure) row.appendChild(supersededDisclosure);
     rows.appendChild(row);
-    const supersededList = renderSupersededList(doc, 'solari-superseded', 'solari-superseded-entry', d.superseded, d.recordDir, linkCfg);
-    if (supersededList) rows.appendChild(supersededList);
   }
   wrap.appendChild(rows);
   return wrap;

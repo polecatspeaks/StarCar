@@ -761,12 +761,32 @@ link, never a broken one" rule, extended rather than re-invented).
 for the SAME subject that lost to the row's own winner (`board/fold`'s precedence-then-
 latest-at rule) - it lives in the identical store directory as the row's own `recordDir`
 (the one-directory-per-subject convention #28's `recordDir` already relies on), so THIS
-surface needed NO new wire field: `board/web/js/dom-writer.js`'s `renderSupersededList`
+surface needed NO new wire field: `board/web/js/dom-writer.js`'s `renderSupersededDisclosure`
 links every superseded item through the row's own already-carried `recordDir`. Landed for
 BOTH the trains lane (cars) and the dispatches lane (the latter never carried `superseded`
 into its view model at all before this ticket, despite the wire field already existing on
-every dispatch entry - a gap, not a wire change). Honest-absence (no list rendered) when
-a row has nothing superseding it, matching every other absence convention in this file.
+every dispatch entry - a gap, not a wire change). Honest-absence (no disclosure rendered)
+when a row has nothing superseding it, or when every item in its `superseded` array fails a
+type check (missing/non-string `kind` or `at` - MINOR-R1-2, fix cycle round 2), matching
+every other absence convention in this file.
+
+**CORRECTED, fix cycle round 2 (MAJOR-R1-1, owner ruling recorded at issue #69,
+2026-07-27):** this paragraph originally described `renderSupersededList` appending its
+block as a SIBLING of the row/chip into the shared grid (`.solari-rows`) or flex
+(`.track-cars`) container - measured live to orphan a wrapped block next to a DIFFERENT
+subject's own cell whenever the preceding cell count made a pair straddle a wrap boundary
+(round 1 review, real Chromium `getBoundingClientRect`). The corrected design nests the
+block INSIDE its owner row/chip - a DOM child, so the grid/flex container can never lay
+it out as an independent cell/item - behind a quiet per-row `<details>`/`<summary>`
+disclosure, collapsed by default, the SAME chrome idiom `renderBoardConditionsStrip` (#30)
+already uses. **Open-state scope, disclosed not owner-ruled:** this disclosure's own open/
+closed state is EPHEMERAL, never threaded through the `sessionStorage` mechanism the
+paragraph below describes for the conditions strip - chosen as the minimal option, since a
+per-row disclosure would need one key per SUBJECT (open-ended, store-size-dependent) on a
+mechanism with no eviction story, and `renderBoard` already clears `root.textContent` on
+every repaint regardless (`board/web/js/dom-writer.js`), so even a native `open` attribute
+would not survive a rebuild without the same new capture-and-reapply plumbing #69's own
+mechanism required. Revisitable if a future ticket wants it persisted.
 
 *Open-state persistence (#69 half 2).* The conditions strip's own `<details>` open/closed
 state, and each condition GROUP's own `<details>` (per-group, never one flag governing

@@ -705,6 +705,197 @@ test('#71: superseded entries with no github config render as plain text, identi
   assert.equal(entries[0].textContent, 'dispatched 2026-07-23T17:00:00Z');
 });
 
+// --- #71 fix-cycle round 2 (MAJOR-R1-1, owner-ruled #69): a superseded
+// block must be a DOM DESCENDANT of its owner row/chip, never a sibling
+// cell - round 1's fixture seeded exactly one subject, which structurally
+// cannot exhibit a wrap-boundary orphan (a one-item grid/flex container has
+// nothing to wrap onto). This fixture seeds 5 subjects (the reviewer's own
+// recipe: "5 or more cars in .track-cars" / "5 or more rows in
+// .solari-rows", each with one superseded entry) and asserts the STRUCTURAL
+// fact directly - .track-cars / .solari-rows must contain ONLY chip/row
+// children, and each chip/row must carry its own superseded disclosure as
+// a descendant - rather than re-measuring pixel geometry, because the
+// defect is a DOM-shape defect, not merely a rendering-coincidence one.
+
+test('#71 fix-cycle r2 (MAJOR-R1-1): with 5 cars each carrying a superseded entry, .track-cars holds ONLY car-chip children - the superseded block is nested INSIDE its own chip, never a wrap-vulnerable sibling', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const cars = [];
+  for (let i = 0; i < 5; i += 1) {
+    cars.push({
+      subject: `car-${i}`,
+      role: 'car',
+      state: 'returned',
+      at: '2026-07-23T18:00:00Z',
+      recordDir: `car-${i}`,
+      superseded: [{ kind: 'dispatched', at: '2026-07-23T17:00:00Z' }]
+    });
+  }
+  const snapshot = makeSnapshot(
+    [
+      {
+        id: 'trains',
+        title: 'Trains',
+        position: 'live',
+        freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+        data: { trains: [{ id: 'train:board-v0', title: 'T', tickets: [], cars, declaredNotObserved: [] }] }
+      }
+    ],
+    githubCfg
+  );
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const trackCars = root.querySelectorAll('.track-cars');
+  assert.equal(trackCars.length, 1);
+  const directChildren = trackCars[0].children;
+  assert.equal(directChildren.length, 5, '.track-cars must hold exactly one child per car - a sibling superseded block would add extra direct children');
+  for (const child of directChildren) {
+    assert.ok(
+      child.className.split(' ').includes('car-chip'),
+      `every direct child of .track-cars must be a car-chip - found '${child.className}' (MAJOR-R1-1: an orphaned superseded block sibling)`
+    );
+  }
+
+  const chips = trackCars[0].querySelectorAll('.car-chip');
+  assert.equal(chips.length, 5);
+  for (const chip of chips) {
+    const nested = chip.querySelectorAll('.car-superseded-entry');
+    assert.equal(nested.length, 1, 'each car with a superseded entry must carry its superseded block as a DESCENDANT of its own chip');
+  }
+});
+
+test('#71 fix-cycle r2 (MAJOR-R1-1): with 5 dispatches each carrying a superseded entry, .solari-rows holds ONLY solari-row children - the superseded block is nested INSIDE its own row, never a wrap-vulnerable sibling', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  // #67's capTerminalHistory (history-filter.js, TERMINAL_HISTORY_CAP=4)
+  // caps TERMINAL rows (state 'returned') at 4 regardless of this test's
+  // intent, and is deliberately out of scope for this fix (MAJOR-R1-1's
+  // ruling touches only nesting, never the cap contract). So exactly ONE
+  // of the 5 stays non-terminal ('dispatched') to keep all 5 visible - 4
+  // terminal entries is at, not over, the cap, so none are hidden.
+  const dispatches = [];
+  for (let i = 0; i < 5; i += 1) {
+    dispatches.push({
+      subject: `orphan-${i}`,
+      state: i === 0 ? 'dispatched' : 'returned',
+      at: '2026-07-23T18:00:00Z',
+      assigned: false,
+      recordDir: `orphan-${i}`,
+      superseded: [{ kind: 'dispatched', at: '2026-07-23T17:00:00Z' }]
+    });
+  }
+  const snapshot = makeSnapshot(
+    [
+      {
+        id: 'dispatches',
+        title: 'Dispatches',
+        position: 'live',
+        freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+        data: { dispatches }
+      }
+    ],
+    githubCfg
+  );
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const solariRows = root.querySelectorAll('.solari-rows');
+  assert.equal(solariRows.length, 1);
+  const directChildren = solariRows[0].children;
+  assert.equal(directChildren.length, 5, '.solari-rows must hold exactly one child per dispatch - a sibling superseded block would add extra direct children');
+  for (const child of directChildren) {
+    assert.ok(
+      child.className.split(' ').includes('solari-row'),
+      `every direct child of .solari-rows must be a solari-row - found '${child.className}' (MAJOR-R1-1: an orphaned superseded block sibling)`
+    );
+  }
+
+  const rows = solariRows[0].querySelectorAll('.solari-row');
+  assert.equal(rows.length, 5);
+  for (const row of rows) {
+    const nested = row.querySelectorAll('.solari-superseded-entry');
+    assert.equal(nested.length, 1, 'each dispatch with a superseded entry must carry its superseded block as a DESCENDANT of its own row');
+  }
+});
+
+// --- #69/#71 fix-cycle round 2 (MINOR-R1-2): a malformed superseded item
+// (missing/non-string kind or at) is skipped, never rendered as literal
+// "undefined undefined" text - Law 1 honest-absence, matching this file's
+// other honest-absence conventions.
+
+test("#71 fix-cycle r2 (MINOR-R1-2): a malformed superseded item (missing 'at') is skipped - never rendered as literal 'undefined undefined'", () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot(
+    [
+      {
+        id: 'dispatches',
+        title: 'Dispatches',
+        position: 'live',
+        freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+        data: {
+          dispatches: [
+            {
+              subject: 'orphan-1',
+              state: 'returned',
+              at: '2026-07-23T18:00:00Z',
+              assigned: false,
+              recordDir: 'orphan-1',
+              // one well-formed entry, one malformed (no `at`) - proves the
+              // GOOD entry still renders while the bad one is dropped, not
+              // that malformed input blanks the whole list.
+              superseded: [
+                { kind: 'dispatched', at: '2026-07-23T17:00:00Z' },
+                { kind: 'dispatched' }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    githubCfg
+  );
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const entries = root.querySelectorAll('.solari-superseded-entry');
+  assert.equal(entries.length, 1, 'the malformed item must be skipped, leaving only the well-formed one');
+  assert.equal(entries[0].textContent, 'dispatched 2026-07-23T17:00:00Z');
+  for (const entry of entries) {
+    assert.ok(!entry.textContent.includes('undefined'), `must never render the literal word 'undefined', got '${entry.textContent}'`);
+  }
+});
+
+test('#71 fix-cycle r2 (MINOR-R1-2): when EVERY superseded item is malformed, no disclosure renders at all - never an empty one', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot(
+    [
+      {
+        id: 'dispatches',
+        title: 'Dispatches',
+        position: 'live',
+        freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+        data: {
+          dispatches: [
+            {
+              subject: 'orphan-1',
+              state: 'returned',
+              at: '2026-07-23T18:00:00Z',
+              assigned: false,
+              recordDir: 'orphan-1',
+              superseded: [{ kind: 'dispatched' }, { at: '2026-07-23T17:00:00Z' }]
+            }
+          ]
+        }
+      }
+    ],
+    githubCfg
+  );
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  assert.equal(root.querySelectorAll('.solari-superseded-disclosure').length, 0);
+  assert.equal(root.querySelectorAll('.solari-superseded-entry').length, 0);
+});
+
 // --- #12: car health bar ----------------------------------------------------
 
 test('#12: a converged family (majors reaches 0) renders a calm health-trend badge with the series, on the LATEST round only', () => {

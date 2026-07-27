@@ -152,6 +152,19 @@ renders `disconnected - showing last known` (never silently frozen with no chrom
 and a restarted server's lower `seq` cannot silently roll the view backward (seq ordering
 drops it as a no-op rather than un-rendering already-shown data).
 
+**NOT a seventh field, disclosed rather than left silent (2026-07-27, view train #69/#71
+fix cycle round 2, MAJOR-R1-1's owner ruling).** The per-row superseded-entries disclosure
+(`board/web/js/dom-writer.js`'s `renderSupersededDisclosure`, one `<details>`/`<summary>`
+per row/chip that carries a `superseded` entry) carries its own open/closed toggle too, but
+it is deliberately NOT tracked by any field in this file: no JS variable, no
+`sessionStorage` key, nothing this repo's own code reads or writes. It is the browser's
+native `<details>` element behaviour, unmediated - and `renderBoard` clears
+`root.textContent` on every repaint (`dom-writer.js`) regardless, so even that native
+toggle cannot outlive a rebuild. Chosen as the minimal option over threading it through
+`condition-open-state.js`'s `sessionStorage` mechanism (which would need one key per
+SUBJECT, open-ended and store-size-dependent, on a mechanism with no eviction story) -
+disclosed here, not owner-ruled, and revisitable if a future ticket wants it persisted.
+
 **A note on what is NOT a separate ledger row:** `Server.lastCompareBytes` (the stripped-
 for-comparison marshal of `lastGoodSnapshot`) is fully DERIVED from `lastGoodSnapshot`
 - recomputed every time that field changes (`mustMarshalStripped`, `poll.go`) - so it
