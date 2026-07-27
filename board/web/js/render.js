@@ -7,6 +7,7 @@ import { composeRegister, composeLines, mostSevereRegister } from './compose.js'
 import { hasRendererFor } from './lanes.js';
 import { describeVocab } from './vocab.js';
 import { computeHealthTrends } from './findings.js';
+import { capTerminalHistory } from './history-filter.js';
 
 // #62: lane-purpose subtitles (owner ruling: shared visual language, no
 // single keeper - "lane plates with lane-purpose subtitles"). PRESENTATION
@@ -186,43 +187,96 @@ export function buildBoardViewModel(snapshot, clientConditions = []) {
   };
 }
 
+// #67 (owner fast-follow after #62 live-board feedback): a train has no
+// top-level liveness state of its own (schema/yard-snapshot.schema.json's
+// $defs.trainsPayload - only each CAR carries `state`); terminality is
+// derived, never wire-native. A train is TERMINAL (fully returned, history-
+// eligible) iff every declared manifest member has a record
+// (declaredNotObserved is empty - an undelivered member is the owner's
+// "queued", never terminal) AND every one of its cars already carries the
+// one liveness state whose register is nominal (car.stateRegister, already
+// computed above by describeVocab against the wire's OWN liveness defs -
+// this reads that register, it never recomputes or hardcodes a state word,
+// so "returned" vs "dispatched"/"overdue"/"presumed-lost"/anything
+// unrecognised stays the server's own closed set, not a client-side
+// taxonomy). Anything else (rolling, stalled for adjudication, an
+// unrecognised car state) is conservatively non-terminal - always visible,
+// per this ticket's "when in doubt, show the row" instruction.
+function isTrainTerminal(train) {
+  if (train.declaredNotObserved.length > 0) return false;
+  return train.cars.length > 0 && train.cars.every((c) => c.stateRegister === 'nominal');
+}
+
+// #67: a train carries no top-level `at` either - its own recency signal is
+// the MOST RECENT `at` among its cars (the latest thing that happened on
+// this train), so capTerminalHistory's default `item.at` accessor cannot be
+// reused verbatim and this custom getAt is threaded in instead.
+function trainRecencyAt(train) {
+  return train.cars.reduce((latest, c) => {
+    if (!latest) return c.at;
+    return Date.parse(c.at) > Date.parse(latest) ? c.at : latest;
+  }, null);
+}
+
+// #67 (HONESTY CONSTRAINT, Law 4 + absence-blindness): hidden history is
+// ASSERTED, never silent - null (never rendered) when nothing is hidden, so
+// an unfiltered lane carries no noise line at all (the same honest-absence
+// posture this file already uses elsewhere, e.g. lanePurpose above).
+function historySummaryLine(hiddenCount, terminalTotal) {
+  if (hiddenCount <= 0) return null;
+  const shown = terminalTotal - hiddenCount;
+  return `showing last ${shown} of ${terminalTotal} returned - full record in the store`;
+}
+
 function buildLaneBody(lane, vocab, hasRenderer) {
   if (!hasRenderer) {
     return { kind: 'no-renderer' };
   }
 
   switch (lane.id) {
-    case 'trains':
+    case 'trains': {
+      const trains = lane.data.trains.map((t) => ({
+        id: t.id,
+        title: t.title,
+        // #28: the manifest's own declared ticket refs, structured, never
+        // re-parsed from title prose (assemble.Train.Tickets).
+        tickets: t.tickets || [],
+        declaredNotObserved: t.declaredNotObserved || [],
+        cars: t.cars.map((c) => ({
+          subject: c.subject,
+          role: describeVocab(c.role, vocab.roles), // presentational label OK - a structural descriptor, not a data value
+          gate: c.gate ?? null,
+          // VERBATIM, never translated (mockup brief: "the real board
+          // renders whatever state word its data source provides,
+          // VERBATIM, never a translation of it") - describeVocab is
+          // used ONLY for the register (color), never the displayed text.
+          state: c.state,
+          stateRegister: describeVocab(c.state, vocab.liveness).register,
+          outcome: c.outcome ?? null,
+          outcomeRegister: c.outcome ? describeVocab(c.outcome, vocab.outcomes).register : null,
+          at: c.at,
+          superseded: c.superseded || [],
+          // #28: single-sourced from store.Record.Path server-side
+          // (assemble.recordDirBySubject) - never re-derived from
+          // `subject` here (Law 6).
+          recordDir: c.recordDir ?? null
+        }))
+      }));
+      // #67 (SCOPE EXTENSION, owner 2026-07-26 21:09): non-terminal trains
+      // (rolling/queued/stalled-for-adjudication/unrecognised, per
+      // isTrainTerminal above) are ALWAYS visible; fully-returned trains are
+      // history, capped by recency - selection only, register computation
+      // above is untouched by this call.
+      const { visible, hiddenCount, terminalTotal } = capTerminalHistory(trains, {
+        isTerminal: isTrainTerminal,
+        getAt: trainRecencyAt
+      });
       return {
         kind: 'trains',
-        trains: lane.data.trains.map((t) => ({
-          id: t.id,
-          title: t.title,
-          // #28: the manifest's own declared ticket refs, structured, never
-          // re-parsed from title prose (assemble.Train.Tickets).
-          tickets: t.tickets || [],
-          declaredNotObserved: t.declaredNotObserved || [],
-          cars: t.cars.map((c) => ({
-            subject: c.subject,
-            role: describeVocab(c.role, vocab.roles), // presentational label OK - a structural descriptor, not a data value
-            gate: c.gate ?? null,
-            // VERBATIM, never translated (mockup brief: "the real board
-            // renders whatever state word its data source provides,
-            // VERBATIM, never a translation of it") - describeVocab is
-            // used ONLY for the register (color), never the displayed text.
-            state: c.state,
-            stateRegister: describeVocab(c.state, vocab.liveness).register,
-            outcome: c.outcome ?? null,
-            outcomeRegister: c.outcome ? describeVocab(c.outcome, vocab.outcomes).register : null,
-            at: c.at,
-            superseded: c.superseded || [],
-            // #28: single-sourced from store.Record.Path server-side
-            // (assemble.recordDirBySubject) - never re-derived from
-            // `subject` here (Law 6).
-            recordDir: c.recordDir ?? null
-          }))
-        }))
+        trains: visible,
+        historySummary: historySummaryLine(hiddenCount, terminalTotal)
       };
+    }
     case 'gates': {
       // #12: ONE pass over this fold's gates computes every family's
       // convergence trend, keyed by array index - computeHealthTrends is
@@ -256,13 +310,33 @@ function buildLaneBody(lane, vocab, hasRenderer) {
         assigned: Boolean(d.assigned),
         recordDir: d.recordDir ?? null // #28
       }));
+      // #67 (owner finding after #62 live-board feedback): every non-
+      // terminal / needs-attention dispatch (dispatched, overdue, presumed-
+      // lost, any unrecognised state word) is ALWAYS visible; RETURNED
+      // history is capped by recency. Terminality reads the row's own
+      // ALREADY-COMPUTED stateRegister (nominal <=> 'returned' is the one
+      // liveness state the wire's own vocab maps there) - this never
+      // recomputes or hardcodes the liveness taxonomy, it only selects
+      // which already-registered rows render. Probed: no pre-dispatch
+      // ("queued") state exists anywhere on this wire (schema/yard-
+      // snapshot.schema.json's $defs.dispatchesPayload and board/fold's
+      // closed liveness set both enumerate exactly dispatched/overdue/
+      // returned/presumed-lost - grep of board/server/*.go turned up no
+      // fifth state), so there is no "queued" slot for this lane to render
+      // - none invented, per this ticket's own instruction.
+      const { visible, hiddenCount, terminalTotal } = capTerminalHistory(dispatches, {
+        isTerminal: (d) => d.stateRegister === 'nominal'
+      });
       return {
         kind: 'dispatches',
-        dispatches,
+        dispatches: visible,
         // Yard inventory (mockup: "visible, never hidden") - the count is
         // ALWAYS surfaced, even at zero, so its absence is never mistaken
-        // for "nothing to disclose".
-        yardInventoryCount: dispatches.filter((d) => !d.assigned).length
+        // for "nothing to disclose". Computed over the FULL set (never the
+        // capped view) - this is a distinct honesty count from history
+        // capping and must not shrink when returned history is capped.
+        yardInventoryCount: dispatches.filter((d) => !d.assigned).length,
+        historySummary: historySummaryLine(hiddenCount, terminalTotal)
       };
     }
     case 'freight':

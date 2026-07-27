@@ -201,3 +201,37 @@ test('#29: an idle lane renders CALM (nominal register) and names "idle" verbati
   assert.ok(!lines.secondary.includes('stale'), `an idle line must never also say "stale": ${lines.secondary}`);
   assert.ok(lines.secondary.includes('40'), `idle must still honestly carry the ageBucketMs-derived figure: ${lines.secondary}`);
 });
+
+// #67 (FORMAT NIT, owner 2026-07-26 17:16): every duration this board
+// renders becomes compact clock time - no unit-suffix forms ("40s" is now
+// forbidden text on this surface; freshness ages are as much "a duration
+// display" as dispatch elapsed is, per the issue's own "board-wide" scope).
+test('#67: a stale line renders its ageBucketMs as compact clock time, never a unit-suffixed number', () => {
+  const lines = composeLines({
+    position: 'live',
+    positionDefs,
+    freshness: { kind: 'stale', asOf: '2020-01-01T00:00:00Z', ageBucketMs: 40000 },
+    hasRenderer: true
+  });
+  assert.equal(lines.secondary, 'stale, 0:40', `expected clock-formatted stale line, got: ${lines.secondary}`);
+});
+
+test('#67: an idle line renders its ageBucketMs as compact clock time, never a unit-suffixed number', () => {
+  const lines = composeLines({
+    position: 'live',
+    positionDefs,
+    freshness: { kind: 'idle', asOf: '2020-01-01T00:00:00Z', ageBucketMs: 40000 },
+    hasRenderer: true
+  });
+  assert.equal(lines.secondary, 'idle, quiet 0:40', `expected clock-formatted idle line, got: ${lines.secondary}`);
+});
+
+test('#67: an ageBucketMs past a minute renders M:SS, not raw seconds (a stale lane really can be old)', () => {
+  const lines = composeLines({
+    position: 'live',
+    positionDefs,
+    freshness: { kind: 'stale', asOf: '2020-01-01T00:00:00Z', ageBucketMs: 125000 },
+    hasRenderer: true
+  });
+  assert.equal(lines.secondary, 'stale, 2:05', `expected clock-formatted stale line, got: ${lines.secondary}`);
+});

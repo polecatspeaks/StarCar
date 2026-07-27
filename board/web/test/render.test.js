@@ -80,7 +80,9 @@ const outcomeDefs = [
 const roleDefs = [{ id: 'car', label: 'Car', register: 'nominal' }];
 const livenessDefs = [
   { id: 'returned', label: 'Returned', register: 'nominal' },
-  { id: 'overdue', label: 'Overdue', register: 'needs-attention' }
+  { id: 'dispatched', label: 'Dispatched', register: 'in-progress' },
+  { id: 'overdue', label: 'Overdue', register: 'needs-attention' },
+  { id: 'presumed-lost', label: 'Presumed lost', register: 'needs-attention' }
 ];
 
 function makeSnapshot(lanes) {
@@ -407,4 +409,232 @@ test('dispatches: yard inventory (unassigned) count is tallied, never hidden', (
   ]);
   const vm = buildBoardViewModel(snapshot);
   assert.equal(vm.lanes[0].body.yardInventoryCount, 1);
+});
+
+// --- #67: dispatches lane filter (owner fast-follow after #62 feedback) ---
+
+function dispatchFixture(subject, state, at, assigned = true) {
+  return { subject, state, at, assigned };
+}
+
+test('#67: a returned dispatch beyond the cap is hidden from the rendered list, but never from the honesty summary', () => {
+  const snapshot = makeSnapshot([
+    {
+      id: 'dispatches',
+      title: 'Dispatches',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' },
+      data: {
+        dispatches: [
+          dispatchFixture('r1', 'returned', '2026-07-01T00:00:00Z'),
+          dispatchFixture('r2', 'returned', '2026-07-02T00:00:00Z'),
+          dispatchFixture('r3', 'returned', '2026-07-03T00:00:00Z'),
+          dispatchFixture('r4', 'returned', '2026-07-04T00:00:00Z'),
+          dispatchFixture('r5', 'returned', '2026-07-05T00:00:00Z')
+        ]
+      }
+    }
+  ]);
+  const vm = buildBoardViewModel(snapshot);
+  const body = vm.lanes[0].body;
+  assert.equal(body.dispatches.length, 4, 'only the 4 most recent returned dispatches render');
+  assert.ok(!body.dispatches.some((d) => d.subject === 'r1'), 'the oldest returned dispatch is the one capped out');
+  assert.equal(body.historySummary, 'showing last 4 of 5 returned - full record in the store');
+});
+
+test('#67 NEVER FILTER A HOT ROW: a needs-attention dispatch older than every returned dispatch still renders', () => {
+  const snapshot = makeSnapshot([
+    {
+      id: 'dispatches',
+      title: 'Dispatches',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' },
+      data: {
+        dispatches: [
+          dispatchFixture('ancient-hot', 'presumed-lost', '2020-01-01T00:00:00Z'),
+          dispatchFixture('r1', 'returned', '2026-07-01T00:00:00Z'),
+          dispatchFixture('r2', 'returned', '2026-07-02T00:00:00Z'),
+          dispatchFixture('r3', 'returned', '2026-07-03T00:00:00Z'),
+          dispatchFixture('r4', 'returned', '2026-07-04T00:00:00Z'),
+          dispatchFixture('r5', 'returned', '2026-07-05T00:00:00Z')
+        ]
+      }
+    }
+  ]);
+  const vm = buildBoardViewModel(snapshot);
+  const subjects = vm.lanes[0].body.dispatches.map((d) => d.subject);
+  assert.ok(subjects.includes('ancient-hot'), 'a needs-attention row must render regardless of how old it is');
+});
+
+test('#67: an unrecognised dispatch state is never capped, even sitting far below every returned dispatch by recency', () => {
+  const snapshot = makeSnapshot([
+    {
+      id: 'dispatches',
+      title: 'Dispatches',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' },
+      data: {
+        dispatches: [
+          dispatchFixture('discovery', 'quarantined', '2020-01-01T00:00:00Z'),
+          dispatchFixture('r1', 'returned', '2026-07-01T00:00:00Z'),
+          dispatchFixture('r2', 'returned', '2026-07-02T00:00:00Z'),
+          dispatchFixture('r3', 'returned', '2026-07-03T00:00:00Z'),
+          dispatchFixture('r4', 'returned', '2026-07-04T00:00:00Z'),
+          dispatchFixture('r5', 'returned', '2026-07-05T00:00:00Z')
+        ]
+      }
+    }
+  ]);
+  const vm = buildBoardViewModel(snapshot);
+  const subjects = vm.lanes[0].body.dispatches.map((d) => d.subject);
+  assert.ok(subjects.includes('discovery'), 'an unrecognised state word must never be filtered - unknowns are hot by law');
+});
+
+test('#67: with hidden history under the cap, historySummary is null - never a "showing 0 of 0" noise line', () => {
+  const snapshot = makeSnapshot([
+    {
+      id: 'dispatches',
+      title: 'Dispatches',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' },
+      data: {
+        dispatches: [
+          dispatchFixture('r1', 'returned', '2026-07-01T00:00:00Z'),
+          dispatchFixture('d1', 'dispatched', '2026-07-02T00:00:00Z')
+        ]
+      }
+    }
+  ]);
+  const vm = buildBoardViewModel(snapshot);
+  assert.equal(vm.lanes[0].body.historySummary, null);
+});
+
+test('#67: dispatches lane REGISTER SEMANTICS are unchanged - the lane still composes from position x freshness x capability only, never from row filtering', () => {
+  const snapshot = makeSnapshot([
+    {
+      id: 'dispatches',
+      title: 'Dispatches',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' },
+      data: {
+        dispatches: [
+          dispatchFixture('r1', 'returned', '2026-07-01T00:00:00Z'),
+          dispatchFixture('r2', 'returned', '2026-07-02T00:00:00Z'),
+          dispatchFixture('r3', 'returned', '2026-07-03T00:00:00Z'),
+          dispatchFixture('r4', 'returned', '2026-07-04T00:00:00Z'),
+          dispatchFixture('r5', 'returned', '2026-07-05T00:00:00Z')
+        ]
+      }
+    }
+  ]);
+  const vm = buildBoardViewModel(snapshot);
+  // position 'live' is nominal, freshness 'fresh' is nominal, a renderer
+  // exists - the lane register must read nominal even though 5 rows exist
+  // upstream and only 4 render, because capping never touches this axis.
+  assert.equal(vm.lanes[0].register, 'nominal');
+});
+
+// --- #67: trains lane filter (owner scope extension, same commit) ---
+
+function trainFixture(id, cars, declaredNotObserved = []) {
+  return { id, title: id, cars, declaredNotObserved };
+}
+
+function carFixture(subject, state, at) {
+  return { subject, role: 'car', state, at };
+}
+
+test('#67: a fully-returned train beyond the cap is hidden from the rendered list, honesty summary states true counts', () => {
+  const snapshot = makeSnapshot([
+    {
+      id: 'trains',
+      title: 'Trains',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' },
+      data: {
+        trains: [
+          trainFixture('train:t1', [carFixture('c1', 'returned', '2026-07-01T00:00:00Z')]),
+          trainFixture('train:t2', [carFixture('c2', 'returned', '2026-07-02T00:00:00Z')]),
+          trainFixture('train:t3', [carFixture('c3', 'returned', '2026-07-03T00:00:00Z')]),
+          trainFixture('train:t4', [carFixture('c4', 'returned', '2026-07-04T00:00:00Z')]),
+          trainFixture('train:t5', [carFixture('c5', 'returned', '2026-07-05T00:00:00Z')])
+        ]
+      }
+    }
+  ]);
+  const vm = buildBoardViewModel(snapshot);
+  const body = vm.lanes[0].body;
+  assert.equal(body.trains.length, 4, 'only the 4 most recent fully-returned trains render');
+  assert.ok(!body.trains.some((t) => t.id === 'train:t1'), 'the oldest fully-returned train is the one capped out');
+  assert.equal(body.historySummary, 'showing last 4 of 5 returned - full record in the store');
+});
+
+test('#67 NEVER FILTER A HOT ROW: a train with an in-flight (non-returned) car always renders, regardless of recency', () => {
+  const snapshot = makeSnapshot([
+    {
+      id: 'trains',
+      title: 'Trains',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' },
+      data: {
+        trains: [
+          trainFixture('train:rolling-ancient', [carFixture('rolling-car', 'dispatched', '2020-01-01T00:00:00Z')]),
+          trainFixture('train:t1', [carFixture('c1', 'returned', '2026-07-01T00:00:00Z')]),
+          trainFixture('train:t2', [carFixture('c2', 'returned', '2026-07-02T00:00:00Z')]),
+          trainFixture('train:t3', [carFixture('c3', 'returned', '2026-07-03T00:00:00Z')]),
+          trainFixture('train:t4', [carFixture('c4', 'returned', '2026-07-04T00:00:00Z')]),
+          trainFixture('train:t5', [carFixture('c5', 'returned', '2026-07-05T00:00:00Z')])
+        ]
+      }
+    }
+  ]);
+  const vm = buildBoardViewModel(snapshot);
+  const ids = vm.lanes[0].body.trains.map((t) => t.id);
+  assert.ok(ids.includes('train:rolling-ancient'), 'a train with an in-flight car must render regardless of recency');
+});
+
+test('#67: a train with an undelivered manifest member ("queued") always renders - declaredNotObserved is never terminal', () => {
+  const snapshot = makeSnapshot([
+    {
+      id: 'trains',
+      title: 'Trains',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' },
+      data: {
+        trains: [
+          trainFixture('train:queued-ancient', [carFixture('member', 'returned', '2020-01-01T00:00:00Z')], ['not-yet-dispatched-member']),
+          trainFixture('train:t1', [carFixture('c1', 'returned', '2026-07-01T00:00:00Z')]),
+          trainFixture('train:t2', [carFixture('c2', 'returned', '2026-07-02T00:00:00Z')]),
+          trainFixture('train:t3', [carFixture('c3', 'returned', '2026-07-03T00:00:00Z')]),
+          trainFixture('train:t4', [carFixture('c4', 'returned', '2026-07-04T00:00:00Z')]),
+          trainFixture('train:t5', [carFixture('c5', 'returned', '2026-07-05T00:00:00Z')])
+        ]
+      }
+    }
+  ]);
+  const vm = buildBoardViewModel(snapshot);
+  const ids = vm.lanes[0].body.trains.map((t) => t.id);
+  assert.ok(ids.includes('train:queued-ancient'), 'a train with an undelivered manifest member must render regardless of recency');
+});
+
+test('#67: trains lane REGISTER SEMANTICS are unchanged - capping never touches composeRegister\'s three-axis composition', () => {
+  const snapshot = makeSnapshot([
+    {
+      id: 'trains',
+      title: 'Trains',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' },
+      data: {
+        trains: [
+          trainFixture('train:t1', [carFixture('c1', 'returned', '2026-07-01T00:00:00Z')]),
+          trainFixture('train:t2', [carFixture('c2', 'returned', '2026-07-02T00:00:00Z')]),
+          trainFixture('train:t3', [carFixture('c3', 'returned', '2026-07-03T00:00:00Z')]),
+          trainFixture('train:t4', [carFixture('c4', 'returned', '2026-07-04T00:00:00Z')]),
+          trainFixture('train:t5', [carFixture('c5', 'returned', '2026-07-05T00:00:00Z')])
+        ]
+      }
+    }
+  ]);
+  const vm = buildBoardViewModel(snapshot);
+  assert.equal(vm.lanes[0].register, 'nominal');
 });

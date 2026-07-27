@@ -6,6 +6,7 @@
 // THREE-AXIS matrix (board/web/test/compose.test.js) exhaustively testable
 // in Node with no browser.
 import { describeVocab } from './vocab.js';
+import { formatClockDuration } from './format.js';
 
 // The ONLY closed taxonomy (design S5.2) and its severity order. Growing
 // this set is a constitution-level decision (schema/yard-snapshot.schema.json
@@ -97,15 +98,20 @@ function freshnessLine(freshness) {
       // deviation from the mock's illustrative text; the contract wins.
       return 'fresh';
     case 'stale': {
+      // #67 (FORMAT NIT): compact clock time, never a unit-suffixed number -
+      // formatClockDuration is the ONE formatter every duration on this
+      // board uses (Law 6), so this and dom-writer.js's dispatch-elapsed
+      // rendering share one implementation.
       const bucketSeconds = Math.round((freshness.ageBucketMs || 0) / 1000);
-      return `stale, ${bucketSeconds}s`;
+      return `stale, ${formatClockDuration(bucketSeconds)}`;
     }
     case 'idle': {
       // #29: same server-issued ageBucketMs mechanism as 'stale' (Rule 3 -
       // never a client-computed elapsed time), but a DISTINCT word so a
       // reader never mistakes a calmly-idle yard for the "stale" alarm.
+      // #67: clock-formatted, same as 'stale' above.
       const bucketSeconds = Math.round((freshness.ageBucketMs || 0) / 1000);
-      return `idle, quiet ${bucketSeconds}s`;
+      return `idle, quiet ${formatClockDuration(bucketSeconds)}`;
     }
     case 'failed': {
       const reason = freshness.reason || {};
