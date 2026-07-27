@@ -3,7 +3,7 @@
   "checkpoint_id": "f615a8f220c5",
   "strategy": "manual-commit",
   "branch": "dev",
-  "checkpoints_count": 2,
+  "checkpoints_count": 6,
   "files_touched": [
     "docs/friction-log.md"
   ],
@@ -14,13 +14,20 @@
       "compact_transcript": "/f6/15a8f220c5/0/transcript.jsonl",
       "content_hash": "/f6/15a8f220c5/0/content_hash.txt",
       "prompt": "/f6/15a8f220c5/0/prompt.txt"
+    },
+    {
+      "metadata": "/f6/15a8f220c5/1/metadata.json",
+      "transcript": "/f6/15a8f220c5/1/full.jsonl",
+      "compact_transcript": "/f6/15a8f220c5/1/transcript.jsonl",
+      "content_hash": "/f6/15a8f220c5/1/content_hash.txt",
+      "prompt": "/f6/15a8f220c5/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 950,
-    "cache_creation_tokens": 2872889,
-    "cache_read_tokens": 220224583,
-    "output_tokens": 521782,
-    "api_call_count": 502
+    "input_tokens": 1006,
+    "cache_creation_tokens": 3027036,
+    "cache_read_tokens": 224252756,
+    "output_tokens": 557749,
+    "api_call_count": 532
   }
 }
