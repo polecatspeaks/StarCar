@@ -451,3 +451,34 @@ locator phrase so a second party can re-derive it from that file.
   one was the repo's own GitNexus PreToolUse context hook, the other the harness
   re-listing the goodnight skill mid-run because #74's edit landed while the miner was
   running - the miner's refuse-and-report reflex was correct anyway.
+
+- 2026-07-27 ~09:30 (car/probe-79, live, #79): PSEVENTING A DOTNET PROCESS WITH A RAW
+  `.add_OutputDataReceived({...})` SCRIPT BLOCK CRASHES THE WHOLE PWSH HOST - a
+  `System.Diagnostics.Process`'s async output/error events fire on a threadpool thread
+  with no PowerShell runspace attached; a bare `{...}` handler throws "There is no
+  Runspace available to run scripts in this thread" and takes the entire pwsh process
+  down with it (observed: `Invoke-Pester` itself died mid-suite, not just the one test).
+  `Register-ObjectEvent -InputObject $proc -EventName OutputDataReceived -Action {...}`
+  is the correct mechanism - its `-Action` runs on the engine's event queue, which has a
+  real runspace. Cost: one ~5-minute hung/crashed background run plus manual process
+  cleanup (stray `board-server-probe.exe`/`go.exe` left running) before the cause was
+  isolated. Class: any PowerShell code that spawns a real subprocess and wants to react
+  to its async output/error streams must use `Register-ObjectEvent`, never a raw .NET
+  event-delegate script block - this generalizes past this one probe to any future
+  suite that drives a long-lived process from pwsh (`scripts/probes/
+  ManifestBoardJoin.Probes.Tests.ps1`'s `Start-BoardServerAgainst` is now the landed
+  exemplar).
+
+- 2026-07-27 ~09:45 (car/probe-79, live, #79): A JUST-KILLED WINDOWS PROCESS CAN STILL
+  DELETE-LOCK ITS OWN .EXE FOR A SHORT WINDOW AFTER `Process.WaitForExit()` RETURNS - a
+  single `Remove-Item -Recurse -Force -ErrorAction SilentlyContinue` on the scratch
+  directory containing `board-server-probe.exe` silently left the whole directory
+  behind (no error surfaced, because `SilentlyContinue` swallowed it) even though the
+  process handle had already exited; a manual `Remove-Item` moments later succeeded
+  with no special handling. Cost: one leftover ~debris directory under
+  `%TEMP%\mbj-probe-*` caught only by an explicit post-run `Get-ChildItem` audit
+  (would have silently violated #43's standing no-debris ticket otherwise). Class:
+  cleanup code that deletes a directory containing a just-terminated process's own
+  binary needs a short bounded retry (this probe uses 10 attempts x 300ms), never a
+  single silently-swallowed attempt - `SilentlyContinue` on a cleanup step turns a
+  transient OS lock into permanent, invisible debris.
