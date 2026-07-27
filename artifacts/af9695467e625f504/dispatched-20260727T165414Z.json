@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "dispatched",
+  "subject": "af9695467e625f504",
+  "session_id": "8a347c36-20b4-427a-ae0b-46855aa7bb72",
+  "at": "2026-07-27T16:54:14Z",
+  "budget": 1800.0,
+  "model": "claude-opus-5[1m]",
+  "subject_basis": "runtime-id",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:fab773be909ab3114c674ec9d92ce815f298a1dc418f20e1fc502caca88c4b23"
+}
