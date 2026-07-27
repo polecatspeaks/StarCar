@@ -133,28 +133,41 @@ function healthTrendBadgeText(healthTrend) {
 // severity.go) but a per-row disclosure would need one key per SUBJECT -
 // an open-ended, store-size-dependent key set with no eviction story, on a
 // mechanism (sessionStorage) that already has no size ledger. Ephemeral
-// also matches this file's own render cycle unforced: `renderBoard` clears
-// `root.textContent` on every repaint (line 141), so even a native `open`
+// also matches this file's own render cycle unforced: `renderBoard`
+// (this file's own top-level export, cited by SYMBOL - fix cycle round 3
+// MAJOR-R2-2, this comment's own bare "(line 141)" was already false the
+// instant round 2 committed it, MAJOR-R1-4's class reproduced in the same
+// commit as the lecture about it, docs/contracts/gating-matrix.md:49)
+// clears `root.textContent` on every repaint, so even a native `open`
 // attribute set by a prior render is already discarded before the next
 // paint - persisting it would require NEW capture-and-reapply plumbing
 // mirroring #69's, not a re-use of it. Reopens on the next click, same as
 // every `<details>` on the web with no persistence wired at all.
-// #69/#71 fix-cycle round 2 (MINOR-R1-2): the wire schema now constrains
-// superseded[] items to {kind: string, at: string} both required
-// (schema/yard-snapshot.schema.json's $defs.dispatchSupersededItem), but
-// this function stays defense-in-depth rather than trusting that
-// constraint alone - ingest.js's validator only runs against a real
-// browser fetch of /schema/yard-snapshot.schema.json (network-reachable at
-// runtime); any other caller of renderBoard (a future test harness, a
-// hand-built view model) is NOT gated by that fetch. A malformed item
-// (missing/non-string kind or at) is skipped, never rendered as literal
-// "undefined undefined" (Law 1: honest-absence over a guessed/garbled
-// fact) - matching this file's other honest-absence conventions
-// (declared-not-observed, renderHistorySummary). If EVERY item in the
-// array is malformed, the whole disclosure renders as absent (no empty
-// <details> with a "0 superseded" summary and nothing inside it) - the
-// same "never an empty list" posture the original honest-absence comment
-// above already commits to.
+//
+// #69/#71 fix-cycle round 2 (MINOR-R1-2), CORRECTED fix cycle round 3
+// (MAJOR-R2-3): the wire schema now constrains superseded[] items to
+// {kind: string, at: string} both required (schema/yard-snapshot.schema.
+// json's $defs.dispatchSupersededItem), but that constraint is NEVER
+// enforced on the runtime hop a browser actually takes - $defs.lane.data
+// (schema/yard-snapshot.schema.json's own $comment explains why: a lane's
+// data shape is chosen by which lane it is, not one closed schema union)
+// does not $ref dispatchesPayload/trainsPayload, so ingest.js's validator
+// (validate.js, the real vendored cfworker-json-schema engine) applies NO
+// constraint to superseded[] items - measured: a malformed item validates
+// clean through it, before and after this schema addition. The ONLY
+// consumer of the new $def is scripts/tests/WirePayload.Tests.ps1's
+// fragment extraction, which wraps the $def standalone and therefore sees
+// a constraint the real runtime validator never applies. THIS FUNCTION'S
+// OWN FILTER, below, is the entire runtime protection, full stop - not
+// "defense in depth" alongside a wire-level gate that does not exist. A
+// malformed item (missing/non-string kind or at) is skipped, never
+// rendered as literal "undefined undefined" (Law 1: honest-absence over a
+// guessed/garbled fact) - matching this file's other honest-absence
+// conventions (declared-not-observed, renderHistorySummary). If EVERY item
+// in the array is malformed, the whole disclosure renders as absent (no
+// empty <details> with a "0 superseded" summary and nothing inside it) -
+// the same "never an empty list" posture the original honest-absence
+// comment above already commits to.
 function renderSupersededDisclosure(doc, wrapperClassName, entryClassName, superseded, recordDir, linkCfg) {
   if (!superseded || superseded.length === 0) return null;
   const validItems = superseded.filter((item) => typeof item?.kind === 'string' && typeof item?.at === 'string');
@@ -514,22 +527,33 @@ function renderDispatches(doc, body, linkCfg) {
   const rows = el(doc, 'div', 'solari-rows');
   for (const d of body.dispatches) {
     const row = el(doc, 'div', `solari-row ${registerClass(d.stateRegister)}${d.assigned ? '' : ' unassigned'}`);
+    // #71 fix cycle r3 (MAJOR-R2-1): the subject/state/elapsed cluster lives
+    // in its OWN wrapper (`solari-row-main`), never as direct flex children
+    // of `.solari-row` itself - see board.css's `.solari-row`/`.solari-row-
+    // main` comment for why (round 2's `flex-wrap: wrap` on `.solari-row`
+    // wrapped this cluster onto a second line too, not just the disclosure).
+    const main = el(doc, 'div', 'solari-row-main');
     const subject = factOrLink(doc, 'solari-subject', d.subject, buildRecordLink(linkCfg, d.recordDir));
     // #62: board.css truncates a long subject id with an ellipsis (the
     // fixed-height dispatches grid) - the native title tooltip keeps the
     // full id reachable, never silently lost. Survives becoming a link
     // (#28) - the title attribute goes on the anchor/span either way.
     subject.setAttribute('title', d.subject);
-    row.appendChild(subject);
-    row.appendChild(el(doc, 'span', 'solari-state', d.state)); // VERBATIM
+    main.appendChild(subject);
+    main.appendChild(el(doc, 'span', 'solari-state', d.state)); // VERBATIM
     if (d.elapsedSeconds !== null) {
       // #67 (FORMAT NIT): compact clock time, never "272s" - the ONE
       // formatter every duration on this board shares (format.js, Law 6).
-      row.appendChild(el(doc, 'span', 'solari-elapsed', formatClockDuration(d.elapsedSeconds)));
+      main.appendChild(el(doc, 'span', 'solari-elapsed', formatClockDuration(d.elapsedSeconds)));
     }
-    // #71 fix-cycle r2 (MAJOR-R1-1): appended INSIDE the row, never to
-    // `rows` (the grid container) - the disclosure can only ever grow ITS
-    // OWN row's grid cell, never wrap onto a neighbouring subject's cell.
+    row.appendChild(main);
+    // #71 fix-cycle r2 (MAJOR-R1-1), fix cycle r3 (MAJOR-R2-1): appended
+    // INSIDE the row, never to `rows` (the grid container) - the disclosure
+    // can only ever grow ITS OWN row's grid cell, never wrap onto a
+    // neighbouring subject's cell. Appended AFTER `main`, never inside it,
+    // so `.solari-row`'s column-direction layout stacks it below the
+    // single-line cluster rather than letting it compete for space on that
+    // cluster's own flex line.
     const supersededDisclosure = renderSupersededDisclosure(doc, 'solari-superseded', 'solari-superseded-entry', d.superseded, d.recordDir, linkCfg);
     if (supersededDisclosure) row.appendChild(supersededDisclosure);
     rows.appendChild(row);

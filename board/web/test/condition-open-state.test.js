@@ -88,14 +88,20 @@ test('withGroupOpen/withStripOpen never mutate the input state (pure update)', (
   assert.deepEqual(original, frozen, 'the input state object must be unchanged');
 });
 
-// #69/#71 fix-cycle round 2 (MINOR-R1-3): a storage-shaped fake whose
-// getItem/setItem THROW - fakeStorage above never throws, so neither catch
-// branch in condition-open-state.js (loadOpenState:44-46,
-// saveOpenState:66-71) was ever exercised before this pair. Mirrors a real
-// browser's documented failure modes: sessionStorage access can throw
-// SecurityError in some private-browsing configurations, and setItem can
-// throw QuotaExceededError when storage is full - both real DOMException
-// classes, not hypothetical.
+// #69/#71 fix-cycle round 2 (MINOR-R1-3), citation converted to SYMBOL form
+// fix cycle round 3 (audit prompted by MAJOR-R2-2 - this file was never
+// touched by any round-2 commit, so these two line-range citations were
+// still accurate at HEAD, but a line-number citation into a file this
+// train may edit later is exactly the class MAJOR-R1-4/R2-2 name, so it is
+// converted here rather than left as a hazard for the NEXT commit that
+// touches condition-open-state.js): a storage-shaped fake whose getItem/
+// setItem THROW - fakeStorage above never throws, so neither catch branch
+// in condition-open-state.js (loadOpenState's own getItem try/catch,
+// saveOpenState's own setItem try/catch) was ever exercised before this
+// pair. Mirrors a real browser's documented failure modes: sessionStorage
+// access can throw SecurityError in some private-browsing configurations,
+// and setItem can throw QuotaExceededError when storage is full - both
+// real DOMException classes, not hypothetical.
 function throwingStorage(message) {
   return {
     getItem() {

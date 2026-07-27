@@ -361,6 +361,62 @@ export function buildScratchStoreUnderRepoRootWithConditionsAndSuperseded() {
   };
 }
 
+// buildScratchStoreForDispatchRowGeometry (#69/#71 fix cycle round 3,
+// MAJOR-R2-1) - a tmpdir-based scratch store (no recordDir links needed for
+// this test, unlike buildScratchStoreUnderRepoRootWithConditionsAndSuperseded)
+// seeding enough dispatch subjects to both (a) overflow .solari-rows' own
+// 11rem max-height, so a mid-row crop regression has somewhere to happen,
+// and (b) isolate the row-height regression from the disclosure itself -
+// MOST rows here carry NO superseded entry at all, so a regression that
+// makes every row taller (not just rows with a disclosure) is caught.
+// 7 plain subjects (no superseded, sorted alphabetically BEFORE the
+// with-sup ones and small enough in number that they alone never straddle
+// .solari-rows' own boundary at the correct single-line row height - the
+// deliberately CHOSEN row count that keeps "does a PLAIN row ever cross
+// the boundary" a meaningful, decidable question rather than a coincidence
+// of divisibility) + 2 with exactly one superseded entry each (sorted
+// after, and relied on to push the container past its max-height so the
+// overflow precondition holds). Mirrors the round-2 reviewer's own
+// falsifying recipe (their probe3.mjs used 14 plain + a car-chip train;
+// this omits the chip half, which the round-2 review already measured
+// clean).
+export function buildScratchStoreForDispatchRowGeometry() {
+  const storeDir = mkdtempSync(join(tmpdir(), 'starcar-board-scratch-store-'));
+
+  function write(subject, kind, at, extra = {}) {
+    const dir = join(storeDir, subject);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, `${kind}-${at.replace(/[:.]/g, '')}.json`),
+      JSON.stringify(
+        {
+          schema: 'starcar-artifact/1',
+          kind,
+          subject,
+          session_id: 'view-69-71-r3-geometry-probe',
+          at,
+          normalisation: [],
+          integrity: 'sha256:0000000000000000000000000000000000000000000000000000000000000000',
+          ...extra
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+  }
+
+  for (let i = 0; i < 7; i += 1) {
+    write(`plain-subject-${String(i).padStart(2, '0')}`, 'dispatched', `2026-07-20T09:${String(i).padStart(2, '0')}:00Z`);
+  }
+  for (let i = 0; i < 2; i += 1) {
+    write(`with-sup-${i}`, 'dispatched', `2026-07-20T08:0${i}:00Z`); // becomes the sole superseded entry
+    write(`with-sup-${i}`, 'returned', `2026-07-20T09:3${i}:00Z`, { outcome: 'done', findings: 'none', abstract: 'winner' });
+  }
+
+  return storeDir;
+}
+
 // addRecordToStore (#69/#71) writes ONE additional real record into an
 // already-running scratch store, mid-test - used to force a genuine SECOND
 // poll-detected CHANGE (a new board condition appears) so a real DOM
