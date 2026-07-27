@@ -48,8 +48,11 @@
 # resolves to "/docs/friction-log.md", the guard's `else` branch fires, and an
 # arriving agent is told to CREATE a file that already holds dozens of entries -
 # exactly the unanchored-path class round 1's m2 fixed in the now-deleted delivery
-# script (session-start-record.sh:76) and this replacement re-introduced one file
-# over. `git rev-parse --show-toplevel` gives the real repo root when run from
+# script (session-start-record.sh:76 - historical coordinate, the file no longer
+# exists; #65's CitationResolverPolicy gate exempts it by this marker rather than
+# flagging a dead path for a deletion the text already discloses) and this
+# replacement re-introduced one file over. `git rev-parse --show-toplevel` gives
+# the real repo root when run from
 # anywhere inside it; the `|| echo .` fallback degrades to the historical bare-relative
 # behavior (never fatal) if git itself is ever unavailable.
 #

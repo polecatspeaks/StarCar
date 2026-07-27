@@ -94,7 +94,7 @@ single gap produced all three instances of round 5's Major 1.
 
 | Record | What writes it | Trigger | Durable when | If two arrive for one dispatch |
 |---|---|---|---|---|
-| `dispatched` | producer hook | **launch** - `PostToolUse:Task` fires at launch with no body, established at `docs/reviews/2026-07-22-harness-design-round1-REJECT.md:66` | file written, then committed; visible to CI after push | latest-`at` wins; the supersession is rendered (§5.8) |
+| `dispatched` | producer hook | **launch** - `PostToolUse:Task` fires at launch with no body, established at `artifacts/reviews/2026-07-22-harness-design-round1-REJECT.md`'s MAJOR-1 finding (cited by heading, not line: the line-number form of this exact citation was already wrong at `:66` - a blank line, one above the real `### MAJOR-1` heading at `:67` - inserted above by a later, unrelated commit; caught by #65's round-1 reviewer, not by the gate, which does not check in-range shifts) | file written, then committed; visible to CI after push | latest-`at` wins; the supersession is rendered (§5.8) |
 | `returned` | producer hook | subagent stop - **BLOCKING TEST, §7** | same | same |
 | `presumed-lost` | a human, prompted by the tier-1 detector | detector raises a gap; human confirms and lands | same | same |
 | `intent`, `ruling` | the conductor, deliberately | a decision | same | later supersedes earlier (§5.8) |
