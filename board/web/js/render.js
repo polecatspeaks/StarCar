@@ -427,10 +427,25 @@ function buildLaneBody(lane, vocab, hasRenderer) {
         historySummary: historySummaryLine(hiddenCount, terminalTotal, 'returned')
       };
     }
-    case 'freight':
-      // Dark: no adapter exists (Car 4's adjudication: "no-equipment",
-      // distinguished from fuel's "bagged" below).
-      return { kind: 'dark', text: 'no equipment on this lane' };
+    case 'freight': {
+      // #84: freight went live - the inbound ticket queue (GitHub Project 6
+      // items in Backlog or Todo status). Empty-vs-never-run-vs-stale is NOT
+      // this function's job to disambiguate: that distinction lives entirely
+      // in freshness (composeLines' secondary line above - "not yet polled"
+      // for never-polled, "fresh" for a genuinely-run-and-empty queue,
+      // "stale, <duration>" for an aged sync) - the same Rule 2 split every
+      // other live lane already follows (freshness carries the "when" story,
+      // the body carries the "what"). This body only ever renders the
+      // CURRENT tickets array, honestly, at whatever size it is.
+      const tickets = lane.data.tickets.map((t) => ({
+        number: t.number,
+        title: t.title,
+        status: t.status,
+        url: t.url,
+        recordDir: t.recordDir ?? null
+      }));
+      return { kind: 'freight', tickets };
+    }
     case 'fuel':
       // Bagged: data exists (cost fields on some records) but is
       // deliberately not surfaced yet (#11) - the hooded-signal treatment,

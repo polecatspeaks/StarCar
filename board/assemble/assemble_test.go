@@ -929,3 +929,105 @@ func TestAssembleTrainCarTaskId(t *testing.T) {
 		t.Errorf("car.TaskID = %q, want %q", car.TaskID, "carA-task-id")
 	}
 }
+
+// --- #84: freight (the inbound ticket queue) --------------------------------
+
+// ticketRecord builds a kind=ticket raw record matching
+// schema/starcar-ticket.schema.json's shape.
+func ticketRecord(subject string, at string, number int, title, status, url string) store.Record {
+	return recAt(subject+"/ticket.json", map[string]any{
+		"schema": "starcar-artifact/1", "kind": "ticket", "subject": subject,
+		"session_id": "freight-adapter", "at": at, "normalisation": []any{}, "integrity": "sha256:0",
+		"ticket": map[string]any{"number": float64(number), "title": title, "status": status, "url": url},
+	})
+}
+
+// TestAssembleFreightReadsRawTicketRecordsDirectly (#84) proves freight is
+// assembled from RAW records, the same way manifestPayload already reads the
+// "manifest" key off raw intent records - never through board/fold, which has
+// no case for kind=ticket at all (algorithm.go's bySubject switch only
+// groups dispatched/returned/presumed-lost/intent). fold.Output here carries
+// ZERO dispatches and ZERO intents (the real fold, run over these exact
+// records, would produce exactly that - proving this is not a fabricated
+// Input), yet the ticket still reaches the wire: the load-bearing assertion
+// that "the fold is not involved" (#84 owner ruling item 3).
+func TestAssembleFreightReadsRawTicketRecordsDirectly(t *testing.T) {
+	records := []store.Record{
+		ticketRecord("ticket-84", "2026-07-27T15:00:00Z", 84, "Light up the FREIGHT lane", "Backlog", "https://github.com/polecatspeaks/StarCar/issues/84"),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	if len(out.Dispatches) != 0 || len(out.Intents) != 0 {
+		t.Fatalf("test precondition not met: expected the real fold to produce zero dispatches/intents for a kind=ticket-only store, got %d/%d - fold now recognises this kind, which would defeat this test's own premise", len(out.Dispatches), len(out.Intents))
+	}
+
+	result := Assemble(Input{Records: records, Fold: out})
+	if len(result.Freight.Tickets) != 1 {
+		t.Fatalf("expected 1 freight ticket, got %d: %+v", len(result.Freight.Tickets), result.Freight.Tickets)
+	}
+	tk := result.Freight.Tickets[0]
+	if tk.Number != 84 || tk.Title != "Light up the FREIGHT lane" || tk.Status != "Backlog" || tk.URL != "https://github.com/polecatspeaks/StarCar/issues/84" {
+		t.Errorf("unexpected ticket shape: %+v", tk)
+	}
+	if tk.RecordDir != "ticket-84" {
+		t.Errorf("tk.RecordDir = %q, want %q (#28's clickable-provenance convention)", tk.RecordDir, "ticket-84")
+	}
+}
+
+// TestAssembleFreightIgnoresTicketSyncRecords (#84) proves the freight
+// adapter's heartbeat marker (kind=ticket-sync, no "ticket" payload key) is
+// never mistaken for a queue entry - it exists purely for freight's own
+// freshness signal (board/server/poll.go's computeFreightFreshness), read
+// there, never here.
+func TestAssembleFreightIgnoresTicketSyncRecords(t *testing.T) {
+	records := []store.Record{
+		recAt("ticket-sync/ticket-sync.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "ticket-sync", "subject": "ticket-sync",
+			"session_id": "freight-adapter", "at": "2026-07-27T15:00:00Z", "normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+	if len(result.Freight.Tickets) != 0 {
+		t.Fatalf("a ticket-sync heartbeat record must NOT appear in the tickets list, got %+v", result.Freight.Tickets)
+	}
+}
+
+// TestAssembleFreightEmptyWhenNoTicketRecords (#84, DR3-5a's honest-empty
+// posture applied to freight): zero kind=ticket records is a genuinely empty
+// (never nil, never omitted) tickets array - the JSON encoder must marshal
+// `"tickets":[]`, not `"tickets":null`, so the wire never confuses "empty" for
+// "absent".
+func TestAssembleFreightEmptyWhenNoTicketRecords(t *testing.T) {
+	out := fold.Fold(foldRecords(nil), testVocab, now)
+	result := Assemble(Input{Records: nil, Fold: out})
+	if result.Freight.Tickets == nil {
+		t.Fatalf("Freight.Tickets must be an empty slice, never nil, on an empty store")
+	}
+	if len(result.Freight.Tickets) != 0 {
+		t.Fatalf("expected 0 tickets, got %d", len(result.Freight.Tickets))
+	}
+}
+
+// TestAssembleFreightMultipleTicketsSortedByNumber (#84) - the freight
+// adapter writes one record per issue with no cross-record ordering
+// guarantee (store.Scan's own deterministic order is lexical-by-path, not
+// issue-number order); Assemble imposes a stable, dispatcher-legible order
+// (ascending issue number) rather than exposing scan order as an accident of
+// directory naming.
+func TestAssembleFreightMultipleTicketsSortedByNumber(t *testing.T) {
+	records := []store.Record{
+		ticketRecord("ticket-90", "2026-07-27T15:00:00Z", 90, "ninety", "Todo", "https://github.com/polecatspeaks/StarCar/issues/90"),
+		ticketRecord("ticket-3", "2026-07-27T15:00:00Z", 3, "three", "Backlog", "https://github.com/polecatspeaks/StarCar/issues/3"),
+		ticketRecord("ticket-42", "2026-07-27T15:00:00Z", 42, "forty-two", "Backlog", "https://github.com/polecatspeaks/StarCar/issues/42"),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+	if len(result.Freight.Tickets) != 3 {
+		t.Fatalf("expected 3 tickets, got %d", len(result.Freight.Tickets))
+	}
+	got := []int{result.Freight.Tickets[0].Number, result.Freight.Tickets[1].Number, result.Freight.Tickets[2].Number}
+	want := []int{3, 42, 90}
+	if got[0] != want[0] || got[1] != want[1] || got[2] != want[2] {
+		t.Errorf("ticket order = %v, want ascending by number %v", got, want)
+	}
+}

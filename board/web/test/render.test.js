@@ -98,19 +98,57 @@ function makeSnapshot(lanes) {
   };
 }
 
-test('freight (dark) and fuel (bagged) render DISTINCT honesty text - Car 4 review adjudication, never identical', () => {
+test('fuel (bagged) renders its own honesty text - Car 4 review adjudication', () => {
+  const snapshot = makeSnapshot([{ id: 'fuel', title: 'Fuel', position: 'bagged', freshness: { kind: 'not-applicable' } }]);
+  const vm = buildBoardViewModel(snapshot);
+  const fuel = vm.lanes.find((l) => l.id === 'fuel');
+  assert.equal(fuel.body.kind, 'bagged');
+  assert.equal(fuel.body.text, 'data held, not surfaced');
+  assert.equal(fuel.register, 'nominal');
+});
+
+// --- #84: freight (live) - the three absence/staleness states, distinct rendering ---
+
+test('#84 Case 1 (NEVER RUN): freight with freshness never-polled reads distinctly from an empty-but-run queue - the freshness line, not the body, carries this distinction', () => {
   const snapshot = makeSnapshot([
-    { id: 'freight', title: 'Freight', position: 'dark', freshness: { kind: 'not-applicable' } },
-    { id: 'fuel', title: 'Fuel', position: 'bagged', freshness: { kind: 'not-applicable' } }
+    { id: 'freight', title: 'Freight', position: 'live', freshness: { kind: 'never-polled' }, data: { tickets: [] } }
   ]);
   const vm = buildBoardViewModel(snapshot);
   const freight = vm.lanes.find((l) => l.id === 'freight');
-  const fuel = vm.lanes.find((l) => l.id === 'fuel');
-  assert.equal(freight.body.kind, 'dark');
-  assert.equal(fuel.body.kind, 'bagged');
-  assert.notEqual(freight.body.text, fuel.body.text);
+  assert.equal(freight.secondary, 'not yet polled');
+  assert.equal(freight.body.kind, 'freight');
+  assert.deepEqual(freight.body.tickets, []);
+  assert.equal(freight.register, 'in-progress');
+});
+
+test('#84 Case 2 (RAN, GENUINELY EMPTY): freight with freshness fresh and zero tickets reads calm, distinct secondary line from Case 1', () => {
+  const snapshot = makeSnapshot([
+    { id: 'freight', title: 'Freight', position: 'live', freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' }, data: { tickets: [] } }
+  ]);
+  const vm = buildBoardViewModel(snapshot);
+  const freight = vm.lanes.find((l) => l.id === 'freight');
+  assert.equal(freight.secondary, 'fresh');
+  assert.notEqual(freight.secondary, 'not yet polled');
+  assert.deepEqual(freight.body.tickets, []);
   assert.equal(freight.register, 'nominal');
-  assert.equal(fuel.register, 'nominal');
+});
+
+test('#84 Case 3 (STALE): freight with freshness stale reads the quantised age, and its queued tickets still render (last known queue, not blanked)', () => {
+  const snapshot = makeSnapshot([
+    {
+      id: 'freight',
+      title: 'Freight',
+      position: 'live',
+      freshness: { kind: 'stale', asOf: '2026-07-23T00:00:00Z', ageBucketMs: 90000 },
+      data: { tickets: [{ number: 84, title: 'Light up the FREIGHT lane', status: 'Backlog', url: 'https://github.com/polecatspeaks/StarCar/issues/84' }] }
+    }
+  ]);
+  const vm = buildBoardViewModel(snapshot);
+  const freight = vm.lanes.find((l) => l.id === 'freight');
+  assert.ok(freight.secondary.startsWith('stale,'), `expected a stale secondary line, got: ${freight.secondary}`);
+  assert.equal(freight.body.tickets.length, 1);
+  assert.equal(freight.body.tickets[0].number, 84);
+  assert.equal(freight.register, 'needs-attention');
 });
 
 test('an unrecognised (6th) lane id renders via the no-renderer path, needs-attention, never a crash', () => {

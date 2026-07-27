@@ -413,6 +413,82 @@ func TestScanTrainManifestRecordSurvivesAndIsNotFlaggedUnknown(t *testing.T) {
 	}
 }
 
+// TestScanTicketRecordSurvivesAndIsNotFlaggedUnknown (#84) proves the D17
+// interaction the manifest test above already pins, applied to the freight
+// adapter's new kind: the "ticket" payload key joins the known key-set, so a
+// well-formed kind=ticket record does NOT trip the unknown-field
+// disclosure, and it validates against schema/starcar-ticket.schema.json.
+func TestScanTicketRecordSurvivesAndIsNotFlaggedUnknown(t *testing.T) {
+	a := newAdapter(t)
+	root := t.TempDir()
+	writeFixture(t, root, "ticket-84/ticket.json", `{
+		"schema": "starcar-artifact/1",
+		"kind": "ticket",
+		"subject": "ticket-84",
+		"session_id": "freight-adapter",
+		"at": "2026-07-23T10:00:00Z",
+		"normalisation": [],
+		"integrity": `+fakeIntegrity+`,
+		"ticket": {
+			"number": 84,
+			"title": "Light up the FREIGHT lane",
+			"status": "Backlog",
+			"url": "https://github.com/polecatspeaks/StarCar/issues/84"
+		}
+	}`)
+
+	result, err := a.Scan(root, time.Now().UTC())
+	if err != nil {
+		t.Fatalf("Scan: %v", err)
+	}
+	if len(result.Records) != 1 {
+		t.Fatalf("expected the ticket record to survive, got %d", len(result.Records))
+	}
+	for _, c := range result.Conditions {
+		if c.Code == "record-unrecognised-fields" {
+			t.Fatalf("a well-formed ticket record must NOT trip unknown-field disclosure (#84), got %v", c)
+		}
+	}
+}
+
+// TestScanTicketRecordMissingRequiredSubfieldQuarantined (#84) proves the
+// ticket schema's own required-field list is actually enforced (never a
+// silent no-op layered schema) - a ticket payload missing "url" fails
+// schema/starcar-ticket.schema.json validation and is quarantined, the same
+// posture the manifest schema's own YB-1 test (TestScanSchemaShapeFailureQuarantined,
+// applied here to the ticket layer specifically) already established.
+func TestScanTicketRecordMissingRequiredSubfieldQuarantined(t *testing.T) {
+	a := newAdapter(t)
+	root := t.TempDir()
+	writeFixture(t, root, "ticket-85/ticket.json", `{
+		"schema": "starcar-artifact/1",
+		"kind": "ticket",
+		"subject": "ticket-85",
+		"session_id": "freight-adapter",
+		"at": "2026-07-23T10:00:00Z",
+		"normalisation": [],
+		"integrity": `+fakeIntegrity+`,
+		"ticket": {
+			"number": 85,
+			"title": "missing status and url"
+		}
+	}`)
+
+	result, err := a.Scan(root, time.Now().UTC())
+	if err != nil {
+		t.Fatalf("Scan: %v", err)
+	}
+	if len(result.Records) != 0 {
+		t.Fatalf("expected the incomplete ticket record to be quarantined, got %d survivors", len(result.Records))
+	}
+	if len(result.Quarantined) != 1 {
+		t.Fatalf("expected exactly 1 quarantined record, got %d", len(result.Quarantined))
+	}
+	if !strings.Contains(result.Quarantined[0].Reason, "starcar-ticket/1") {
+		t.Fatalf("expected the quarantine reason to name starcar-ticket/1 schema validation, got %q", result.Quarantined[0].Reason)
+	}
+}
+
 // TestScanKnownProducerFieldsNotUnrecognised is the red-first pin for issue
 // #26: `model` (Produce-Artifact.ps1:285, dispatched-only, sourced from the
 // Task tool_response's resolvedModel) and `body_file` (Migrate-Verdicts.ps1:152,

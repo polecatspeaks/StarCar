@@ -70,14 +70,18 @@ type ScanResult struct {
 type Adapter struct {
 	artifactSchema *jsonschema.Schema
 	manifestSchema *jsonschema.Schema
+	ticketSchema   *jsonschema.Schema
 }
 
-// NewAdapter compiles the store record schema and the layered manifest
-// schema (YB-1: "Store validators run this schema IN ADDITION to the base
-// record schema; neither restates the other") from schemaDir (the repo's
-// schema/ directory). Compiling once here, rather than re-implementing the
-// schemas' required-field/conditional logic by hand in Go, is the
-// Law-6-compliant path Car 1 proved works (board/board_test.go).
+// NewAdapter compiles the store record schema and the layered manifest and
+// ticket schemas (YB-1: "Store validators run this schema IN ADDITION to the
+// base record schema; neither restates the other") from schemaDir (the
+// repo's schema/ directory). Compiling once here, rather than
+// re-implementing the schemas' required-field/conditional logic by hand in
+// Go, is the Law-6-compliant path Car 1 proved works (board/board_test.go).
+// ticketSchema (#84) follows the manifest's own precedent verbatim: a
+// separate layered schema file, compiled once, validated on every record
+// (its if/then clauses are a no-op for a non-ticket record).
 func NewAdapter(schemaDir string) (*Adapter, error) {
 	c := jsonschema.NewCompiler()
 	artifactSchema, err := c.Compile(filepath.Join(schemaDir, "starcar-artifact.schema.json"))
@@ -88,7 +92,11 @@ func NewAdapter(schemaDir string) (*Adapter, error) {
 	if err != nil {
 		return nil, fmt.Errorf("store: compiling starcar-manifest.schema.json: %w", err)
 	}
-	return &Adapter{artifactSchema: artifactSchema, manifestSchema: manifestSchema}, nil
+	ticketSchema, err := c.Compile(filepath.Join(schemaDir, "starcar-ticket.schema.json"))
+	if err != nil {
+		return nil, fmt.Errorf("store: compiling starcar-ticket.schema.json: %w", err)
+	}
+	return &Adapter{artifactSchema: artifactSchema, manifestSchema: manifestSchema, ticketSchema: ticketSchema}, nil
 }
 
 // typedRecord is the KNOWN field set (D17): every field name here is a JSON
@@ -110,6 +118,10 @@ func NewAdapter(schemaDir string) (*Adapter, error) {
 // (returned-kind only), and runtime-internal ids kept as enrichment. Same
 // epistemic rule as #26/#22: an observed, provenanced producer field gets
 // DECLARED here, not left to fire record-unrecognised-fields forever.
+//
+// #84: Ticket joins the known key-set the same way Manifest did (DR3-1 item
+// 4's precedent) - the freight adapter's one new top-level payload key for
+// kind=ticket records.
 type typedRecord struct {
 	Schema            string          `json:"schema"`
 	Kind              string          `json:"kind"`
@@ -133,6 +145,7 @@ type typedRecord struct {
 	SubjectBasis      string          `json:"subject_basis"`
 	TaskID            string          `json:"task_id"`
 	Provenance        json.RawMessage `json:"provenance"`
+	Ticket            json.RawMessage `json:"ticket"`
 }
 
 // typedKeys is computed ONCE (package init), by reflecting typedRecord's own
@@ -285,6 +298,9 @@ func (a *Adapter) readOne(path, rel string, now time.Time) (Record, *BoardCondit
 	}
 	if err := a.manifestSchema.Validate(fields); err != nil {
 		return Record{}, nil, fmt.Sprintf("fails starcar-manifest/1 schema validation: %v", err)
+	}
+	if err := a.ticketSchema.Validate(fields); err != nil {
+		return Record{}, nil, fmt.Sprintf("fails starcar-ticket/1 schema validation: %v", err)
 	}
 
 	// Issue #24 (C3R-3, binding on this task): schema "format" is

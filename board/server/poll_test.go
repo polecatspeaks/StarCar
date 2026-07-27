@@ -4,10 +4,13 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/polecatspeaks/StarCar/board/assemble"
 )
 
 func testConfig(t *testing.T, storeRoot string) Config {
@@ -94,13 +97,138 @@ func TestPollOnceEmptyStoreIsFresh(t *testing.T) {
 	if snap.Seq != 1 {
 		t.Fatalf("first real poll's seq = %d, want 1 (seq 0 is the pre-poll placeholder)", snap.Seq)
 	}
+	// #84: freight is EXCLUDED from this blanket "empty store is honest-fresh"
+	// assertion, deliberately - see TestPollOnceFreightNeverPolledOnEmptyStore
+	// just below, which pins the divergence by name. An empty store with NO
+	// ticket-sync heartbeat record means the freight adapter has never run
+	// at all (Case 1, #84's own framing), which must NOT read the same as
+	// "ran, queue genuinely empty" (Case 2, what dispatches/gates/trains'
+	// shared honest-empty rule means here) - the two are different facts and
+	// this repo's Law 1 forbids collapsing them onto one freshness word.
 	for _, l := range snap.Lanes {
-		if l.Position != "live" {
+		if l.Position != "live" || l.ID == "freight" {
 			continue
 		}
 		if l.Freshness.Kind != "fresh" {
 			t.Errorf("lane %q on an honest-empty store = %q, want fresh", l.ID, l.Freshness.Kind)
 		}
+	}
+}
+
+// TestPollOnceFreightNeverPolledOnEmptyStore (#84, Law 1's absence/staleness
+// requirement): an empty store carries no ticket-sync heartbeat record at
+// all, so freight must read "never-polled" - DISTINCT from dispatches/gates/
+// trains, which read "fresh" on the exact same empty store
+// (TestPollOnceEmptyStoreIsFresh). Proving both in ONE poll is the
+// non-vacuous half: it shows the divergence is real, not an artifact of two
+// different fixtures.
+func TestPollOnceFreightNeverPolledOnEmptyStore(t *testing.T) {
+	srv := newTestServer(t, t.TempDir())
+	now := time.Date(2026, 7, 23, 12, 0, 0, 0, time.UTC)
+	snap, _, err := srv.PollOnce(now)
+	if err != nil {
+		t.Fatalf("PollOnce: %v", err)
+	}
+	freight := laneByID(snap, "freight")
+	if freight.Freshness.Kind != "never-polled" {
+		t.Fatalf("freight freshness on an empty store (no ticket-sync record) = %q, want never-polled", freight.Freshness.Kind)
+	}
+	dispatches := laneByID(snap, "dispatches")
+	if dispatches.Freshness.Kind != "fresh" {
+		t.Fatalf("test precondition not met: dispatches freshness = %q, want fresh (the divergence this test proves requires this to hold)", dispatches.Freshness.Kind)
+	}
+}
+
+// TestPollOnceFreightFreshWhenTicketSyncRecent (#84, Case 2): a recent
+// ticket-sync heartbeat record (age <= stalenessMs) reads freight as fresh,
+// with the freight lane's Data carrying the real assembled ticket list -
+// end-to-end through the real StoreAdapter.Scan -> assemble.Assemble path,
+// never a hand-built payload.
+func TestPollOnceFreightFreshWhenTicketSyncRecent(t *testing.T) {
+	root := t.TempDir()
+	writeRecord(t, root, "ticket-sync/ticket-sync.json", validTicketSyncJSON("2026-07-23T11:59:50Z"))
+	writeRecord(t, root, "ticket-84/ticket.json", validTicketJSON("ticket-84", "2026-07-23T11:59:50Z", 84, "Light up the FREIGHT lane", "Backlog", "https://github.com/polecatspeaks/StarCar/issues/84"))
+	srv := newTestServer(t, root)
+
+	now := time.Date(2026, 7, 23, 12, 0, 0, 0, time.UTC) // 10s after ticket-sync's at, stalenessMs default 15000
+	snap, _, err := srv.PollOnce(now)
+	if err != nil {
+		t.Fatalf("PollOnce: %v", err)
+	}
+	freight := laneByID(snap, "freight")
+	if freight.Freshness.Kind != "fresh" {
+		t.Fatalf("freight freshness = %q, want fresh (ticket-sync is 10s old, stalenessMs=15000)", freight.Freshness.Kind)
+	}
+	payload, ok := freight.Data.(assemble.FreightPayload)
+	if !ok {
+		t.Fatalf("freight lane Data is %T, want assemble.FreightPayload", freight.Data)
+	}
+	if len(payload.Tickets) != 1 || payload.Tickets[0].Number != 84 {
+		t.Fatalf("expected 1 ticket (#84), got %+v", payload.Tickets)
+	}
+}
+
+// TestPollOnceFreightStaleWhenTicketSyncOld (#84, Case 3): an OLD ticket-sync
+// record (past stalenessMs) reads freight as stale, with a quantised
+// ageBucketMs derived from the RECORD's own "at" - never wall-clock hope
+// (#84's own explicit requirement). This is the freight adapter having
+// stopped updating (or failed silently, per this car's disclosed design
+// decision: a failed run writes nothing rather than a fresh-looking
+// failure marker), distinct from "never ran" (never-polled, no ticket-sync
+// record exists at all) and from "ran, genuinely empty" (fresh).
+func TestPollOnceFreightStaleWhenTicketSyncOld(t *testing.T) {
+	root := t.TempDir()
+	writeRecord(t, root, "ticket-sync/ticket-sync.json", validTicketSyncJSON("2026-07-20T00:00:00Z"))
+	srv := newTestServer(t, root)
+
+	now := time.Date(2026, 7, 23, 12, 0, 0, 0, time.UTC) // days after ticket-sync's at
+	snap, _, err := srv.PollOnce(now)
+	if err != nil {
+		t.Fatalf("PollOnce: %v", err)
+	}
+	freight := laneByID(snap, "freight")
+	if freight.Freshness.Kind != "stale" {
+		t.Fatalf("freight freshness = %q, want stale (ticket-sync is days old)", freight.Freshness.Kind)
+	}
+	if freight.Freshness.AgeBucketMs == nil || *freight.Freshness.AgeBucketMs < 15000 {
+		t.Fatalf("freight ageBucketMs = %v, want a quantised age >= 15000ms derived from ticket-sync's own 'at'", freight.Freshness.AgeBucketMs)
+	}
+}
+
+// TestPollOnceFreightRetainsLastGoodOnScanFailure (#84) proves freight has
+// its OWN independent lastGoodAsOf/lastGoodLaneData tracking (Server.
+// lastGoodAsOf["freight"], separate from ["live"]) - the same retention
+// contract TestPollOnceScanFailureIsFailedWithLastGood already pins for
+// dispatches/gates/trains, applied to the newly-live fourth lane.
+func TestPollOnceFreightRetainsLastGoodOnScanFailure(t *testing.T) {
+	root := t.TempDir()
+	writeRecord(t, root, "ticket-sync/ticket-sync.json", validTicketSyncJSON("2026-07-23T11:59:50Z"))
+	writeRecord(t, root, "ticket-84/ticket.json", validTicketJSON("ticket-84", "2026-07-23T11:59:50Z", 84, "Light up the FREIGHT lane", "Backlog", "https://github.com/polecatspeaks/StarCar/issues/84"))
+	srv := newTestServer(t, root)
+
+	now := time.Date(2026, 7, 23, 12, 0, 0, 0, time.UTC)
+	snap1, _, err := srv.PollOnce(now)
+	if err != nil {
+		t.Fatalf("first PollOnce: %v", err)
+	}
+	goodFreight := laneByID(snap1, "freight").Data
+
+	if err := os.RemoveAll(root); err != nil {
+		t.Fatalf("removing store dir: %v", err)
+	}
+	snap2, _, err := srv.PollOnce(now.Add(1 * time.Second))
+	if err != nil {
+		t.Fatalf("second PollOnce: %v", err)
+	}
+	freight2 := laneByID(snap2, "freight")
+	if freight2.Freshness.Kind != "failed" {
+		t.Fatalf("freight freshness = %q, want failed once the store directory vanishes", freight2.Freshness.Kind)
+	}
+	if freight2.Freshness.LastGoodAsOf == nil {
+		t.Errorf("freight failed freshness must carry lastGoodAsOf, got nil")
+	}
+	if !reflect.DeepEqual(freight2.Data, goodFreight) {
+		t.Errorf("freight Data on scan failure = %#v, want the RETAINED poll-1 payload %#v", freight2.Data, goodFreight)
 	}
 }
 
@@ -497,5 +625,39 @@ func validDispatchedJSON(subject, at string) string {
 		"at": "` + at + `",
 		"normalisation": [],
 		"integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+	}`
+}
+
+// validTicketSyncJSON (#84) is the freight adapter's heartbeat marker - no
+// extra payload key, just the base schema fields (kind: ticket-sync).
+func validTicketSyncJSON(at string) string {
+	return `{
+		"schema": "starcar-artifact/1",
+		"kind": "ticket-sync",
+		"subject": "ticket-sync",
+		"session_id": "freight-adapter",
+		"at": "` + at + `",
+		"normalisation": [],
+		"integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+	}`
+}
+
+// validTicketJSON (#84) is one freight lane entry matching
+// schema/starcar-ticket.schema.json's shape.
+func validTicketJSON(subject, at string, number int, title, status, url string) string {
+	return `{
+		"schema": "starcar-artifact/1",
+		"kind": "ticket",
+		"subject": "` + subject + `",
+		"session_id": "freight-adapter",
+		"at": "` + at + `",
+		"normalisation": [],
+		"integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+		"ticket": {
+			"number": ` + strconv.Itoa(number) + `,
+			"title": "` + title + `",
+			"status": "` + status + `",
+			"url": "` + url + `"
+		}
 	}`
 }

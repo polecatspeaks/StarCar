@@ -50,6 +50,11 @@ func TestAssembledSnapshotValidatesAgainstWireSchema(t *testing.T) {
 		"integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
 	}`)
 	writeRecord(t, root, "orphan-1/dispatched-1.json", validDispatchedJSON("orphan-1", "2026-07-23T09:06:00Z"))
+	// #84: freight - a ticket-sync heartbeat plus one queued ticket - proves
+	// the newly-live fourth lane's payload validates against the same wire
+	// schema alongside trains/gates/dispatches in one real assembled snapshot.
+	writeRecord(t, root, "ticket-sync/ticket-sync.json", validTicketSyncJSON("2026-07-23T09:19:50Z"))
+	writeRecord(t, root, "ticket-84/ticket.json", validTicketJSON("ticket-84", "2026-07-23T09:19:50Z", 84, "Light up the FREIGHT lane", "Backlog", "https://github.com/polecatspeaks/StarCar/issues/84"))
 
 	cfg := testConfig(t, root)
 	cfg.RepoRoot = filepath.Dir(root) // root itself is NOT "artifacts", but any parent proves the prefix computes
@@ -94,7 +99,7 @@ func TestAssembledSnapshotValidatesAgainstWireSchema(t *testing.T) {
 	if snap.Config.GitHubArtifactsPrefix == "" {
 		t.Errorf("Config.GitHubArtifactsPrefix must be non-empty when RepoRoot is a real ancestor of StorePath")
 	}
-	var trainsLane, gatesLane, dispatchesLane Lane
+	var trainsLane, gatesLane, dispatchesLane, freightLane Lane
 	for _, l := range snap.Lanes {
 		switch l.ID {
 		case "trains":
@@ -103,6 +108,8 @@ func TestAssembledSnapshotValidatesAgainstWireSchema(t *testing.T) {
 			gatesLane = l
 		case "dispatches":
 			dispatchesLane = l
+		case "freight":
+			freightLane = l
 		}
 	}
 	trainsPayload, ok := trainsLane.Data.(assemble.TrainsPayload)
@@ -148,5 +155,21 @@ func TestAssembledSnapshotValidatesAgainstWireSchema(t *testing.T) {
 	}
 	if orphanDir != "orphan-1" {
 		t.Errorf("orphan-1 recordDir = %q, want orphan-1", orphanDir)
+	}
+
+	// #84: freight - the newly-live fourth lane, on the SAME real
+	// schema-validated wire output as trains/gates/dispatches above.
+	if freightLane.Freshness.Kind != "fresh" {
+		t.Errorf("freight freshness = %q, want fresh (ticket-sync is 10s old, stalenessMs default 15000)", freightLane.Freshness.Kind)
+	}
+	freightPayload, ok := freightLane.Data.(assemble.FreightPayload)
+	if !ok {
+		t.Fatalf("freight lane Data is %T, want assemble.FreightPayload", freightLane.Data)
+	}
+	if len(freightPayload.Tickets) != 1 {
+		t.Fatalf("expected 1 ticket, got %d", len(freightPayload.Tickets))
+	}
+	if freightPayload.Tickets[0].Number != 84 || freightPayload.Tickets[0].RecordDir != "ticket-84" {
+		t.Errorf("unexpected ticket shape: %+v", freightPayload.Tickets[0])
 	}
 }

@@ -1155,20 +1155,70 @@ test('#12: unparseable findings renders a neutral "unknown" badge, never a guess
   assert.ok(badges[0].textContent.toLowerCase().includes('unknown'));
 });
 
-test('renderBoard distinguishes bagged (fuel) and dark (freight) with different rendered text', () => {
+// #84: freight went live, so no CURRENT lane id produces body.kind 'dark'
+// through render.js's buildLaneBody switch any more (freight was the only
+// id that ever did) - this test's freight half is retired rather than kept
+// green on a stale premise. fuel's bagged rendering is untouched by #84 and
+// stays covered here.
+test('renderBoard renders bagged (fuel) with its own text', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([{ id: 'fuel', title: 'Fuel', position: 'bagged', freshness: { kind: 'not-applicable' } }]);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const bagged = root.querySelectorAll('.lane-body-bagged');
+  assert.equal(bagged.length, 1);
+  assert.equal(bagged[0].textContent, 'data held, not surfaced');
+});
+
+// #84: freight's three inbound-queue states, through the real
+// buildBoardViewModel -> renderBoard pipeline (dom-writer's OWN coverage of
+// render.js's Case 1/2/3, distinct from render.test.js's view-model-level
+// pins above) - the rendered DOM text a reader actually sees.
+test('#84: renderBoard renders freight Case 1 (never-polled) with the honest "not yet polled" secondary line and an empty queue body, never "no tickets" alone', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([{ id: 'freight', title: 'Freight', position: 'live', freshness: { kind: 'never-polled' }, data: { tickets: [] } }]);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  assert.equal(root.querySelectorAll('.lane-secondary')[0].textContent, 'not yet polled');
+  const empty = root.querySelectorAll('.lane-body-freight-empty');
+  assert.equal(empty.length, 1);
+  assert.equal(empty[0].textContent, 'no tickets in the queue');
+});
+
+test('#84: renderBoard renders freight Case 2 (fresh, genuinely empty) with a DIFFERENT secondary line than Case 1, same empty-queue body', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([{ id: 'freight', title: 'Freight', position: 'live', freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' }, data: { tickets: [] } }]);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  assert.equal(root.querySelectorAll('.lane-secondary')[0].textContent, 'fresh');
+  assert.equal(root.querySelectorAll('.lane-body-freight-empty').length, 1);
+});
+
+test('#84: renderBoard renders freight Case 3 (stale) with the stale secondary line and the last-known queue still visible, never blanked', () => {
   const doc = createMiniDocument();
   const root = doc.createElement('main');
   const snapshot = makeSnapshot([
-    { id: 'freight', title: 'Freight', position: 'dark', freshness: { kind: 'not-applicable' } },
-    { id: 'fuel', title: 'Fuel', position: 'bagged', freshness: { kind: 'not-applicable' } }
+    {
+      id: 'freight',
+      title: 'Freight',
+      position: 'live',
+      freshness: { kind: 'stale', asOf: '2026-07-23T00:00:00Z', ageBucketMs: 90000 },
+      data: { tickets: [{ number: 84, title: 'Light up the FREIGHT lane', status: 'Backlog', url: 'https://github.com/polecatspeaks/StarCar/issues/84' }] }
+    }
   ]);
   renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
 
-  const dark = root.querySelectorAll('.lane-body-dark');
-  const bagged = root.querySelectorAll('.lane-body-bagged');
-  assert.equal(dark.length, 1);
-  assert.equal(bagged.length, 1);
-  assert.notEqual(dark[0].textContent, bagged[0].textContent);
+  assert.ok(root.querySelectorAll('.lane-secondary')[0].textContent.startsWith('stale,'));
+  const rows = root.querySelectorAll('.freight-row');
+  assert.equal(rows.length, 1);
+  assert.equal(root.querySelectorAll('.freight-number')[0].textContent, '#84');
+  const titleLink = root.querySelectorAll('.freight-title')[0];
+  assert.equal(titleLink.textContent, 'Light up the FREIGHT lane');
+  assert.equal(titleLink.attributes.href, 'https://github.com/polecatspeaks/StarCar/issues/84');
+  assert.equal(root.querySelectorAll('.freight-status')[0].textContent, 'Backlog');
 });
 
 // --- #67: compact clock time (owner FORMAT NIT, 2026-07-26 17:16) ---

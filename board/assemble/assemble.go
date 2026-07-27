@@ -226,7 +226,56 @@ func Assemble(in Input) Result {
 		result.Trains.Trains = []Train{}
 	}
 
+	// #84: freight reads raw kind=ticket records DIRECTLY - never through
+	// fold (owner ruling item 3: "the fold is not involved" - board/fold has
+	// no case for kind=ticket at all, algorithm.go's bySubject switch only
+	// groups dispatched/returned/presumed-lost/intent). recordDirs is
+	// already built above (line ~56), single-sourced from store.Record.Path
+	// the same way every other entry's RecordDir is (#28, Law 6).
+	result.Freight.Tickets = freightTickets(in.Records, recordDirs)
+
 	return result
+}
+
+// freightTickets (#84) scans every raw record for kind=="ticket" and reads
+// its "ticket" payload key (schema/starcar-ticket.schema.json already
+// guarantees number/title/status/url are present and correctly typed on any
+// record that survived store.Scan's schema gate; the type assertions below
+// are defense-in-depth, matching manifestPayload's own posture just above -
+// a malformed payload is silently skipped rather than crashing the board,
+// Law 1's "a board that guesses or dies is worse than one that discloses").
+// Sorted ascending by issue number: store.Scan's own order is lexical-by-
+// path (an accident of directory naming), never a dispatcher-legible queue
+// order, so Assemble imposes one rather than exposing scan order as if it
+// meant something.
+func freightTickets(records []store.Record, recordDirs map[string]string) []Ticket {
+	tickets := []Ticket{}
+	for _, r := range records {
+		if k, _ := r.Fields["kind"].(string); k != "ticket" {
+			continue
+		}
+		raw, isMap := r.Fields["ticket"].(map[string]any)
+		if !isMap {
+			continue
+		}
+		numberFloat, isNum := raw["number"].(float64)
+		title, _ := raw["title"].(string)
+		status, _ := raw["status"].(string)
+		url, _ := raw["url"].(string)
+		if !isNum {
+			continue
+		}
+		subject, _ := r.Fields["subject"].(string)
+		tickets = append(tickets, Ticket{
+			Number:    int(numberFloat),
+			Title:     title,
+			Status:    status,
+			URL:       url,
+			RecordDir: recordDirs[subject],
+		})
+	}
+	sort.Slice(tickets, func(i, j int) bool { return tickets[i].Number < tickets[j].Number })
+	return tickets
 }
 
 // dispatchWireMap reuses fold.DispatchEntry's OWN MarshalJSON (the single

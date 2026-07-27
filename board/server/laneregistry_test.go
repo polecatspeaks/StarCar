@@ -4,13 +4,14 @@ import "testing"
 
 // TestLaneRegistryPin: design S5.2's completeness guard - shrinking the
 // registered lane set is a red. The five lanes are the whole v0 registry
-// (dispatches, gates, trains live; freight dark; fuel bagged).
+// (dispatches, gates, trains, freight live; fuel bagged - #84 flipped
+// freight dark -> live).
 func TestLaneRegistryPin(t *testing.T) {
 	want := map[string]string{
 		"dispatches": "live",
 		"gates":      "live",
 		"trains":     "live",
-		"freight":    "dark",
+		"freight":    "live",
 		"fuel":       "bagged",
 	}
 	if len(laneRegistry) != len(want) {

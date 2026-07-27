@@ -405,6 +405,8 @@ function renderLaneBody(doc, body, linkCfg) {
       return renderGates(doc, body, linkCfg);
     case 'dispatches':
       return renderDispatches(doc, body, linkCfg);
+    case 'freight':
+      return renderFreight(doc, body);
     case 'dark':
       return el(doc, 'div', 'lane-body lane-body-dark', body.text);
     case 'bagged':
@@ -577,6 +579,37 @@ function renderDispatches(doc, body, linkCfg) {
     // cluster's own flex line.
     const supersededDisclosure = renderSupersededDisclosure(doc, 'solari-superseded', 'solari-superseded-entry', d.superseded, d.recordDir, linkCfg);
     if (supersededDisclosure) row.appendChild(supersededDisclosure);
+    rows.appendChild(row);
+  }
+  wrap.appendChild(rows);
+  return wrap;
+}
+
+// FREIGHT: the inbound ticket queue (#84) - one row per queued issue. The
+// title links DIRECTLY to the issue's github.com URL (t.url, verbatim from
+// the wire) rather than through linkCfg's recordDir composition every other
+// provenance link on this board uses - a ticket record already carries the
+// real issue URL itself, so there is no repo-relative path to assemble
+// (Law 6: never re-derive what the record already states).
+//
+// Same "empty-but-live reads as a stated absence, not a rendering hole"
+// posture as renderGates' N3 precedent above: a genuinely empty queue says
+// so, in its own honest line - paired with the lane's OWN freshness
+// secondary line (composeLines, render.js), which is what actually carries
+// the never-run/ran-empty/stale distinction (#84's Law 1 requirement) -
+// this function never re-states or duplicates that distinction itself.
+function renderFreight(doc, body) {
+  const wrap = el(doc, 'div', 'lane-body lane-body-freight');
+  if (body.tickets.length === 0) {
+    wrap.appendChild(el(doc, 'div', 'lane-body-freight-empty', 'no tickets in the queue'));
+    return wrap;
+  }
+  const rows = el(doc, 'div', 'freight-rows');
+  for (const t of body.tickets) {
+    const row = el(doc, 'div', 'freight-row');
+    row.appendChild(el(doc, 'span', 'freight-number', `#${t.number}`));
+    row.appendChild(factOrLink(doc, 'freight-title', t.title, t.url));
+    row.appendChild(el(doc, 'span', 'freight-status', t.status)); // VERBATIM
     rows.appendChild(row);
   }
   wrap.appendChild(rows);

@@ -96,7 +96,7 @@
         "position": { "type": "string", "description": "A PositionDef id from vocabularies.positions - open vocabulary, registry-owned (D11)." },
         "freshness": { "$ref": "#/$defs/freshness" },
         "data": {
-          "$comment": "Shapes for the v0 lanes are pinned by $defs.trainsPayload, $defs.gatesPayload, and $defs.dispatchesPayload below (spec YB-5) - each landed red-first by the schema car (plan task 2.2). An unrecognised lane's payload is a free object the view meets with the no-renderer path, never a validation failure (Law 7); these three $defs are not $ref'd here because a lane's data shape is chosen by which lane it is, not by one closed schema union.",
+          "$comment": "Shapes for the v0 lanes are pinned by $defs.trainsPayload, $defs.gatesPayload, $defs.dispatchesPayload, and (#84) $defs.freightPayload below (spec YB-5) - each landed red-first by the schema car (plan task 2.2). An unrecognised lane's payload is a free object the view meets with the no-renderer path, never a validation failure (Law 7); these four $defs are not $ref'd here because a lane's data shape is chosen by which lane it is, not by one closed schema union.",
           "description": "The lane payload. Shapes for the v0 lanes are pinned by the spec's payload contracts (S4) and their vectors; an unrecognised lane's payload is a free object the view meets with the no-renderer path, never a validation failure (Law 7)."
         }
       },
@@ -181,6 +181,30 @@
         }
       },
       "required": ["gates"]
+    },
+    "freightPayload": {
+      "type": "object",
+      "description": "#84: the freight lane's data shape - the inbound ticket queue (GitHub Project 6 items in Backlog or Todo status, owner ruling 2026-07-27). Read directly from raw kind=ticket store records (schema/starcar-ticket.schema.json) - board/fold has no case for this kind at all, so this payload is never derived through fold's supersession/liveness machinery the way trainsPayload/gatesPayload/dispatchesPayload are.",
+      "properties": {
+        "tickets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "number": { "type": "integer", "description": "The GitHub issue number." },
+              "title": { "type": "string" },
+              "status": { "type": "string", "description": "The project's Status field value at write time (Backlog/Todo in practice - open vocabulary, never schema-enumerated, same posture as every other recognition value on this board)." },
+              "url": { "type": "string" },
+              "recordDir": {
+                "type": "string",
+                "description": "#28 (clickable provenance): same convention as every other entry's recordDir - this ticket's own record directory, relative to the store root, single-sourced from store.Record.Path."
+              }
+            },
+            "required": ["number", "title", "status", "url"]
+          }
+        }
+      },
+      "required": ["tickets"]
     },
     "dispatchesPayload": {
       "type": "object",

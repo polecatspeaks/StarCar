@@ -541,6 +541,73 @@ export function addRecordToStore(storeDir, subject, kind, at, extra = {}) {
   );
 }
 
+// --- #84: freight's three absence/staleness states, each a MINIMAL,
+// self-contained scratch store (never the ambient repo store, which has no
+// freight adapter output of its own to seed a controlled Case 1/2/3 from -
+// same posture as buildScratchStoreWithHealthTrendFamilies above).
+
+function freightWrite(storeDir, subject, kind, at, extra = {}) {
+  const dir = join(storeDir, subject);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(
+    join(dir, `${kind}.json`),
+    JSON.stringify(
+      {
+        schema: 'starcar-artifact/1',
+        kind,
+        subject,
+        session_id: 'freight-adapter',
+        at,
+        normalisation: [],
+        integrity: 'sha256:0000000000000000000000000000000000000000000000000000000000000000',
+        ...extra
+      },
+      null,
+      2
+    ),
+    'utf8'
+  );
+}
+
+// Case 1 (#84): the freight adapter has NEVER RUN - no kind=ticket-sync
+// record anywhere in the store at all. A plain empty scratch dir: the real
+// Go server's own honest-empty rule (DR3-5a) would otherwise render an
+// empty store as "fresh" for dispatches/gates/trains, which is exactly the
+// ambiguity #84 exists to NOT let freight fall into.
+export function buildScratchStoreFreightNeverPolled() {
+  return mkdtempSync(join(tmpdir(), 'starcar-board-freight-never-polled-'));
+}
+
+// Case 2 (#84): the adapter RAN and the queue is GENUINELY EMPTY - a recent
+// ticket-sync heartbeat, zero ticket records. "Recent" is computed from the
+// REAL wall clock at build time (never a fixed past date), a few seconds
+// before now, safely inside the default stalenessMs (15000ms) for the
+// whole browser-launch-and-navigate window this test needs.
+export function buildScratchStoreFreightFreshEmpty() {
+  const storeDir = mkdtempSync(join(tmpdir(), 'starcar-board-freight-fresh-empty-'));
+  const recentAt = new Date(Date.now() - 2000).toISOString().replace(/\.\d+Z$/, 'Z');
+  freightWrite(storeDir, 'ticket-sync', 'ticket-sync', recentAt);
+  return storeDir;
+}
+
+// Case 3 (#84): the adapter's last successful run is OLD (past
+// stalenessMs) - a ticket-sync heartbeat dated far in the past, PLUS one
+// queued ticket, proving the last-known queue still renders (never
+// blanked) even while stale.
+export function buildScratchStoreFreightStale() {
+  const storeDir = mkdtempSync(join(tmpdir(), 'starcar-board-freight-stale-'));
+  freightWrite(storeDir, 'ticket-sync', 'ticket-sync', '2020-01-01T00:00:00Z');
+  freightWrite(storeDir, 'ticket-84', 'ticket', '2020-01-01T00:00:00Z', {
+    ticket: {
+      number: 84,
+      title: 'Light up the FREIGHT lane',
+      status: 'Backlog',
+      url: 'https://github.com/polecatspeaks/StarCar/issues/84'
+    }
+  });
+  return storeDir;
+}
+
 function goBinary() {
   // CI (docs/setup.md's Go toolchain row): actions/setup-go puts `go` on
   // PATH for the whole job, same as the existing "Run board Go vet +

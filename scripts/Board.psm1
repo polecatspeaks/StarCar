@@ -96,6 +96,34 @@ function Get-PropertyOrNull {
     return $prop.Value
 }
 
+function Get-BoardQueueItems {
+    <#
+      #84 (freight adapter): filters `gh project item-list <n> --owner <o> --format
+      json` output to items in Backlog OR Todo status - the owner-ruled definition of
+      "the inbound queue" (work accepted but not started; excludes In Progress, already
+      visible on the trains lane, and Done). Returns normalized [pscustomobject]s with
+      Number/Title/Status/Url - never the raw gh shape - so the freight adapter (and any
+      future consumer) never re-parses content.number/content.title/content.url itself
+      (Law 6: one place reads the gh shape). A missing status (a freshly-added board item,
+      Get-PropertyOrNull's own doc comment names this exact case) is excluded, same as
+      In Progress/Done - the queue is an explicit Backlog/Todo allowlist, not a
+      not-Done blocklist.
+    #>
+    param([Parameter(Mandatory)] [object]$ItemsResult)
+
+    $queue = foreach ($item in $ItemsResult.items) {
+        $status = Get-PropertyOrNull -Object $item -Name 'status'
+        if ($status -ne 'Backlog' -and $status -ne 'Todo') { continue }
+        [pscustomobject]@{
+            Number = $item.content.number
+            Title  = $item.content.title
+            Status = $status
+            Url    = $item.content.url
+        }
+    }
+    @($queue)
+}
+
 function Format-BoardListLine {
     <#
       One line per item: "#<n> [<status>] <title>". Works for both the plain
@@ -191,4 +219,4 @@ function Resolve-BoardBatchItems {
     }
 }
 
-Export-ModuleMember -Function Get-BoardStatusField, Resolve-BoardStatusOptionId, Find-BoardItemForIssue, Format-BoardListLine, ConvertFrom-BoardIssueNumberList, Resolve-BoardBatchItems
+Export-ModuleMember -Function Get-BoardStatusField, Resolve-BoardStatusOptionId, Find-BoardItemForIssue, Format-BoardListLine, ConvertFrom-BoardIssueNumberList, Resolve-BoardBatchItems, Get-BoardQueueItems
