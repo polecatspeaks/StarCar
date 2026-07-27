@@ -896,6 +896,76 @@ test('#71 fix-cycle r2 (MINOR-R1-2): when EVERY superseded item is malformed, no
   assert.equal(root.querySelectorAll('.solari-superseded-entry').length, 0);
 });
 
+// #71 fix cycle r3 (MINOR-R2-1): the owner-ruled "COLLAPSED by default"
+// (issue #69's M1 ruling) had zero regression pin - board.css's own comment
+// asserted it by READING renderSupersededDisclosure, never by a test that
+// would catch a future `details.setAttribute('open', '')` regression. This
+// pins BOTH owners (a car chip's disclosure and a dispatch row's) never
+// carry an `open` attribute, however many superseded entries they have.
+test("#71 fix cycle r3 (MINOR-R2-1): a superseded disclosure NEVER carries an 'open' attribute - collapsed by default is a REGRESSION PIN, not just a comment", () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot(
+    [
+      {
+        id: 'trains',
+        title: 'Trains',
+        position: 'live',
+        freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+        data: {
+          trains: [
+            {
+              id: 'train:board-v0',
+              title: 'T',
+              tickets: [],
+              cars: [
+                {
+                  subject: 'carA',
+                  role: 'car',
+                  state: 'returned',
+                  at: '2026-07-23T18:00:00Z',
+                  recordDir: 'carA',
+                  superseded: [{ kind: 'dispatched', at: '2026-07-23T17:00:00Z' }]
+                }
+              ],
+              declaredNotObserved: []
+            }
+          ]
+        }
+      },
+      {
+        id: 'dispatches',
+        title: 'Dispatches',
+        position: 'live',
+        freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+        data: {
+          dispatches: [
+            {
+              subject: 'orphan-1',
+              state: 'returned',
+              at: '2026-07-23T18:00:00Z',
+              assigned: false,
+              recordDir: 'orphan-1',
+              superseded: [{ kind: 'dispatched', at: '2026-07-23T17:00:00Z' }]
+            }
+          ]
+        }
+      }
+    ],
+    githubCfg
+  );
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const disclosures = [...root.querySelectorAll('.car-superseded-disclosure'), ...root.querySelectorAll('.solari-superseded-disclosure')];
+  assert.equal(disclosures.length, 2, 'test precondition not met: expected one car disclosure and one dispatch-row disclosure');
+  for (const details of disclosures) {
+    assert.ok(
+      !('open' in details.attributes),
+      `REGRESSION (MINOR-R2-1): a superseded disclosure carries an 'open' attribute (${JSON.stringify(details.attributes)}) - the owner ruling is COLLAPSED by default`
+    );
+  }
+});
+
 // --- #12: car health bar ----------------------------------------------------
 
 test('#12: a converged family (majors reaches 0) renders a calm health-trend badge with the series, on the LATEST round only', () => {
