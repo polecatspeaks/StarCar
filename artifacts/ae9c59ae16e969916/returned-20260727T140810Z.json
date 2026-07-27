@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "ae9c59ae16e969916",
+  "session_id": "8a347c36-20b4-427a-ae0b-46855aa7bb72",
+  "at": "2026-07-27T14:08:10Z",
+  "outcome": "done",
+  "findings": "R1-M1 (Major, screenshot staleness) resolved: independently verified all of the reviewer's claims (verify-registers.mjs:104 no storePath override, 84/248 real records carry task_id, a076bf6c0a94e302f maps to process-42-car-r3, both PNGs visually confirmed) before writing, and extended the disclosure beyond what was cited - found hot-yard.png in both directories is also affected via the same ambient-store cpSync mechanism, and confirmed health-trend-and-provenance.png is unaffected - stating each explicitly rather than assuming. R1-m1 (Law 1, empty-string taskId) fixed one character in two sites, pinned red-first (two new tests, both observed '' !== null pre-fix). R1-m2 (instrument honesty) fixed by seeding a genuinely long task-id and adding a length-dependent scrollWidth-vs-clientWidth assertion so the test cannot pass for the wrong reason again. R1-m3 (stale comment) corrected. One transient full-suite port-collision flake observed and reproduced-away (5/5 alone, 225/225 on full-suite re-run) - recognized as the same load-flake class the reviewer already disclosed, not a regression.",
+  "abstract": "Fix cycle round 2 on view train #75 addressed a REJECT (1 Major, 3 minor) where all three of the car's contested engineering judgments were upheld by the reviewer. Landed the screenshot-staleness disclosure the reviewer required (two new READMEs, images left uncaptured per instruction, every claim independently re-verified against the real store and the real images before writing), fixed the empty-string Law 1 gap to match the sibling recordDir field's truthiness convention, corrected an instrument-honesty gap in the long-task-id truncation test by making its fixture and assertion actually earn the test's name, and fixed one stale comment - all red-first where a test was possible, with full suites re-derived at final HEAD.",
+  "subject_basis": "runtime-id",
+  "task_id": "view-75-car-r2",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:74f40d8a00208dc0f364d0fff12bd41331dc68e68e5113b97718cff00a0f1f4e"
+}
