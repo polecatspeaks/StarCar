@@ -1,6 +1,6 @@
 ---
 name: goodnight
-description: Session-end ritual - triage in-flight work (wait or write a resume packet), push sweep, state checkpoint, board pass, CI disposition, and the yard-status close. Invoke when the owner signs off for the day or asks to close the session cleanly.
+description: Session-end ritual - triage in-flight work (wait or write a resume packet), push sweep, friction sweep, state checkpoint, board pass, CI disposition, and the yard-status close. Invoke when the owner signs off for the day or asks to close the session cleanly.
 ---
 
 # /goodnight - closing the yard
@@ -23,6 +23,26 @@ it.
 
 Shared checkout clean; default branch pushed (release pipelines build from the REMOTE).
 Car worktree branches are exempt - they are recorded in the packet instead.
+
+## 2b. Friction sweep (#74 - while the context holding the friction is still alive)
+
+Before writing the checkpoint, sweep THIS session for unlogged friction: walk back
+through the session's own work and land a row in `docs/friction-log.md` for anything
+that cost time, produced a wrong diagnosis, or made a defect possible and was not
+logged when it happened. Then state the result in the yard-status close (step 6),
+always, in one of exactly three forms: **"friction sweep: N rows added"**, **"friction
+sweep: nothing new"**, or **"friction sweep: SKIPPED because X"**. The statement is the
+load-bearing half - it is a completeness assertion, and it makes an empty evening
+distinguishable from an unswept one. A close that says nothing about the sweep is an
+unswept close.
+
+*Scar (#74, 2026-07-27): the log-as-it-happens discipline decays exactly when the
+session is busiest, which is when friction is densest. The 07-26 marathon logged 8 rows
+by 20:05, then ZERO across the five busiest hours (#65 rounds 2-5 with a second swirl
+escalation and an owner amputation ruling, the #67 three-round train, the #69/#71 car
+and REJECT). The next morning's retro ran on a log that looked complete and was not,
+and the gap was found by the OWNER, not the conductor. By morning the context holding
+the friction has evaporated - session close is the last moment the sweep is cheap.*
 
 ## 3. State checkpoint (never skipped)
 
@@ -103,7 +123,8 @@ other un-backfilled gap above.
 ## 6. The yard-status close
 
 Three sentences, written to memory AND said to the owner: what landed, what is parked,
-what happens first tomorrow.
+what happens first tomorrow. Plus the friction-sweep line from step 2b (added / nothing
+new / skipped-because) - never omitted.
 
 ## 7. Weekly only: worktree prune
 

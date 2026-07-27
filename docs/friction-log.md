@@ -279,3 +279,33 @@ overlap found.
   Remove-Item of the single untracked file, sailed through. Cost: one split-and-retry round
   trip. Class: bundling a destructive op into a compound command forfeits the whole command;
   sequence destructive steps alone, after their prerequisites have already landed.
+
+## 2026-07-27 - reconstruction of the 07-26 evening (#74)
+
+Rows marked RECONSTRUCTED were never logged live - they are rebuilt from durable
+artifacts the morning after, which is itself the cost the first row records.
+
+- 2026-07-26 evening, RECONSTRUCTED (owner-caught 07-27, the finding that opened #74): THE
+  LOG ITSELF LAPSED. Eight rows logged by 20:05, then ZERO across the five busiest hours
+  (20:05 -> 00:58: #65 rounds 2-5 incl. the second swirl escalation and the owner's
+  amputation ruling, the #67 three-round train, the #69/#71 car + r1 REJECT). The morning
+  retro then ran on a log that looked complete and was not; the gap was found by the OWNER
+  asking "what happened?", not by any instrument. Cost: the evening's tool-level friction
+  evaporated with the context; a transcript-mine dispatch is reconstructing what it can.
+  Class: an as-it-happens discipline has no backstop - vigilance decays exactly when the
+  session is busiest, which is when friction is densest; only a close-time completeness
+  assertion (the #74 goodnight sweep, landed same day) distinguishes an empty evening from
+  an unswept one. Note: caps, the r4 rotation, and review findings from the window are NOT
+  re-rowed here - the landed verdicts already carry them; this log carries what THEY do not.
+
+- 2026-07-26 ~20:30-21:58, RECONSTRUCTED from the commit record and verdicts: THE SWIRL
+  FIRED TWICE IN ONE DAY, second time on #65 - r3 REJECT-ESCALATED (cap fired, owner
+  adjudication owed), owner ruled AMPUTATION of the citation-resolver header (de9cda2), r4
+  ran a fresh-reviewer rotation on the mechanical round-4 trigger (first non-drill use),
+  APPROVE at r5. Same class as the morning's #50+#32 swirl and the founding harness scar:
+  a PROSE artifact carrying structured claims (a header asserting resolver coverage)
+  attracts churn that closes findings and opens new ones in place. Cost: two extra review
+  rounds before the amputation dissolved the defect generator. Class: when successive
+  rounds rework the same prose surface, the surface is the defect - remove or mechanize it
+  rather than revise it; the swirl doctrine detects this but only AFTER rounds are spent,
+  so the cheaper catch is at design time (match the instrument to the artifact).
