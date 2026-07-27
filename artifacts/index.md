@@ -339,3 +339,5 @@ dispatch batch between regenerations.
 | a06d658c5485bd454 | returned | 2026-07-27T19:31:19Z | REJECT | a06d658c5485bd454/returned-20260727T193119Z.json |
 | aa29fe4a9fbb90268 | returned | 2026-07-27T19:37:09Z | success | aa29fe4a9fbb90268/returned-20260727T193709Z.json |
 | a06d658c5485bd454 | returned | 2026-07-27T19:44:59Z | APPROVE | a06d658c5485bd454/returned-20260727T194459Z.json |
+| js-review-92 | dispatched | 2026-07-27T20:11:14Z |  | js-review-92/dispatched-20260727T201114Z.json |
+| ps-review-92 | dispatched | 2026-07-27T20:11:19Z |  | ps-review-92/dispatched-20260727T201119Z.json |
