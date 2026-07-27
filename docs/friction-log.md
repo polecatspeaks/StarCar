@@ -440,6 +440,33 @@ locator phrase so a second party can re-derive it from that file.
   scope, pre-existing); the reviewer was asked to rule whether it is a real fragility
   worth its own ticket rather than have the conductor decide it alone.
 
+- 2026-07-27 ~12:20 (design-87 author, SELF-DISCLOSED; RECURRENCE of a logged class):
+  PWSH .NET STATIC FILE APIS IGNORE Set-Location - AGAIN, and this time it also made a
+  fault injection VACUOUS. The #87 design author used `[System.IO.File]` with a RELATIVE
+  path inside its worktree; .NET resolves against `[Environment]::CurrentDirectory`, which
+  `Set-Location` does not change, so the write landed in the SHARED CHECKOUT as a 0-byte
+  untracked file. Second-order cost, and the worse half: the run that was supposed to
+  fault-inject the citation gate therefore injected NOTHING and reported green - a
+  decorative guard produced by a path bug. Caught by the author, cleaned, and redone with
+  absolute paths plus an explicit `[Environment]::CurrentDirectory` set; shared checkout
+  verified clean by the conductor independently (`git status --porcelain` empty, the stray
+  path absent). Cost: one wasted injection cycle, no tracked state touched.
+  **This exact class is already in this log at 2026-07-26** (round-4 reviewer, same
+  mechanism, same shared-checkout target). A logged instance did not immunise the next
+  agent, because nothing MECHANICAL stands between a relative .NET path and the shared
+  checkout - the rule lives only in prose that a fresh dispatch may never read. Class:
+  pwsh maintains TWO current directories, and worktree isolation is enforced by discipline
+  rather than by mechanism. Candidate remedy if it recurs a third time: brief-level
+  boilerplate is already failing, so the next tier is a guard that refuses writes outside
+  the dispatch's own worktree, or simply banning bare `[System.IO.File]` in favour of
+  cmdlets that honour `Set-Location`.
+  SECOND, SEPARATE LESSON from the same disclosure, worth as much as the first: **the
+  citation gate scans `git ls-files` ONLY, so an UNTRACKED file is invisible to it.** The
+  author's first green run never saw the new document at all and proved nothing; it only
+  became a real check after staging. Any repo-policy gate keyed to `git ls-files` silently
+  passes new work until it is staged - which is exactly when an author is most likely to
+  believe they have been checked.
+
 - 2026-07-27, structural fact FOUND BY THE MINE (not friction, recorded so nobody
   re-digs): the per-dispatch "Entire-Checkpoint" blobs on the checkpoint branch are
   periodic snapshots of the SINGLE conductor session, not separate car/reviewer
