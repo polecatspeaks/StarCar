@@ -406,6 +406,22 @@ locator phrase so a second party can re-derive it from that file.
   Same family as the CI-watch scar one layer down: sampling a launcher is not observing a
   service.
 
+- 2026-07-27 ~09:37 (conductor, self-caught before merge): I APPENDED TO A FILE A CAR HAD
+  CHECKED OUT, guaranteeing a merge conflict in the one file every car is REQUIRED to
+  touch. Three friction rows landed on dev (e0a6a43, 4f7f05f, and this one) while car #79
+  was live and - correctly, per the log-as-it-happens rule - appending its OWN rows to
+  `docs/friction-log.md` in its worktree. Both parties did the right thing and the
+  collision is structural: an append-only log plus concurrent branches means every
+  multi-car day ends in a conflict on the same trailing lines. Cost: nil so far (resolvable
+  by keeping both sets - the rows are independent appends, never edits to each other), but
+  it is a standing tax and a place where a careless resolution could DROP a car's row,
+  which is silent loss of the record (Law 4). Class: the friction log is a
+  MULTI-WRITER APPEND SURFACE with no merge strategy declared; the resolution rule is
+  always UNION, never pick-a-side, and a conductor merging one must diff both parents'
+  additions before resolving. Candidate mechanisms if this recurs: a `.gitattributes`
+  union merge driver for this one file, or per-session section files that concatenate -
+  neither built today, deliberately (one occurrence is not yet a pattern).
+
 - 2026-07-27, structural fact FOUND BY THE MINE (not friction, recorded so nobody
   re-digs): the per-dispatch "Entire-Checkpoint" blobs on the checkpoint branch are
   periodic snapshots of the SINGLE conductor session, not separate car/reviewer
