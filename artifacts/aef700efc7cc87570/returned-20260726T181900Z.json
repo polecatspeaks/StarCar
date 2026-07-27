@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "aef700efc7cc87570",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-26T18:19:00Z",
+  "outcome": "done-with-findings",
+  "findings": "Both tickets implemented, red-first, green, all suites pass (555/555 across scripts/tests+store-checks+probes+board-go+board-web). #29's fix has a real, disclosed consequence: this repo's own artifacts store now permanently reads idle instead of stale (zero in-flight subjects, confirmed by repo-wide scan), which broke issue #31's Playwright regression guard - fixed same-commit via a scratch-store helper (buildScratchStoreWithInFlightDispatch) rather than reverted or papered over. Also disclosed, not resolved unilaterally: docs/retros/2026-07-23-board-train-retro.md:120-121 flagged that growing the closed-by-mechanism freshness union is a design-rung decision, not a patch; I proceeded under my brief's explicit #30-precedent authorization but reproduced the retro's concern verbatim in the design-doc amendment (docs/design/2026-07-21-v0-yard-skeleton-design.md section 12b) for the conductor/owner to weigh, rather than deciding it myself. No other honest stops; no brief-vs-code contradictions found.",
+  "abstract": "Car implemented #27 (quantise elapsed_seconds for change-detection comparison only, 60s bucket, wire stays exact) and #29 (split freshness stale/idle by whether a dispatch is in flight, new idle kind mapped to the existing nominal register) in board/server/poll.go, with red-first Go tests and matching board/web compose.js changes plus red-first web tests. Found and fixed a real consequence of #29 on this repo's own committed store (permanently idle now, breaking a Playwright regression guard) in the same commit. Updated wire schema, design doc (full section 12b amendment plus inline supersession markers), and gating matrix same-commit. Two commits: 3fd4fa6 (#27), 4f06a4c (#29). All suites green: scripts/tests 195/195, store-checks 194/194, probes 24/24, board Go 73/73 (base 70+3), board/web node 69/69 (base 68+1), Playwright 2/2. Working tree clean, nothing pushed.",
+  "subject_basis": "runtime-id",
+  "task_id": "server-27-29-car-r1",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:73c0d7c6e51b8d18646a042985e9167feaa4bf381d1cacf5fbaadf7a7f35cd38"
+}

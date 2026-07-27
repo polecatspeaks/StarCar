@@ -42,7 +42,7 @@ func LoadVocabularies(path string) (Vocabularies, []store.BoardCondition) {
 		return Vocabularies{}, []store.BoardCondition{{
 			Code:     "board-defs-unreadable",
 			Detail:   fmt.Sprintf("could not read %s: %v", path, err),
-			Register: "needs-attention",
+			Register: store.RegisterForCode("board-defs-unreadable"),
 		}}
 	}
 
@@ -56,7 +56,7 @@ func LoadVocabularies(path string) (Vocabularies, []store.BoardCondition) {
 		return Vocabularies{}, []store.BoardCondition{{
 			Code:     "board-defs-unreadable",
 			Detail:   fmt.Sprintf("could not parse %s: %v", path, err),
-			Register: "needs-attention",
+			Register: store.RegisterForCode("board-defs-unreadable"),
 		}}
 	}
 
@@ -75,7 +75,7 @@ func LoadVocabularies(path string) (Vocabularies, []store.BoardCondition) {
 				conditions = append(conditions, store.BoardCondition{
 					Code:     "board-def-invalid-row",
 					Detail:   fmt.Sprintf("%s: row %q is invalid (missing id/label, or register outside the closed set)", path, name),
-					Register: "needs-attention",
+					Register: store.RegisterForCode("board-def-invalid-row"),
 				})
 				continue
 			}

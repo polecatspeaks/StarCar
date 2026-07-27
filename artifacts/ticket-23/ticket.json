@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-23",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 23,
+    "title": "Producer's dispatch budget stamp has no brief-level override input (deferred, issue #22 item 1)",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/23"
+  },
+  "normalisation": [],
+  "integrity": "sha256:dc35d954b65976c94a8caeaefa01247c59ddb4b935e1bab5219c6aebe78bd5ad"
+}

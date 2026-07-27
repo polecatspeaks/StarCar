@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-14",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 14,
+    "title": "Portability: OS-portable requirement recorded; runtime decision at yard-board design; ubuntu CI leg at Car 3",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/14"
+  },
+  "normalisation": [],
+  "integrity": "sha256:4b9cc9a843bb241450b81c656a15081d99c1f38b556ff77dc4be5d391ecd23ca"
+}

@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-58",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 58,
+    "title": "Agent-run guided adoption: self-discovery onboarding for repos adopting the StarCar process",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/58"
+  },
+  "normalisation": [],
+  "integrity": "sha256:199f731f29a994a9bc5c4c75755ea1e0101936b633d34d919287aa35377840b5"
+}

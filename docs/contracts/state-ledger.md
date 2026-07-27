@@ -54,7 +54,7 @@ Per spec S9 rows 1-2, both parts of this claim are recorded, not one:
 
 | Claim | Answer |
 |---|---|
-| Is the artifact store append-only under git? | Yes - every artifact is a new file. The writer is now real: the producer hook (`scripts/Produce-Artifact.ps1`) writes one new file per dispatch EVENT (`<subject>/<kind>-<compact-at>.json`) and commits ONLY that path (`git commit --only`, never `-a`); nothing is edited or removed in place, and a co-staged foreign file is never swept into a harness commit (Producer.Tests.ps1 entanglement test, C2R1-M2). |
+| Is the artifact store append-only under git? | Yes - every artifact is a new file. The writer is now real: the producer hook (`scripts/Produce-Artifact.ps1`) writes one new file per dispatch EVENT (`<subject>/<kind>-<compact-at>.json`) and commits ONLY that path (`git commit --only`, never `-a`); nothing is edited or removed in place, and a co-staged foreign file is never swept into a harness commit (Producer.Tests.ps1 entanglement test, C2R1-M2). ONE RECORDED EXCEPTION (#54, owner ruling 2026-07-26): six launch-side `dispatched` records that the Copilot hook minted under agent NAMES (aliases - every one's work is fully recorded under its shop-minted twin subject) were removed in the open, because six structurally-unresolvable overdue lanes were wolf-criers on the board's primary signal and a crying instrument is worse than none. The originals remain one `git log` away; the posture otherwise stands unchanged, and a recurrence of aliasing (post-#54 rule: the task agent is named with the minted id) would earn a mechanical supersession kind rather than a second removal. |
 | Is there mutable process state to ledger? | No - see reasoning above. The producer and detector are both stateless script invocations. |
 
 ## Question 2 - derived committed artifacts
@@ -77,6 +77,14 @@ C.2) - see `docs/contracts/gating-matrix.md`'s own already-ARMED row for that st
 C.2's own commit invalidated this row and did not true it, a living-contracts miss its
 own reviewer also missed (the same class the plan folds as F7). Trued here, in the
 commit that caught it.
+
+**Amended (#84 fix cycle round 2, R1-m6, 2026-07-27):** `scripts/Sync-Freight.ps1` is a
+SECOND producer that stales the index the same way `Produce-Artifact.ps1` already does
+(and, like it, never regenerates `index.md` itself - confirmed by grep, no producer
+script in this repo does) - this row's existing contract already covers it without
+amendment: dev-branch staleness is the documented, gated-only-at-PR-to-main posture
+above, unchanged by which script produced the drift. Recorded here so the freight
+adapter's own contribution to index staleness is not mistaken for an undocumented gap.
 
 ## Question 1, amended (2026-07-23, yard-board train Car 4, plan task 4.4)
 
@@ -104,8 +112,8 @@ successful scan | poll cycle, scan failure | client (SSE) connect/reconnect.
 | `lastPollAt` (`Server.lastPollAt`) | RESET to `nil` | SET to the poll's injected `now` | SET to the poll's injected `now` (an ATTEMPT is recorded regardless of the scan's outcome - distinct from `lastGoodSnapshot`'s `asOf`, which only advances on success) | UNCHANGED | SAFE | `TestLastPollAtLedgerField` |
 | `pollInFlight` (`Server.pollInFlight`, atomic) | RESET to `false` | `TryBeginPoll` sets true, `EndPoll` (deferred) resets false around each poll attempt | same guard, unconditionally of outcome | UNCHANGED | SAFE | `TestSkipNotQueueGuard`, `TestRestartMidPollIsEquivalentToNeverStarted` (a hard kill mid-poll leaves nothing for the NEXT process to inherit, since nothing persists across processes) |
 | poll timer (`time.Ticker`, `RunPollLoop`, `poll.go`) | RESET - `RunPollLoop` constructs a brand-new `time.Ticker` every process start; no phase/interval state survives a restart | fires every `cfg.PollMs`; a tick that finds `pollInFlight` already true is SKIPPED (never queued - the same guard row above), so the timer itself never accumulates backlog | same - a tick during a failing scan still fires and still attempts a poll | UNCHANGED (the timer is process-global, not per-client) | SAFE | `TestSkipNotQueueGuard` (the guard the timer relies on); the ticker's OWN firing is production-loop behaviour with no dedicated unit test in this car (real timers are flake-prone; `PollOnce` is what every other test calls directly) - disclosed here rather than silently assumed |
-| `lastGoodAsOf["live"]` (`Server.lastGoodAsOf`) | RESET (empty map) | UPDATED to the poll's `now` | CARRIED at its last successful value - this map IS the mechanism behind the `failed` freshness variant's `lastGoodAsOf` field | UNCHANGED | SAFE | `TestPollOnceScanFailureIsFailedWithLastGood` |
-| `lastGoodLaneData[laneID]` (`Server.lastGoodLaneData`) | RESET (empty map) | UPDATED per live lane ID to the poll's freshly assembled `assemble.DispatchesPayload`/`GatesPayload`/`TrainsPayload` | CARRIED at its last successful value - `buildSnapshot` assigns this retained payload to `lane.Data` on a scan failure (#51 C2 fix; before this fix `lane.Data` went to Go's zero value `nil` on every scan failure regardless of prior state, degrading the web view to "no renderer for this payload" even though `freshness.kind=failed` correctly showed `lastGoodAsOf`); on the FIRST-EVER poll failure (empty map, nothing to retain) `lane.Data` stays `nil` - honest-empty, never a fabricated payload | UNCHANGED | SAFE | `TestPollOnceScanFailureIsFailedWithLastGood` (retention branch), `TestPollOnceFirstEverPollFailsKeepsDataNil` (nil branch) |
+| `lastGoodAsOf["live"\|"freight"]` (`Server.lastGoodAsOf`) | RESET (empty map) | **CONDITIONAL, per key, CORRECTED (#84 fix cycle round 3, R2-M1 - this row previously read "UPDATED (both keys, same poll's `now`)", true only through fix cycle round 1 and left stale when round 2's R1-M1 fix changed the write condition without truing this row in the same commit):** `"live"` is UPDATED unconditionally on every successful scan (DR3-5a - any successful scan is definitionally good data for dispatches/gates/trains). `"freight"` is UPDATED ONLY when `freightFreshnessVal.Kind != "never-polled"` (`poll.go`'s `computeFreightFreshness` result) - a freight lane that has never found a `ticket-sync` heartbeat leaves this key untouched, so it can never later claim "showing last good" after a scan failure (the exact confident-falsehood R1-M1 closed). | CARRIED at its last successful value (whichever value the poll-success column actually wrote, per key) - this map IS the mechanism behind the `failed` freshness variant's `lastGoodAsOf` field; for `"freight"`, "carried" can mean "still absent" if no poll has ever advanced it | UNCHANGED | SAFE | `TestPollOnceScanFailureIsFailedWithLastGood`, `TestPollOnceFreightRetainsLastGoodOnScanFailure` (#84), `TestPollOnceFreightNeverPolledScanFailureNeverClaimsLastGood` (#84 fix cycle round 2, the never-advances-when-never-polled case) |
+| `lastGoodLaneData[laneID]` (`Server.lastGoodLaneData`) | RESET (empty map) | **CONDITIONAL for `freight`, CORRECTED (#84 fix cycle round 3, R2-M1 - same staleness as the row above):** `dispatches`/`gates`/`trains` are UPDATED unconditionally on every successful scan, to the poll's freshly assembled `assemble.DispatchesPayload`/`GatesPayload`/`TrainsPayload`. `freight` (#84) is UPDATED ONLY when `freightFreshnessVal.Kind != "never-polled"` - the SAME gate as `lastGoodAsOf["freight"]` above, so the two never advance out of step with each other. Note this gate is on the RETENTION MAP only: `lane.Data` itself (the value actually served on THIS poll's wire) is still assigned `assemble.FreightPayload` on every successful scan regardless of the gate - a never-polled freight lane still honestly renders its real (possibly non-empty) ticket list on the CURRENT poll; only the FALLBACK value a later scan failure would retrieve is what stays unset. | CARRIED at its last successful value - `buildSnapshot` assigns this retained payload to `lane.Data` on a scan failure (#51 C2 fix; before this fix `lane.Data` went to Go's zero value `nil` on every scan failure regardless of prior state, degrading the web view to "no renderer for this payload" even though `freshness.kind=failed` correctly showed `lastGoodAsOf`); on the FIRST-EVER poll failure (empty map, nothing to retain) `lane.Data` stays `nil` - honest-empty, never a fabricated payload. For `freight` specifically, this is also the state after any run of poll successes that never once found a heartbeat: `nil`, never a fabricated "last good" queue. | UNCHANGED | SAFE | `TestPollOnceScanFailureIsFailedWithLastGood` (retention branch), `TestPollOnceFirstEverPollFailsKeepsDataNil` (nil branch), `TestPollOnceFreightRetainsLastGoodOnScanFailure` (#84, the freight-specific key), `TestPollOnceFreightNeverPolledScanFailureNeverClaimsLastGood` (#84 fix cycle round 2, the gated-off case) |
 | `connectedClients` (`sse.go`'s `subscriberRegistry`) | RESET to 0 | UNCHANGED by polling itself | UNCHANGED by polling itself | INCREMENT on `/api/stream` connect, DECREMENT on disconnect (request context done) | SAFE | `TestConnectedClientsLedger` |
 | lane-id set (`laneRegistry`, `laneregistry.go`) | UNCHANGED - compiled-in Go data, not runtime state; a restart cannot alter it | UNCHANGED | UNCHANGED | UNCHANGED | SAFE (immutable by construction - v0 has no adapter-plugin system yet, design D11) | `TestLaneRegistryPin` (fault-injected: shrinking the registry by one entry was OBSERVED to fail this test, then reverted byte-identical), `TestNewServerPreFirstPollIsNeverPolled` (all five lanes present even pre-first-poll) |
 | recognition vocabulary + shop-default budget (`Server.vocab`, `Server.defaultBudget`) | RE-READ from disk at construction (a restart picks up an on-disk edit) | UNCHANGED - loaded ONCE at `NewServer`, never refreshed mid-process | UNCHANGED | UNCHANGED | **DELIBERATE_CARRY** - a mid-process edit to `schema/vocab/kinds.json`/`outcomes.json` or `config/harness-defaults.json` is picked up only on the NEXT restart, never mid-run; this matches `board/fold`'s own loaders (`LoadVocab`/`LoadDefaultBudget`, one-shot by design) and is documented here so it is never mistaken for a bug | `board/fold/loaders_test.go` (existing); this car's `NewServer` construction path |
@@ -113,6 +121,36 @@ successful scan | poll cycle, scan failure | client (SSE) connect/reconnect.
 **Browser-side bounded state** (rendered snapshot, connection status, last-applied `seq`)
 is named here per design S6/S8 but is explicitly Car 5's to ledger - this server never
 reads or writes it; it is out of `board/server`'s process boundary entirely.
+
+## Question 1, amended (2026-07-27, #84 freight adapter car)
+
+**No new struct field** - `lastGoodAsOf` and `lastGoodLaneData` are the SAME two map
+fields the table above already ledgers; both rows are TRUED in place (not restated as a
+new row) to name the second key each map now carries. Header arithmetic is unchanged
+(still 9 process state fields; a new map KEY is not a new FIELD). What actually changed:
+freight's freshness (`board/server/poll.go`'s `computeFreightFreshness`, #84) is
+computed INDEPENDENTLY of `liveFreshnessVal` - it answers "has the freight adapter ever
+completed a run, and how stale is its last one" (derived from a `kind=ticket-sync`
+record's own `at`), never "did the whole-store scan succeed" (dispatches/gates/trains'
+shared question) - so it needed its OWN `lastGoodAsOf`/`lastGoodLaneData` key rather than
+reusing `"live"`'s.
+
+**CORRECTED (#84 fix cycle round 3, R2-M1): the paragraph below used to end here with
+"Lifecycle behaviour (restart/poll-success/scan-failure/reconnect) is IDENTICAL in shape
+to the existing `\"live\"` key's row - same map, same nil-check pattern, same
+retention-on-scan-failure code path - so no new lifecycle column values were needed, only
+the key-name generalisation reflected above." That was true only through fix cycle round
+1. Fix cycle round 2's R1-M1 fix (closing a Law 1 finding: a freight lane that had never
+proven a run could falsely claim "showing last good" after a later scan failure) made the
+POLL-SUCCESS column diverge for the `"freight"` key specifically - `"live"` still updates
+unconditionally (DR3-5a: any successful scan is good data for dispatches/gates/trains);
+`"freight"` now updates ONLY when `freightFreshnessVal.Kind != "never-polled"`. That
+divergence IS the fix, not an implementation detail underneath an unchanged shape - the
+table rows above state it directly rather than through this paragraph's own now-corrected
+claim, which is left here, corrected in place, only so a reader who lands on this
+paragraph's history sees the mistake and its fix rather than a silently vanished
+sentence.** The restart/scan-failure/reconnect columns remain identical in shape between
+the two keys; only poll-success diverges, and only for the reason stated in the table.
 
 ## Question 3, added (2026-07-23, yard-board train Car 5, plan task 5.3) - the browser's own state
 
@@ -126,17 +164,44 @@ tab), not a row inside `board/server`'s own 9-field count above - the header ari
 the top of this file is unchanged by this addition, and is stated here as its own
 question per the template's Q1/Q2 shape rather than folded into Q1's count.
 
+**Amended (2026-07-27, view train #69/#71 car, issue #69): a SIXTH browser-side field,
+and the first one in this section that is NOT purely in-memory.** The conditions strip's
+open/collapsed state (`board/web/js/condition-open-state.js`'s `{strip, groups}` shape) is
+read fresh from `window.sessionStorage` on every `repaint()` call and written by a single
+capturing-phase `'toggle'` listener on `root` (`app.js`'s `handleConditionToggle`) - this
+is deliberately NOT one more `let` beside `connected`/`ingestState`, because the whole
+point of #69 (owner: "closes back up every page refresh") is that this field survive a
+page reload the other five never do. `sessionStorage` gives exactly that lifecycle for
+free: it outlives a DOM rebuild AND a page refresh within the same tab, and is cleared by
+the browser itself on a new tab/session - so "do not persist across sessions in a way that
+could hide a new hot condition" (issue #69's own constraint) is satisfied by the storage
+API's own boundary, never by code in this repo re-implementing session detection.
+
 | Field (owner) | Page load | Tab reconnect (network drop then restored) | Server restart mid-connection | Verdict | Evidence |
 |---|---|---|---|---|---|
 | `ingestState.snapshot` (`app.js`) | starts `null`; set on the FIRST payload that both parses and validates (`firstPaint`) | UNCHANGED across a transient drop - the last validated snapshot stays rendered, marked disconnected (never blanked) | UNCHANGED until a new valid, higher-seq snapshot arrives from the restarted server | SAFE | `board/web/test/ingest.test.js` (discard-keeps-last-render, seq ordering); `dom-writer.test.js`'s disconnected-still-shows-the-lane test |
 | `ingestState.lastAppliedSeq` (`app.js`) | starts `-1` (`initialIngestState`) | UNCHANGED by a drop itself; the server's OWN `seq` resets to 0 on its restart (this file's Q1 row above), so the client's stored value can be numerically ahead of a freshly restarted server's `seq` until that server's count climbs back past it - a deliberate consequence of seq being a per-process monotonic counter, not a global one; the wire's `asOf`/lane data are what a reconnecting client actually judges freshness by, never a raw seq comparison across a server restart | resets to `-1` only on a full PAGE reload, never on a mere stream reconnect | SAFE | `board/web/test/ingest.test.js`'s three seq-ordering tests (lower/equal seq is a no-op; higher seq applies) |
 | `ingestState.markedStale` / `clientConditions` (`app.js`) | starts `false` / `[]` | set by a validation failure (task 5.2), cleared by the next VALID payload | same | SAFE | `board/web/test/ingest.test.js` |
 | `connected` (`app.js`, driven by `sse-protocol.js`'s watchdog) | starts `false` until the stream's first frame | flips `false` after two missed heartbeat intervals (`10000ms` default), flips back `true` on the next observed frame | flips `false` when the fetch/read loop throws or stalls past the watchdog | SAFE | `board/web/test/sse-protocol.test.js`'s disconnect-watchdog tests |
+| conditions-strip open state (`window.sessionStorage`, keyed `starcar-board-conditions-open`, read/written via `condition-open-state.js`) | starts collapsed (`{strip:false, groups:{}}`) on a genuinely NEW tab/session (sessionStorage is per-tab); on a same-tab PAGE RELOAD it is NOT reset - `sessionStorage` (unlike every `let` above) survives navigation within the tab, which is the entire point of #69 | UNCHANGED - a network drop/reconnect never touches storage, only `connected` and the rendered picture do | UNCHANGED - a server restart changes what is IN the board, never the reader's own open/closed preference for a given condition CODE; a condition code the restarted server no longer emits simply has no group to apply the flag to | SAFE | `board/web/test/condition-open-state.test.js` (pure state-shape: load/save round-trip, corrupt-JSON degrade, per-group independence); `board/web/test/dom-writer.test.js`'s `#69` block (an `openState` argument is correctly reflected in the rendered `open` attribute, per-strip and per-group, and a never-toggled code still defaults collapsed) |
 
 No lifecycle event here can produce a stale-looking "fine" - a dropped connection always
 renders `disconnected - showing last known` (never silently frozen with no chrome change),
 and a restarted server's lower `seq` cannot silently roll the view backward (seq ordering
 drops it as a no-op rather than un-rendering already-shown data).
+
+**NOT a seventh field, disclosed rather than left silent (2026-07-27, view train #69/#71
+fix cycle round 2, MAJOR-R1-1's owner ruling).** The per-row superseded-entries disclosure
+(`board/web/js/dom-writer.js`'s `renderSupersededDisclosure`, one `<details>`/`<summary>`
+per row/chip that carries a `superseded` entry) carries its own open/closed toggle too, but
+it is deliberately NOT tracked by any field in this file: no JS variable, no
+`sessionStorage` key, nothing this repo's own code reads or writes. It is the browser's
+native `<details>` element behaviour, unmediated - and `renderBoard` clears
+`root.textContent` on every repaint (`dom-writer.js`) regardless, so even that native
+toggle cannot outlive a rebuild. Chosen as the minimal option over threading it through
+`condition-open-state.js`'s `sessionStorage` mechanism (which would need one key per
+SUBJECT, open-ended and store-size-dependent, on a mechanism with no eviction story) -
+disclosed here, not owner-ruled, and revisitable if a future ticket wants it persisted.
 
 **A note on what is NOT a separate ledger row:** `Server.lastCompareBytes` (the stripped-
 for-comparison marshal of `lastGoodSnapshot`) is fully DERIVED from `lastGoodSnapshot`

@@ -47,6 +47,12 @@ type BoardCondition struct {
 	Code     string
 	Detail   string
 	Register string // "nominal" | "in-progress" | "needs-attention"
+	// RecordDir (#69/#71: clickable provenance, extending #28 to the
+	// board-conditions surface) is the store-root-relative directory of a
+	// record naming this condition's own subject, when one is resolvable -
+	// empty when the condition names no single subject/record (Law 1: no
+	// link is rendered rather than a guessed one).
+	RecordDir string
 }
 
 // ScanResult is everything one Scan call produced: survivors, quarantine,
@@ -64,14 +70,18 @@ type ScanResult struct {
 type Adapter struct {
 	artifactSchema *jsonschema.Schema
 	manifestSchema *jsonschema.Schema
+	ticketSchema   *jsonschema.Schema
 }
 
-// NewAdapter compiles the store record schema and the layered manifest
-// schema (YB-1: "Store validators run this schema IN ADDITION to the base
-// record schema; neither restates the other") from schemaDir (the repo's
-// schema/ directory). Compiling once here, rather than re-implementing the
-// schemas' required-field/conditional logic by hand in Go, is the
-// Law-6-compliant path Car 1 proved works (board/board_test.go).
+// NewAdapter compiles the store record schema and the layered manifest and
+// ticket schemas (YB-1: "Store validators run this schema IN ADDITION to the
+// base record schema; neither restates the other") from schemaDir (the
+// repo's schema/ directory). Compiling once here, rather than
+// re-implementing the schemas' required-field/conditional logic by hand in
+// Go, is the Law-6-compliant path Car 1 proved works (board/board_test.go).
+// ticketSchema (#84) follows the manifest's own precedent verbatim: a
+// separate layered schema file, compiled once, validated on every record
+// (its if/then clauses are a no-op for a non-ticket record).
 func NewAdapter(schemaDir string) (*Adapter, error) {
 	c := jsonschema.NewCompiler()
 	artifactSchema, err := c.Compile(filepath.Join(schemaDir, "starcar-artifact.schema.json"))
@@ -82,7 +92,11 @@ func NewAdapter(schemaDir string) (*Adapter, error) {
 	if err != nil {
 		return nil, fmt.Errorf("store: compiling starcar-manifest.schema.json: %w", err)
 	}
-	return &Adapter{artifactSchema: artifactSchema, manifestSchema: manifestSchema}, nil
+	ticketSchema, err := c.Compile(filepath.Join(schemaDir, "starcar-ticket.schema.json"))
+	if err != nil {
+		return nil, fmt.Errorf("store: compiling starcar-ticket.schema.json: %w", err)
+	}
+	return &Adapter{artifactSchema: artifactSchema, manifestSchema: manifestSchema, ticketSchema: ticketSchema}, nil
 }
 
 // typedRecord is the KNOWN field set (D17): every field name here is a JSON
@@ -104,6 +118,10 @@ func NewAdapter(schemaDir string) (*Adapter, error) {
 // (returned-kind only), and runtime-internal ids kept as enrichment. Same
 // epistemic rule as #26/#22: an observed, provenanced producer field gets
 // DECLARED here, not left to fire record-unrecognised-fields forever.
+//
+// #84: Ticket joins the known key-set the same way Manifest did (DR3-1 item
+// 4's precedent) - the freight adapter's one new top-level payload key for
+// kind=ticket records.
 type typedRecord struct {
 	Schema            string          `json:"schema"`
 	Kind              string          `json:"kind"`
@@ -127,6 +145,7 @@ type typedRecord struct {
 	SubjectBasis      string          `json:"subject_basis"`
 	TaskID            string          `json:"task_id"`
 	Provenance        json.RawMessage `json:"provenance"`
+	Ticket            json.RawMessage `json:"ticket"`
 }
 
 // typedKeys is computed ONCE (package init), by reflecting typedRecord's own
@@ -198,9 +217,10 @@ func (a *Adapter) Scan(storeRoot string, now time.Time) (ScanResult, error) {
 		if quarantineReason != "" {
 			result.Quarantined = append(result.Quarantined, QuarantinedRecord{Path: rel, Reason: quarantineReason})
 			result.Conditions = append(result.Conditions, BoardCondition{
-				Code:     "record-quarantined",
-				Detail:   fmt.Sprintf("%s: %s", rel, quarantineReason),
-				Register: "needs-attention",
+				Code:      "record-quarantined",
+				Detail:    fmt.Sprintf("%s: %s", rel, quarantineReason),
+				Register:  RegisterForCode("record-quarantined"),
+				RecordDir: RecordDirFromRelPath(rel),
 			})
 			continue
 		}
@@ -216,7 +236,7 @@ func (a *Adapter) Scan(storeRoot string, now time.Time) (ScanResult, error) {
 		result.Conditions = append(result.Conditions, BoardCondition{
 			Code:     "all-records-quarantined",
 			Detail:   fmt.Sprintf("%d of %d records quarantined", len(result.Quarantined), len(paths)),
-			Register: "needs-attention",
+			Register: RegisterForCode("all-records-quarantined"),
 		})
 	}
 
@@ -279,6 +299,9 @@ func (a *Adapter) readOne(path, rel string, now time.Time) (Record, *BoardCondit
 	if err := a.manifestSchema.Validate(fields); err != nil {
 		return Record{}, nil, fmt.Sprintf("fails starcar-manifest/1 schema validation: %v", err)
 	}
+	if err := a.ticketSchema.Validate(fields); err != nil {
+		return Record{}, nil, fmt.Sprintf("fails starcar-ticket/1 schema validation: %v", err)
+	}
 
 	// Issue #24 (C3R-3, binding on this task): schema "format" is
 	// annotation-only under draft 2020-12 (confirmed by the Car 3 reviewer),
@@ -309,11 +332,34 @@ func (a *Adapter) readOne(path, rel string, now time.Time) (Record, *BoardCondit
 	if len(unknown) > 0 {
 		sort.Strings(unknown)
 		cond := BoardCondition{
-			Code:     "record-unrecognised-fields",
-			Detail:   fmt.Sprintf("%s: record carries %d unrecognised field(s): %s", rel, len(unknown), strings.Join(unknown, ", ")),
-			Register: "needs-attention",
+			Code:      "record-unrecognised-fields",
+			Detail:    fmt.Sprintf("%s: record carries %d unrecognised field(s): %s", rel, len(unknown), strings.Join(unknown, ", ")),
+			Register:  RegisterForCode("record-unrecognised-fields"),
+			RecordDir: RecordDirFromRelPath(rel),
 		}
 		return rec, &cond, ""
 	}
 	return rec, nil, ""
+}
+
+// RecordDirFromRelPath (#69/#71) derives a record's store-root-relative
+// DIRECTORY from its own already-known rel path - filepath.Dir, "." means
+// no directory component, no link rather than a wrong one. EXPORTED (#69/
+// #71 fix cycle round 2, MINOR-R1-1, Law 6): board/assemble's
+// recordDirBySubject used to inline this identical three-line rule rather
+// than call it, on the stated justification that recordDirFromRelPath's
+// two SCAN-TIME call sites here (record-quarantined, record-unrecognised-
+// fields, both fire before Assemble ever sees the record) could not reach
+// assemble's own recordDirBySubject (built later, from the full Records
+// slice). That reasoning explains why the CALL SITES differ, never why the
+// CODE was copied - board/assemble already imports board/store
+// (assemble.go's own import block), so this package's exported helper is
+// reachable from there regardless of ordering. Two call sites, one rule,
+// singly sourced.
+func RecordDirFromRelPath(rel string) string {
+	dir := filepath.ToSlash(filepath.Dir(rel))
+	if dir == "." || dir == "" {
+		return ""
+	}
+	return dir
 }

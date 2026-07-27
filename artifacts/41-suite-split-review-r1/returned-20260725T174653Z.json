@@ -1,0 +1,19 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "41-suite-split-review-r1",
+  "session_id": "70b173ed-7b83-485a-b71a-5adb0591db07",
+  "at": "2026-07-25T17:46:53Z",
+  "outcome": "approve-for-merge",
+  "findings": "0",
+  "abstract": "All eight review claims verified empirically. scripts/tests yields 149/149 (fixed, code-only), scripts/store-checks yields 147/147 (142 per-record + 5 fixed). CI step correctly wired with fail-on-error and zero-test guard. Fault injection proves the relocated check bites. No stale references, no historical docs touched, ticket cited throughout. Clean approve.",
+  "subject_basis": "minted-id",
+  "task_id": "41-suite-split-review-r1",
+  "provenance": {
+    "runtime": "copilot",
+    "agent_name": "car"
+  },
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:6ecf2bb9aaa856ce8d55044a9b7f439f2cd8efe9560151155b44ac399808f9d2"
+}

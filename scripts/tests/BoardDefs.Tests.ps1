@@ -61,6 +61,14 @@ Describe 'schema/vocab/board-defs.json - presentational vocabulary (plan 2.4)' {
                 'honest-stop'              = 'nominal'
                 'done-with-findings'       = 'in-progress'
                 'error'                    = 'needs-attention'
+                # #30 (2026-07-26): 'completed'/'approve-for-merge' are a different agent
+                # runtime's (Copilot) sibling words for 'done'/'APPROVE' - PINNED here
+                # (review round 1 MIN-1: without this row a flipped register on either id
+                # was proven UNCAUGHT, 11/11 passed; see this file's git history for the
+                # fault-injection evidence, reproduced independently in this fix-cycle
+                # commit's message) at the SAME register their sibling carries.
+                'completed'                = 'nominal'
+                'approve-for-merge'        = 'nominal'
             }
             roles = @{
                 'car'      = 'nominal'

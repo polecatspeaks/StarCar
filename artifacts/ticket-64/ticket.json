@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-64",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 64,
+    "title": "Poll-loop liveness has no wire surface: a wedged poller freezes the snapshot silently",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/64"
+  },
+  "normalisation": [],
+  "integrity": "sha256:97529d0d5ea6edae0219f4dd6bbee9ec125cb1e3c2c88303e077aeda15e9745c"
+}

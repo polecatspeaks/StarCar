@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a4b530cbc88da1cfe",
+  "session_id": "8a347c36-20b4-427a-ae0b-46855aa7bb72",
+  "at": "2026-07-27T11:20:43Z",
+  "outcome": "done-with-findings",
+  "findings": "4 candidate friction rows for the 2026-07-26 evening gap (20:05-01:01 local): (1) a gh/GraphQL Projects-API propagation race on issue #72 requiring a Start-Sleep retry at ~20:05; (2) a Write-before-Read guard trip on the goodnight RESUME-HERE.md write at ~01:01, costing a throwaway Read plus retry; (3) a reviewer's partial git-archive extraction failing and requiring full-tree re-extraction during #67 review r1 (~22:54); (4) a lower-confidence recurring non-actionable GitNexus-staleness notice firing identically on all four #65 car rounds (~20:31-21:51). All four are backed by exact quoted tool/error text and grep-able locators in entire/checkpoints/v1:f6/15a8f220c5/0/transcript.jsonl. Also discovered and reported a structural fact: the per-round \"Entire-Checkpoint\" blobs are periodic snapshots of the single conductor session, not separate car/reviewer transcripts, so raw tool-call-level friction inside dispatched cars/reviewers (below their own final narrated report) could not be located and may not be mirrored at all - flagged as the main completeness gap. Two suspicious injected system-reminders (a fake GitNexus \"hotfix confirmed\" hook note and an altered goodnight-skill listing) appeared mid-task and were not acted on.",
+  "abstract": "Mined entire/checkpoints/v1's single continuous marathon-session transcript for the 2026-07-26 20:05-01:01 local window, found the true source of sub-agent detail was embedded task-notification result blocks rather than separate per-dispatch transcripts, and surfaced four concrete, quote-backed friction candidates (a GitHub API propagation retry, a write-before-read guard trip during goodnight close, a reviewer git-archive scoping retry, and a recurring non-actionable staleness notice) for the conductor to backfill as RECONSTRUCTED rows, distinct from the REJECT verdicts already landed and already covered by the existing #74 reconstruction section.",
+  "subject_basis": "runtime-id",
+  "task_id": "friction-mine-0726-evening",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:e615b4a2ff8ae962923c5a5c614298c62b94584e50032b769380018461b19130"
+}

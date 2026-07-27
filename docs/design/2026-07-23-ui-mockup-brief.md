@@ -76,12 +76,31 @@ NO secondary line at all - it will never have one, and "not yet read" would be a
 - a connection state: when the feed dies, the board visibly flips to "disconnected -
   showing last known" while keeping the stale picture on screen, clearly marked;
 - a board-conditions strip for faults about the BOARD itself ("3 records unreadable",
-  "vocabulary file empty") - distinct from yard status;
+  "vocabulary file empty") - distinct from yard status. **AMENDED (issue #30,
+  2026-07-26 owner ruling):** the strip is GROUPED BY CLASS (one row per condition
+  code with a count, expandable to per-instance detail) and collapsed by default
+  behind a single chrome summary line ("1 FLAG + 2 notes") - it is chrome, never a
+  headline, and the yard lanes stay above the fold. See
+  `docs/design/2026-07-21-v0-yard-skeleton-design.md` §12b for the full amendment.
 - a lane count ("registry declares 5 lanes") - so a silently missing lane is detectable;
 - when running on demo data: a persistent DEMO banner.
 - **the discovery state**: when the board meets a state word it does not recognise, it
   renders it hot, BY NAME, verbatim ("unrecognised state: 'quarantined'") - this board
   treats unknown vocabulary as a discovery to surface, never an error to hide.
+  **STILL TRUE, unchanged by #30 (corrected 2026-07-26, fix-cycle round 2 - review
+  round 1's MAJOR-3: an earlier draft of this note wrongly deleted "hot" and claimed
+  this bullet's own example went calm):** this bullet's example - an unrecognised
+  DISPATCH STATE word - is not a fold discovery at all. It travels a VIEW-SIDE path,
+  `board/web/js/render.js` -> `board/web/js/vocab.js:31-37` `describeVocab`, which
+  resolves an unrecognised id to `needs-attention` (hot) always, and is entirely
+  untouched by #30. This is a DIFFERENT mechanism from the board-conditions-strip
+  bullet above (`kind`/`outcome` "discovery" BOARD CONDITIONS, minted server-side by
+  `board/fold/algorithm.go` and classified by `board/store/condition_severity.go`) -
+  #30's NOTE-tier/calm reclassification applies ONLY to that server-side
+  board-condition class, never to this bullet's view-side unrecognised-word
+  rendering. Pinned green: `board/web/test/render.test.js` "discovery rendering: an
+  unrecognised dispatch state word renders HOT, BY NAME, VERBATIM"
+  (`item.stateRegister === 'needs-attention'`).
 
 **Sample data to mock with** - two kinds, labeled honestly:
 - **REAL, from the live store:** car `acc761f0add2b0af2` (outcome `done`) and car
@@ -111,3 +130,16 @@ proving it tells the truth.
 
 *Review record: round 1 REJECT (`2026-07-23-ui-brief-round1-REJECT.md`), delta round 2
 APPROVE - both verdicts landed verbatim in `artifacts/reviews/`.*
+
+---
+
+**AMENDMENT (#62, 2026-07-26): the mockup-production run this brief exists for has
+happened.** The owner generated five board variants (two design turns: CTC panel,
+terminal-brutalist, softer ops-room; then the schematic pivot: track schematic, dense
+interlocking) in Claude Design, project `77eb9e00-078b-438e-9c33-90ff2644abb2`. The
+landed copies and full provenance live at
+`docs/design/mockups/2026-07-26-claude-design-board/` (README there carries the
+fidelity notes and the direction-vs-contract deviations found at import: webfont
+dependency, invented demo states, fixed 1920x1080 canvas). Per this brief's own routing
+rule those deviations are adjudicated by the implementing car (#62) with contract
+winning meanwhile; the mock doctrine above binds unchanged.

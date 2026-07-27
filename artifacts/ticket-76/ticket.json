@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-76",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 76,
+    "title": "Train manifests as PLAN records: composition-time minting, supersession amendments, board renders plan-vs-actual fulfillment",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/76"
+  },
+  "normalisation": [],
+  "integrity": "sha256:4335099dcdde4061ad955b27e98c625b923c49eff0a6011595f785c34fe8c74e"
+}

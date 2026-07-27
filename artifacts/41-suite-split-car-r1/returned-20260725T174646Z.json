@@ -1,0 +1,19 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "41-suite-split-car-r1",
+  "session_id": "70b173ed-7b83-485a-b71a-5adb0591db07",
+  "at": "2026-07-25T17:46:46Z",
+  "outcome": "completed",
+  "findings": "0",
+  "abstract": "StoreIntegrity.Tests.ps1 relocated from scripts/tests/ to scripts/store-checks/ via git mv (history preserved), header rewritten to state the new invocation and cite the #41 owner ruling and probes precedent. A dedicated store-checks CI step added to ci.yml with its own separate count label. docs/templates/car-brief.md both StoreIntegrity references updated; scripts/Produce-Artifact.ps1 path corrected. Commit 8701a18. Observed: scripts/tests 149/149 (fixed, code-only; base 296 minus 147 = 149); scripts/store-checks 147/147 (142 per-record + 5 fixed); CiWrapperSimulation 3/3; total 296 = base 296.",
+  "subject_basis": "minted-id",
+  "task_id": "41-suite-split-car-r1",
+  "provenance": {
+    "runtime": "copilot",
+    "agent_name": "car"
+  },
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:e5f5b26b17343bef95e8a0b8ec71ffa5fdc084b81875f5ee3b2b5fd022ad455c"
+}

@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-60",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 60,
+    "title": "CI walks the fidelity ledger + carrier-completeness gate (split from #9 item 2; folds reviewer notes N-8/N-9)",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/60"
+  },
+  "normalisation": [],
+  "integrity": "sha256:6b41f05ab7874c4384eb90f629858a3133119888bc47fb9a86a943ce26d18c76"
+}

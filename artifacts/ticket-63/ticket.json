@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-63",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 63,
+    "title": "Retune stalenessMs against measured reality (#29's second ask, split out)",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/63"
+  },
+  "normalisation": [],
+  "integrity": "sha256:6a42d512833af586a657b3a0c19b9b35cd58290eae25a30468c9dfab6d763281"
+}

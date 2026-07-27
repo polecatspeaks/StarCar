@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-10",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 10,
+    "title": "Probe tooling: wire scripts/probes into CI as the substrate-floor gate",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/10"
+  },
+  "normalisation": [],
+  "integrity": "sha256:7669619ca71a15f5d76669b916cf6dab2e8d2797a81c521ea1bd8d2192a74b16"
+}

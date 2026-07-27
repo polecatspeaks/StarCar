@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "acb10c126ac3a7488",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-26T21:30:05Z",
+  "outcome": "done-with-findings",
+  "findings": "Two disclosed deviations from strict per-ticket commit granularity (both commits cite and touch both #28 and #12 due to genuine shared Go structs, one shared E2E wire test, and one continuous design-doc amendment section); state-ledger.md deliberately left unmodified with reasoning stated (new Config fields are immutable startup config, not ledgered mutable process state, matching existing StorePath/DemoMode precedent); GitNexus impact-analysis MCP tools were unavailable in this environment's toolset, substituted with manual Grep/Read tracing, disclosed rather than silently skipped; board-condition-link and superseded-entry-link surfaces from the raw ticket #28 text were consciously out of scope per the brief's own narrowed three-surface definition, filed as a follow-on rather than attempted.",
+  "abstract": "Implemented issue #28 (clickable provenance - GitHub-URL links from subject to record directory, manifest tickets to GitHub issues, gate verdicts to record directory, all optional/degrade-honest via new Config.GitHubRepo/GitHubRef/RepoRoot and board/server/githublinks.go) and issue #12 (car health bar - board/web/js/findings.js parses a conservative Major/Minor count from the wire's existing returned-record findings text, computeHealthTrends derives a converged/declining/stalled/first-round/unknown trend per review-round family attached only to the latest round, rendered via the existing three-register classes with a CSS-cascade bug caught and fixed before shipping and proven non-vacuous through a real Playwright browser fault injection). Go 73 to 83/83 pass, Node 81 to 129/129 pass, both suites green at HEAD 3076a40. Two commits landed citing both tickets due to genuine code coupling in shared structs and one shared E2E test, disclosed in both commit messages and this report.",
+  "subject_basis": "runtime-id",
+  "task_id": "view-28-12-car-r1",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:652cdc75ed799dd1dcca91a7d3bc6a8642c4db6f77661ac3fae4334272eebd80"
+}

@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-86",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 86,
+    "title": "board: manifest member task_id is read by nothing - in-flight rows cannot be named from their plan",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/86"
+  },
+  "normalisation": [],
+  "integrity": "sha256:c91da9f6318140b6589c5901cac34675827746f144f857625e058f53d19891f3"
+}

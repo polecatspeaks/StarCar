@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a076bf6c0a94e302f",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-26T16:41:18Z",
+  "outcome": "done",
+  "findings": "none (no defects found; gate calibrated clean on first run against the real 21-file post-boundary code corpus)",
+  "abstract": "Mechanized the cite-your-ticket code standard as scripts/tests/CodeCitationPolicy.Tests.ps1, ported from DocPolicy.Tests.ps1's shape per issue #42. The gate walks files added strictly after boundary commit d4db6f5baf2bd31bf41f9dc5804684334797cb35, checks code extensions derived from the real post-boundary corpus (.ps1 .psm1 .go .js .mjs .sh), excludes artifacts/** (machine-generated), .json (config/fixture, no comment syntax), and .md (docs have their own DocPolicy gate), and fails listing every violator by name if a post-boundary code file lacks a bare #N citation. Red-first with a stubbed always-cited function observed failing for the stated reason, then reverted to green; a scratch-repo Describe block proves the forward-only boundary independently of real repo history, and board/board.go (pre-boundary, uncited) is asserted absent from the real added-files set. Calibrated clean: all 21 real post-boundary code files already carried citations, so the gate landed green with zero fixes. No CI wiring change needed - .github/workflows/ci.yml already runs Invoke-Pester -Path ./scripts/tests. CLAUDE.md's CODE STANDARD section amended in the same commit to record the mechanism as landed (was previously marked attention-tier/deferred). scripts/tests suite: 182 -> 189 (189/189 passing) at commit 79cb5c909e2dafc898266b0c04258dc00673fb81 on branch car/process-42.",
+  "subject_basis": "runtime-id",
+  "task_id": "process-42-car-r1",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:f8719e3d5fc36173c8998463fb823bb48203f113137a68fdae0a94502eb49fb1"
+}

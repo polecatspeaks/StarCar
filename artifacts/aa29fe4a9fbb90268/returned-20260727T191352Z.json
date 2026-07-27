@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "aa29fe4a9fbb90268",
+  "session_id": "8a347c36-20b4-427a-ae0b-46855aa7bb72",
+  "at": "2026-07-27T19:13:52Z",
+  "outcome": "success",
+  "findings": "Fixed all 5 accuracy defects named in #91 plus 2 more found in the sweep: (1) issue #91's own body mischaracterized #90 as covering a four-column \"area\" freight row - #90 and dom-writer.js:611-621/Sync-Freight.ps1 show freight has exactly three fields (number/title/status), no area concept anywhere; disclosed rather than perpetuated. (2) A self-introduced error caught before commit - I initially wrote Detect-Dispatches.ps1 as folding into \"dispatch/train/gate state\"; its own header (scripts/Detect-Dispatches.ps1:7-17) documents dispatches+intents only, and board/server actually runs board/fold (a Go port), per board/server/poll.go:345 - corrected before committing. Also disclosed: while probing the quickstart I found a stale, unrelated go-run process already bound to port 4600 serving the MAIN checkout (storePathDisplay ~/git/starcar/artifacts), predating this session - killed it and restarted cleanly from the worktree, confirmed by storePathDisplay flipping to the worktree path. Independently re-derived (not trusted) the coordinator's mid-task self-correction on idle-vs-stale freshness by re-querying my own worktree's server with no dispatch in flight (dispatches/gates/trains: idle, freight: stale), matching board/server/poll.go's computeLiveFreshness (idle case, line 542) vs computeFreightFreshness (no idle case, by design, line ~571).",
+  "abstract": "Reviewed and rewrote README.md for StarCar issue #91 - fixed all 5 named stale claims plus 2 more found independently, rebalanced structure so \"What it renders\" and Quickstart lead and the process framing is cut from ~21 to ~14 lines while keeping the load-bearing honesty commitments (doc-ranks-equal-to-code, Law 7, nothing-reaches-main-except-PR, the PR #5 revert story - all re-verified true today via gh). Ran the quickstart live from the worktree (not read) and re-validated the /api/snapshot payload against schema/yard-snapshot.schema.json with the same vendored validator the browser uses, replacing a 4-day-stale dated verification block. Embedded the owner-supplied board screenshot with a caption naming #90/#63/#76/#88/#86, every claim independently verified against the image, the code, and a live re-query of the board before being written, including a self-correction the coordinator made mid-task about idle vs stale being the resting state, which I re-derived myself rather than trusting. Landed docs/screenshots/2026-07-27-readme-board/README.md per CLAUDE.md's screenshot-labelling rule. Committed at ae22071 on car/readme-91, base 20c3970, Pester DocPolicy 2/2 passed, working tree clean, nothing pushed.",
+  "subject_basis": "runtime-id",
+  "task_id": "readme-91-car-r1",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:b22f430b648bf2f3a331a410d990ad5afd86291a73e91144cd0364671fb942b6"
+}

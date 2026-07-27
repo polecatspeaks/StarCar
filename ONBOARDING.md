@@ -57,7 +57,11 @@ tiered reading path below is for the conductor and for a session being (re)estab
 
 - **Claude Code:** auto-loads [`CLAUDE.md`](CLAUDE.md) at session start - doctrine is reachable automatically.
 - **Copilot CLI:** auto-loads [`.github/copilot-instructions.md`](.github/copilot-instructions.md),
-  which points back here.
+  which points back here. **Run `sh .claude/hooks/run-session-start-guards.sh` as your FIRST
+  action and read its output (#50):** Copilot does not inject SessionStart hook stdout into
+  agent context, so pull the four SessionStart guards' combined output (resume packets,
+  checkpoint drift, CI baseline, the friction retro) yourself instead of waiting for it to
+  arrive.
 - **Any other family:** start HERE, human-pointed. Auto-load is enrichment; the front door works
   for any agent a human points at it (that is the floor, per the design's P2).
 

@@ -1,0 +1,19 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "51-fix-car-r1",
+  "session_id": "70b173ed-7b83-485a-b71a-5adb0591db07",
+  "at": "2026-07-24T17:26:29Z",
+  "outcome": "done-with-findings",
+  "findings": "Task1: subject-based lookup was required in the extended test because Go's path sort orders \"returned-subj2\\...\" before \"returned-subj\\...\" on Windows (disclosed in test comment, not a defect). Task4: red-first evidence came from a local, uncommitted scratch revert of run() to the pre-fix shape (never committed) rather than a diff-based red, because main() had no seam before this task - disclosed and justified in the brief's own fallback clause. Task5: -race is unavailable in this sandbox (CGO_ENABLED path, no C compiler: \"go: -race requires cgo\"); the lock-ordering safety claim is verified by source-reading against register/unregister, not by an observed race-detector run - disclosed rather than claimed as tested. web test baseline command in the brief (\"node --test test/\") does not work on Node v24.15.0 in this environment (MODULE_NOT_FOUND); \"node --test\" with no path argument was used instead for both baseline and final counts, and both were 59/59 pass with zero regression.",
+  "abstract": "All five Copilot-review fixes (C1-C5) landed as five separate red-first commits on car/51-pr-fixes, base 797818d confirmed before starting. C1 (board/store/store.go) declares subject_basis/task_id/provenance as known producer fields. C2 (board/server/poll.go) retains last-good lane data through a scan failure via a new Server.lastGoodLaneData field, with docs/contracts/state-ledger.md updated in the same commit (field count 0->10, new row added). C3 (board/server/handlers.go) reorders handleStream to register the SSE subscriber before sending the initial snapshot, pinned via a small deterministic test seam. C4 (board/server/main.go) extracts a run(ctx,cfg,ready) seam and wires ctx.Done() to http.Server.Shutdown so interrupt actually terminates the process instead of zombifying it. C5 (board/server/sse.go) fixes broadcast's full-channel path to drain-and-replace the stale queued frame with the newest one, deleting the in-code comment that falsely claimed the opposite behavior. Every task's red failure was observed and quoted verbatim before the fix; final suite counts after all 5 commits: go test ./... 5/5 board packages pass, Pester scripts/tests 276/276, scripts/probes 22/22, board/web node --test 59/59 (matches pre-change baseline, unchanged since no web code was touched). Working tree is clean; nothing pushed.",
+  "subject_basis": "minted-id",
+  "task_id": "51-fix-car-r1",
+  "provenance": {
+    "runtime": "copilot",
+    "agent_name": "car"
+  },
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:b30b445df4b92449b8e40d02dfac38f3d7f3e12df9594f5f306fbaa770033ed2"
+}

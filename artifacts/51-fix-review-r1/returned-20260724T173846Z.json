@@ -1,0 +1,19 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "51-fix-review-r1",
+  "session_id": "70b173ed-7b83-485a-b71a-5adb0591db07",
+  "at": "2026-07-24T17:38:46Z",
+  "outcome": "done-with-findings",
+  "findings": "APPROVE-FOR-MERGE. No Major. 5 Minor tracked issues. C51R-1 C3 stray leftover testStreamOrderHook register-done at handlers.go:71 (dead code from block swap; zero prod/test-correctness impact; contradicts commit's clean-swap wording). C51R-2 C4 main.go trailing blank line flagged by gofmt on the LF-clean blob; not CI-gated (go vet clean, no gofmt gate). C51R-3 C5 comment cites nonexistent unregister.go (code is in sse.go). C51R-4 C2 cites state-ledger.md:102 (the seq row); the lastGood contract is line 103 and the new row is line 108 - imprecise citation in poll.go:43, test messages, commit body. C51R-5 RULING on disclosed hazard: C2 enlarged the lock-free map mutation (lastGoodLaneData outside s.mu) but this is NOT a Major - buildSnapshot runs only on the PollOnce path serialized by the skip-not-queue guard, and both maps are accessed only inside buildSnapshot with no concurrent reader; safe by the single-poll invariant, carriable as a tracked issue. Verified myself: go build clean, go vet clean, go test 5 of 5 packages pass, Pester tests 276 of 276, Pester probes 22 of 22, web node --test 59 of 59. Fault-injected C3 C4 C5 - each guard failed with its exact stated message, all reverted byte-identical with SHA re-verified. Sentence checks traced for all five fixes including ingest.js:59 duplicate-frame no-op and the C2 web hasRenderer path.",
+  "abstract": "Adversarial sentence-check review of the PR-51 five-commit fix train on branch car/51-pr-fixes at base 797818d. Ran every suite independently and fault-injected the three concurrency/ordering guards to watch them fire, reverting byte-identical. All fixes correct, docs synced in-commit, reds non-vacuous. Five Minor findings carried as tracked issues; no Major. Verdict APPROVE-FOR-MERGE.",
+  "subject_basis": "minted-id",
+  "task_id": "51-fix-review-r1",
+  "provenance": {
+    "runtime": "copilot",
+    "agent_name": "car"
+  },
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:0e6fa65ba7e7feaecdcf60cfb148db9e6397b747c500482e90328f0b542c6cf5"
+}

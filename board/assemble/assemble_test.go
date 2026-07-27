@@ -193,6 +193,41 @@ func TestAssembleManifestMembershipCollision(t *testing.T) {
 	}
 }
 
+// TestAssembleManifestMembershipCollisionCarriesRecordDir (#69/#71:
+// clickable provenance) - the collision condition names the claimed
+// dispatch's own record directory (recAt gives it a real store path, unlike
+// TestAssembleManifestMembershipCollision above's simplified dispatched()
+// helper).
+func TestAssembleManifestMembershipCollisionCarriesRecordDir(t *testing.T) {
+	records := []store.Record{
+		manifestIntent("train:alpha", "2026-07-23T09:00:00Z", "Alpha", []map[string]any{
+			{"subject": "shared-dispatch", "role": "car"},
+		}),
+		manifestIntent("train:bravo", "2026-07-23T09:00:00Z", "Bravo", []map[string]any{
+			{"subject": "shared-dispatch", "role": "car"},
+		}),
+		recAt("shared-dispatch/dispatched-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "dispatched", "subject": "shared-dispatch",
+			"session_id": "s1", "at": "2026-07-23T09:05:00Z", "normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+
+	var found bool
+	for _, cond := range result.Conditions {
+		if cond.Code == "manifest-membership-collision" {
+			found = true
+			if cond.RecordDir != "shared-dispatch" {
+				t.Errorf("RecordDir = %q, want %q", cond.RecordDir, "shared-dispatch")
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected a manifest-membership-collision board condition, got %v", result.Conditions)
+	}
+}
+
 // TestAssembleSubjectNamespaceCollision is DR3-3's defensive detector: a
 // subject appearing in BOTH fold.dispatches and fold.intents (a producer bug
 // reusing one subject across kinds, defeating the train: partition
@@ -219,6 +254,41 @@ func TestAssembleSubjectNamespaceCollision(t *testing.T) {
 			found = true
 			if !strings.Contains(cond.Detail, "collide-1") {
 				t.Errorf("detail must name the colliding subject, got %q", cond.Detail)
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected a subject-namespace-collision board condition, got %v", result.Conditions)
+	}
+}
+
+// TestAssembleSubjectNamespaceCollisionCarriesRecordDir (#69/#71: clickable
+// provenance) - the collision condition names the colliding subject's own
+// record directory, derived (single-sourced, Law 6) from a REAL store path,
+// unlike TestAssembleSubjectNamespaceCollision above which uses the
+// simplified rec() helper (Path=subject, no directory component, so
+// recordDirBySubject correctly resolves nothing there - this test uses
+// recAt to prove the POSITIVE case).
+func TestAssembleSubjectNamespaceCollisionCarriesRecordDir(t *testing.T) {
+	records := []store.Record{
+		recAt("collide-1/dispatched-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "dispatched", "subject": "collide-1",
+			"session_id": "s1", "at": "2026-07-23T09:00:00Z", "normalisation": []any{}, "integrity": "sha256:0",
+		}),
+		recAt("collide-1/intent-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "intent", "subject": "collide-1",
+			"session_id": "s1", "at": "2026-07-23T09:05:00Z", "normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+
+	var found bool
+	for _, cond := range result.Conditions {
+		if cond.Code == "subject-namespace-collision" {
+			found = true
+			if cond.RecordDir != "collide-1" {
+				t.Errorf("RecordDir = %q, want %q", cond.RecordDir, "collide-1")
 			}
 		}
 	}
@@ -302,5 +372,662 @@ func TestAssembleNonTrainIntentIgnoredForTrains(t *testing.T) {
 	result := Assemble(Input{Records: records, Fold: out})
 	if len(result.Trains.Trains) != 0 {
 		t.Fatalf("a non-train: intent must not produce a Train entry, got %d", len(result.Trains.Trains))
+	}
+}
+
+// --- #28: clickable provenance ---------------------------------------------
+
+// manifestIntentWithTickets is manifestIntent plus the manifest.tickets array
+// (schema/starcar-manifest.schema.json already declares this key; only
+// manifestPayload was never reading it - design DR3-1's own quote: "the
+// manifest PAYLOAD - members, roles, title, ticket refs - is NOT in fold
+// output and never will be; it lives in the raw intent records").
+func manifestIntentWithTickets(subject, at, title string, tickets []string, members []map[string]any) store.Record {
+	membersAny := make([]any, len(members))
+	for i, m := range members {
+		membersAny[i] = m
+	}
+	ticketsAny := make([]any, len(tickets))
+	for i, tk := range tickets {
+		ticketsAny[i] = tk
+	}
+	return rec(map[string]any{
+		"schema": "starcar-artifact/1", "kind": "intent", "subject": subject,
+		"session_id": "s1", "at": at, "normalisation": []any{}, "integrity": "sha256:0",
+		"manifest": map[string]any{"title": title, "tickets": ticketsAny, "members": membersAny},
+	})
+}
+
+// recAt is store.Record{Path, Fields} with an explicit, REALISTIC repo-store
+// path (subject/kind-timestamp.json), unlike the shared rec() helper (which
+// sets Path=subject as a simplification the other tests never depend on) -
+// needed here because recordDirBySubject derives a value FROM Path, so a
+// test proving that derivation needs Path shaped like the real store's.
+func recAt(path string, fields map[string]any) store.Record {
+	return store.Record{Path: path, Fields: fields}
+}
+
+// TestAssembleTrainCarriesTicketsFromManifest: issue #28's "#N tokens ...
+// link to issues" surface - the manifest's own declared tickets array
+// (already schema-declared, schema/starcar-manifest.schema.json) flows
+// through onto the wire train, structured, never re-parsed from title prose.
+func TestAssembleTrainCarriesTicketsFromManifest(t *testing.T) {
+	records := []store.Record{
+		manifestIntentWithTickets("train:view-28-12", "2026-07-26T09:00:00Z", "Provenance + health bar", []string{"#28", "#12"},
+			[]map[string]any{{"subject": "carA", "role": "car"}}),
+		dispatched("carA", "2026-07-26T09:05:00Z"),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+	if len(result.Trains.Trains) != 1 {
+		t.Fatalf("expected 1 train, got %d", len(result.Trains.Trains))
+	}
+	got := result.Trains.Trains[0].Tickets
+	if len(got) != 2 || got[0] != "#28" || got[1] != "#12" {
+		t.Fatalf("Tickets = %v, want [#28 #12]", got)
+	}
+}
+
+// TestAssembleTrainNoTicketsIsEmptyNeverGuessed: a manifest that declares no
+// tickets array carries an empty (never nil-vs-guessed) Tickets slice - Law
+// 1, honest-empty rather than inventing a ticket reference.
+func TestAssembleTrainNoTicketsIsEmptyNeverGuessed(t *testing.T) {
+	records := []store.Record{
+		manifestIntent("train:no-tickets", "2026-07-26T09:00:00Z", "No tickets declared",
+			[]map[string]any{{"subject": "carA", "role": "car"}}),
+		dispatched("carA", "2026-07-26T09:05:00Z"),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+	if len(result.Trains.Trains[0].Tickets) != 0 {
+		t.Fatalf("Tickets = %v, want empty", result.Trains.Trains[0].Tickets)
+	}
+}
+
+// TestAssembleRecordDirSingleSourcedFromStorePath proves car/gate/dispatch
+// entries all carry a recordDir derived from store.Record.Path (design
+// note 1 on issue #28: "the wire exposes each entry's record path - the
+// adapter already knows it; emitting it is single-source, while view-side
+// re-derivation would duplicate the subject-sanitisation rule (Law 6)") -
+// never re-derived from the subject string client-side.
+func TestAssembleRecordDirSingleSourcedFromStorePath(t *testing.T) {
+	records := []store.Record{
+		manifestIntent("train:board-v0", "2026-07-26T09:00:00Z", "T", []map[string]any{
+			{"subject": "carA", "role": "car"},
+			{"subject": "gate-1", "role": "gate", "gate": "design review round 1"},
+		}),
+		recAt("carA/dispatched-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "dispatched", "subject": "carA",
+			"session_id": "s1", "at": "2026-07-26T09:05:00Z", "normalisation": []any{}, "integrity": "sha256:0",
+		}),
+		recAt("gate-1/returned-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "returned", "subject": "gate-1",
+			"session_id": "s1", "at": "2026-07-26T09:10:00Z", "outcome": "REJECT",
+			"findings": "1 Major, 0 Minor", "abstract": "a",
+			"normalisation": []any{}, "integrity": "sha256:0",
+		}),
+		recAt("orphan-1/dispatched-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "dispatched", "subject": "orphan-1",
+			"session_id": "s1", "at": "2026-07-26T09:06:00Z", "normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+
+	train := result.Trains.Trains[0]
+	byCar := map[string]TrainCar{}
+	for _, c := range train.Cars {
+		byCar[c.Subject] = c
+	}
+	if byCar["carA"].RecordDir != "carA" {
+		t.Errorf("carA.RecordDir = %q, want carA", byCar["carA"].RecordDir)
+	}
+
+	if len(result.Gates.Gates) != 1 {
+		t.Fatalf("expected 1 gate, got %d", len(result.Gates.Gates))
+	}
+	gate := result.Gates.Gates[0]
+	if gate.RecordDir != "gate-1" {
+		t.Errorf("gate.RecordDir = %q, want gate-1", gate.RecordDir)
+	}
+	if gate.Findings != "1 Major, 0 Minor" {
+		t.Errorf("gate.Findings = %q, want the returned record's findings text verbatim", gate.Findings)
+	}
+
+	var orphanDir string
+	var orphanFound bool
+	for _, d := range result.Dispatches.Dispatches {
+		if d["subject"] == "orphan-1" {
+			orphanFound = true
+			orphanDir, _ = d["recordDir"].(string)
+		}
+	}
+	if !orphanFound {
+		t.Fatalf("expected orphan-1 in the dispatches lane")
+	}
+	if orphanDir != "orphan-1" {
+		t.Errorf("orphan-1 recordDir = %q, want orphan-1", orphanDir)
+	}
+}
+
+// TestAssembleManifestRecordNotFoundCarriesRecordDir (#69/#71: clickable
+// provenance) - the fold names a winning manifest at an "at" no raw intent
+// record matches, but ANOTHER record for the SAME subject IS in the store
+// (a stray dispatched record, standing in for "some record proves this
+// subject's own directory"), so the condition still resolves a RecordDir
+// even though the SPECIFIC manifest record it complains about was never
+// found - honest best-effort, never a guess about a directory that does not
+// exist.
+func TestAssembleManifestRecordNotFoundCarriesRecordDir(t *testing.T) {
+	records := []store.Record{
+		recAt("train:missing-intent/dispatched-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "dispatched", "subject": "train:missing-intent",
+			"session_id": "s1", "at": "2026-07-27T09:00:00Z", "normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	handBuiltOut := fold.Output{
+		Intents: []fold.IntentEntry{{Subject: "train:missing-intent", At: "2026-07-27T08:00:00Z"}},
+	}
+	result := Assemble(Input{Records: records, Fold: handBuiltOut})
+
+	var found bool
+	for _, cond := range result.Conditions {
+		if cond.Code == "manifest-record-not-found" {
+			found = true
+			if cond.RecordDir != "train:missing-intent" {
+				t.Errorf("RecordDir = %q, want %q", cond.RecordDir, "train:missing-intent")
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected a manifest-record-not-found board condition, got %v", result.Conditions)
+	}
+}
+
+// TestAssembleManifestPayloadUnreadableCarriesRecordDir (#69/#71: clickable
+// provenance) - the intent record itself IS found, but its "manifest" key is
+// absent (manifestPayload returns ok=false); the condition still names that
+// same record's own directory.
+func TestAssembleManifestPayloadUnreadableCarriesRecordDir(t *testing.T) {
+	records := []store.Record{
+		recAt("train:bad-payload/intent-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "intent", "subject": "train:bad-payload",
+			"session_id": "s1", "at": "2026-07-27T09:00:00Z", "normalisation": []any{}, "integrity": "sha256:0",
+			// no "manifest" key - manifestPayload must return ok=false
+		}),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+
+	var found bool
+	for _, cond := range result.Conditions {
+		if cond.Code == "manifest-payload-unreadable" {
+			found = true
+			if cond.RecordDir != "train:bad-payload" {
+				t.Errorf("RecordDir = %q, want %q", cond.RecordDir, "train:bad-payload")
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected a manifest-payload-unreadable board condition, got %v", result.Conditions)
+	}
+}
+
+// TestAssembleGateFindingsRecordNotFoundCarriesRecordDir (#69/#71: clickable
+// provenance) - companion to TestAssembleGateFindingsRecordNotFoundDisclosed
+// above, asserting the RecordDir this ticket adds to that same condition.
+func TestAssembleGateFindingsRecordNotFoundCarriesRecordDir(t *testing.T) {
+	records := []store.Record{
+		manifestIntent("train:board-v0", "2026-07-26T09:00:00Z", "T", []map[string]any{
+			{"subject": "gate-1", "role": "gate", "gate": "design review round 1"},
+		}),
+		recAt("gate-1/returned-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "returned", "subject": "gate-1",
+			"session_id": "s1", "at": "2026-07-26T10:00:00Z", "outcome": "REJECT",
+			"findings": "3 Major, 1 Minor", "abstract": "a",
+			"normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	handBuiltOut := fold.Output{
+		Intents: []fold.IntentEntry{{Subject: "train:board-v0", At: "2026-07-26T09:00:00Z"}},
+		Dispatches: []fold.DispatchEntry{
+			{Subject: "gate-1", State: "returned", At: "2026-07-26T11:00:00Z", Outcome: "APPROVE"},
+		},
+	}
+	result := Assemble(Input{Records: records, Fold: handBuiltOut})
+
+	var found bool
+	for _, cond := range result.Conditions {
+		if cond.Code == "gate-findings-record-not-found" {
+			found = true
+			if cond.RecordDir != "gate-1" {
+				t.Errorf("RecordDir = %q, want %q", cond.RecordDir, "gate-1")
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected a gate-findings-record-not-found board condition, got %v", result.Conditions)
+	}
+}
+
+// TestAssembleGateFindingsMatchesFoldWinnerNotFirstScanOrder is MAJOR-4's
+// red-first pin (review round 1, 2026-07-26, #28/#12 fix cycle round 2):
+// findingsForReturnedSubject used to return the FIRST subject-matching
+// returned record in whatever order in.Records happened to arrive (in
+// production, store.go's sort.Strings on PATH, which puts an earlier
+// timestamp-in-filename first) - while the fold's own winner
+// (algorithm.go's parseInstant .After comparison) is the NEWEST at. This
+// test constructs an OLDER (superseded, REJECT, "3 Major, 1 Minor") record
+// BEFORE a NEWER (winning, APPROVE, "0 Major, 0 Minor") one in in.Records,
+// reproducing exactly the shape the reviewer found live in the real store
+// (30 subjects there carry 2-5 returned records - the dominant shape, not
+// an edge case).
+func TestAssembleGateFindingsMatchesFoldWinnerNotFirstScanOrder(t *testing.T) {
+	records := []store.Record{
+		manifestIntent("train:board-v0", "2026-07-26T09:00:00Z", "T", []map[string]any{
+			{"subject": "gate-1", "role": "gate", "gate": "design review round 1"},
+		}),
+		recAt("gate-1/returned-1-earlier.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "returned", "subject": "gate-1",
+			"session_id": "s1", "at": "2026-07-26T10:00:00Z", "outcome": "REJECT",
+			"findings": "3 Major, 1 Minor", "abstract": "a",
+			"normalisation": []any{}, "integrity": "sha256:0",
+		}),
+		recAt("gate-1/returned-2-later.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "returned", "subject": "gate-1",
+			"session_id": "s1", "at": "2026-07-26T11:00:00Z", "outcome": "APPROVE",
+			"findings": "0 Major, 0 Minor", "abstract": "a",
+			"normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+
+	if len(result.Gates.Gates) != 1 {
+		t.Fatalf("expected 1 gate, got %d", len(result.Gates.Gates))
+	}
+	gate := result.Gates.Gates[0]
+	if gate.Outcome != "APPROVE" {
+		t.Fatalf("test setup: expected the fold's winner to be the NEWER (APPROVE) record, got outcome %q - fold precedence assumption broken, not the fix under test", gate.Outcome)
+	}
+	if gate.At != "2026-07-26T11:00:00Z" {
+		t.Fatalf("test setup: expected the fold's winner At to be the NEWER 11:00 record, got %q", gate.At)
+	}
+	if gate.Findings != "0 Major, 0 Minor" {
+		t.Errorf("gate.Findings = %q, want the WINNING (newer, APPROVE, 11:00) record's findings %q - not the superseded 10:00 REJECT record's %q",
+			gate.Findings, "0 Major, 0 Minor", "3 Major, 1 Minor")
+	}
+}
+
+// TestAssembleGateFindingsRecordNotFoundDisclosed is the Go-side ASSERTION
+// the round-1 review asked for (MAJOR-4): if the fold ever names a
+// "returned" gate winner whose subject+at has no matching raw record (a
+// data-integrity contradiction that should be unreachable in production,
+// since the fold is built FROM the same records Assemble receives), that
+// is disclosed as its own board condition rather than silently rendering
+// an empty Findings string as if the record simply carried none. This
+// test constructs the contradiction directly (a hand-built fold.Output
+// naming a winner at an "at" no raw record actually carries) - the only
+// way to reach this path, since fold.Fold itself cannot produce it from
+// consistent input.
+func TestAssembleGateFindingsRecordNotFoundDisclosed(t *testing.T) {
+	records := []store.Record{
+		manifestIntent("train:board-v0", "2026-07-26T09:00:00Z", "T", []map[string]any{
+			{"subject": "gate-1", "role": "gate", "gate": "design review round 1"},
+		}),
+		// The only returned record for gate-1 is at 10:00 - the hand-built
+		// fold output below claims a DIFFERENT (11:00) winner timestamp,
+		// which no raw record matches.
+		recAt("gate-1/returned-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "returned", "subject": "gate-1",
+			"session_id": "s1", "at": "2026-07-26T10:00:00Z", "outcome": "REJECT",
+			"findings": "3 Major, 1 Minor", "abstract": "a",
+			"normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	handBuiltOut := fold.Output{
+		Intents: []fold.IntentEntry{{Subject: "train:board-v0", At: "2026-07-26T09:00:00Z"}},
+		Dispatches: []fold.DispatchEntry{
+			{Subject: "gate-1", State: "returned", At: "2026-07-26T11:00:00Z", Outcome: "APPROVE"},
+		},
+	}
+	result := Assemble(Input{Records: records, Fold: handBuiltOut})
+
+	if len(result.Gates.Gates) != 1 {
+		t.Fatalf("expected 1 gate, got %d", len(result.Gates.Gates))
+	}
+	if result.Gates.Gates[0].Findings != "" {
+		t.Errorf("Findings = %q, want empty (Law 1: never a guessed value when no matching record was found)", result.Gates.Gates[0].Findings)
+	}
+
+	var found bool
+	for _, cond := range result.Conditions {
+		if cond.Code == "gate-findings-record-not-found" {
+			found = true
+			if cond.Register != "needs-attention" {
+				t.Errorf("condition register = %q, want needs-attention", cond.Register)
+			}
+			if !strings.Contains(cond.Detail, "gate-1") {
+				t.Errorf("condition detail must name the subject, got %q", cond.Detail)
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected a gate-findings-record-not-found board condition, got %v", result.Conditions)
+	}
+}
+
+// TestAssembleDispatchRenderFailedIsReachable (#69/#71 fix cycle round 2,
+// MAJOR-R1-3) - CORRECTS a false claim that used to sit at assemble.go's
+// dispatch-render-failed branch and in this train's own commit message:
+// "d.winnerKind (the only field that can make MarshalJSON emit an
+// unencodable spend value) is unexported, so no test outside board/fold can
+// construct a fold.DispatchEntry that reaches this branch." winnerKind
+// SELECTS the branch, but it is Spend (fold.go:112, EXPORTED) that carries
+// the unencodable value, and Output.Dispatches (fold/output.go) is exported
+// too - so a package OUTSIDE board/fold can reach it without ever touching
+// winnerKind directly: run the REAL fold.Fold on a genuine returned-wins
+// record pair (which sets winnerKind == "returned" internally, inside
+// package fold, the only place that can), then mutate the returned entry's
+// exported Spend field to a value json.Marshal cannot encode (a channel).
+// Reached through the real Assemble() entry point, never dispatchWireMap
+// called directly, so this also proves the condition's RecordDir survives
+// end to end exactly like every other population site's own RecordDir test.
+func TestAssembleDispatchRenderFailedIsReachable(t *testing.T) {
+	records := []store.Record{
+		recAt("probe-subj/dispatched-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "dispatched", "subject": "probe-subj",
+			"session_id": "s1", "at": "2026-07-27T09:00:00Z", "normalisation": []any{}, "integrity": "sha256:0",
+		}),
+		recAt("probe-subj/returned-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "returned", "subject": "probe-subj",
+			"session_id": "s1", "at": "2026-07-27T10:00:00Z", "outcome": "done",
+			"findings": "f", "abstract": "a", "spend": map[string]any{"tokens": 1},
+			"normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+
+	// Find the real "returned"-winner entry the fold itself produced
+	// (winnerKind set internally, inside package fold - never by this test)
+	// and mutate ONLY its exported Spend field to something json.Marshal
+	// cannot encode. A channel is Go's canonical "cannot be JSON-encoded"
+	// value (encoding/json's own documented limitation), the same choice
+	// the round-1 reviewer's disproof probe used.
+	mutated := false
+	for i := range out.Dispatches {
+		if out.Dispatches[i].Subject == "probe-subj" {
+			out.Dispatches[i].Spend = make(chan int)
+			mutated = true
+		}
+	}
+	if !mutated {
+		t.Fatalf("test precondition not met: expected a 'probe-subj' entry in fold.Fold's output, got %+v", out.Dispatches)
+	}
+
+	result := Assemble(Input{Records: records, Fold: out})
+
+	var found bool
+	for _, cond := range result.Conditions {
+		if cond.Code == "dispatch-render-failed" {
+			found = true
+			if !strings.Contains(cond.Detail, "probe-subj") {
+				t.Errorf("condition detail must name the subject, got %q", cond.Detail)
+			}
+			if cond.RecordDir != "probe-subj" {
+				t.Errorf("RecordDir = %q, want %q", cond.RecordDir, "probe-subj")
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected a dispatch-render-failed board condition (branch was claimed unreachable outside board/fold - disproven), got %v", result.Conditions)
+	}
+
+	// The subject must NOT also appear in the ordinary dispatches list -
+	// dispatchWireMap's error path `continue`s past the append (assemble.go)
+	// rather than emitting a half-built entry.
+	for _, d := range result.Dispatches.Dispatches {
+		if d["subject"] == "probe-subj" {
+			t.Errorf("probe-subj should not appear in Dispatches.Dispatches when its render failed, got %v", d)
+		}
+	}
+}
+
+// --- #75: the human task-id handle on dispatch rows ------------------------
+
+// TestAssembleDispatchTaskIdFromReturnedWinnerNotFirstScanOrder is #75's
+// analogue of TestAssembleGateFindingsMatchesFoldWinnerNotFirstScanOrder
+// above: task_id (the #47 envelope echo) must come from the fold's own
+// WINNER record (subject+kind=="returned"+at==the fold's own winning At),
+// never a first-scanned-wins pick. This test constructs an OLDER (superseded,
+// carries a DIFFERENT task_id) record BEFORE a NEWER (winning) one in
+// in.Records, the same shape the #28/#12 fix cycle's MAJOR-4 proved was live
+// for findings - proving the same defect class cannot recur here.
+func TestAssembleDispatchTaskIdFromReturnedWinnerNotFirstScanOrder(t *testing.T) {
+	records := []store.Record{
+		recAt("solo-1/returned-1-earlier.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "returned", "subject": "solo-1",
+			"session_id": "s1", "at": "2026-07-27T10:00:00Z", "outcome": "REJECT",
+			"findings": "f", "abstract": "a", "task_id": "solo-1-earlier-task-id",
+			"normalisation": []any{}, "integrity": "sha256:0",
+		}),
+		recAt("solo-1/returned-2-later.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "returned", "subject": "solo-1",
+			"session_id": "s1", "at": "2026-07-27T11:00:00Z", "outcome": "APPROVE",
+			"findings": "f", "abstract": "a", "task_id": "solo-1-winning-task-id",
+			"normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+
+	var found bool
+	for _, d := range result.Dispatches.Dispatches {
+		if d["subject"] == "solo-1" {
+			found = true
+			if d["taskId"] != "solo-1-winning-task-id" {
+				t.Errorf(`d["taskId"] = %v, want the WINNING (newer, 11:00) record's task_id %q - not the superseded 10:00 record's %q`,
+					d["taskId"], "solo-1-winning-task-id", "solo-1-earlier-task-id")
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected solo-1 in the dispatches lane, got %v", result.Dispatches.Dispatches)
+	}
+}
+
+// TestAssembleDispatchTaskIdAbsentForDispatchedWinner (Law 1, #75/#76 scope
+// split): a subject with only a "dispatched" record - never returned - has
+// no task_id ANYWHERE in the store (per the issue's own probe: dispatched
+// records carry no task_id until #76's producer work lands), so the
+// dispatches entry must carry NO "taskId" key at all - never an invented or
+// empty-string placeholder, matching every other optional wire field's
+// omitempty convention (recordDir's own posture, assemble.go).
+func TestAssembleDispatchTaskIdAbsentForDispatchedWinner(t *testing.T) {
+	records := []store.Record{
+		recAt("inflight-1/dispatched-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "dispatched", "subject": "inflight-1",
+			"session_id": "s1", "at": "2026-07-27T09:00:00Z", "normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+
+	var found bool
+	for _, d := range result.Dispatches.Dispatches {
+		if d["subject"] == "inflight-1" {
+			found = true
+			if _, present := d["taskId"]; present {
+				t.Errorf(`d["taskId"] = %v, want the key entirely ABSENT for a dispatched (never returned) winner`, d["taskId"])
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected inflight-1 in the dispatches lane, got %v", result.Dispatches.Dispatches)
+	}
+}
+
+// TestAssembleDispatchTaskIdAbsentWhenReturnedRecordCarriesNone (Law 1): a
+// returned winner whose own record simply has no task_id field (a legacy
+// returned record predating #47's envelope echo, or a non-Claude producer
+// adapter that never populated it) renders the key absent, never a guessed
+// or blank-string value.
+func TestAssembleDispatchTaskIdAbsentWhenReturnedRecordCarriesNone(t *testing.T) {
+	records := []store.Record{
+		recAt("solo-2/returned-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "returned", "subject": "solo-2",
+			"session_id": "s1", "at": "2026-07-27T10:00:00Z", "outcome": "done",
+			"findings": "f", "abstract": "a", // no task_id key
+			"normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+
+	var found bool
+	for _, d := range result.Dispatches.Dispatches {
+		if d["subject"] == "solo-2" {
+			found = true
+			if _, present := d["taskId"]; present {
+				t.Errorf(`d["taskId"] = %v, want the key entirely ABSENT when the winning returned record itself carries no task_id`, d["taskId"])
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected solo-2 in the dispatches lane, got %v", result.Dispatches.Dispatches)
+	}
+}
+
+// TestAssembleTrainCarTaskId proves the SAME task-id resolution reaches the
+// trains lane's car entries (#75 brief step 5: "check the car-chip side and
+// the trains lane too") - populated by the identical taskIDsBySubject lookup
+// dispatchWireMap uses, never a second derivation.
+func TestAssembleTrainCarTaskId(t *testing.T) {
+	records := []store.Record{
+		manifestIntent("train:board-v0", "2026-07-27T09:00:00Z", "T", []map[string]any{
+			{"subject": "carA", "role": "car"},
+		}),
+		recAt("carA/dispatched-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "dispatched", "subject": "carA",
+			"session_id": "s1", "at": "2026-07-27T09:05:00Z", "normalisation": []any{}, "integrity": "sha256:0",
+		}),
+		recAt("carA/returned-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "returned", "subject": "carA",
+			"session_id": "s1", "at": "2026-07-27T09:10:00Z", "outcome": "done",
+			"findings": "f", "abstract": "a", "task_id": "carA-task-id",
+			"normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+
+	if len(result.Trains.Trains) != 1 || len(result.Trains.Trains[0].Cars) != 1 {
+		t.Fatalf("expected 1 train with 1 car, got %+v", result.Trains.Trains)
+	}
+	car := result.Trains.Trains[0].Cars[0]
+	if car.TaskID != "carA-task-id" {
+		t.Errorf("car.TaskID = %q, want %q", car.TaskID, "carA-task-id")
+	}
+}
+
+// --- #84: freight (the inbound ticket queue) --------------------------------
+
+// ticketRecord builds a kind=ticket raw record matching
+// schema/starcar-ticket.schema.json's shape.
+func ticketRecord(subject string, at string, number int, title, status, url string) store.Record {
+	return recAt(subject+"/ticket.json", map[string]any{
+		"schema": "starcar-artifact/1", "kind": "ticket", "subject": subject,
+		"session_id": "freight-adapter", "at": at, "normalisation": []any{}, "integrity": "sha256:0",
+		"ticket": map[string]any{"number": float64(number), "title": title, "status": status, "url": url},
+	})
+}
+
+// TestAssembleFreightReadsRawTicketRecordsDirectly (#84) proves freight is
+// assembled from RAW records, the same way manifestPayload already reads the
+// "manifest" key off raw intent records - never through board/fold, which has
+// no case for kind=ticket at all (algorithm.go's bySubject switch only
+// groups dispatched/returned/presumed-lost/intent). fold.Output here carries
+// ZERO dispatches and ZERO intents (the real fold, run over these exact
+// records, would produce exactly that - proving this is not a fabricated
+// Input), yet the ticket still reaches the wire: the load-bearing assertion
+// that "the fold is not involved" (#84 owner ruling item 3).
+func TestAssembleFreightReadsRawTicketRecordsDirectly(t *testing.T) {
+	records := []store.Record{
+		ticketRecord("ticket-84", "2026-07-27T15:00:00Z", 84, "Light up the FREIGHT lane", "Backlog", "https://github.com/polecatspeaks/StarCar/issues/84"),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	if len(out.Dispatches) != 0 || len(out.Intents) != 0 {
+		t.Fatalf("test precondition not met: expected the real fold to produce zero dispatches/intents for a kind=ticket-only store, got %d/%d - fold now recognises this kind, which would defeat this test's own premise", len(out.Dispatches), len(out.Intents))
+	}
+
+	result := Assemble(Input{Records: records, Fold: out})
+	if len(result.Freight.Tickets) != 1 {
+		t.Fatalf("expected 1 freight ticket, got %d: %+v", len(result.Freight.Tickets), result.Freight.Tickets)
+	}
+	tk := result.Freight.Tickets[0]
+	if tk.Number != 84 || tk.Title != "Light up the FREIGHT lane" || tk.Status != "Backlog" || tk.URL != "https://github.com/polecatspeaks/StarCar/issues/84" {
+		t.Errorf("unexpected ticket shape: %+v", tk)
+	}
+	if tk.RecordDir != "ticket-84" {
+		t.Errorf("tk.RecordDir = %q, want %q (#28's clickable-provenance convention)", tk.RecordDir, "ticket-84")
+	}
+}
+
+// TestAssembleFreightIgnoresTicketSyncRecords (#84) proves the freight
+// adapter's heartbeat marker (kind=ticket-sync, no "ticket" payload key) is
+// never mistaken for a queue entry - it exists purely for freight's own
+// freshness signal (board/server/poll.go's computeFreightFreshness), read
+// there, never here.
+func TestAssembleFreightIgnoresTicketSyncRecords(t *testing.T) {
+	records := []store.Record{
+		recAt("ticket-sync/ticket-sync.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "ticket-sync", "subject": "ticket-sync",
+			"session_id": "freight-adapter", "at": "2026-07-27T15:00:00Z", "normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+	if len(result.Freight.Tickets) != 0 {
+		t.Fatalf("a ticket-sync heartbeat record must NOT appear in the tickets list, got %+v", result.Freight.Tickets)
+	}
+}
+
+// TestAssembleFreightEmptyWhenNoTicketRecords (#84, DR3-5a's honest-empty
+// posture applied to freight): zero kind=ticket records is a genuinely empty
+// (never nil, never omitted) tickets array - the JSON encoder must marshal
+// `"tickets":[]`, not `"tickets":null`, so the wire never confuses "empty" for
+// "absent".
+func TestAssembleFreightEmptyWhenNoTicketRecords(t *testing.T) {
+	out := fold.Fold(foldRecords(nil), testVocab, now)
+	result := Assemble(Input{Records: nil, Fold: out})
+	if result.Freight.Tickets == nil {
+		t.Fatalf("Freight.Tickets must be an empty slice, never nil, on an empty store")
+	}
+	if len(result.Freight.Tickets) != 0 {
+		t.Fatalf("expected 0 tickets, got %d", len(result.Freight.Tickets))
+	}
+}
+
+// TestAssembleFreightMultipleTicketsSortedByNumber (#84) - the freight
+// adapter writes one record per issue with no cross-record ordering
+// guarantee (store.Scan's own deterministic order is lexical-by-path, not
+// issue-number order); Assemble imposes a stable, dispatcher-legible order
+// (ascending issue number) rather than exposing scan order as an accident of
+// directory naming.
+func TestAssembleFreightMultipleTicketsSortedByNumber(t *testing.T) {
+	records := []store.Record{
+		ticketRecord("ticket-90", "2026-07-27T15:00:00Z", 90, "ninety", "Todo", "https://github.com/polecatspeaks/StarCar/issues/90"),
+		ticketRecord("ticket-3", "2026-07-27T15:00:00Z", 3, "three", "Backlog", "https://github.com/polecatspeaks/StarCar/issues/3"),
+		ticketRecord("ticket-42", "2026-07-27T15:00:00Z", 42, "forty-two", "Backlog", "https://github.com/polecatspeaks/StarCar/issues/42"),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+	if len(result.Freight.Tickets) != 3 {
+		t.Fatalf("expected 3 tickets, got %d", len(result.Freight.Tickets))
+	}
+	got := []int{result.Freight.Tickets[0].Number, result.Freight.Tickets[1].Number, result.Freight.Tickets[2].Number}
+	want := []int{3, 42, 90}
+	if got[0] != want[0] || got[1] != want[1] || got[2] != want[2] {
+		t.Errorf("ticket order = %v, want ascending by number %v", got, want)
 	}
 }

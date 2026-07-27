@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a076bf6c0a94e302f",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-26T17:28:56Z",
+  "outcome": "done",
+  "findings": "none outstanding — the single new Major from round-2 REJECT (extensionless-file completeness hole) fixed and verified with red/green transcripts at commit 45588a2, plus one self-found PowerShell array-collapse defect fixed in the same commit",
+  "abstract": "Round 3 fix cycle for issue #42, addressing round-2 REJECT's one new Major (CodeCitationPolicy.Tests.ps1's closed-set completeness guard computed the unaccounted-extension set correctly for an extensionless file but discarded it via a join-then-BeNullOrEmpty idiom, since a joined single empty string is still empty; measured 10/10 green on an uncited extensionless Dockerfile). Reproduced the reviewer's exact repro before the fix (10/10 green), then decided and documented the extensionless-file policy - extensionless files (Dockerfile, Makefile, CODEOWNERS, shebang scripts) join the CHECKED set as comment-capable, not the declared-exempt set, with a disclosed edge that a future genuinely comment-incapable extensionless file would need a path-level exemption rather than an extension-level one. Fixed the assertion to check .Count directly with a (no extension) sentinel in the failure message, extracted the logic into Get-UnaccountedExtensions, and added a synthetic 3-test Describe proving the fixed mechanism in isolation since the real corpus has no unaccounted-extensionless case today. Post-fix, the same Dockerfile fixture reds naming it directly (9/10), citing it goes to 13/13 green, and the fixture was reverted via git rm plus a soft reset folding the throwaway commit away entirely so the final commit's tree and diff carry no trace of it. Self-found and fixed in the same commit: PowerShell silently collapses a function's returned array to a scalar or null at the call site when 0 or 1 items are returned regardless of return @(...) inside the function, discovered while building the synthetic proof and fixed by wrapping every relevant call site with @(...). CLAUDE.md's amendment corrected to state exactly what the guard now delivers. scripts/tests 192 -> 195/195 passed at commit 45588a2; scripts/probes 24/24 and scripts/store-checks 178/178 unaffected; tree clean, no Dockerfile residue.",
+  "subject_basis": "runtime-id",
+  "task_id": "process-42-car-r3",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:378e3e5eb94a20d03b0c9a2f0b58e4bf98f9e0ba2eb4b752a0d2e65dc7a6e360"
+}

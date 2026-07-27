@@ -1,0 +1,9 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket-sync",
+  "subject": "ticket-sync",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "normalisation": [],
+  "integrity": "sha256:68fcb82d0c396538e42d9f875d5043a137fe59c81daa075d3f0b4a03743acfee"
+}

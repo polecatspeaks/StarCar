@@ -39,7 +39,7 @@ makes about existing code carries file:line - the spec reviewer OPENS every one.
 - Null/absent FetchedAt => `unknown`, rendered as UNKNOWN. Never inferred, never
   defaulted to fresh (First Law).
 - Thresholds read once per snapshot derivation, not per render (two reads can disagree
-  mid-config-reload - the review that caught this class is recorded in section 12).
+  mid-config-reload - the review that caught this class is recorded in section 11).
 
 ## 3. Contracts
 
@@ -82,7 +82,68 @@ into the design.]
 Per-adapter freshness detail (#15). Historical staleness charting. Anything the
 brainstorm deferred, named so a plan-writer cannot scope-creep it back in.
 
-## 12. Review record
+## 9. Contracts touched (#9 - the carrier a rev-1 spec did not have)
+
+Every document this spec's decisions invalidate, and who owns updating each. Mandatory,
+even when the row is "none" - a spec that introduces no new documentation obligation says
+so explicitly, the same non-vacuity discipline section 5 already applies to state.
+
+| Document | What changes | Owner |
+|---|---|---|
+| `docs/contracts/state-ledger.md` | Instantiated - records that this feature adds NO mutable process state (section 5 says `Snapshot.verdict` is "NOT STATE - recomputed per snapshot"), so the ledger's arithmetic is 0 -> 0. A `none` row is still a mandatory row, per this section's own opening line - it demonstrates the non-vacuity discipline rather than skipping it | Car B |
+| `docs/contracts/gating-matrix.md` | The UNKNOWN verdict is a gated truth surface, never suppressed - the example row this project's own gating-matrix template already carries (`gating-matrix.md:23`) becomes real | Car B |
+| `docs/glossary.md` | Defines `fresh` / `aging` / `stale` / `unknown` as the verdict's closed string union, replacing the three components' informal, disagreeing prose | Car A |
+| The three retired self-computing comparisons' call sites [file:line each, section 4] | Doc comments describing the old per-component computation are removed same-commit as the code | Car A / Car C |
+
+[WHY this section exists: the design rung has one, in the real design that produced this
+fold (`docs/design/2026-07-22-dispatch-harness-design.md` section 8: eight rows, one per
+obligation, each with an owner). Without its spec-rung equivalent, a design's documentation obligations
+evaporate at the design-to-spec handoff - the first real use of this template without this
+section lost nine of them, and a zero-context plan-writer working from the spec alone would
+have written no documentation tasks at all. See `worked-rung-carriers.md`: obligations cross
+rungs by carrier, never by memory.]
+
+## 10. Fidelity to the design (#9 - the disposition table a rev-1 spec did not have)
+
+One row per adopted design premise, decision, or review ruling; each points at the spec
+section that carries it. A blank is a defect, not an omission - the same rule the design
+rung's own one-row-per-finding table already enforces (design section 9b).
+
+| Design item (premise / decision / ruling) | Where it lands here |
+|---|---|
+| DR-1 (lane badge added to the retirement list) | Section 4 |
+| DR-2 (config-reload double-read race - thresholds read once per derivation) | Section 2, bullet 2 |
+| DR-3 (observability reality - the error-path FetchedAt question) | Section 7, probe item 1 |
+| DR-4 (YAGNI - per-adapter detail deferred) | Section 8 |
+| Owner decision: verdict derives ONLY from adapter-reported FetchedAt, never the browser clock alone | **NOT CARRIED - header only.** The "ONLY from adapter-reported FetchedAt" half is close to section 2's opening line (`derived in the adapter layer at snapshot arrival`), but "never the browser clock alone" is not stated in any numbered section - only in the document header's "Owner decisions locked in the brainstorm" line |
+| Owner decision: UNKNOWN is a first-class rendered state | Section 2, bullet 1 |
+| Owner decision: thresholds configurable per deployment, defaulted 30s/120s | **NOT CARRIED - header only.** A whole-file grep for every threshold token finds this decision only at the document header (`Owner decisions locked in the brainstorm`); section 2's opening line and section 3 are both silent on configurability and on 30s/120s specifically - section 5's config-reload cell (`derived with the NEW thresholds from the next snapshot on`) is the nearest thing to a numbered-section carrier, and even that assumes configurability rather than stating it |
+
+[WHY this section exists: the design rung's one-row-per-finding-and-ruling disposition
+table demonstrably worked - it is why a design revision could prove nothing had been
+dropped. With no spec-rung equivalent, the first real use of this template silently
+dropped five adopted design requirements, including the feature's central mechanism. A
+row here that cites nowhere real, or a real requirement with no row, is the fold that
+LOOKS folded - the failure this table exists to make impossible to hide.]
+
+**The two NOT CARRIED rows above are not a gap in this exemplar - they ARE the
+exemplar.** A fidelity table's job is to surface exactly this: an owner decision that
+was locked at the header and never actually landed in a numbered section is a real,
+if small, defect in the fictional spec it describes, and the honest row says so instead
+of pointing at the nearest plausible-looking section. A false full row teaches the wrong
+lesson twice (it hides the gap AND models the failure the paragraph below warns about);
+an honest NOT CARRIED row teaches what this table is FOR.
+
+**Known fallibility, kept rather than smoothed over:** the real spec that produced this
+shape had its own fidelity ledger produce a FALSE row in its first round - a row claiming
+a section carried something that section did not actually say, caught only when a human
+reviewer opened the cited section and it was silent. The table is real work, not a
+rubber stamp; it is checked by OPENING the cited section, never by trusting the row. A
+CI check that walks every row and confirms the cited section actually mentions the
+claimed item is tracked separately (still open; see the closing note below) - until it
+lands, this table is reviewer-verified, attention-tier, same as any other citation.
+
+## 11. Review record
 
 Design review (code-grounded adversary, read-only, ran BEFORE this spec was written):
 **NEEDS-REWORK, 4 findings, all folded above** marked [DR-*]: DR-1 the third
@@ -97,39 +158,46 @@ Spec review (document attack, a DIFFERENT failure surface than the ideas): round
 function (the reviewer opened it; a wrong citation that sends a car to the wrong code
 is a Major); M2 "the banner shows staleness" was readable two ways (age text vs
 verdict color) - ambiguity is a finding because a car that sees only its own task will
-pick the wrong reading. Round 2: **APPROVED**.
+pick the wrong reading. Round 2: **APPROVED**, the round-2 reviewer having read sections
+9 and 10 above and accepted the two NOT CARRIED rows as the honest, correct disclosure
+of a real but small gap rather than a defect blocking approval.
 
 [The review records stay IN the spec forever. They are how the next reader knows what
 was already attacked, what was ruled, and what the document's claims have survived.]
 
 ---
 
-## KNOWN GAP - disclosed, not yet fixed (2026-07-22)
+## Sections 9-10 provenance and residual open items (folded 2026-07-26, #9)
 
-**This exemplar has two holes, and they are not hypothetical.** On its first real use, an
-adversarial spec review attributed two of its eight Major findings to the template rather
-than to the author:
+Sections 9 and 10 above were carried, not invented. They are the shape and rhetoric
+of `docs/specs/2026-07-22-dispatch-harness-spec.md` sections 9 and 10 - the real spec
+whose first draft, written from THIS template before it had these sections, lost nine
+documentation obligations and five adopted design requirements (including the feature's
+central mechanism) at the design-to-spec handoff. That candidate was deliberately left
+out of this template while still under adversarial review, per this repo's own rule that
+amending an exemplar with an unreviewed invention is inventing prior art. It has since
+survived four rounds - REJECT (8 Major), DELTA-REJECT (1 Major: a false ledger row, N1),
+CONFIRM-REJECT (1 Major, mechanical - a repo-policy commit's line-number shift, not a
+substance defect), APPROVE - with N1 confirmed closed on substance in round 3 and no
+further false row in round 4
+(`artifacts/reviews/2026-07-22-harness-spec-round{1-REJECT,2-DELTA-REJECT,3-CONFIRM-REJECT,4-APPROVE}.md`).
+The shape has survived a round without a false row, which is the trigger this template's
+prior note set for folding it in.
 
-1. **No contracts-touched section.** The design-rung template has one; this does not. So a
-   design's documentation obligations - which documents this work invalidates, and which car
-   owns updating each - **evaporate at the design-to-spec handoff**. In that first use, nine
-   obligations were lost, and a zero-context plan-writer working from the spec alone would
-   have written no documentation tasks at all.
-2. **No fidelity ledger.** The design rung's one-row-per-finding-and-ruling disposition table
-   demonstrably worked - it is why that revision could prove nothing had been dropped. With
-   no equivalent here, **five adopted design requirements were silently dropped**, including
-   the feature's central mechanism.
+Two items from #9 remain open, disclosed rather than silently dropped:
 
-Both are instances of one class: *obligations cross rungs by carrier, never by memory* - see
-`worked-rung-carriers.md`.
+1. **Make CI walk the ledger.** `worked-rung-carriers.md:57-58` predicted the false-row
+   failure before it happened ("if you build the central form anyway, make CI walk it");
+   nothing does yet. A ledger row asserting a section carries something, checked
+   mechanically against whether that section actually mentions it, is the natural next
+   gate and is NOT built by this commit.
+2. **Mirror both sections into `Project-Bootstrapping`**, the public repo that ships this
+   template externally. Out of scope for this worktree (different repository, not present
+   here) - tracked on #9, not resolved by this commit.
 
-**A candidate fix exists and is UNDER ADVERSARIAL REVIEW at the time of writing**, as §9 and
-§10 of the spec that discovered the gap. It is deliberately not folded into this template yet,
-for the reason this repo keeps repeating: **amending an exemplar with an unreviewed invention
-is inventing prior art**, which is the exact failure exemplars exist to prevent. The candidate
-may turn out to be a table that lists obligations without binding anything, in which case the
-correct amendment is none.
-
-**Until that verdict lands, an adopter should add both sections by hand** and treat this note
-as the reason. Disclosed while incomplete beats confidently wrong - a template is allowed to
-be TRUE before it is COMPLETE, and this one is not yet complete.
+Also closed, in the same fold: the numbering gap the first spec review flagged in this
+template - verbatim, "the template jumps §8 → §12 with no §9-11 and no explanation... an
+unexplained gap teaches every future author to leave one"
+(`artifacts/reviews/2026-07-22-harness-spec-round1-REJECT.md:72`). Sections 9 and 10 now
+fill two of the three missing numbers; Review record renumbers to section 11 immediately
+below, closing the rest of the gap rather than leaving it explained-but-open.

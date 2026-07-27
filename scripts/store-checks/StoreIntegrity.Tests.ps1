@@ -12,8 +12,21 @@
 # there is no placeholder class and no gap this test needs to special-case). This asserts
 # the WHOLE store, uniformly.
 #
-# Runs in the existing CI Pester step (scripts/tests/**/*.Tests.ps1 glob already covers
-# this file) -- no ci.yml change needed.
+# INVOCATION (deliberately NOT under scripts/tests/ - #41 owner ruling 2026-07-25):
+# store integrity is a DATA-INTEGRITY CHECK, not a code test. Its per-record test count
+# grows with every producer dispatch (one record per dispatch), so placing it in
+# scripts/tests made that suite's total store-size-dependent and could mask a lost code
+# test (N new records + 1 real test breaks = total still +N-1 - a lying instrument).
+# This file follows the precedent of scripts/probes/SubstrateFloor.Probes.Tests.ps1
+# (see its header line 13: "INVOCATION (deliberately NOT under scripts/tests/ - car
+# briefs pin that suite's counts") and lives in scripts/store-checks/ with its own
+# separately-reported CI step. scripts/tests is now fixed-count (code tests only).
+#
+# INVOCATION:
+#   pwsh -NoProfile -Command "Invoke-Pester -Path ./scripts/store-checks"
+# CI: a dedicated 'Run store-checks (data integrity, per-record)' step in ci.yml (#41).
+#
+# #41
 
 BeforeDiscovery {
     $repoRoot = (git rev-parse --show-toplevel)
@@ -156,6 +169,92 @@ Describe 'Store integrity - every artifacts/**/*.json record (F4)' {
             $json = $fixture | ConvertTo-Json -Depth 20
             $valid = Test-Json -Json $json -Schema $script:ManifestSchemaJson -ErrorAction SilentlyContinue
             $valid | Should -BeTrue -Because 'a well-formed train: manifest fixture must pass schema/starcar-manifest.schema.json'
+        }
+    }
+
+    Context 'kind=ticket layer (#84, fix cycle round 2 R1-m5): YB-1''s "validators run BOTH schemas" honored in pwsh too' {
+        # #84 fix cycle round 2, R1-m5: board/store/store.go:302 already validates every
+        # record against schema/starcar-ticket.schema.json (the Go side); this Context is
+        # the pwsh-side twin, mirroring the manifest Context immediately above verbatim -
+        # same layered-schema posture (schema/starcar-manifest.schema.json's own YB-1
+        # comment: "neither restates the other"), same TestDrive fixture shape (no
+        # real-store precondition: unlike train:board-v0, no kind=ticket record has been
+        # committed to the real artifacts/ store by this car - Sync-Freight.ps1 was
+        # deliberately never run against the live repo/GitHub as part of landing this
+        # ticket - so a ">0 in the real store" non-vacuity guard would be vacuously false
+        # forever until the adapter's first real production run; these two fixture-only
+        # cases are this Context's honest scope).
+        BeforeAll {
+            $script:TicketSchemaPath = Join-Path $script:RepoRoot 'schema/starcar-ticket.schema.json'
+            $script:TicketSchemaJson = Get-Content $script:TicketSchemaPath -Raw -Encoding UTF8
+        }
+
+        It 'a TestDrive kind=ticket record WITHOUT a ticket key is CAUGHT' {
+            $fixture = [ordered]@{
+                schema        = 'starcar-artifact/1'
+                kind          = 'ticket'
+                subject       = 'ticket-test-no-payload'
+                session_id    = 'freight-adapter'
+                at            = '2026-07-23T10:00:00Z'
+                normalisation = @()
+                integrity     = 'sha256:' + ('0' * 64)
+            }
+            $json = $fixture | ConvertTo-Json -Depth 20
+            $valid = Test-Json -Json $json -Schema $script:TicketSchemaJson -ErrorAction SilentlyContinue
+            $valid | Should -BeFalse -Because 'a kind=ticket record without a ticket key must fail schema/starcar-ticket.schema.json'
+        }
+
+        It 'a TestDrive kind=ticket record with an INCOMPLETE ticket payload (missing url) is CAUGHT' {
+            $fixture = [ordered]@{
+                schema        = 'starcar-artifact/1'
+                kind          = 'ticket'
+                subject       = 'ticket-test-incomplete'
+                session_id    = 'freight-adapter'
+                at            = '2026-07-23T10:00:00Z'
+                ticket        = [ordered]@{ number = 84; title = 'missing status and url' }
+                normalisation = @()
+                integrity     = 'sha256:' + ('0' * 64)
+            }
+            $json = $fixture | ConvertTo-Json -Depth 20
+            $valid = Test-Json -Json $json -Schema $script:TicketSchemaJson -ErrorAction SilentlyContinue
+            $valid | Should -BeFalse -Because 'a ticket payload missing status/url must fail schema/starcar-ticket.schema.json'
+        }
+
+        It 'a TestDrive well-formed kind=ticket fixture passes' {
+            $fixture = [ordered]@{
+                schema        = 'starcar-artifact/1'
+                kind          = 'ticket'
+                subject       = 'ticket-84'
+                session_id    = 'freight-adapter'
+                at            = '2026-07-23T10:00:00Z'
+                ticket        = [ordered]@{
+                    number = 84
+                    title  = 'Light up the FREIGHT lane'
+                    status = 'Backlog'
+                    url    = 'https://github.com/polecatspeaks/StarCar/issues/84'
+                }
+                normalisation = @()
+                integrity     = 'sha256:' + ('0' * 64)
+            }
+            $json = $fixture | ConvertTo-Json -Depth 20
+            $valid = Test-Json -Json $json -Schema $script:TicketSchemaJson -ErrorAction SilentlyContinue
+            $valid | Should -BeTrue -Because 'a well-formed kind=ticket fixture must pass schema/starcar-ticket.schema.json'
+        }
+
+        It 'a TestDrive kind=ticket-sync heartbeat (no extra payload key) passes the BASE schema alone' {
+            $fixture = [ordered]@{
+                schema        = 'starcar-artifact/1'
+                kind          = 'ticket-sync'
+                subject       = 'ticket-sync'
+                session_id    = 'freight-adapter'
+                at            = '2026-07-23T10:00:00Z'
+                normalisation = @()
+                integrity     = 'sha256:' + ('0' * 64)
+            }
+            $json = $fixture | ConvertTo-Json -Depth 20
+            $artifactSchemaJson = Get-Content (Join-Path $script:RepoRoot 'schema/starcar-artifact.schema.json') -Raw -Encoding UTF8
+            $valid = Test-Json -Json $json -Schema $artifactSchemaJson -ErrorAction SilentlyContinue
+            $valid | Should -BeTrue -Because 'a ticket-sync heartbeat carries no extra payload key and must validate against the base schema alone'
         }
     }
 

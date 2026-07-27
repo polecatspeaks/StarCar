@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "af5f0b4f753a8f9d7",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-26T11:54:02Z",
+  "outcome": "done",
+  "findings": "Citation correction (brief pointed at a Status:Superseded/RETIRED design doc; amendment landed on the correct live, APPROVED successor doc instead, docs/design/2026-07-24-family-agnostic-harness-design.md:65); two real bugs caught pre-commit during red-green cycles (Windows backslash path stripped across a PowerShell-to-sh.exe argv boundary in a manually-built sh -c string; ConvertFrom-Json auto-coerced an ISO-8601 string to [datetime] and re-rendered it in local culture format, fixed via -DateKind String matching Detect-Dispatches.ps1:132); deliberate second-copy design decision for Task 3 (disclosed and pinned by a behavioral divergence test rather than a refactor of the latency-sensitive producer); local reproduction of the #50 Copilot syntax error attempted and did not reproduce on this box's shells.",
+  "abstract": "Three commits on car/tooling-50-32 from base 5ea6c0c. Task 1 (f858aa1, #50): moved the fifth SessionStart line from an inline sh -c wrapper to .claude/hooks/session-start-entire.sh, byte-identical behavior pinned by SessionStartWiring.Tests.ps1. Task 2 (b48639d, #50): new .claude/hooks/session-start-record.sh delivers the four SessionStart guards' combined stdout to a gitignored .claude/session-start-report.txt via a two-stage pipe (tee -a, reset-once-per-batch), Claude Code's stdout path untouched; pointer lines added to .github/copilot-instructions.md and ONBOARDING.md; design doc amended at the correct live document (family-agnostic-harness-design.md, not the cited but retired dual-runtime doc). Task 3 (2555266, #32): new scripts/Reconcile-DispatchRecords.ps1 cross-references the SubagentStop probe log against the artifact store to detect dispatch records the producer silently never wrote, deliberate second copy of the producer's Claude-returned subject rule pinned by a behavioral divergence test (#37 precedent), wired into the goodnight ritual's existing artifact-store sweep step. Final: scripts/tests 173/173 (149 base + 5 + 10 + 9), scripts/store-checks 159/159 unchanged, CheckpointReconcile probes 10/10. All red-first, all reds confirmed failing for the stated reason before implementation.",
+  "subject_basis": "runtime-id",
+  "task_id": "tooling-50-32-car-r1",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:0f5196b2f9c82521bb5b35ffbb1c6264c81e8f62582112c1efbec2827744d792"
+}

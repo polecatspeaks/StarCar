@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "af5f0b4f753a8f9d7",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-26T12:44:27Z",
+  "outcome": "done-with-findings",
+  "findings": "M5 fixed with one disclosed deviation (1 residual gap, not 0, for a probe-log entry whose timestamp cannot be proven pre-epoch without guessing - Law 1 forbids the guess); a second real bug (migrated-verdict contamination of the epoch-floor derivation) was found and fixed while verifying M5 against the real corpus, beyond what round-1 review named. All other findings (M1-M4, m1-m6) fixed cleanly with red-first evidence and green confirmation.",
+  "abstract": "Fix cycle round 2 on car/tooling-50-32-car-r2, same worktree/branch, base 2555266 unchanged. Four new commits. M1 (4e9cfa2): restored a whitelist covering all five SessionStart lines after the reviewer proved the round-1 blacklist blind to an inline if-compound injection. M4 (4e9cfa2, same commit): removed the --reset ordering assumption entirely, replaced with a file-mtime staleness check serialized by an atomic mkdir mutex - non-vacuity proven by neutering the mutex and observing 5/80 losses reappear before restoring it byte-identical. M2+M3 (94888d3): docs/setup.md now carries the delivery-mechanism disclosure the design doc's amendment falsely claimed; D5 and section 5 item 6 amended inline (tagged #50, original text preserved) to state the pipe supersedes the bare intersection-dialect prescription and to name the Copilot-pipe-evaluation risk in the design itself, not only a test comment. M5 (cb59867): the reconciler's default gap-detection floor now derives from the store's earliest producer-written (returned-*.json) record; re-verified read-only against the real shared-checkout corpus, reducing 9 wolf-cried gaps to 1 honestly-irreducible one, with a second contaminating bug (migrated review verdicts sharing kind:returned) found and fixed along the way. Minors m1-m6 all fixed (ticket citation, CLAUDE_PROJECT_DIR anchoring, unknown-timestamp rendering, exit-code-masking comment, a landed sh-resolution probe, and a corrected stale substrate claim). Final suite totals: scripts/tests 182/182 (173 round-1 base + 4 net from M1/M4 + 5 from M5), scripts/store-checks 159/159 unchanged, scripts/probes 24/24 (22 + 2 new).",
+  "subject_basis": "runtime-id",
+  "task_id": "tooling-50-32-car-r2",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:affa916d82a9c0c5684cbc2562b4324054da052d27a5c44375e573f87e399b70"
+}

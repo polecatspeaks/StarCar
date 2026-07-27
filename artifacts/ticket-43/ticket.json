@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-43",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 43,
+    "title": "real-board-server.js leaks its temp build directory (~10 MiB per local run, 181.9 MiB measured in one session)",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/43"
+  },
+  "normalisation": [],
+  "integrity": "sha256:a5b7d2befd25580a765a483e673b40528fd5b5c4421a8664283d2e7e5d234dd1"
+}

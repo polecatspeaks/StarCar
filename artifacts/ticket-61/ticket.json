@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-61",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 61,
+    "title": "Project-Bootstrapping mirror of worked-spec sections 9-10 (split from #9 item 3; cross-repo)",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/61"
+  },
+  "normalisation": [],
+  "integrity": "sha256:a10e0d0f0fc498d10d3dff013c292fc3bea6044df21051cf08b21330463c78f0"
+}

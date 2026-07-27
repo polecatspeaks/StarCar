@@ -166,7 +166,10 @@ pins these shapes executably at the spec rung, which then becomes the single own
   (D11), each with a `register` and a `surfacesData` flag.
 - **Freshness** - closed by mechanism, provably complete: `not-applicable` (no adapter) |
   `never-polled` | `fresh` | `stale` (with server-issued `ageBucketMs`) | `failed` (with
-  coded reason and `lastGood`/`lastGoodAsOf` carried).
+  coded reason and `lastGood`/`lastGoodAsOf` carried). **`[AMENDED, issue #29,
+  2026-07-26 - see §12b]`**: old data alone no longer means `stale` - a sixth kind,
+  `idle`, now covers old data with NOTHING in flight (a yard at rest, calm). This line's
+  five-kind enumeration is superseded; §12b's #29 amendment is the corrected text.
 - **Composition rules** (rev 2's REJECT root cause, closed in rev 3, restated in full):
   - **Rule 1:** rendered register = MOST SEVERE of the three axes' registers - position's
     (from its def; `needs-attention` if unrecognised), freshness's (per this mapping:
@@ -174,7 +177,9 @@ pins these shapes executably at the spec rung, which then becomes the single own
     `stale`→`needs-attention`, `failed`→`needs-attention`), and capability's (`nominal`,
     or `needs-attention` when no renderer exists for the payload). The load-bearing case:
     a `live` lane whose data source dies resolves `needs-attention` - the board goes hot
-    when the data dies.
+    when the data dies. **`[AMENDED, issue #29, 2026-07-26 - see §12b]`**: this mapping
+    is missing the new `idle`→`nominal` row; §12b's #29 amendment carries the corrected
+    six-row mapping.
   - **Rule 2:** position speaks first (primary line), freshness second; `not-applicable`
     renders NO freshness line (a lane that will never be read must never say "not yet
     read"); `surfacesData: false` renders no payload and says so; missing capability says
@@ -182,14 +187,20 @@ pins these shapes executably at the spec rung, which then becomes the single own
   - **Rule 3:** rendered age always comes from the server (`ageBucketMs`, quantised,
     included in change detection); the client never computes age from its own clock.
   - **Rule 4:** the detector's register is `needs-attention`, deliberately - the one
-    alarm that is about the board rather than the yard.
+    alarm that is about the board rather than the yard. **`[SUPERSEDED, issue #30,
+    2026-07-26 - see §12b]`**: this held only while every board-condition class shared
+    one register; #30 ruled severity PER CLASS, so this rule no longer states the
+    detector's actual behaviour. §12b's #30 amendment is the corrected text -
+    read it before relying on this line.
 - **Completeness guards** - every registered lane in every snapshot on every code path
   including pre-first-poll; the lane-id set pinned by a fixture-backed test (shrink =
   red); lane count rendered in chrome and ledgered.
 
 v0's lane registry: `dispatches` (live), `gates` (live), `trains` (live), `freight`
-(dark - the ticket queue has no adapter yet), `fuel` (bagged - `cost` fields exist on
-some records, held but not surfaced until #11's cost ledger work). Positions per D11 are
+(**live as of #84, 2026-07-27** - §7's deferred ticket-queue adapter; the ticket queue was
+dark through v0 and stayed that way until this section's own trigger fired and was acted
+on), `fuel` (bagged - `cost` fields exist on some records, held but not surfaced until
+#11's cost ledger work). Positions per D11 are
 deploy-time registry truth.
 
 ### 5.3 The store adapter and the four derived surfaces
@@ -348,10 +359,17 @@ successful store scan; a scan that fails (directory missing, unreadable) is `fai
 
 ## §7 - Out of scope (with triggers)
 
-Git adapter; GitHub board adapter (freight lane) - trigger: first train after v0 ships
-`[Q5, ruling adopted: honest-but-thin first paint is CORRECT for the showcase - a first
-screenshot with loudly-honest dark/bagged lanes demonstrates the Law 4 mechanism working;
-freight stays out]`.
+Git adapter; ~~GitHub board adapter (freight lane) - trigger: first train after v0
+ships~~ **TRIGGER FIRED, LANDED #84 (2026-07-27).** The trigger sat unpicked-up for many
+trains after v0 shipped (the same class this repo's docs/setup.md probes-in-CI row was
+corrected for, same day) - #84 named the satisfied trigger, and the adapter
+(`scripts/Sync-Freight.ps1`) plus the freight lane's render path landed the same day. The
+original entry is struck through rather than deleted so the deferral-and-pickup shape
+stays legible: `[Q5, ruling adopted: honest-but-thin first paint is CORRECT for the
+showcase - a first screenshot with loudly-honest dark/bagged lanes demonstrates the Law 4
+mechanism working; freight stays out]`. Q5's ruling was correct FOR v0; it was never a
+ruling that freight stays out forever, and this section's own header promises exactly
+one thing per entry - a trigger - which this row's now discharged.
 Fuel gauge surfacing - trigger: #11 cost-ledger work. Auth - local-only, stated in README.
 View-side override UI - trigger: the second use of intent-record overrides (Law 2 is
 served by the store path in v0). History/event-log view - the snapshot is current-state;
@@ -469,6 +487,340 @@ as the substrate probe it is.
 2. **`statePathDisplay` renamed `storePathDisplay`** `[spec §3 deviation]`: the rev 3
    relic named the retired state file; the field displays the STORE path. The wire
    schema (`schema/yard-snapshot.schema.json`) carries the authoritative name.
+
+**Amendment (2026-07-26, issue #30 owner ruling - board-condition severity per
+class; SUPERSEDES §5.2 Rule 4 and, IN PART, §6's row on unrecognised
+`kind`/`outcome`/`position`/role; corrected 2026-07-26 in fix-cycle round 2 after
+review round 1's MAJOR-1/MAJOR-2 - the round-1 text over-scoped, see below):**
+
+**Scope of what actually changed - the board-condition REGISTER for `kind` and
+`outcome` discoveries only.** §6's row reads "Unrecognised `kind`/`outcome`/
+`position`/role, vocabularies loaded | Detector fires: rendered loudly BY NAME,
+register `needs-attention` - a discovery, not a bug", and Rule 4 (§5.2, above)
+generalised the same claim to "the detector's register is `needs-attention`,
+deliberately." Both are corrected, precisely:
+
+- **`kind` and `outcome`** are the ONLY values `board/fold/algorithm.go:110-122`
+  ever mints a "discovery" BOARD CONDITION for (deduplicated by detail string,
+  `:113,119`). For exactly these two, a "discovery" is now the design's own
+  named example of a NOTE-tier board-condition CLASS (an expected pattern,
+  distinct from a FLAG-tier defect), and NOTE-tier renders `nominal`, not
+  `needs-attention` - "rendered loudly BY NAME" still holds (the code and detail
+  are never suppressed, never an ack-list; grouping at the view rolls instances
+  up by code but discards none), only the REGISTER changes.
+- **`position` and `role` are UNCHANGED and render `needs-attention` still.**
+  Round 1 (MAJOR-2) correctly caught that the §6 row's literal text names all
+  four (`kind`/`outcome`/`position`/`role`) and this amendment's first draft
+  superseded the row wholesale, implying position/role went calm too. They did
+  not, and could not have: unrecognised `position`/`role` never mint a
+  board-condition CODE at all (no construction site for them exists in
+  `board/{store,assemble,server}`, so `condition_severity.go` - which classifies
+  board-condition CODES - has no lever over them). Their register comes from an
+  entirely different, VIEW-SIDE path: `board/web/js/vocab.js:31-37`
+  `describeVocab` resolves an unrecognised id to `needs-attention` directly
+  (never through the wire's board-conditions array), reached for positions via
+  `board/web/js/compose.js:30-31` `positionRegister` and
+  `board/web/js/render.js` per-lane composition. This path is untouched by #30
+  and stays pinned green by `describeVocab: an UNRECOGNISED id renders its raw
+  id verbatim as the label, register needs-attention, never guessed as calm`
+  (`board/web/test/vocab.test.js`).
+
+The severity classification for the board-condition codes this DOES cover is
+now ONE owned mapping (`board/store/condition_severity.go`), pinned by
+`board/store/condition_severity_test.go` against every `Code` literal a
+production Go source file under `board/` actually constructs - the #37
+register-taxonomy precedent applied to a second axis.
+
+**`docs/contracts/gating-matrix.md`'s Detector/discovery rendering row**
+(cited by row name, not line - R3-M1, 2026-07-26: this row has already moved
+once, from a later row's insertion, and a hardcoded number does not survive
+that) quotes the pre-#30 Rule 4 verbatim as the rationale for why the
+detector surface is never suppressed; that document is amended in the same
+commit as this one (2026-07-26, fix-cycle round 2) - see its own inline
+amendment. The rationale it protects - the surface is never SUPPRESSED -
+still holds exactly as written; only the register a `kind`/`outcome`
+discovery renders at changed, from always-hot to per-class.
+
+First application (#30 item 4, "quiet by declaration"): the cross-family
+outcome words `completed` and `approve-for-merge` are declared in
+`schema/vocab/outcomes.json` and `schema/vocab/board-defs.json`, so their
+"discovery" BOARD CONDITION disappears because it stopped being true, never
+because it was suppressed. Counts, disambiguated (round 1 MIN-4: the original
+text's "x1"/"x1" was readable two ways and this repo holds ambiguity to be a
+finding): as of this car's base (`4f0182d`), the live store held exactly ONE
+board-condition INSTANCE of `discovery` for each of `outcome: completed` and
+`outcome: approve-for-merge` (the fold dedups discoveries by detail string,
+`board/fold/algorithm.go:113,119`, so one instance regardless of how many
+records share the value) - but the underlying RETURNED RECORDS carrying those
+outcome values numbered **4** (`completed`) and **5** (`approve-for-merge`)
+respectively, matching `schema/vocab/outcomes.json`'s own `$comment` exactly.
+One board condition per distinct value; four and five records behind it.
+
+**Amendment (2026-07-26, issue #29 - freshness gains a sixth kind, `idle`; amends
+§5.2's freshness enumeration and its Rule 1 register mapping, both quoted above):**
+
+**The finding, first-light (2026-07-23):** `stalenessMs` fires on DATA age alone
+(§5.2's own text: "staleness is DATA age, never scan-cadence health"), so a yard whose
+every dispatch has already returned - nothing in flight, nothing expected to change -
+rendered `stale`/`needs-attention` identically to a yard where something IS in flight
+and the pipeline has genuinely stalled. Confident falsehood (Law 1): "a yard at rest is
+not stale," the finding's own words (issue #29).
+
+**The fix:** `board/server/poll.go`'s `computeLiveFreshness` now takes the fold's own
+dispatch entries (`out.Dispatches`, threaded from `buildSnapshot`) and asks whether
+anything is IN FLIGHT (state `dispatched` or `overdue` - not yet returned, not
+presumed-lost: `hasInFlightDispatch`). Old data (age > `stalenessMs`) now splits:
+
+- **In flight AND stalled** -> `stale` (unchanged register, `needs-attention`) - the
+  genuine alarm; something should be moving and is not.
+- **Nothing in flight** -> `idle` (NEW kind, register `nominal`) - the yard is at rest;
+  its age is still honestly disclosed via the SAME `ageBucketMs` mechanism `stale`
+  already carries (schema's `idle` oneOf branch mirrors `stale`'s shape exactly: `kind`,
+  `asOf`, `ageBucketMs`, all required).
+
+**Freshness is still closed by mechanism, now six-valued**: `not-applicable` |
+`never-polled` | `fresh` | `stale` | `idle` | `failed`. §5.2's register mapping gains one
+row: `idle` -> `nominal`. No fourth register is introduced (the three-register law is
+unaffected - `idle` maps to an EXISTING register, exactly as `not-applicable` and
+`fresh` already do).
+
+**Wire impact (same commit, the #30 precedent):** `schema/yard-snapshot.schema.json`'s
+`$defs.freshness` oneOf gains the `idle` branch; `board/server/poll.go`'s `Freshness`
+struct is unchanged (no new fields - `idle` reuses `AsOf`/`AgeBucketMs`, exactly like
+`stale`); `board/web/js/compose.js`'s `FRESHNESS_REGISTER` map and `freshnessLine`
+switch both gain an `idle` case. `docs/contracts/gating-matrix.md`'s Staleness row is
+amended in the same commit (its own inline note).
+
+**Disclosed process note, for the conductor/owner to weigh:** `docs/retros/2026-07-23-
+board-train-retro.md:120-121` flagged, at the prior train's close, that "the
+staleness/idle semantics (#29) touch the freshness union, which is CLOSED by
+mechanism - growing it is a design-rung decision, not a patch." This car's brief
+explicitly authorized the wire-schema change and named the #30 precedent (a car +
+this-document amendment closed a comparable closed-taxonomy change, rather than a
+fresh design→spec→plan cycle) as the shape to follow - which is what this amendment
+does. The retro's concern is reproduced here VERBATIM rather than silently overridden:
+whether a bounded, one-value extension of an already-open-ended-by-mechanism enum
+(following #30's landed pattern exactly) satisfies that concern, or whether it still
+warrants a standalone design-rung pass, is the human/conductor's call, not this car's.
+
+**Real-store consequence, discovered while fixing this (disclosed):** a repo-wide scan
+of this repo's OWN committed `artifacts/` store (87 dispatch-kind subjects) found ZERO
+still in flight - every merged dispatch has returned. Under this fix, that makes the
+real store's live lanes render `idle`, not `stale`, PERMANENTLY (not a transient
+snapshot-in-time fact, since committed records only get older, never un-return).
+`board/web/test/browser-register-cascade.test.js` (issue #31's browser regression
+guard) depended on the ambient store reading `stale` forever; it now builds its own
+scratch copy of the real store plus one seeded in-flight fixture
+(`buildScratchStoreWithInFlightDispatch`, `real-board-server.js`) rather than relying on
+this repo's dispatch history staying empty - same car, same commit.
+
+**The undone half, disclosed (round-1 review m1, 2026-07-26):** issue #29's own text
+asked for two things; this amendment does the first (the taxonomy split) and leaves the
+second - "Also retune stalenessMs against measured reality" - untouched. Consequence,
+measured: `StalenessMs` ships at `15000` (`board/server/config.go`'s `DefaultConfig()`
+function - cited by SYMBOL, not line, #28/#12 fix cycle round 2 MAJOR-2: this citation's
+own prior line coordinate was falsified when a LATER commit in this same train grew
+`Config` by roughly 21 lines, exactly the trap `poll.go`'s own "cited by symbol, not
+line" convention exists to avoid) against a shop
+default budget of `1800` seconds (`config/harness-defaults.json`), so `stale` now fires
+**15 seconds into every healthy 30-minute dispatch** and stays lit until it returns -
+identical to base behaviour, NOT a regression this fix introduced, but this amendment's
+own words ("the genuine alarm; something should be moving and is not") overstate what
+`stale` actually means while that default stands: for the overwhelming majority of a
+normal dispatch's lifetime, `stale` reads "a car is running," not "the pipeline broke."
+The retune is explicitly OUT OF SCOPE for this car (a tuning decision against measured
+production cadence, not a taxonomy fix); the conductor tracks it as its own ticket.
+
+**Amendment (2026-07-26, issues #28/#12 - clickable provenance + car health bar; ADDITIVE
+wire growth, no supersession of anything above, following the #30/#29 precedent's
+same-commit-schema-plus-code shape):**
+
+**#28, clickable provenance.** The wire's OPEN `additionalProperties` posture (already
+exercised by #26/#30/#29) absorbs this without a schema version bump. Four new,
+optional fields - never a broken link, never a hardcoded repo identity (Law 7).
+CORRECTED (#28/#12 fix cycle round 2 MINOR-1): these do NOT all share one "unconfigured"
+condition - `githubRepoUrl` is "" exactly when `GitHubRepo` is unset; `githubRef`
+DEFAULTS to `"dev"` (`DefaultConfig`) and is observed non-empty on every real wire
+snapshot regardless of whether a repo is configured; `githubArtifactsPrefix` degrades on
+`RepoRoot`/`StorePath` alone, independent of `GitHubRepo`, and is observed `"artifacts"`
+on this repo's own default layout even with no GitHub repo configured at all. The view
+(`links.js`) still gates every link on `githubRepoUrl` being non-empty, so "no link,
+never a broken one" holds regardless:
+
+- `config.githubRepoUrl`/`config.githubRef` (`board/server/config.go`'s new
+  `GitHubRepo`/`GitHubRef` fields, `STARCAR_GITHUB_REPO`/`STARCAR_GITHUB_REF`) - the
+  ONE place this repo's (or any fork's) GitHub identity is configured, never derived by
+  parsing `.git/config` (rejected: an added `git` subprocess dependency for a value the
+  operator already knows).
+- `config.githubArtifactsPrefix` (`board/server/githublinks.go`'s
+  `githubArtifactsPrefix`) - the configured store's path RELATIVE TO THE REPO ROOT
+  (`Config.RepoRoot`, `main.go`'s `resolveDefaultRepoRoot` result, now threaded through
+  Config). Deliberately NOT cwd-relative like `storePathDisplay` - this repo's own
+  documented quickstart (`cd board && go run ./server`, `reporoot.go`) puts the
+  process's cwd one level BELOW the repo root, and a cwd-relative computation here
+  would silently produce `"../artifacts"`, a GitHub tree link pointing outside the repo.
+- `recordDir` (on `trainsPayload`'s car entries, `gatesPayload`'s gate entries, and
+  `dispatchesPayload`'s dispatch entries) - each subject's record directory, RELATIVE TO
+  THE STORE ROOT, single-sourced from `store.Record.Path` (`board/assemble/assemble.go`'s new
+  `recordDirBySubject`) rather than re-derived from `subject` client-side. **Why this
+  matters, measured live during this car's own visual verification:** the real
+  committed store's `train:board-v0` manifest record sits under directory
+  `artifacts/train-board-v0/` (dash), not `artifacts/train:board-v0/` (colon - illegal
+  on Windows) - subject and directory name are NOT always the same string, exactly the
+  "subject-sanitisation rule" issue #28's own design note warned a view-side
+  re-derivation would have to duplicate (Law 6). `recordDirBySubject` sidesteps this
+  entirely: it reads the ALREADY-sanitised directory name off `store.Record.Path`,
+  never re-sanitising anything itself.
+- `tickets` (on `trainsPayload`'s train entries) - `manifest.tickets`, ALREADY declared
+  by `schema/starcar-manifest.schema.json` (design DR3-1's own list: "members, roles,
+  title, ticket refs") but never previously read by `board/assemble.manifestPayload`;
+  this is that field's first consumer, not a new concept.
+
+**View-side, `board/web/js/links.js`** is the ONE place a `(config, recordDir)` or
+`(config, "#N")` pair becomes a real `https://github.com/OWNER/REPO/tree/REF/PREFIX/DIR`
+or `.../issues/N` URL (repo-relative paths, GitHub URLs, never a `localhost` file route
+or an absolute local path - the conductor's own ruling on this issue) or `null`.
+`board/web/js/dom-writer.js`'s `factOrLink` renders an `<a class="... provenance-link">`
+when a link is available, or the same element as plain text otherwise - CORRECTED
+(#28/#12 fix cycle round 2 MINOR-2: "identical className either way" was literally
+false) - the BASE className is preserved either way, with `provenance-link` APPENDED
+only on the linked form, so a caller's `querySelectorAll('.car-subject')` finds the
+element regardless of which tag it rendered as. `board.css`'s
+`.provenance-link` is a quiet, dotted-underline affordance (`color: inherit`, never a
+structural color declaration - avoids re-creating issue #31's cascade-bleed class) that
+solidifies and brightens only on hover/focus.
+
+**Scope, disclosed:** three concrete click surfaces landed (subject-to-record-directory,
+train ticket refs, gate-verdict-to-record-directory) - the brief's own narrowed scope
+from the ticket's fuller brainstorm (board-condition-to-record, superseded-entry links).
+Those two remain open, filed as a follow-on rather than attempted here at the risk of an
+undertested rush.
+
+**#12, car health bar.** `gatesPayload`'s gate entries gain one new optional field,
+`findings` (`board/assemble.Gate.Findings`, sourced from the winning `returned` record's
+own `findings` field, VERBATIM - the raw free text, never re-derived Go-side).
+`board/web/js/findings.js` is the ONE place this text is parsed: `parseFindingsCounts`
+recognises ONLY the unambiguous head-anchored `"N Major(s), M Minor(s)"` shape (Law 1 -
+everything else, including text that merely MENTIONS a count mid-sentence, renders
+UNKNOWN, never a guessed number) - calibrated directly against this repo's OWN
+`artifacts/` store, method and count both reproducible (CORRECTED #28/#12 fix cycle
+round 2 MINOR-4: was cited to "this car's final report", not a durable artifact): of
+207 store records, 136 carry a `findings` field, the parser recognises 38 of them and
+renders the remaining 98 UNKNOWN - re-derivable any time by walking `artifacts/**/*.json`
+and counting matches against `board/web/js/findings.js`'s own pattern.
+`familyKey(subject)` groups a car's review rounds by stripping a trailing `-rN` suffix
+(e.g. `tooling-50-32-review-r1/-r2/-r3`);
+`computeHealthTrends` sorts each family CHRONOLOGICALLY (by `at`, never subject lexical
+order - `r10` would otherwise sort before `r2`) and derives ONE trend, attached ONLY to
+the family's LATEST round: `converged` (latest Majors = 0, healthy regardless of the
+starting number - the ticket's own `7 -> 1 -> 0` example), `declining` (still improving,
+not yet zero), `stalled` (flat or climbing, nonzero - the swirl signature, the ticket's
+own `3 -> 4 -> 4` example), `first-round` (no history yet - never alarming on its own, a
+REJECT with Majors is normal traffic per this repo's own review-calibration framing), or
+`unknown` (ANY round in the family is unparseable - Law 1, the whole family's trend is
+withheld rather than computed from a partial, guessed series).
+
+**Rendering, three-register law honored:** the health-trend badge (`.health-trend`,
+`board/web/css/board.css`) reuses the EXISTING `register-nominal`/`register-needs-
+attention` classes for `converged`/`declining` and `stalled` respectively - no fourth
+color. `first-round`/`unknown` carry NEITHER register class, falling through to a muted
+`text-dim` rule scoped with `:not(.register-nominal):not(.register-needs-attention)`
+rather than a plain `.health-trend { color: ... }` base rule - the latter would tie in
+CSS specificity with `.register-*` and the LATER rule in `board.css`'s own source order
+would silently win regardless of which trend actually applied, the exact issue #31 class
+of bug (a structural color declaration fighting the register class) this repo already
+paid for once. Proven live, through a REAL browser (never a DOM-class assertion): a
+converged badge and a stalled badge, in the SAME real page, measured two DIFFERENT
+`getComputedStyle` colors matching the live `.register-nominal`/`.register-needs-
+attention` probe colors exactly (`board/web/test/browser-health-trend-cascade.test.js`);
+fault-injecting the naive, un-guarded rule (an injected later stylesheet, not a disk
+edit - Go's `http.FileServer` was OBSERVED to 304 an edited file within the same
+mtime-granularity second, a false-negative this test's own history discloses) was
+OBSERVED to repaint both badges the SAME wrong muted color, then reverted and
+re-verified hot again.
+
+**`docs/contracts/gating-matrix.md` gains a new truth-surface row (same commit) for
+the health-trend badge** - see its own inline addition.
+
+**#69/#71 (view train, 2026-07-27): board-condition/superseded provenance links, and
+conditions-strip open-state persistence.** Extends #28's clickable-provenance scheme to
+the two surfaces its own car report disclosed as out of scope, plus the owner's #69
+fast-follow (the live board's "flags drop-down" not being clickable and re-collapsing on
+every refresh).
+
+*Board-condition entries (#69 half 1, #71's condition case).* `schema/yard-snapshot.
+schema.json`'s `$defs.boardCondition` gains one new OPTIONAL field, `recordDir` (mirrors
+`trainsPayload.cars.recordDir`'s own convention exactly) - present when the condition's
+own subject resolves a directory (`board/assemble`'s existing `recordDirBySubject` map,
+already computed for cars/gates/dispatches, now also read for EVERY condition
+`Assemble` constructs; `board/store/store.go`'s two scan-time conditions, which fire
+before `Assemble` ever runs, derive the identical value inline from their own already-
+known file path via a `filepath.Dir` helper - same rule, two call sites, because of a
+real construction-order constraint, not a duplicated decision), absent otherwise (a
+config-load fault, an aggregate count). A `"discovery"` condition (NOTE-tier, names an
+undeclared VALUE, never a subject) is the one exception: it NEVER carries `recordDir` and
+instead links, client-side only, to the `schema/vocab/kinds.json` or `outcomes.json`
+file its own `"kind: "`/`"outcome: "`-prefixed detail text names (`board/web/js/links.js`'s
+`buildVocabLink`/`vocabFilenameForDiscoveryDetail` - a producer-contract-pinned prefix
+check, never a loose guess). Every other condition class links to its `recordDir` when
+present; a condition with neither renders plain text, unchanged layout (#28's own "no
+link, never a broken one" rule, extended rather than re-invented).
+
+*Superseded entries (#71's remaining surface).* A `superseded` entry names a PRIOR record
+for the SAME subject that lost to the row's own winner (`board/fold`'s precedence-then-
+latest-at rule) - it lives in the identical store directory as the row's own `recordDir`
+(the one-directory-per-subject convention #28's `recordDir` already relies on), so THIS
+surface needed NO new wire field: `board/web/js/dom-writer.js`'s `renderSupersededDisclosure`
+links every superseded item through the row's own already-carried `recordDir`. Landed for
+BOTH the trains lane (cars) and the dispatches lane (the latter never carried `superseded`
+into its view model at all before this ticket, despite the wire field already existing on
+every dispatch entry - a gap, not a wire change). Honest-absence (no disclosure rendered)
+when a row has nothing superseding it, or when every item in its `superseded` array fails a
+type check (missing/non-string `kind` or `at` - MINOR-R1-2, fix cycle round 2), matching
+every other absence convention in this file.
+
+**CORRECTED, fix cycle round 2 (MAJOR-R1-1, owner ruling recorded at issue #69,
+2026-07-27):** this paragraph originally described `renderSupersededList` appending its
+block as a SIBLING of the row/chip into the shared grid (`.solari-rows`) or flex
+(`.track-cars`) container - measured live to orphan a wrapped block next to a DIFFERENT
+subject's own cell whenever the preceding cell count made a pair straddle a wrap boundary
+(round 1 review, real Chromium `getBoundingClientRect`). The corrected design nests the
+block INSIDE its owner row/chip - a DOM child, so the grid/flex container can never lay
+it out as an independent cell/item - behind a quiet per-row `<details>`/`<summary>`
+disclosure, collapsed by default, the SAME chrome idiom `renderBoardConditionsStrip` (#30)
+already uses. **Open-state scope, disclosed not owner-ruled:** this disclosure's own open/
+closed state is EPHEMERAL, never threaded through the `sessionStorage` mechanism the
+paragraph below describes for the conditions strip - chosen as the minimal option, since a
+per-row disclosure would need one key per SUBJECT (open-ended, store-size-dependent) on a
+mechanism with no eviction story, and `renderBoard` already clears `root.textContent` on
+every repaint regardless (`board/web/js/dom-writer.js`), so even a native `open` attribute
+would not survive a rebuild without the same new capture-and-reapply plumbing #69's own
+mechanism required. Revisitable if a future ticket wants it persisted.
+
+*Open-state persistence (#69 half 2).* The conditions strip's own `<details>` open/closed
+state, and each condition GROUP's own `<details>` (per-group, never one flag governing
+all groups), are read from `window.sessionStorage` fresh on every `repaint()` and written
+by one capturing-phase `'toggle'` listener on `root` (`board/web/js/app.js`) - `docs/
+contracts/state-ledger.md`'s Question 3 gains its sixth browser-side field, the first one
+that is not purely in-memory, in the same commit. DEVIATION FROM THE BRIEF'S SUGGESTED
+MECHANISM, disclosed: the brief suggested "capture state from the outgoing DOM before
+clearing it, reapply after" for the rebuild case; this design instead makes
+`sessionStorage` the SINGLE source of truth for both a DOM rebuild and a page refresh
+identically (a native `'toggle'` event fires synchronously on the SAME task as the user's
+click, before any repaint can intervene, so there is no window in which a DOM-scrape
+would observe a value sessionStorage does not already have) - simpler, and avoids ever
+reading a half-torn-down tree. #30's NEW-CONDITION-DEFAULTS-COLLAPSED rule is preserved
+structurally, not by a special case: a condition CODE with no entry in the persisted
+`groups` map reads as closed (`isGroupOpen`'s own default), so a condition class this
+session has never opened - including a genuinely new one - renders collapsed exactly as
+#30 always specified. `sessionStorage`'s own per-tab/per-session lifecycle (survives a
+refresh, cleared on a new tab) is what satisfies the owner's "never hide a NEW hot
+condition across sessions" constraint, without any session-detection code of this
+repo's own.
+
+Real-browser, non-vacuous proof: `docs/screenshots/2026-07-26-view-69-71-candidates/`
+(this car's report cites the exact fault-injections and observed `getComputedStyle`
+values).
 
 ## §13 - Revision history
 

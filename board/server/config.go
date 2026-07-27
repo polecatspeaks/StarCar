@@ -29,6 +29,27 @@ type Config struct {
 	// consumer is the wire config.demoMode field (the view's banner) - no
 	// other behaviour in this package may branch on it.
 	DemoMode bool
+	// GitHubRepo is "owner/repo" (issue #28, STARCAR_GITHUB_REPO) - the ONE
+	// place this repo's GitHub identity may be configured. Empty by default:
+	// no hardcoded repo identity (Law 7), and an unconfigured or non-GitHub
+	// yard degrades to zero provenance links rather than a wrong one.
+	GitHubRepo string
+	// GitHubRef (issue #28, STARCAR_GITHUB_REF) is the branch a record/tree
+	// link resolves against. Defaults to "dev" (DefaultConfig) - this repo's
+	// own working-integration branch (CLAUDE.md's branch topology section),
+	// and issue #28's own worked example.
+	GitHubRef string
+	// RepoRoot is main()'s resolveDefaultRepoRoot result, threaded through
+	// so githubArtifactsPrefix (githublinks.go) can compute StorePath's
+	// position relative to the REPO ROOT rather than the process's cwd -
+	// the documented "cd board && go run ./server" quickstart invocation
+	// (reporoot.go) puts cwd one level below the repo root, and a
+	// cwd-relative computation here (unlike storePathDisplay's own,
+	// deliberately cwd-relative display value) would silently point a
+	// GitHub tree link outside the repo. Never rendered on the wire itself
+	// (an absolute local path) - only ever used to derive the relative
+	// prefix that IS rendered.
+	RepoRoot string
 }
 
 // DefaultConfig is design rev 5 S5.6's carried numbers: host 127.0.0.1,
@@ -40,6 +61,7 @@ func DefaultConfig() Config {
 		PollMs:      1000,
 		HeartbeatMs: 5000,
 		StalenessMs: 15000,
+		GitHubRef:   "dev",
 	}
 }
 
@@ -82,6 +104,12 @@ func applyEnvOverrides(base Config, lookup lookupEnvFunc) Config {
 		if b, err := strconv.ParseBool(v); err == nil {
 			cfg.DemoMode = b
 		}
+	}
+	if v, ok := lookup("STARCAR_GITHUB_REPO"); ok && v != "" {
+		cfg.GitHubRepo = v
+	}
+	if v, ok := lookup("STARCAR_GITHUB_REF"); ok && v != "" {
+		cfg.GitHubRef = v
 	}
 	return cfg
 }

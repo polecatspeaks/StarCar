@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a076bf6c0a94e302f",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-26T17:06:11Z",
+  "outcome": "done",
+  "findings": "none outstanding — all 2 Major, 4 Minor, 1 Note from round-1 REJECT verdict fixed and verified with before/after evidence at commit 83cd377871a1656caaec6b3ba45cdaeddc27eebf",
+  "abstract": "Round 2 fix cycle for issue #42 addressing REJECT round 1 (2 Major, 4 Minor, 1 Note). M1: .github/workflows/ci.yml's checkout step now carries fetch-depth: 0, and CodeCitationPolicy.Tests.ps1 gained a Test-BoundaryResolvable pinned assertion that fails named on an unreachable boundary commit; reproduced the reviewer's depth-1 shallow-clone simulation myself both before the fix (6/7, misleading \"greater than 0, got 0\") and after (8/10, now naming the real cause verbatim). CLAUDE.md's false \"no CI wiring change was needed\" claim corrected. M2: added a self-calibrating closed-set assertion (checked extensions union declared-exempt-with-reasons) that reds by name on any unaccounted extension; red-first proven by committing an uncited scripts/fault-inject-r2.py, observing the new test fail naming \".py\" exactly, then git reset --hard to revert byte-identical (verified clean). MIN-1 deduplicated by hoisting shared functions into one file-level BeforeAll, independently probed (2/2) that Pester 5.8.0 shares file-level BeforeAll functions across Describes before making the change. MIN-2 narrowed the self-refuted no-collision sentence rather than touching the regex, per the reviewer's own ruling. MIN-3 added the disposition line to docs/setup.md's #3/#4 deferral row. MIN-4 disclosed the fixture clause's gap as attention-tier in both the test header and CLAUDE.md, not built. NOTE corrected \"21\" to \"22\" with its qualifier in CLAUDE.md. scripts/tests: 189 -> 192/192 passed at 83cd377871a1656caaec6b3ba45cdaeddc27eebf; scripts/probes 24/24 and scripts/store-checks 178/178 unaffected. Mid-cycle self-disclosed process defect: a git reset --hard used to revert the M2 fault injection also discarded uncommitted M1/MIN-3 edits, caught via git status and redone before finalizing.",
+  "subject_basis": "runtime-id",
+  "task_id": "process-42-car-r2",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:5378f270f3217a232b37f681206b33588734e1797d1d40ca3cf8fc2f6cf26892"
+}

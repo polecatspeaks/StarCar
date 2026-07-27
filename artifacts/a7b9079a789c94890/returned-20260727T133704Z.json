@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a7b9079a789c94890",
+  "session_id": "8a347c36-20b4-427a-ae0b-46855aa7bb72",
+  "at": "2026-07-27T13:37:04Z",
+  "outcome": "done",
+  "findings": "Landed scripts/probes/ManifestBoardJoin.Probes.Tests.ps1 pinning #76's manifest-to-board join as a substrate probe: 5 new Its (gates lane, trains lane, declaredNotObserved, assigned, zero-conditions guard), all passing against the real board/server binary over a sealed scratch store. Non-vacuity proven for all five assertions via direct fault injection to this file, five quoted reds observed, all five reverted to byte-identical sha256 b21e0c5eb4b6c7c341d9735289bb1b2573132f4996173e6ffca18559263b3599. Two genuine PowerShell/Windows process-handling defects found and fixed during build (event-delegate runspace crash; delete-lock retry for no-debris compliance), both logged to docs/friction-log.md at the class level per standing doctrine. scripts/probes 24/24 to 29/29; scripts/tests unchanged (223/0/4, no files touched). No board/, schema/, or scripts/tests/ edits - scope boundary honored while #75 works live in board/. Committed c1c4d2dcee4023f721f2d5d433fe3bc2f3583dc1 on car/probe-79, not pushed.",
+  "abstract": "Car probe-79 landed a pinned Pester substrate probe in scripts/probes/ that runs the real board/server binary against a sealed scratch store and asserts, by name, the four manifest-to-board join properties issue #76's owner-ruled PROBE RESULT comment measured (gates lane fill, trains consist rendering, declaredNotObserved completeness, dispatch-assigned flow), plus a zero-board-conditions non-vacuity guard. All five assertions were proven non-vacuous via direct, reverted fault injection to the fixture with quoted red messages and sha256 before/after checks. Two Windows/PowerShell process-handling defects (event-handler runspace crash, exe delete-lock on cleanup) were found and fixed in the process, with class-level friction-log entries. scripts/probes moved 24/24 to 29/29; scripts/tests untouched at 223/0/4. Committed locally on car/probe-79, never pushed.",
+  "subject_basis": "runtime-id",
+  "task_id": "probe-79-car-r1",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:4101c10d1edb1394e351713febdd8a840572202fd8743655fd438cb23793c416"
+}

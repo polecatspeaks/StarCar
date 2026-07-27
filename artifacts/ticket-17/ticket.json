@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-17",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 17,
+    "title": "Envelope.psm1 live-path gap: off-grammar envelope (extra key after outcome) yields multi-line outcome",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/17"
+  },
+  "normalisation": [],
+  "integrity": "sha256:c325b129e1ba45e6a1494055c4c3d9760a7680bf705c621927abb4fa07fa055b"
+}

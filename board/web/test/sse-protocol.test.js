@@ -1,7 +1,9 @@
 // sse-protocol.js: pure SSE-over-text-stream parsing + a heartbeat-aware
-// disconnect watchdog (design rev 5 S5.6 / gating-matrix.md:43 - "resets
-// on: any frame arriving, data or heartbeat"; "two consecutive heartbeatMs
-// intervals pass with no frame" flips the client to disconnected).
+// disconnect watchdog (design rev 5 S5.6 / gating-matrix.md's Disconnect
+// row, cited by row name not line since that row has already moved once -
+// "resets on: any frame arriving, data or heartbeat"; "two consecutive
+// heartbeatMs intervals pass with no frame" flips the client to
+// disconnected).
 //
 // DISCLOSED DEVIATION FROM D19's LITERAL CHOICE (docs/design/2026-07-21-v0-
 // yard-skeleton-design.md:133 names `EventSource` explicitly): the server
@@ -10,7 +12,7 @@
 // browser EventSource API delivers to NO event listener at all - see this
 // car's final report for the full citation trail. This module reads the
 // raw text stream instead so heartbeat frames are visible resets, which is
-// what gating-matrix.md:43's disconnect row actually requires.
+// what gating-matrix.md's Disconnect row actually requires.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { splitFrames, classifyFrame, createDisconnectWatchdog } from '../js/sse-protocol.js';
@@ -55,7 +57,7 @@ test('LOAD-BEARING: after TWO missed heartbeat intervals with no frame at all, t
   assert.equal(watchdog.isDisconnected(), true);
 });
 
-test('ANY frame arriving (heartbeat OR data) resets the watchdog and clears a disconnected mark (gating-matrix.md:43)', (t) => {
+test('ANY frame arriving (heartbeat OR data) resets the watchdog and clears a disconnected mark (gating-matrix.md, Disconnect row)', (t) => {
   t.mock.timers.enable({ apis: ['setTimeout'] });
   let disconnectedCount = 0;
   const watchdog = createDisconnectWatchdog({ heartbeatMs: 5000, onDisconnect: () => { disconnectedCount += 1; } });

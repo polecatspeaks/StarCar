@@ -23,7 +23,7 @@
     },
     "freshness": {
       "type": "object",
-      "description": "Closed by mechanism (design rev 5 section 5.2): an adapter is attached or not; if attached it has run or not; if run it succeeded or failed.",
+      "description": "Closed by mechanism (design rev 5 section 5.2, amended #29 2026-07-26): an adapter is attached or not; if attached it has run or not; if run it succeeded or failed; if it succeeded but the data is old, something is IN FLIGHT and stalled (stale) or nothing is (idle) - a yard at rest is not stale.",
       "oneOf": [
         { "properties": { "kind": { "const": "not-applicable" } }, "required": ["kind"] },
         { "properties": { "kind": { "const": "never-polled" } }, "required": ["kind"] },
@@ -44,6 +44,15 @@
         },
         {
           "properties": {
+            "kind": { "const": "idle" },
+            "asOf": { "type": "string" },
+            "ageBucketMs": { "type": "integer", "description": "#29: same QUANTISED server-issued age mechanism as 'stale' - an idle yard still honestly discloses its age, calmly. Included in change detection, exactly like 'stale''s ageBucketMs." }
+          },
+          "required": ["kind", "asOf", "ageBucketMs"],
+          "description": "#29: data is older than stalenessMs, but NOTHING is in flight (every dispatch has returned or is presumed-lost, or there are no dispatch subjects at all) - a yard at rest, rendered calm/nominal, never confused with a broken pipeline ('stale', reserved for old data WHILE something is in flight and not moving)."
+        },
+        {
+          "properties": {
             "kind": { "const": "failed" },
             "reason": {
               "type": "object",
@@ -56,13 +65,26 @@
         }
       ]
     },
+    "dispatchSupersededItem": {
+      "type": "object",
+      "description": "#69/#71 fix cycle round 2 (MINOR-R1-2): one entry in a superseded array - mirrors board/fold's DispatchSupersededItem (fold.go), which always emits both fields (fold.go's algorithm.go population sites), so this is a type-only tightening of a shape that has been well-formed on every real emission since #71 landed. Constrains type, never adds a new required field the server did not already always send - existing absent-array/omitted-superseded forms validate unchanged.",
+      "properties": {
+        "kind": { "type": "string" },
+        "at": { "type": "string" }
+      },
+      "required": ["kind", "at"]
+    },
     "boardCondition": {
       "type": "object",
       "description": "A fault about the BOARD, rendered in chrome, distinct from yard status (design rev 5 section 6).",
       "properties": {
         "code": { "type": "string" },
         "detail": { "type": "string" },
-        "register": { "$ref": "#/$defs/register" }
+        "register": { "$ref": "#/$defs/register" },
+        "recordDir": {
+          "type": "string",
+          "description": "#69/#71 (clickable provenance, extending #28 to the board-conditions surface): the STORE-ROOT-RELATIVE directory of a record that carries this condition's own subject, when one is resolvable - same convention as trainsPayload's car.recordDir (board/assemble's recordDirBySubject, board/store's per-file rel-path fallback for pre-fold conditions), never re-derived client-side. Absent when the condition names no single store subject/record (a config-load fault, an aggregate count, or a vocabulary discovery - the last of which links to its schema/vocab/*.json file instead, client-side, never through this field)."
+        }
       },
       "required": ["code", "detail", "register"]
     },
@@ -74,7 +96,7 @@
         "position": { "type": "string", "description": "A PositionDef id from vocabularies.positions - open vocabulary, registry-owned (D11)." },
         "freshness": { "$ref": "#/$defs/freshness" },
         "data": {
-          "$comment": "Shapes for the v0 lanes are pinned by $defs.trainsPayload, $defs.gatesPayload, and $defs.dispatchesPayload below (spec YB-5) - each landed red-first by the schema car (plan task 2.2). An unrecognised lane's payload is a free object the view meets with the no-renderer path, never a validation failure (Law 7); these three $defs are not $ref'd here because a lane's data shape is chosen by which lane it is, not by one closed schema union.",
+          "$comment": "Shapes for the v0 lanes are pinned by $defs.trainsPayload, $defs.gatesPayload, $defs.dispatchesPayload, and (#84) $defs.freightPayload below (spec YB-5) - each landed red-first by the schema car (plan task 2.2). An unrecognised lane's payload is a free object the view meets with the no-renderer path, never a validation failure (Law 7); these four $defs are not $ref'd here because a lane's data shape is chosen by which lane it is, not by one closed schema union.",
           "description": "The lane payload. Shapes for the v0 lanes are pinned by the spec's payload contracts (S4) and their vectors; an unrecognised lane's payload is a free object the view meets with the no-renderer path, never a validation failure (Law 7)."
         }
       },
@@ -102,7 +124,15 @@
                     "state": { "type": "string" },
                     "at": { "type": "string" },
                     "outcome": { "type": "string" },
-                    "superseded": { "type": "array" }
+                    "superseded": { "type": "array", "items": { "$ref": "#/$defs/dispatchSupersededItem" } },
+                    "recordDir": {
+                      "type": "string",
+                      "description": "#28 (clickable provenance): this subject's record directory, RELATIVE TO THE STORE ROOT (e.g. \"51-fix-car-r1\") - single-sourced from store.Record.Path (board/assemble's recordDirBySubject), never re-derived from subject client-side. Combine with config.githubRepoUrl/githubRef/githubArtifactsPrefix to build a full tree link. Absent when no surviving record names this subject."
+                    },
+                    "taskId": {
+                      "type": "string",
+                      "description": "#75 (the human task-id handle, replacing the record-dir hash as the visible identity): this subject's shop-minted task-id, single-sourced from the winning RETURNED record's own task_id field (board/assemble's taskIDsBySubject), never re-derived client-side. Absent when this car has not yet returned with one (a dispatched-only car - #76's producer-side half is not yet landed - or a returned record predating #47's envelope echo); the view falls back honestly to rendering subject in that case (Law 1: never an invented handle)."
+                    }
                   },
                   "required": ["subject", "role", "state", "at"]
                 }
@@ -111,6 +141,11 @@
                 "type": "array",
                 "items": { "type": "string" },
                 "description": "Manifest members with no matching store records (design S6)."
+              },
+              "tickets": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "#28 (clickable provenance): the manifest's own declared ticket refs (manifest.tickets, schema/starcar-manifest.schema.json), e.g. [\"#28\", \"#12\"] - never re-parsed from title prose. Absent/empty when the manifest declares none."
               }
             },
             "required": ["id", "title", "cars", "declaredNotObserved"]
@@ -131,13 +166,45 @@
               "name": { "type": "string", "description": "From the member's gate/role declaration." },
               "subject": { "type": "string" },
               "outcome": { "type": "string", "description": "VERBATIM - the gate's raw recorded outcome, never re-derived." },
-              "at": { "type": "string" }
+              "at": { "type": "string" },
+              "recordDir": {
+                "type": "string",
+                "description": "#28 (clickable provenance): same convention as trainsPayload's car.recordDir - this gate's returned record's directory, relative to the store root."
+              },
+              "findings": {
+                "type": "string",
+                "description": "#12 (car health bar): the returned record's own findings field, VERBATIM free text. The view's findings.js module parses a conservative Major/Minor count out of it CLIENT-SIDE (unrecognised shapes render UNKNOWN, never a guessed count). Absent when this gate has no returned record yet."
+              }
             },
             "required": ["name", "subject", "outcome", "at"]
           }
         }
       },
       "required": ["gates"]
+    },
+    "freightPayload": {
+      "type": "object",
+      "description": "#84: the freight lane's data shape - the inbound ticket queue (GitHub Project 6 items in Backlog or Todo status, owner ruling 2026-07-27). Read directly from raw kind=ticket store records (schema/starcar-ticket.schema.json) - board/fold has no case for this kind at all, so this payload is never derived through fold's supersession/liveness machinery the way trainsPayload/gatesPayload/dispatchesPayload are.",
+      "properties": {
+        "tickets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "number": { "type": "integer", "description": "The GitHub issue number." },
+              "title": { "type": "string" },
+              "status": { "type": "string", "description": "The project's Status field value at write time (Backlog/Todo in practice - open vocabulary, never schema-enumerated, same posture as every other recognition value on this board)." },
+              "url": { "type": "string" },
+              "recordDir": {
+                "type": "string",
+                "description": "#28 (clickable provenance): same convention as every other entry's recordDir - this ticket's own record directory, relative to the store root, single-sourced from store.Record.Path."
+              }
+            },
+            "required": ["number", "title", "status", "url"]
+          }
+        }
+      },
+      "required": ["tickets"]
     },
     "dispatchesPayload": {
       "type": "object",
@@ -152,12 +219,20 @@
               "state": { "type": "string" },
               "at": { "type": "string" },
               "outcome": { "type": "string" },
-              "superseded": { "type": "array" },
+              "superseded": { "type": "array", "items": { "$ref": "#/$defs/dispatchSupersededItem" } },
               "elapsed_seconds": { "type": "integer" },
               "budget_seconds": { "type": "integer" },
               "budget_source": { "type": "string", "description": "Car 4 fix, folded same-commit (docs/plans/2026-07-23-yard-board-plan.md task 4.2): board/fold's shop-default budget threading (spec Amendment 2, issue #22) added this field to fold.DispatchEntry AFTER this $def first landed (Car 2, task 2.2); this schema had no slot for it even though the fold has emitted it since Car 3. Present only alongside a non-null budget_seconds - 'record' or 'default', disclosing which patience produced the rendered state (never a phantom source for a null budget)." },
               "spend": {},
-              "assigned": { "type": "boolean", "description": "Yard inventory (unassigned) renders loudly, never silently." }
+              "assigned": { "type": "boolean", "description": "Yard inventory (unassigned) renders loudly, never silently." },
+              "recordDir": {
+                "type": "string",
+                "description": "#28 (clickable provenance): same convention as trainsPayload's car.recordDir - this dispatch subject's record directory, relative to the store root."
+              },
+              "taskId": {
+                "type": "string",
+                "description": "#75 (the human task-id handle, replacing the record-dir hash as the row's visible title): same convention as trainsPayload's car.taskId - this dispatch subject's shop-minted task-id, single-sourced from its winning RETURNED record's own task_id field. Absent when this dispatch has not yet returned with one (#76's producer-side half is not yet landed) or when its returned record predates #47's envelope echo; the view falls back honestly to rendering subject in that case."
+              }
             },
             "required": ["subject", "state", "at", "assigned"]
           }
@@ -181,7 +256,19 @@
         "stalenessMs": { "type": "integer" },
         "storePathDisplay": { "type": "string", "description": "CWD-relative or home-collapsed - NEVER a raw absolute path (normalisation law; this repo publishes screenshots)." },
         "laneCount": { "type": "integer", "description": "Completeness guard 3: 'registry declares N lanes' renders in chrome." },
-        "demoMode": { "type": "boolean", "description": "True exactly when serving a demo fixture store (spec YB-15). Sole consumer: the view's persistent DEMO banner - a disclosure. No truth surface may branch on this field (gating-matrix; the design retired demo-mode suppression)." }
+        "demoMode": { "type": "boolean", "description": "True exactly when serving a demo fixture store (spec YB-15). Sole consumer: the view's persistent DEMO banner - a disclosure. No truth surface may branch on this field (gating-matrix; the design retired demo-mode suppression)." },
+        "githubRepoUrl": {
+          "type": "string",
+          "description": "#28 (clickable provenance): the base GitHub repo URL (e.g. \"https://github.com/polecatspeaks/StarCar\"), or absent/empty when STARCAR_GITHUB_REPO is unconfigured - a non-GitHub yard degrades to zero provenance links, never a broken one (Law 7: no hardcoded repo identity)."
+        },
+        "githubRef": {
+          "type": "string",
+          "description": "#28: the branch a record/tree link resolves against (STARCAR_GITHUB_REF, default \"dev\" - this repo's own working-integration branch)."
+        },
+        "githubArtifactsPrefix": {
+          "type": "string",
+          "description": "#28: the configured store's path RELATIVE TO THE REPO ROOT (e.g. \"artifacts\"), or absent/empty when it could not be resolved. Combine as githubRepoUrl + \"/tree/\" + githubRef + \"/\" + githubArtifactsPrefix + \"/\" + a car/gate/dispatch entry's own recordDir to build its full GitHub tree link."
+        }
       },
       "required": ["pollMs", "heartbeatMs", "stalenessMs", "storePathDisplay", "laneCount", "demoMode"]
     },

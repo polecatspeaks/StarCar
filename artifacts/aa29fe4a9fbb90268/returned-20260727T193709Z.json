@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "aa29fe4a9fbb90268",
+  "session_id": "8a347c36-20b4-427a-ae0b-46855aa7bb72",
+  "at": "2026-07-27T19:37:09Z",
+  "outcome": "success",
+  "findings": "Fixed all 3 Majors and all 5 minors from review verdict artifacts/reviews/2026-07-27-readme-91-review-r1-REJECT.md. R1-M1: \"board/fold runs at request time\" was false (runs at poll time per poll.go:232/244/345) - fixed. R1-M2: \"Sync-Freight.ps1 periodically reads\" was false (manual, on-demand per docs/setup.md) - fixed. R1-M3: commit message falsely accused issue #91 of mischaracterizing #90 - the car had read #90's body only (gh issue view 90 --json body), never its comments, where an owner ruling (\"PHASE IS NEW DATA... no longer a CSS-only ticket\") confirms #91's characterization was exact; disclosed plainly, commit message amended to drop the accusation and keep the true observation. R1-m1 through m5: wrong row ordinal (third not fifth), producer/consumer misattribution for #86 (manifestPayload never reads task_id - board/assemble/assemble.go:335-360), unqualified \"no external service\" claim (first build needs network for the one Go module dependency, no board/vendor/), unaddressed Reading Order item (added a work-facing pointer to the design doc and wire schema), and an underspecified \"one hash\" caption (trains lane's ten hashes are honest rendering, now distinguished). All fixes re-verified live from this worktree's own server (storePathDisplay confirmed, freshness idle/idle/idle/stale/not-applicable, 41 freight tickets) after editing, not just read.",
+  "abstract": "Fix cycle round 2 for StarCar README ticket #91, addressing REJECT verdict artifacts/reviews/2026-07-27-readme-91-review-r1-REJECT.md (3 Major, 5 minor) at base ae22071. Fixed two newly-introduced false claims (Go fold timing, freight sync automation) that each contradicted another line of the same document, corrected a commit-message accusation against an owner ruling on open issue #90 (root cause: read the issue body without its comments), and closed all five minors (wrong screenshot row ordinal, producer/consumer misattribution for #86, unqualified network-dependency claim, an unaddressed Reading Order item, and an underspecified hash-row caption). Amended the round-1 commit in place per the coordinator's explicit instruction (unpushed). Re-verified every corrected claim live against this worktree's own board server post-edit rather than trusting the prior observation. Pester DocPolicy 2/2 and CodeCitationPolicy 13/13 both re-run green at the amended HEAD b985424 on car/readme-91, base 20c3970, working tree clean, nothing pushed.",
+  "subject_basis": "runtime-id",
+  "task_id": "readme-91-car-r2",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:f4003f12b76cb11c49133d71467619f80f0ae4e698effe131f1a1e57edd4716f"
+}

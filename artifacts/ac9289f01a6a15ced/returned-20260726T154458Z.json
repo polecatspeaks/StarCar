@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "ac9289f01a6a15ced",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-26T15:44:58Z",
+  "outcome": "done-with-findings",
+  "findings": "2",
+  "abstract": "Implemented issue #30's four-part owner-ruled design on branch car/view-30 (base 4f0182d, 3 commits: 9e5261f severity mapping, b9595b9 quiet-by-declaration, 8658011 web grouping/placement). Severity mapping lives in board/store/condition_severity.go, pinned by a go/ast-based scanner (condition_severity_test.go) matching the #37 register-taxonomy precedent, fault-injected in both directions with byte-identical reverts. Discovery reclassified NOTE-tier (nominal), record-unrecognised-fields classified FLAG-tier as a disclosed judgment call (design row 333 lacks the \"not a bug\" framing row 335 has). Quiet-by-declaration derived live from the real store (81 returned-*.json files, 0 parse errors): completed (4 records) and approve-for-merge (5 records) declared in both schema/vocab/outcomes.json and board-defs.json, pinned against the real store in a red-first test. Web grouping/placement (render.js groupBoardConditions/summariseBoardConditionGroups, dom-writer.js native collapsed details/summary chrome) required no wire-schema change since register stays server-authoritative per existing Rule 4; added an unscoped HAVAGLANCE enhancement (overallBoardConditionsRegister) so the collapsed summary line itself carries a severity color. Findings: (1) self-disclosed arithmetic error in commit b9595b9's message claiming 71/71 Go tests when the correct, directly-counted figure is 70/70 (base 66 + 4 new tests across both commits) - not amended per git safety protocol, corrected in the final report instead; (2) the record-unrecognised-fields FLAG-tier classification is a genuine judgment call the design text does not fully resolve, disclosed inline in the mapping's own comment for reviewer scrutiny. All suites green at HEAD: board Go 70/70 (5 packages), board/web node --test 68/68 (base 60+8, npm ci required for the 2-test Playwright file), scripts/tests 182/182, scripts/store-checks 172/172, scripts/probes 24/24 - all unchanged from base except board Go/web which gained exactly the new pinned tests, zero regressions.",
+  "subject_basis": "runtime-id",
+  "task_id": "view-30-car-r1",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:7385cf9f9b04c34d29039d34d1ef75bbd3ae92347f94c62b736968ca2395be5b"
+}

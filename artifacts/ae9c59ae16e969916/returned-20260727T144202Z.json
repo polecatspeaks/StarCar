@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "ae9c59ae16e969916",
+  "session_id": "8a347c36-20b4-427a-ae0b-46855aa7bb72",
+  "at": "2026-07-27T14:42:02Z",
+  "outcome": "done",
+  "findings": "R2-M1 (Major) resolved by opening the actual image before rewriting - confirmed the reviewer's description exactly (ticket link and health-trend badges render, record-dir anchors on every dispatch subject and car-chip do not), corrected the caption to name only what renders and point at the real in-repo proof (TestBuildSnapshotGitHubConfigConfigured, dom-writer.test.js) instead of a screenshot that shows the opposite. Performed the broader re-audit the finding warranted: independently re-verified both capture commits by git show and every remaining citation in both READMEs, all held. R2-m3 fixed by reopening hot-yard.png myself (three red lanes, not two) and tracing poll.go's single board-global freshness computation as the real mechanism, catching and correcting my own draft overclaim (freight/fuel get a constant, not zero, freshness) before committing. R2-m1 (R1-m2 DRIFTED) fixed by measuring both the old and new task-id widths myself in isolated scratch stores (131/123 and 741/123, matching the reviewer's numbers independently) and renaming the test to what it actually proves rather than re-engineering a scenario. R2-m2 fixed by measuring the actual subject and hash lengths myself (20 and 17, not 33) and dropping the false comparison. Every new sentence in this round's diff was checked against an opened artifact before being written, per the round's own binding rule.",
+  "abstract": "Fix cycle round 3 on view train #75, addressing a REJECT (1 Major, 3 minor) delivered under a binding swirl cap - one more cycle before owner escalation on any further Major in the documentation-accuracy class. Every correction in this round followed the coordinator's stated remedy literally: open the artifact, describe what is actually there, then write the sentence. This surfaced and fixed a Major (a screenshot caption claiming record-dir anchors render when they do not, contradicted by a comment in the very file the caption cites), an inaccurate mechanism gloss (two lanes claimed red when three render red, and the wrong causal story), and two measurement-honesty minors (a test that could not fail for the reason its name claimed, and an unmeasured size comparison) - all pinned or corrected with figures re-derived independently rather than copied from the verdict.",
+  "subject_basis": "runtime-id",
+  "task_id": "view-75-car-r3",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:3ea444e10e9e8a810988b6e3300bbbd16dbb1a9b5920da75b0a7ba762aff3c71"
+}

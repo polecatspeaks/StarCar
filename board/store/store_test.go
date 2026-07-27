@@ -190,6 +190,42 @@ func TestScanUnknownFieldRecordDisclosed(t *testing.T) {
 	}
 }
 
+// TestScanUnknownFieldConditionCarriesRecordDir (#69/#71: clickable
+// provenance, board-conditions surface) - the condition names the directory
+// its OWN offending file lives in, derived from the already-known rel path
+// (RecordDirFromRelPath), single-sourced, never re-parsed from Detail text.
+func TestScanUnknownFieldConditionCarriesRecordDir(t *testing.T) {
+	a := newAdapter(t)
+	root := t.TempDir()
+	writeFixture(t, root, "subj/dispatched-1.json", `{
+		"schema": "starcar-artifact/1",
+		"kind": "dispatched",
+		"subject": "subj",
+		"session_id": "session-1",
+		"at": "2026-07-23T10:00:00Z",
+		"normalisation": [],
+		"integrity": `+fakeIntegrity+`,
+		"surprise_field": "unrecognised"
+	}`)
+
+	result, err := a.Scan(root, time.Now().UTC())
+	if err != nil {
+		t.Fatalf("Scan: %v", err)
+	}
+	var found bool
+	for _, c := range result.Conditions {
+		if c.Code == "record-unrecognised-fields" {
+			found = true
+			if c.RecordDir != "subj" {
+				t.Errorf("RecordDir = %q, want %q", c.RecordDir, "subj")
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected a 'record-unrecognised-fields' board condition, got %v", result.Conditions)
+	}
+}
+
 // TestScanMalformedAtQuarantined is the red-first pin for issue #24 (C3R-3,
 // binding on this task): a record whose "at" is unparseable/malformed, OR
 // ZONELESS (no Z/offset suffix - schema-valid because JSON Schema "format" is
@@ -307,6 +343,41 @@ func TestScanSchemaShapeFailureQuarantined(t *testing.T) {
 	}
 }
 
+// TestScanQuarantinedConditionCarriesRecordDir (#69/#71: clickable
+// provenance) - a quarantined record's own condition names its directory
+// (derived from the file's own rel path, RecordDirFromRelPath), so the view
+// can link straight to the offending record even though the record itself
+// never survived into result.Records.
+func TestScanQuarantinedConditionCarriesRecordDir(t *testing.T) {
+	a := newAdapter(t)
+	root := t.TempDir()
+	writeFixture(t, root, "bad/dispatched-1.json", `{
+		"schema": "starcar-artifact/1",
+		"kind": "dispatched",
+		"subject": "bad",
+		"at": "2026-07-23T10:00:00Z",
+		"normalisation": [],
+		"integrity": `+fakeIntegrity+`
+	}`)
+
+	result, err := a.Scan(root, time.Now().UTC())
+	if err != nil {
+		t.Fatalf("Scan: %v", err)
+	}
+	var found bool
+	for _, c := range result.Conditions {
+		if c.Code == "record-quarantined" {
+			found = true
+			if c.RecordDir != "bad" {
+				t.Errorf("RecordDir = %q, want %q", c.RecordDir, "bad")
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected a 'record-quarantined' board condition, got %v", result.Conditions)
+	}
+}
+
 // TestScanTrainManifestRecordSurvivesAndIsNotFlaggedUnknown proves the D17
 // interaction (DR3-1 item 4): the manifest payload key joins the known
 // key-set, so a well-formed train: manifest record does NOT trip the
@@ -339,6 +410,82 @@ func TestScanTrainManifestRecordSurvivesAndIsNotFlaggedUnknown(t *testing.T) {
 		if c.Code == "record-unrecognised-fields" {
 			t.Fatalf("a well-formed manifest must NOT trip unknown-field disclosure (DR3-1 item 4), got %v", c)
 		}
+	}
+}
+
+// TestScanTicketRecordSurvivesAndIsNotFlaggedUnknown (#84) proves the D17
+// interaction the manifest test above already pins, applied to the freight
+// adapter's new kind: the "ticket" payload key joins the known key-set, so a
+// well-formed kind=ticket record does NOT trip the unknown-field
+// disclosure, and it validates against schema/starcar-ticket.schema.json.
+func TestScanTicketRecordSurvivesAndIsNotFlaggedUnknown(t *testing.T) {
+	a := newAdapter(t)
+	root := t.TempDir()
+	writeFixture(t, root, "ticket-84/ticket.json", `{
+		"schema": "starcar-artifact/1",
+		"kind": "ticket",
+		"subject": "ticket-84",
+		"session_id": "freight-adapter",
+		"at": "2026-07-23T10:00:00Z",
+		"normalisation": [],
+		"integrity": `+fakeIntegrity+`,
+		"ticket": {
+			"number": 84,
+			"title": "Light up the FREIGHT lane",
+			"status": "Backlog",
+			"url": "https://github.com/polecatspeaks/StarCar/issues/84"
+		}
+	}`)
+
+	result, err := a.Scan(root, time.Now().UTC())
+	if err != nil {
+		t.Fatalf("Scan: %v", err)
+	}
+	if len(result.Records) != 1 {
+		t.Fatalf("expected the ticket record to survive, got %d", len(result.Records))
+	}
+	for _, c := range result.Conditions {
+		if c.Code == "record-unrecognised-fields" {
+			t.Fatalf("a well-formed ticket record must NOT trip unknown-field disclosure (#84), got %v", c)
+		}
+	}
+}
+
+// TestScanTicketRecordMissingRequiredSubfieldQuarantined (#84) proves the
+// ticket schema's own required-field list is actually enforced (never a
+// silent no-op layered schema) - a ticket payload missing "url" fails
+// schema/starcar-ticket.schema.json validation and is quarantined, the same
+// posture the manifest schema's own YB-1 test (TestScanSchemaShapeFailureQuarantined,
+// applied here to the ticket layer specifically) already established.
+func TestScanTicketRecordMissingRequiredSubfieldQuarantined(t *testing.T) {
+	a := newAdapter(t)
+	root := t.TempDir()
+	writeFixture(t, root, "ticket-85/ticket.json", `{
+		"schema": "starcar-artifact/1",
+		"kind": "ticket",
+		"subject": "ticket-85",
+		"session_id": "freight-adapter",
+		"at": "2026-07-23T10:00:00Z",
+		"normalisation": [],
+		"integrity": `+fakeIntegrity+`,
+		"ticket": {
+			"number": 85,
+			"title": "missing status and url"
+		}
+	}`)
+
+	result, err := a.Scan(root, time.Now().UTC())
+	if err != nil {
+		t.Fatalf("Scan: %v", err)
+	}
+	if len(result.Records) != 0 {
+		t.Fatalf("expected the incomplete ticket record to be quarantined, got %d survivors", len(result.Records))
+	}
+	if len(result.Quarantined) != 1 {
+		t.Fatalf("expected exactly 1 quarantined record, got %d", len(result.Quarantined))
+	}
+	if !strings.Contains(result.Quarantined[0].Reason, "starcar-ticket/1") {
+		t.Fatalf("expected the quarantine reason to name starcar-ticket/1 schema validation, got %q", result.Quarantined[0].Reason)
 	}
 }
 

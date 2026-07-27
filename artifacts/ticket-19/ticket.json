@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-19",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 19,
+    "title": "Harden New-ArtifactIndex + StoreIntegrity against foreign JSON in the store tree",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/19"
+  },
+  "normalisation": [],
+  "integrity": "sha256:d0d43552bf7d384ead932406fdf79f337797a1731e9c70ec1c251701405632ce"
+}

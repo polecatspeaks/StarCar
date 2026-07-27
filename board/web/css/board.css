@@ -1,28 +1,47 @@
-/* board.css - StarCar yard board (task 5.3). Industrial CTC-panel direction
-   (mockup brief + the owner's 2b/1b merge): dark background, dense
-   monospace typography, color rationed to exactly three registers.
+/* board.css - StarCar yard board. Shared visual language pass (#62, owner
+   ruling: NO SINGLE KEEPER - build the language common to all five
+   docs/design/mockups/2026-07-26-claude-design-board/ variants rather than
+   commit to one layout): near-black CTC-panel ground, a condensed display
+   face for lane titles restrained to structure (never body copy), dense
+   monospace for data, lane label PLATES with purpose subtitles, a footer
+   status strip, and color rationed to exactly three registers.
 
-   Steering deviation, disclosed: the mockup direction names IBM Plex Mono /
-   Barlow Condensed specifically. This v0 pass uses system monospace /
-   condensed-sans font STACKS with no network font fetch (no Google Fonts
-   CDN), so the board is fully self-contained and renders offline/in CI
-   with no external dependency. Swapping in the named webfonts is a pure
-   CSS change whenever that's wanted - never a re-architecture.
+   FONT DECISION (disclosed deviation from direction - the mockups' own
+   README.md names this as one of three to adjudicate at implementation):
+   the mocks fetch Barlow Condensed + IBM Plex Mono from Google Fonts
+   (<link> tags in starcar-board.dc.html). The shipped board is
+   no-build-step AND offline-capable today (D19) - a webfont <link> would
+   make first paint depend on a network fetch this board has never needed.
+   Chosen: SYSTEM FONT STACKS approximating the direction, no network
+   fetch, ever. Display/condensed role: 'Bahnschrift' (Windows 10+, a real
+   variable condensed family) then 'Arial Narrow' (broad cross-platform
+   presence) then generic sans-serif - on a box with neither, this falls
+   through to plain sans-serif, an honest degradation rather than a lie
+   about having the mockup's exact face. Data/mono role: unchanged from the
+   v0 pass, ui-monospace resolves to the OS's real monospace (SF Mono/
+   Cascadia/Consolas/DejaVu depending on platform) - IBM Plex Mono is kept
+   first in the stack so a box that DOES have it installed gets it.
 
    The one hard aesthetic law (mockup brief): three severity colors, total.
-   Every other color in this file is background/structure/typography, never
-   a fourth "shade of alarm". */
+   --nominal/--in-progress/--needs-attention are CONTRACT (the brief's own
+   pinned hexes, verified against the live register tokens at mock import) -
+   every other color in this file is background/structure/typography,
+   never a fourth "shade of alarm". */
 
 :root {
-  --bg: #14181d;
-  --panel: #1c2128;
-  --border: #2c333d;
+  --bg: #0b0c0e; /* near-black ground - matches the mockups' #0b0c0e family exactly */
+  --panel: #15181d;
+  --panel-dim: #0a0b0c; /* freight/fuel dark-lane treatment - slightly recessed, mockup 1c's convention */
+  --border: #242830;
   --text: #d9d5c9; /* paper, mockup's nominal ink color */
-  --text-dim: #8a8f97;
+  --text-dim: rgba(217, 213, 201, 0.55); /* mockups dim by alpha on the same paper token, not a second gray */
 
   --nominal: #d9d5c9;
   --in-progress: #ffb454; /* amber, mockup's in-progress color */
   --needs-attention: #ff4a3a; /* red, mockup's needs-attention color */
+
+  --font-display: 'Bahnschrift', 'Arial Narrow', 'Roboto Condensed', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', 'Consolas', 'Liberation Mono', monospace;
 }
 
 * {
@@ -33,94 +52,249 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
+  font-family: var(--font-mono);
 }
 
 #board-root {
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 0;
 }
 
-/* --- honesty chrome ------------------------------------------------- */
+/* --- honesty chrome (header) -------------------------------------------- */
 
 .chrome {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 1.25rem;
   align-items: center;
-  padding: 0.5rem 0.75rem;
+  padding: 0.6rem 1rem;
   border-bottom: 2px solid var(--border);
-  margin-bottom: 1rem;
-  font-family: 'Barlow Condensed', ui-sans-serif, system-ui, sans-serif;
+  margin-bottom: 0.9rem;
+  font-family: var(--font-display);
   letter-spacing: 0.02em;
 }
 
-.demo-banner {
-  background: var(--in-progress);
-  color: #14181d;
+/* #62: the wordmark - the single strongest shared signal across all five
+   mockup variants (every one opens with STARCAR + a subtitle before the
+   rest of the honesty chrome). Static, never colored by register - brand
+   identity is not a truth surface. */
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+}
+
+.brand-name {
   font-weight: 700;
-  padding: 0.15rem 0.6rem;
+  font-size: 1.6rem;
+  letter-spacing: 0.18em;
+  color: var(--text);
+}
+
+.brand-subtitle {
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+}
+
+.demo-banner {
+  background: transparent;
+  color: var(--in-progress);
+  font-weight: 700;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--in-progress);
   border-radius: 2px;
+}
+
+.as-of {
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  margin-left: auto;
 }
 
 .connection-disconnected {
   color: var(--needs-attention);
   font-weight: 700;
+  font-family: var(--font-mono);
 }
 
 .connection-connected {
   color: var(--text-dim);
+  font-family: var(--font-mono);
 }
 
-.board-conditions {
-  list-style: none;
-  margin: 0.25rem 0 0 0;
-  padding: 0;
-  width: 100%;
+/* --- footer status strip (#62) ------------------------------------------ */
+/* Shared across every mockup variant: registry lane completeness, the
+   real storePathDisplay field, and (#30) the board-conditions strip -
+   moved here from the top chrome so the header stays a quick identity/
+   liveness glance and the footer carries the quieter, denser accounting
+   line every mockup places at the bottom of the frame. */
+.board-footer {
   display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.5rem 1rem;
+  margin-top: 0.9rem;
+  border-top: 2px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.store-path {
+  color: var(--text-dim);
+}
+
+/* #30: the conditions strip is CHROME, not headline - a native <details>
+   collapsed by default (no JS needed to expand/collapse), summary line
+   carries the roll-up ("1 FLAG + 2 notes"), the yard lanes stay above the
+   fold regardless of what is inside. */
+.board-conditions-strip {
   font-size: 0.85rem;
 }
 
-.board-condition {
+.board-conditions-summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.board-condition-groups {
+  list-style: none;
+  margin: 0.25rem 0 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+/* #30: GROUP BY CLASS - one row per condition code, itself an expandable
+   <details> to the per-instance detail text. */
+.board-condition-group {
   padding: 0.1rem 0.4rem;
   border-left: 3px solid var(--border);
 }
 
-/* --- lanes ------------------------------------------------------------ */
+.board-condition-group-summary {
+  cursor: pointer;
+}
+
+.board-condition-instances {
+  list-style: none;
+  margin: 0.15rem 0 0 0.4rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+/* No color/border-left-color declared here on purpose - same convention as
+   .car-chip / .signal / .solari-row: this element ALSO carries its own
+   register-* class (dom-writer.js), and that class is the ONE owner of its
+   color (issue #31's own fix - a structural rule setting color here would
+   either fight the register class or (if using currentColor) silently
+   inherit whatever this element's ancestor is running, re-creating #31). */
+.board-condition-instance {
+  font-size: 0.8rem;
+}
+
+/* --- lanes: label PLATE beside CONTENT (#62, shared across every variant) */
 
 .lanes {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.6rem;
+  padding: 0 1rem;
 }
 
 .lane {
+  display: flex;
+  align-items: stretch;
   background: var(--panel);
   border: 1px solid var(--border);
   border-left-width: 6px;
   border-radius: 3px;
+  min-height: 3.6rem;
+}
+
+.lane-plate {
+  flex: 0 0 15.5rem;
+  min-width: 0;
   padding: 0.6rem 0.9rem;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.15rem;
+}
+
+.lane-content {
+  flex: 1;
+  min-width: 0;
+  padding: 0.6rem 0.9rem;
+  display: flex;
+  align-items: center;
+}
+
+.lane-content > * {
+  width: 100%;
+}
+
+.lane-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+/* #62: a small bordered ordinal badge (mockup 2b's "1"/"2" plate marker) -
+   this DOES encode true, real information (the lane's position in the
+   already-pinned, already-ordered five-lane registry - render.test.js
+   pins that order), not a decorative sequence number. Deliberately NOT
+   colored by register (a structural label about the registry, not a
+   severity signal). */
+.lane-ordinal {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 0.05rem 0.35rem;
+  border-radius: 2px;
+  flex: none;
 }
 
 .lane-title {
-  font-family: 'Barlow Condensed', ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-display);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin: 0 0 0.15rem 0;
-  font-size: 1rem;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+/* #62: the per-lane purpose subtitle ("what this lane IS", copy lifted
+   from the ui-mockup-brief's own lane definitions - render.js's
+   LANE_PURPOSE) - quiet, small, dim; never colored by register (a fixed
+   fact about the lane's role, not a severity signal). */
+.lane-purpose {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-dim);
 }
 
 .lane-primary {
   font-weight: 600;
+  font-family: var(--font-mono);
 }
 
 .lane-secondary {
   color: var(--text-dim);
-  font-size: 0.85rem;
-  margin-bottom: 0.4rem;
+  font-size: 0.8rem;
+  font-family: var(--font-mono);
 }
 
 /* --- the three registers, and NOTHING else colors an element ---------- */
@@ -146,9 +320,20 @@ body {
   margin-top: 0.3rem;
 }
 
+.track:first-child {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
 .track-title {
   font-weight: 600;
   margin-bottom: 0.25rem;
+  font-family: var(--font-mono);
+  /* NEUTRAL PAPER: train title is a property of the train, not the lane's freshness.
+     Without this explicit color it inherits the lane register class's color and would
+     repaint a nominal train's title hot when the lane is in needs-attention. #36 */
+  color: var(--text);
 }
 
 .track-cars {
@@ -157,8 +342,76 @@ body {
   gap: 0.4rem;
 }
 
+/* #36: absence disclosure - "declared, not yet observed" renders needs-attention
+   colors ALWAYS, independent of the lane's register state. Reuses var(--needs-attention)
+   for a structural pin to .register-needs-attention: both must use the same token so
+   they cannot silently drift (owner ruling 2026-07-25). */
+.declared-not-observed {
+  color: var(--needs-attention);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+/* #71 (clickable provenance, remaining #28 surfaces): a superseded record
+   is quiet chrome, never a headline - "a prior record that lost" is a
+   detail a reader expands into, not a fact competing with the row's own
+   current state word. text-dim (never a register color - superseded is
+   presentational history, not a live severity signal) + .provenance-link's
+   own color:inherit (board.css's existing #28 idiom) when it renders as a
+   link. */
+.car-superseded,
+.solari-superseded {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+}
+
+/* #71 fix-cycle r2 (MAJOR-R1-1, owner ruling #69): the superseded block is
+   now nested INSIDE its owner chip/row (dom-writer.js), rendered behind a
+   <details>/<summary> disclosure - same quiet-chrome idiom as
+   .board-conditions-strip (#30) above. COLLAPSED by default (no `open`
+   attribute is ever set - #69/#71-M1's ephemeral choice, see dom-writer.js's
+   renderSupersededDisclosure comment), so the common case (no reader has
+   expanded it) costs one small summary line, never the full list -
+   preserving #67's density argument.
+
+   CORRECTED, fix cycle r3 (MAJOR-R2-1): the two owners no longer share one
+   mechanism, and no longer share one rule - `.car-chip` and `.solari-row`
+   diverged this round (see `.solari-row`'s own comment above for why).
+   `.car-superseded-disclosure` keeps `flex-basis: 100%`, the "force this
+   flex item onto its own line WITHIN the flex container" hack: `.car-chip`
+   stays `display:flex; flex-wrap:wrap` (round 2 review measured this half
+   CLEAN - chips are content-sized, never grid-cell-constrained, so nothing
+   else on that line is at risk of an unwanted wrap). `.solari-superseded-
+   disclosure` needs NO flex-basis at all: `.solari-row` is now a COLUMN-
+   direction flex container (see above), where this disclosure is simply
+   the second block-stacked child - flex-basis:100% in a COLUMN container
+   sizes the cross-axis dimension (HEIGHT, not width), which would be
+   wrong here, so it is declared separately below rather than shared. */
+.car-superseded-disclosure {
+  flex-basis: 100%;
+  margin-left: 0.5rem;
+}
+
+.solari-superseded-disclosure {
+  margin-left: 0.5rem;
+}
+
+.car-superseded-summary,
+.solari-superseded-summary {
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
 .car-chip {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.35rem;
   align-items: center;
   border: 1px solid var(--border);
@@ -166,6 +419,7 @@ body {
   padding: 0.15rem 0.5rem;
   border-radius: 2px;
   font-size: 0.85rem;
+  font-family: var(--font-mono);
 }
 
 .signal {
@@ -177,12 +431,74 @@ body {
   padding: 0.2rem 0.6rem;
   margin-top: 0.25rem;
   border-radius: 2px;
+  font-family: var(--font-mono);
+}
+
+.signal:first-child {
+  margin-top: 0;
+}
+
+/* #28 (clickable provenance): a QUIET affordance - "visible on hover/focus",
+   never underline soup on a glance. Uses currentColor for the dotted
+   underline so a linked car-subject/signal-name/solari-subject/ticket-link
+   still carries whichever register color its container is already running
+   (the SAME issue #31 rule .board-condition-instance's own comment names:
+   a structural rule here would either fight the register class or silently
+   inherit an unrelated ancestor's color). Brightens to the paper ink color
+   only on hover/focus - the one moment a reader has decided to interact. */
+.provenance-link {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dotted currentColor;
+  cursor: pointer;
+}
+
+.provenance-link:hover,
+.provenance-link:focus-visible {
+  color: var(--text);
+  border-bottom-style: solid;
+}
+
+/* #28: a train's declared ticket refs (manifest.tickets), rendered as a
+   small row of quiet issue links beneath the track title - distinct from
+   the track-cars row below it, never mixed into the consist itself. */
+.train-tickets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-bottom: 0.25rem;
+}
+
+/* #12 (car health bar): the badge reuses the SAME three-register classes
+   every other severity signal on this board uses (register-nominal /
+   register-needs-attention) - never a fourth "health" color. A neutral
+   trend (first-round / unknown) carries NEITHER register class and gets
+   its own muted text-dim rule below - quiet-when-calm, never confused with
+   a genuinely converged (calm) trend. The :not() combinators (rather than
+   just letting cascade ORDER decide) are deliberate: a plain `.health-trend
+   { color: ... }` base rule would tie on specificity with `.register-*`
+   and the LATER rule in the file would silently win regardless of which
+   trend actually applies - the exact #31 class of bug (a structural color
+   rule fighting or shadowing the register class) this repo already paid
+   for once. */
+.health-trend {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  margin-left: 0.4rem;
+}
+
+.health-trend:not(.register-nominal):not(.register-needs-attention) {
+  color: var(--text-dim);
 }
 
 /* --- DISPATCHES: Solari split-flap direction (mockup 1b) --------------- */
 
 .lane-body-dispatches {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono);
+  width: 100%;
 }
 
 .yard-inventory-count {
@@ -191,21 +507,188 @@ body {
   margin-bottom: 0.3rem;
 }
 
-.solari-rows {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
+/* #67 (HONESTY CONSTRAINT): the "showing last N of M returned" line, shared
+   by the dispatches and trains lane bodies (dom-writer.js's
+   renderHistorySummary) - quiet chrome per the #62 visual idiom (nominal
+   register, small text, never a headline). No `color` here, deliberately
+   (same pattern as .health-trend above): the element always carries
+   `register-nominal` (dom-writer.js always renders this line at the calm
+   register - it only ever asserts capped HISTORY, never a hot condition),
+   so `.register-nominal`'s own color rule (line ~302, "the three registers,
+   and NOTHING else colors an element") is left to apply unshadowed - a
+   second `color` declaration here would just be this rule fighting that one
+   on specificity, the #31 class of bug this file's own comment already
+   warns against. */
+.history-summary {
+  font-size: 0.8rem;
+  margin-bottom: 0.3rem;
 }
 
+/* #62 FIX, found live during this car's own visual verification (not in
+   the original ticket text): this repo's real artifacts/ store now holds
+   dozens of dispatch rows and growing (this car's screenshot evidence,
+   docs/screenshots/2026-07-26-register-check-candidates/calm-yard.png -
+   a specific count is deliberately not given here: an append-only store's
+   count goes stale the moment it is written down, and the earlier "~79"
+   was itself a mislabeled figure, the yard-inventory unassigned subset
+   rather than a store total, corrected in the same conflation class as
+   the MINOR-2 fix below),
+   and the pre-#62 CSS rendered every one of them as a single flex column
+   with no bound - the dispatches lane alone filled the entire 1920x1080
+   frame and pushed gates/trains/freight/fuel off-screen (measured again,
+   independently, by the round-1 reviewer: restoring the pre-#62 rule at
+   runtime puts the footer at y 2743, four of five lanes off a 1080px
+   screen). A CSS-only, no-data-change fix: a wrapping grid (mockup 1a/1c's
+   multi-column dispatch treatment) capped to a fixed height with its own
+   scrollbar.
+
+   CORRECTED (#62 fix cycle round 2, review round 1 MAJOR-2 - the original
+   comment here invoked the #30 conditions-strip precedent and the
+   analogy was BACKWARDS): rows below the fold ARE still in the DOM and
+   reachable by scrolling, but - unlike #30's collapsed-but-present
+   strip - their severity does NOT currently escape to any
+   always-visible surface. #30's <summary> is Law-1-safe because it
+   carries a register-colored roll-up ("1 FLAG + 2 notes",
+   render.js's summariseBoardConditionGroups function, dom-writer.js's
+   renderBoardConditionsStrip function - cited by SYMBOL, not line, #28/#12
+   fix cycle round 2: a later train's commits shifted both files' line
+   numbers, exactly the drift MAJOR-1/MAJOR-2 in that same fix cycle's
+   review named for other citations); this grid has no such roll-up.
+   The round-1 reviewer PROVED this live: a scratch store with one
+   presumed-lost dispatch sorted to the bottom (board/fold/algorithm.go's
+   alphabetical sort - out of this ticket's scope) rendered a board with
+   ZERO hot pixels - the hot row sat 242px below this grid's clip edge
+   while every lane read register-nominal, because render.js's
+   buildBoardViewModel's per-lane composeRegister call (cited by symbol, same
+   reason as above) composes position x freshness x capability only
+   (compose.js:73-79 - compose.js itself untouched by this train, still
+   line-accurate); a row's own stateRegister never joins that
+   composition. That gap is PRE-EXISTING lane-register semantics (not
+   introduced by this rule, not fixable in CSS/dom-writer scope per this
+   ticket's own boundary) and is measured + routed to issue #1
+   (https://github.com/polecatspeaks/StarCar/issues/1#issuecomment-5085235534,
+   2026-07-26). Until a severity roll-up or hot-rows-first ordering lands
+   there, this bound is a deliberate, disclosed trade: it fixes the
+   measured 4-of-5-lanes-off-screen crowding above, at the cost of not
+   guaranteeing a below-the-fold alarm is visible from a glance.
+
+   Why the height stays as measured rather than being lifted or raised
+   (the fix cycle's own menu, considered and rejected): LIFTING the clip
+   entirely was measured to cost nothing at the store's size on review
+   day (footerBottom 1068 of 1080) - but the store is real and
+   append-only (every dispatch session adds records - that is the
+   append-only design, not a measured growth rate), so "costs nothing
+   today" is a snapshot, not a guarantee, and lifting would eventually
+   re-open the ORIGINAL, measured, 4-lanes-off-screen defect as the store
+   grows. The decisive reason, though, is sharper than store size: RAISING
+   or REMOVING the cap would not close the disclosed severity-escape gap
+   either way - sort order is alphabetical, not severity-based
+   (board/fold/algorithm.go), so no fixed height, however tall, guarantees
+   a hot row stays inside it. Fitting today is a coincidence of this
+   store's current alphabetical ordering, not a property this rule can
+   rely on - a taller number would only look more fixed while remaining
+   exactly as unproven. Kept at the originally-measured height, disclosed
+   honestly, with the real fix tracked at #1.
+
+   RECONCILED (#67, owner fast-follow after this same #62 feedback):
+   render.js's dispatches lane now runs every row through capTerminalHistory
+   BEFORE this grid ever sees it - a needs-attention/in-progress/unrecognised
+   row (render.js's `isTerminal: (d) => d.stateRegister === 'nominal'`) is
+   NEVER a capping candidate, so the demonstrated failure mode above (a
+   single presumed-lost row buried under dozens of alphabetically-earlier
+   calm ones) cannot recur BY CONSTRUCTION: returned history is capped to
+   TERMINAL_HISTORY_CAP (history-filter.js, currently 4), so the calm-row
+   count feeding this grid is bounded regardless of how large the real store
+   grows. This closes the SPECIFIC mechanism this comment measured (return-
+   history bloat pushing a hot row past the clip), but NOT the underlying
+   register-composition gap it also named: this grid can still legitimately
+   overflow 11rem when the NUMBER OF CONCURRENTLY NON-TERMINAL rows itself
+   is large (a genuinely busy yard, never clipped, only ever scrolled) - and
+   #67's own car brief is explicit that composeRegister's three-axis
+   composition (position x freshness x capability) is a CONTRACT this ticket
+   must not touch, so the lane's own register still will not reflect a
+   row's severity if that scenario recurs. The DISCLOSURE for that remainder
+   now lives in ONE place, not two: the honesty summary line
+   (.history-summary above, "showing last N of M returned") is the assertion
+   surface for hidden history, and this comment defers to it rather than
+   re-stating counts here - avoiding the double-report #67's own brief warned
+   against. The #1 routing above stands unchanged for the register-
+   composition gap itself. */
+.solari-rows {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 0.15rem 1.5rem;
+  max-height: 11rem;
+  overflow-y: auto;
+}
+
+/* #71 fix cycle r3 (MAJOR-R2-1): CORRECTED. Round 2's `.solari-row {
+   flex-wrap: wrap }` was measured, real Chromium, to wrap the
+   subject/state/elapsed cluster too - NOT just the disclosure - on every
+   row, including rows with no disclosure at all (row height 22px -> 51-
+   73px, .solari-rows cropping rows mid-row again, the exact #62 hazard the
+   comment below this one already documents). The claim that only a
+   flex-basis:100% item can force a break was false: plain `flex-wrap:
+   wrap` reflows ANY item that does not fit the current line, with or
+   without flex-basis:100% - that property only guarantees WHERE a forced
+   break lands, it does not exempt earlier siblings from wrapping too when
+   the container is narrower than their combined natural width (exactly
+   what a 13rem grid column is, next to a long subject id).
+
+   Corrected mechanism: `.solari-row` no longer sets flex-wrap at all (back
+   to the base value, matching `256d8d5`/`b865cba`). The subject/state/
+   elapsed cluster is written into its OWN wrapper, `.solari-row-main`
+   (dom-writer.js), which is a plain `display:flex` row with no wrap - it
+   is IMPOSSIBLE for its own children to reflow because nothing here tells
+   them to. `.solari-row` itself is a COLUMN-direction flex container
+   holding two block-stacked children: `.solari-row-main` (the one-line
+   cluster) then, when present, `.solari-superseded-disclosure` - stacking
+   by DOM order in a column container needs no flex-wrap and cannot
+   accidentally catch a sibling that should not have wrapped. */
 .solari-row {
   display: flex;
-  gap: 0.75rem;
+  flex-direction: column;
+  gap: 0.15rem;
   padding: 0.1rem 0.3rem;
   border-left: 3px solid currentColor;
+  min-width: 0;
+}
+
+.solari-row-main {
+  display: flex;
+  gap: 0.6rem;
+  min-width: 0;
+  /* One line per row (mockup convention, every variant): a long subject id
+     truncates with an ellipsis rather than wrapping to a second line -
+     wrapping is what made the #62 grid's fixed max-height crop rows
+     mid-line (found live during this car's own visual verification,
+     docs/screenshots/2026-07-26-register-check-candidates/). The
+     VERBATIM state word itself is never truncated (flex:none on
+     .solari-state below) - only the subject id, which is also shown in
+     full via the browser's native title tooltip (dom-writer.js). This
+     wrapper carries no flex-wrap, so this line-per-row guarantee no
+     longer depends on every child individually fitting - see the comment
+     on `.solari-row` above (#71 fix cycle r3, MAJOR-R2-1). */
+  white-space: nowrap;
 }
 
 .solari-row.unassigned {
   background: rgba(255, 255, 255, 0.03);
+}
+
+.solari-subject {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.solari-state {
+  flex: none;
+}
+
+.solari-elapsed {
+  flex: none;
+  color: var(--text-dim);
 }
 
 /* --- dark/bagged dignity: never hidden, never faked -------------------- */
@@ -214,9 +697,50 @@ body {
 .lane-body-bagged {
   color: var(--text-dim);
   font-style: italic;
+  font-family: var(--font-mono);
+  padding: 0.3rem 0;
+}
+
+/* #62 N3: an empty-but-LIVE lane's stated absence (distinct from dark/
+   bagged, which are lanes with no data source at all - this is a live
+   lane whose current fold happens to carry zero entries). Same quiet,
+   dim, italic treatment - not a fourth register, not an alarm. */
+.lane-body-gates-empty {
+  color: var(--text-dim);
+  font-style: italic;
+  font-family: var(--font-mono);
   padding: 0.3rem 0;
 }
 
 .lane-body-no-renderer {
   color: var(--needs-attention);
+  font-family: var(--font-mono);
+}
+
+/* --- quiet-when-calm responsiveness (mockups are a fixed 1920x1080
+   canvas by design - README.md's own third deviation-to-adjudicate: this
+   board stays responsive-ish rather than adopting a fixed canvas) ------- */
+
+@media (max-width: 760px) {
+  .lane {
+    flex-direction: column;
+  }
+
+  .lane-plate {
+    flex: 0 0 auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .chrome {
+    padding: 0.5rem 0.6rem;
+  }
+
+  .lanes {
+    padding: 0 0.6rem;
+  }
+
+  .board-footer {
+    padding: 0.5rem 0.6rem;
+  }
 }

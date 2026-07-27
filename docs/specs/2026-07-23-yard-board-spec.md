@@ -81,6 +81,11 @@ Every obligation the design's approving verdict named, with its requirement here
   - `dispatchesPayload`: `dispatches[]` mirroring the fold's dispatch entry shape
     (the vectors own that shape), plus `assigned: boolean` per entry (yard inventory =
     unassigned, rendered loudly).
+  - **`freightPayload` (#84, 2026-07-27, added after this spec's original Car 2
+    landing - NOT part of that car's scope, disclosed rather than silently folded in):
+    `tickets[]{ number, title, status, url, recordDir? }` - read directly off raw
+    `kind=ticket` store records, never through the fold (board/fold has no case for
+    that kind at all - #84 owner ruling item 3).**
 - **YB-6.** Composition semantics (design §5.2 Rules 1-4: most-severe-wins across
   THREE axes, the freshness→register mapping, position-primary/freshness-secondary,
   server-issued quantised age, detector register) are pinned by an EXHAUSTIVE

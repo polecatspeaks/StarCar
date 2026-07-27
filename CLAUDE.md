@@ -66,7 +66,7 @@ change is itself a process failure (the autoimmune mode - see the Healing Loop's
 | Match the instrument | Behavioural work gets prose; formats/protocols get an EXECUTABLE spec |
 | NO HEADERS HERE | Truth is constructed by probes; probes must LAND as durable artifacts |
 | LAW-FIRST design | Constraints and premises on the page BEFORE the mechanism |
-| ASK FOR THE PRIOR ART | Check `docs/templates/` FIRST - the landed store adjudicates most of it; ask the owner for what has NOT landed; an empty search is a trigger, never an answer |
+| ASK FOR THE PRIOR ART | Check `docs/templates/` FIRST - the landed store adjudicates most of it; ask the owner for what has NOT landed; an empty search is a trigger, never an answer; ported art is a GUIDE STAR - adopt/adapt/refuse after review, never drag-and-drop |
 | Build from wreckage | Only when no prior art exists; never for a rung never run |
 | GUIDE STAR | Blameless is not vague and not polite; REJECT and reversal are SUCCESS outcomes with a durable artifact |
 | Reality vs spec | When a written rule does not fit reality, the HUMAN adjudicates - sharpen or loosen, case by case, never inferred. The escalation path is the PRESSURE RELEASE VALVE: a process with no legitimate way to bend gets bent silently |
@@ -78,10 +78,11 @@ change is itself a process failure (the autoimmune mode - see the Healing Loop's
 | CARRIER rule | Obligations cross rungs in documents with IDs, never by memory; receivers refuse delivery without them |
 | Living contracts | State changes update the ledger in the same commit |
 | Rewrite vs extend | Optimize for least NEW code reviewed; rewrites lose encoded incident knowledge |
-| Cost discipline | Spend approved before dispatch; a car and its review are one unit |
+| Cost discipline | Spend approved before dispatch; a car and its review are one unit; owner-set tempo (low idle / lighter default / heavy); size classes small ≤3, medium ≤8, heavy >8, medium+ wants a fresh meter reading |
 | Tracking | Every piece of work gets an issue; one area label; every new code addition cites its `#N` in a comment. Owner-ruling doctrine is CARVED OUT - it carries the why instead, and if you do not know the why, ask before committing |
 | Session starts | The tooling retro; log friction as it happens; never drop a tooling request; doctrine dedup check |
 | Session ends | A decision point: triage in-flight work, checkpoint in writing, three closing sentences |
+| Chaos drills | Unannounced disruption is standing practice: opportunistic by default, owner-sprung at will; score = what the next session reconstructs from durable artifacts alone; counts only if something LANDS |
 
 ## NORTH STAR: documentation ranks equal to code
 
@@ -133,10 +134,39 @@ and breaks things there is no stable quickstart to assert, and an instrument re-
 yesterday's README would cry wolf - which our own severity philosophy calls worse than no
 instrument. The tier downgrade is the price and is written down rather than glossed.*
 
-Two surfaces stay unguarded even after CI lands, named so nobody assumes otherwise:
-comprehensibility (a machine proves commands run, never that a human could follow them)
-and screenshot drift (a stale image on a status-board project is both the likeliest and
-the most embarrassing rot this repo can ship).
+One surface stays unguarded even after CI lands, named so nobody assumes otherwise:
+comprehensibility (a machine proves commands run, never that a human could follow them).
+
+**SCREENSHOTS ARE A VALIDATION DEVICE, NOT A LIVING DOCUMENT (owner ruling, 2026-07-27),
+and this paragraph used to say the opposite.** It named screenshot drift as the second
+permanently-unguarded surface - "a stale image on a status-board project is both the
+likeliest and the most embarrassing rot this repo can ship" - and that framing was the
+defect. In the owner's words: *"Screenshots are a validation device. They exist to
+validate changes at the time of change, not keep an ongoing tally of the screen
+rendering."* Once that is true, "drift" is the wrong noun for what happens to them. An
+image captured to validate a change on the day of the change does not ROT when the code
+moves on, any more than a landed verdict rots; it simply becomes what it always was, a
+dated observation. The living-document rule above binds documents that make standing
+claims, and a validation capture makes none.
+
+**What DOES rot is an unlabelled one, and that is the guardable thing.** An image with no
+record of what it validated, when, and at which commit is not evidence at all - it is a
+picture, and a reader who mistakes it for current rendering has been misled by our own
+artifact. So the obligation is LABELLING, never recapture: every screenshot directory
+carries a README stating what the images validated, the commit they were captured at, and
+any known divergence since. That is mechanically checkable (the DocPolicy `Status:` gate's
+own shape, one surface over), it asserts something durable rather than something that
+expires hourly, and it does not cry wolf - which recapture-on-drift would, since the board's
+own captures include the ambient artifact store and that store grows with every dispatch.
+
+*Scar, twice in two days, which is what earned the ruling: the #69/#71 train's round-2
+Major forced a DISCLOSED STALENESS block into one screenshot README, and #75's review then
+found the same class again - two committed board images depicting a hash-as-identity
+rendering that the very train under review was replacing, in an enumeration that claimed
+the documentation surface was "checked and clear" without opening `docs/screenshots/` at
+all. Three of four screenshot directories held no README of any kind. The gap was declared
+in this file and then hit anyway, twice: a named unguarded surface is a debt, not an
+excuse.*
 
 **The showcase never edits the record.** This repo is deliberately a demonstration of how
 the process works, which creates standing pressure to make the process LOOK good - and
@@ -401,6 +431,24 @@ adjacent jobs: the templates say what SHAPE is known, the probes say what is TRU
 for what was deliberately deferred; and THEN ask the owner what exists that has not landed.
 A rung with no artifact is not necessarily a rung with no prior art, and a directory with
 no matching file is not a shop with no matching practice.
+
+**Prior art is a GUIDE STAR, never a drop-in (owner ruling, 2026-07-26).** What arrives
+from the ancestor or a sibling is reviewed FOR adoption and adapted to this shop's laws,
+scars, and measurements - never pasted as-is. The receiving shop's own record adjudicates
+fit, three dispositions: ADOPT what survives review; ADAPT what almost fits, stating what
+changed and why; REFUSE what contradicts a standing local ruling - loudly, the divergence
+surfaced for the owner rather than harmonized silently in either direction. Drag-and-drop
+porting is the prior-art rule's own agreeableness failure: it treats another shop's
+codified judgment as senior to this shop's evidence, which no document here is.
+
+*First application, same day as the ruling: the sibling's operating-tempo port (see Cost
+discipline) was adopted with one adaptation - "race-critical heavy" generalized to
+owner-declared windows, this shop having no race calendar - and its reviewers-on-Sonnet
+leg was REFUSED: it contradicted StarCar's standing per-car-Opus topology, the divergence
+was surfaced instead of silently harmonized, and same-day evidence (an Opus reviewer's
+five-Major catch, every finding measured rather than read) supported keeping the standing
+ruling. Revisitable if calibration counts ever show cheaper reviews catching at the same
+rate.*
 
 ## When no prior art exists: build it from wreckage
 
@@ -810,11 +858,16 @@ the baseline it equals.
 watched branch, `scripts/Watch-CI.ps1` runs it to completion: it filters to OUR workflow
 (a PR-review bot posts its own green `dynamic` run at the same SHA - watching that instead
 reports GREEN over a red CI, observed on this script's first live test), watches the most
-recent run for the exact FULL sha, records the per-leg conclusion under `artifacts/ci-checks/`,
-and exits with a code that keeps RED distinct from could-not-observe: 0 green, 10 red (a
-CAUGHT PROBLEM, a success outcome - act on it, never merge on top), 1 failed-to-observe
-(no run appeared, push-parity mismatch, or timeout - THIS is the real failure the scar was).
-No merge to `main`, and no "CI green" claim, without a recorded terminal green for the sha.
+recent run for the exact FULL sha, records the per-leg conclusion under `.ci-checks/`
+(gitignored, LOCAL-ONLY - a watcher cache, not the durable record; #48 owner ruling
+2026-07-25: durable CI provenance is the coordinates-in-claims practice above - run ID,
+SHA and conclusion written into merge messages, ticket closes and plan docs, re-derived
+live at session start per the reconciliation cadence, never a committed mirror of a
+third party's ledger), and exits with a code that keeps RED distinct from
+could-not-observe: 0 green, 10 red (a CAUGHT PROBLEM, a success outcome - act on it,
+never merge on top), 1 failed-to-observe (no run appeared, push-parity mismatch, or
+timeout - THIS is the real failure the scar was). No merge to `main`, and no "CI green"
+claim, without a recorded terminal green for the sha.
 
 **Claims are never terminal until a second party re-derives them.** Every reviewer brief
 carries "RUN YOURSELF at HEAD, expect <counts>, report observed" - so a false or stale claim
@@ -907,6 +960,33 @@ The budget owner approves spend along with scope; exceeding a usage window is a 
 made before dispatch, never a discovery on the bill. Split work at clean boundaries only -
 a car and its review are one unit; never start a car whose review will not also fit.
 
+**Operating tempo (owner port from the sibling shop, 2026-07-26).** The shop runs at an
+owner-set throttle with three named levels, and the mode is OWNER-SET, never inferred:
+
+- **Low idle** - parked; process only drops and P1-class breakage.
+- **Lighter default** - the normal day: riders and small/medium trains, sequential
+  car-plus-review units, conservative dispatch counts. Applies whenever no mode is
+  declared.
+- **Heavy (owner-declared)** - pre-approved heavy multi-agent burn, including dipping
+  into extra usage, ONLY inside a window the owner declares. (The sibling's standing
+  form is "race-critical heavy"; StarCar generalizes the trigger to any owner-declared
+  window, because this shop has no race calendar to key on.)
+
+**Size classes, sharpened by the same port:** the cost line classes every train
+**small (up to 3 dispatches), medium (up to 8), or heavy (more than 8)**, with the
+model mix stated per dispatch. Medium and heavier want a **fresh meter reading at
+wave-out** - the conductor cannot read the usage meter, so the reading is
+owner-supplied (a screenshot or a statement such as "we have fresh limits"), and a
+stale reading is a cost-line defect, not a formality.
+
+*Provenance: this is the owner's "cruise / push" vocabulary, asked-for rather than
+inferred (the standing vocabulary rule doing its job - the conductor's archive search
+came up empty because the conversation lived in the sibling project, and the empty
+search was treated as a trigger to ask, not an answer). The sibling's third leg -
+reviewers on Sonnet, Opus only at whole-branch gates - was REFUSED under the
+guide-star ruling (see the prior-art section): it contradicts StarCar's standing
+per-car-Opus-review topology, and same-day evidence supported the standing ruling.*
+
 ## Tracking
 
 Every piece of work gets an issue - no untracked work. One area label per issue; a train
@@ -972,12 +1052,51 @@ test - the nearest surface that can hold prose without altering the subject.
 producer, not by a person, and is data rather than code. A generator citing a ticket in
 every record it stamps would be noise, and the record already carries its own provenance.
 
-*Mechanism, trigger-gated, and the prior art already exists in-repo so nobody invents it:
-`docs/templates/repo-policy-check-patterns.md` §1's gate pattern is already ported as
-`scripts/tests/DocPolicy.Tests.ps1`, which enforces the docs `Status:` line the same way.
-The citation check is that pattern aimed at new code files, and it lands with #3 and #4 on
-the next CI touch whose own scope includes repo-policy enforcement. Until then this is
-attention-tier and reviewers carry it, which is a real downgrade and is recorded as one.*
+*Mechanism, LANDED (#42, 2026-07-26, corrected rounds 2 and 3 after REJECT):
+`docs/templates/repo-policy-check-patterns.md` §1's gate pattern - already ported as
+`scripts/tests/DocPolicy.Tests.ps1`, which enforces the docs `Status:` line - is now also
+ported as `scripts/tests/CodeCitationPolicy.Tests.ps1`, aimed at new code files instead of
+docs. It walks files added after the boundary commit
+`d4db6f5baf2bd31bf41f9dc5804684334797cb35`, checks extensions `.ps1 .psm1 .go .js .mjs .sh`
+plus EXTENSIONLESS files (Dockerfile, Makefile, CODEOWNERS, shebang scripts with no
+suffix - decided round 3: as comment-capable as any `.sh` file, so the standard applies
+to them the same way) (derived from the real post-boundary corpus at landing) against a
+CLOSED set - checked extensions plus a `.json`/`.md` declared-exempt list, each with a
+stated reason (config/fixture-mutation risk, and DocPolicy's own Status-line gate,
+respectively) - and a self-calibrating test asserts every extension actually observed
+post-boundary, INCLUDING the extensionless case, is in that closed set, reding BY NAME
+(the empty extension rendered as a readable `(no extension)` sentinel) if a new language
+(e.g. `.py`, `.css`, `.ts` - all fault-injected in round-1 review and measured silently
+green before that fix) or an unaccounted extensionless file ever arrives. **Round 3
+correction:** the round-2 completeness test computed the unaccounted set correctly but
+then asserted on a `-join`ed STRING (`Should -BeNullOrEmpty`), which silently passed
+whenever the only unaccounted extension was the empty string - a joined single empty
+string is still an empty string. Measured: an uncited extensionless Dockerfile passed
+10/10 green. Fixed by asserting on `.Count`, never on the joined text, and this sentence
+and the test header were both corrected to state exactly what the guard now delivers
+rather than restating the round-2 overclaim. It fails listing every violator by name if
+any post-boundary code file lacks a bare `#N` marker. **CI WIRING WAS REQUIRED, corrected
+from round 1's false claim:**
+round-1 review simulated a depth-1 shallow clone (`actions/checkout@v4`'s default) and
+found the gate's boundary-commit diff fails with `fatal: bad object` there, which the
+non-vacuity guard turned into a misleading "0 files found" rather than naming the real
+cause - CI would have reded on the first push for a non-violation, never observed because
+the round-1 commit reached no remote branch. Fixed: `.github/workflows/ci.yml`'s checkout
+step now carries `fetch-depth: 0`, and the gate itself carries a pinned assertion that the
+boundary commit resolves, failing with a named "shallow clone? fetch-depth needed" message
+if it does not - belt and suspenders, so a future workflow edit that drops `fetch-depth`
+fails loud instead of silently reproducing the round-1 defect. Real-CI green from this
+fix is observable only post-merge (the conductor watches the run); it is not claimed here.
+The fixture clause (citation for a comment-incapable file goes in a sibling README.md or
+the consuming test) has NO mechanical check anywhere in this repo and stays attention-tier,
+same as the whole standard did before this gate - disclosed, not solved, and out of this
+gate's scope (it targets code files that CAN carry a comment). Calibrated against the real
+corpus at landing: 22 post-boundary code files exist at the landing commit (21 pre-existing
+plus the gate's own test file, itself `#42`-cited) and all 22 already carried citations
+(the "already the house habit" signal below held), so the gate landed green with zero
+fixes required to the checked corpus. This closes the parked bullet in #3/#4's queue for
+THIS one
+check; #3 (area-label presence) and #4 (PR docs review) remain open, unaffected.*
 
 **NO BACKFILL. THE BOUNDARY IS THE POINT (owner ruling, 2026-07-23).** Code that predates
 `d4db6f5` is not retrofitted - not now, not opportunistically, not by a future agent
@@ -1059,6 +1178,32 @@ session. Triage in-flight work first (wait for the car-and-review unit, or write
 packet that is a re-dispatch spec, not a bookmark), sweep pushes, checkpoint state in
 writing, sync the board, state CI's disposition, and close with three sentences: what
 landed, what is parked, what happens first tomorrow.
+
+## Chaos-monkey drills (standing practice, owner-ratified 2026-07-26, #34)
+
+Unannounced disruption is a standing instrument, the complement to the planned drill
+ladder (#21, run through baseline 2026-07-23 with zero divergence). Two modes, both live:
+
+- **OPPORTUNISTIC (the default):** every REAL disruption - a credit-limit kill, a crashed
+  session, a dead tool - is converted into a graded drill instead of smoothed over. Costs
+  nothing extra; the universe supplies the chaos.
+- **DELIBERATE (owner-sprung):** the owner may kill, break, or degrade anything, at any
+  time, unannounced. No schedule and no published target list, because a list would
+  un-chaos the monkey. Any anomaly a session hits may be a drill, and the correct
+  response is identical either way: stop on contradictions, reconstruct from durable
+  artifacts, grade honestly.
+
+**THE RUBRIC:** after the disruption, can the next session reconstruct the true state
+from durable artifacts ALONE - and what was lost is the score. The anti-gaming guard
+binds: a drill counts only if something LANDS (a corrected record, a filed defect, a
+changed mechanism); nothing landed means it was not a drill, it was cost.
+
+*Founding scar (2026-07-23, the first instance - not planned by anyone): a credit-limit
+kill at 16:21 left a branch and worktree with no checkpoint. The next conductor invented
+a benign story for the debris and improvised past a visible contradiction - and the
+drill landed #32, #33, two corrected friction rows, and the continuous-checkpoint
+practice. None of it was reachable by the planned gentle drill, which grades the
+graceful case - the easy one, the one the process was designed for.*
 
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence

@@ -16,8 +16,19 @@ test('hasRendererFor: an UNRECOGNISED lane id has no renderer (Law 7 - a free ob
   assert.equal(hasRendererFor({ id: 'ticket-queue-v2', position: 'live', data: { anything: true } }), false);
 });
 
-test('hasRendererFor: freight (dark, no data key) has a renderer - the honest-absence renderer', () => {
-  assert.equal(hasRendererFor({ id: 'freight', position: 'dark' }), true);
+// #84: freight went live - it now expects a real data.tickets array, the
+// same capability axis every other live lane already uses. The honest-
+// absence renderer (NO_DATA_BY_DESIGN) no longer covers it.
+test('hasRendererFor: freight with a well-shaped tickets[] array has a renderer', () => {
+  assert.equal(hasRendererFor({ id: 'freight', position: 'live', data: { tickets: [] } }), true);
+});
+
+test('hasRendererFor: LOAD-BEARING (#84) - freight with the data key entirely absent has NO renderer (it is no longer the honest-absence dark lane)', () => {
+  assert.equal(hasRendererFor({ id: 'freight', position: 'live' }), false);
+});
+
+test('hasRendererFor: freight with a MALFORMED (non-array) tickets key has NO renderer', () => {
+  assert.equal(hasRendererFor({ id: 'freight', position: 'live', data: { tickets: 'not-an-array' } }), false);
 });
 
 test('hasRendererFor: fuel (bagged, no data key) has a renderer - the honest-absence renderer', () => {

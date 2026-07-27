@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a19ef853c23ba9742",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-26T20:45:17Z",
+  "outcome": "done",
+  "findings": "Fixed the adjacent mislabeling at board.css:397-398 (same conflation class as MINOR-2): \"~79 dispatch records\" was actually the yard-inventory unassigned subset, not a store total. Corrected by dropping the specific number and stating \"dozens of dispatch rows and growing\", with the reasoning for omitting a count (append-only stores go stale the moment a figure is written down) folded into the comment itself. Comment-only, one line, nothing else touched. node --test re-verified 81/81 unaffected.",
+  "abstract": "Final pre-merge one-line fix for issue #62, correcting the last disclosed imprecision in board.css's dispatches-lane comment - a mislabeled dispatch count (unassigned subset presented as store total, same class as the previously-fixed MINOR-2 growth claim). Resolved by removing the specific number in favor of a durable qualitative phrase (\"dozens ... and growing\"), since any fixed count in an append-only store goes stale immediately. Comment-only; node --test 81/81 unaffected. Committed at 2067c773aec2c8b87bf95ef04dba808b17a81833 on car/view-62, parent 4d3b9bdbe57348815ebf5359cfc4d98a729e1f73.",
+  "subject_basis": "runtime-id",
+  "task_id": "view-62-car-r4",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:306945e6d14c2ad621a3f52cf2041e187b23c1c406a0fb081a254a1b23ee55e1"
+}

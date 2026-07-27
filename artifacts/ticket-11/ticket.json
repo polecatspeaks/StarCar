@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-11",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 11,
+    "title": "Tooling: per-train dispatch cost ledger from task-notification usage data",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/11"
+  },
+  "normalisation": [],
+  "integrity": "sha256:829ec516af66714dd8d85701d35da25eae2c52eaefb151ba0c6f2dfc98995363"
+}

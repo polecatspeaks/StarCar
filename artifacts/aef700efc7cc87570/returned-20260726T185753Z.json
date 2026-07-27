@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "aef700efc7cc87570",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-26T18:57:53Z",
+  "outcome": "done",
+  "findings": "All 6 findings (M1, M2a, M2b, M3, m1, m2, m3) plus the advisory fixed, prose-only, at commit 9080a5f0da14d35cb6a12ee4a9903cb072b8146d. Self-caught and disclosed one ripple: M3's comment expansion shifted the line numbers M1 had just repointed, plus one citation the reviewer had marked accurate (poll.go:373-376); resolved by converting the fragile internal poll.go citations to symbol references rather than re-chasing line numbers, closing the whole recurring class instead of reopening M1. Diff audited line-by-line: every change across the five touched code/test files is a comment or string literal, zero logic changed, matching the prose-only mandate with no honest-stop needed. All suites reconfirmed unchanged: Pester scripts/tests 195/195, store-checks 194/194, probes 24/24, Go board/ 73/73 across 5 packages with go vet clean, node --test whole-directory 71/71 (CI's own form), Playwright guard 2/2, CodeCitationPolicy 13/13.",
+  "abstract": "Addressed round-1 REJECT (3 Major, 3 Minor, all prose-only) on the server car's #27/#29 work. Fixed three dead file:line citations in elapsedbucket_test.go born stale in the same commit that wrote them, by pinning one to an immutable base-commit git-show reference and converting two others to symbol citations; fixed two falsified sibling comments (compose.js understating which freshness kinds carry ageBucketMs, ingest.test.js still describing #27's churn as live) plus an advisory failure-message string; rewrote poll.go's DECISION comment to state the measured trade correctly (value exact, recency not, nothing derives from the display, alarm-bearing state exact) instead of the disproven claim of preserved per-second precision; added one disclosure paragraph to the design doc's section 12b recording issue #29's untouched stalenessMs-retune ask and its measured consequence against the shipped 15000ms default and 1800s shop budget; corrected an under-covering line-range citation and an unreachable-path description in the gating matrix. Caught and fixed my own ripple mid-cycle: the M3 comment expansion invalidated the M1 fix and one previously-accurate citation, resolved by moving to symbol-based citation for the fragile targets rather than perpetuating a line-number chase. Zero code, test, or schema behavior changed, confirmed by diff audit; all suites re-run and unchanged from round 1's baseline. Nothing pushed.",
+  "subject_basis": "runtime-id",
+  "task_id": "server-27-29-car-r2",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:531a803c24db7aae88911387e3a32712f3386c03619e5454426301533e523d03"
+}

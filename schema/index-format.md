@@ -22,6 +22,12 @@ basis, cost, context_peak_tokens, producer, normalisation, integrity
 A field absent from a given record (optional, or not applicable to that `kind`) is simply
 omitted - it does not break the ordering of the fields present.
 
+The following schema properties are declared open-posture producer extras and are
+intentionally absent from the canonical order above (deliberate, disclosed - not omissions):
+`model` (#26, dispatched-only, sourced from `resolvedModel` in the Task tool_response),
+`body_file` (#26, migrated verdict records only), `subject_basis`, `task_id`, and
+`provenance` (#47, family-agnostic harness fields written by Produce-Artifact.ps1).
+
 ## `additionalProperties` posture
 
 **Open (`additionalProperties` is not set to `false`; the schema's default of `true`

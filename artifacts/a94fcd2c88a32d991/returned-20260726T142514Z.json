@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a94fcd2c88a32d991",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-26T14:25:14Z",
+  "outcome": "done",
+  "findings": "none - CR-3's framing was verified true against the actual code and fixture before the sentence was written; one clarifying sentence added, no code or test changes, both suites unchanged at baseline counts (182/182 and 166/166).",
+  "abstract": "Added one CR-3-tagged clarifying sentence to schema/vectors/adapter/README.md's Copilot stop scope note, explicitly distinguishing what copilot-stop-envelope-taskid.json pins (the producer's envelope-resolution code path via a Claude-format transcript fixture) from what it does not (the real Copilot runtime path via events.jsonl, already disclosed as deferred). Verified true by tracing vector input through Produce-Artifact.ps1 and Get-LastAssistantText/Read-JsonlObjects to the OBSERVED design-doc facts at 3b-6/3b-7 before writing the sentence. Suites unchanged: scripts/tests 182/182 (base and post-edit), scripts/store-checks 166/166 (base and post-edit). Committed at ffd1a2785f37f9251a2d4c3342919f72b1cd649b on car/adapters-49.",
+  "subject_basis": "runtime-id",
+  "task_id": "adapters-49-car-r1",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:8b0742a672a439dd90fbdf2280fdf8f7029207e9a09a1ff3d1b28a203b1155d8"
+}

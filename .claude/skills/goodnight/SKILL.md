@@ -1,6 +1,6 @@
 ---
 name: goodnight
-description: Session-end ritual - triage in-flight work (wait or write a resume packet), push sweep, state checkpoint, board pass, CI disposition, and the yard-status close. Invoke when the owner signs off for the day or asks to close the session cleanly.
+description: Session-end ritual - triage in-flight work (wait or write a resume packet), push sweep, friction sweep, state checkpoint, board pass, CI disposition, and the yard-status close. Invoke when the owner signs off for the day or asks to close the session cleanly.
 ---
 
 # /goodnight - closing the yard
@@ -23,6 +23,26 @@ it.
 
 Shared checkout clean; default branch pushed (release pipelines build from the REMOTE).
 Car worktree branches are exempt - they are recorded in the packet instead.
+
+## 2b. Friction sweep (#74 - while the context holding the friction is still alive)
+
+Before writing the checkpoint, sweep THIS session for unlogged friction: walk back
+through the session's own work and land a row in `docs/friction-log.md` for anything
+that cost time, produced a wrong diagnosis, or made a defect possible and was not
+logged when it happened. Then state the result in the yard-status close (step 6),
+always, in one of exactly three forms: **"friction sweep: N rows added"**, **"friction
+sweep: nothing new"**, or **"friction sweep: SKIPPED because X"**. The statement is the
+load-bearing half - it is a completeness assertion, and it makes an empty evening
+distinguishable from an unswept one. A close that says nothing about the sweep is an
+unswept close.
+
+*Scar (#74, 2026-07-27): the log-as-it-happens discipline decays exactly when the
+session is busiest, which is when friction is densest. The 07-26 marathon logged 8 rows
+by 20:05, then ZERO across the five busiest hours (#65 rounds 2-5 with a second swirl
+escalation and an owner amputation ruling, the #67 three-round train, the #69/#71 car
+and REJECT). The next morning's retro ran on a log that looked complete and was not,
+and the gap was found by the OWNER, not the conductor. By morning the context holding
+the friction has evaporated - session close is the last moment the sweep is cheap.*
 
 ## 3. State checkpoint (never skipped)
 
@@ -75,10 +95,36 @@ checkpoint (a killed dispatch fires no stop hook, so the budget gradient is the 
 that surfaces it). An un-backfilled gap is a first-class state, not an omission: close it
 with a `presumed-lost` record or carry it forward explicitly, never silently.
 
+**Also run `scripts/Reconcile-DispatchRecords.ps1` (#32) in the same sweep.** It
+cross-references `.claude/probe-logs/subagent-stop.jsonl` (a SEPARATE process from the
+producer, so it survives a producer write/commit failure) against the store, and catches
+a class `Detect-Dispatches.ps1` structurally cannot: a dispatch whose record was NEVER
+WRITTEN at all (git status clean, no signal, root cause unproven - hypothesis: git index
+contention). A nonzero exit names each gap's `agent_id`, `logged_at`, and missing kind -
+treat it exactly like an `_faults.log` entry above: not an omission, a first-class state
+to close with a `presumed-lost` record or carry forward explicitly in the checkpoint.
+
+**Epoch floor (fix cycle round 2, #32, finding M5 - measured, not assumed).** Wired into
+this sweep without ever being run against the real corpus, this script exited 1 with 9
+gaps on day one - every one at or before 2026-07-22T16:35:08Z, while the earliest
+producer-written record is 2026-07-22T16:40:01Z: all 9 were pre-producer-epoch firings,
+not defects. Fixed: the default floor derives from the store's earliest
+`returned-*.json`-named record (never a hand-set constant), and a probe firing logged
+before it is excluded as a NOTE, never a FLAG. Re-measured against the real corpus
+(read-only) after the fix: **8 of the 9 are now correctly excluded** (one summary NOTE
+line); **1 remains flagged** - `agent_id=adba6552daddbe6db`, the very first line of the
+real probe log, which predates the `_probe_logged_at` field's own introduction and
+carries no timestamp at all. It is almost certainly ALSO pre-epoch by file position, but
+the epoch-floor logic will not exclude it on that basis (Law 1: unknown renders as
+unknown, never a guessed exclusion) - a human reading this sweep may close it with a
+`presumed-lost` record if the position-based inference is trusted, exactly like any
+other un-backfilled gap above.
+
 ## 6. The yard-status close
 
 Three sentences, written to memory AND said to the owner: what landed, what is parked,
-what happens first tomorrow.
+what happens first tomorrow. Plus the friction-sweep line from step 2b (added / nothing
+new / skipped-because) - never omitted.
 
 ## 7. Weekly only: worktree prune
 

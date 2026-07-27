@@ -160,3 +160,528 @@ overlap found.
 - 2026-07-24 (conductor, owner catch): restart-gated probe treated as parked instead of actionable - after #47's train landed, the SessionStart verification probe (design 2c row 4) was left 'awaiting next restart' and the conductor moved to the next ticket, when the owner was PRESENT and a restart costs one sentence. Class: a gate whose key is held by the human reads as 'blocked' to an agent when it should read as 'ask now'. Same family as the pressure-release-valve reflex - report the gate to whoever owns the key at the moment it becomes the blocker. Fix: prompt the owner to restart when restart-gated work is the next item and the owner is engaged. (Ruled by owner in-session.)
 
 - 2026-07-24 (conductor, restart probe result): THE FOUR SESSIONSTART GUARDS ARE SILENT UNDER COPILOT CLI, and the entire-CLI fallback wrapper breaks the whole SessionStart invocation. Probed on the deliberate restart (design 2c row 4, Copilot leg). Evidence from this session's events.jsonl: exactly one `hookType: sessionStart` invocation fired, `success: false`, stderr `syntax error: unexpected end of file from 'if' command` - matching the fifth SessionStart line (the entire wrapper with the escaped-JSON printf fallback; the simple-form entire wrappers on other events succeed, and entire.log shows userPromptSubmit/SessionStart lifecycle events flowing). All four shop guards exit 0 under manual `sh` with correct output - the intersection dialect itself is FINE - but none of their stdout reached the agent context: Copilot runs SessionStart hooks and surfaces failures in events.jsonl, it does not inject hook stdout into the conversation. Corroborating: the PREVIOUS session's fresh start failed `'sh' is not recognized` (PowerShell parent, different failure), its resume failed with the same syntax error. Cost: nil this time (the guards' content was re-derived by hand in 4 tool calls via RESUME-HERE.md), but the class is DECORATIVE GUARD - a hook that runs-and-is-unheard is the branch-protection scar with a different transport. Landed: #50, design 2c row updated. | Guards announce to nobody on one of two runtimes | Decorative guard (output channel unverified per runtime) |
+
+- 2026-07-24 (conductor, self-caught same minute): EXTRACTOR LAST-MATCH SELF-POISONING. extract-copilot-report.py picks the LAST tool.execution_complete whose data contains the needle substring; the conductor's own diagnostic search for the verdict events (a powershell tool call whose OUTPUT quoted the toolCallIds) then became the newest matching event, so the next two extractions landed 325-char fragments of the diagnostic instead of the 8049/4437-char verdicts. Two wrong verdict files were landed and force-replaced within minutes (Land-Verdict's already-exists refusal was the tripwire that made the mistake loud - the guard worked). Class: a search whose results enter the corpus being searched - needle-based last-match extraction is unstable under agent self-observation. Fix applied in-session: exact toolCallId field match, not substring-over-data. The extractor (session-files tool, #47 backfill path) should gain an exact-id mode if promoted to the repo. | Two force-relands + one diagnostic round trip | Tool self-poisoning (observer in the corpus) |
+
+- 2026-07-26 (conductor, morning open): Claude-in-Chrome extension not connected at session
+  start (`tabs_context_mcp`: "Browser extension is not connected"); the yard was opened via the
+  `Start-Process <url>` shell fallback instead. Cost: one round trip. Class: a browser-automation
+  dependency is an unverified capability at session start; for "open a page" the one-line shell
+  fallback always works - reach for it first when the task is that small.
+
+- 2026-07-26 (conductor, self-caught by post-mutation verification): PROJECTV2 OPTIONS UPDATE
+  IS A REPLACE, NOT A MERGE. Executing #8 (add Backlog / In Review columns), the
+  updateProjectV2Field mutation regenerated ALL option ids and orphaned every item's status
+  assignment on the owner's live board (18 Done + 33 Todo became 51 null) - GitHub does not
+  match options by name. Caught in the very next command because the baseline distribution
+  was snapshotted BEFORE mutating; recovery re-derived every status from issue state
+  (CLOSED = Done, OPEN = Todo), reproduced the baseline exactly (18/33), 51/51 restored,
+  verified. Cost: ~3 minutes and one incident on a live surface. Class: a config mutation on
+  a third-party API is a guard-unverified-until-fired case - snapshot the per-item state
+  (not just counts) before touching field definitions, and verify the read-back immediately
+  after. Second lesson, cheap only by luck: the count-only snapshot happened to be
+  reconstructible from issue state; a board with hand-curated statuses would not have been.
+
+- 2026-07-26 (reviewer-caught, conductor honors the cap): THE SWIRL DOCTRINE FIRED ON ITS
+  FIRST LIVE TEST. Tooling train #50+#32: round 1 REJECT (5 Major), fix cycle closed all
+  eleven findings, round 2 REJECT (4 Major) - with 4 of 4 new Majors CREATED BY THE FIXES
+  and 3 of 4 clustered in one file (session-start-record.sh). Two of three swirl triggers
+  fired; the reviewer set a cap (no round 3 on the delivery mechanism) and escalated the
+  unquestioned premise: that the record script must determine session-batch identity by
+  itself, when its stdin is occupied and can never read the payload carrying session_id.
+  Two mechanisms were written for one requirement; each was correct against the tests
+  written for it; each lost guard output under conditions those tests did not model. Cost:
+  one extra review round, cheap - the cap fired BEFORE a third mechanism was written, which
+  is the exact failure the doctrine was built from (the harness-design 4-round scar).
+  Class: the reviewer-held cap works; a conductor cannot detect its own churn, and did not.
+
+- 2026-07-26 (reviewer-disclosed, blob-level restoration proven): PWSH .NET STATIC FILE
+  APIS IGNORE Set-Location. The round-4 reviewer's first injection wrote to the SHARED
+  CHECKOUT instead of its worktree: [System.IO.File]::* resolves relative paths against
+  [Environment]::CurrentDirectory, which Set-Location does not change. Restored and proven
+  (working blob == HEAD blob, git status clean); the meaningless injection result was
+  discarded rather than reported. Cost: one wasted injection cycle plus a transient
+  shared-checkout mutation. Class: pwsh maintains TWO current directories; any .NET static
+  API call in a worktree context must use absolute paths. Same family as the MSYS path
+  leak (07-22) - the shell's implicit path resolution is invisible until run.
+
+- 2026-07-26 (rotation-drill outcome + the round-4 root cause): GREEN IN THE AUTHOR'S
+  ENVIRONMENT IS A CLAIM ABOUT THAT ENVIRONMENT ONLY. Both round-4 Majors (a test red
+  under detached HEAD - the exact state of PR CI and every reviewer worktree; a runner
+  emitting a confident falsehood when CLAUDE_PROJECT_DIR is unset - the exact state of
+  every non-Claude-Code shell) were invisible from the car's attached, Claude-flavored
+  worktree and 100% reproducible in the environments the feature targets. The rotation
+  drill itself PASSED: a fresh reviewer reconstructed the four-round series from landed
+  verdicts alone, replicated the prior reviewer's injections by name, honored the r2 cap
+  correctly, and caught what continuation plausibly would have caught plus the
+  environment class - the verdict template carries everything it claims to.
+
+- 2026-07-26 (CI-caught, conductor hotfix): THE UBUNTU LEG CAUGHT WHAT NO DESK REVIEW
+  COULD. The tooling-train merge went red on ubuntu only (run 30205842313): the new
+  fifth-line wiring test's stub helper hardcoded the Windows PATH separator (";") and
+  wrote its stub without the exec bit - Git-bash on Windows forgives both, Linux forgives
+  neither, so `command -v entire` missed the stub and the hook honestly took its absent
+  branch. Five review rounds (two reviewers, both on this Windows box) could not have
+  seen it; the second CI leg (#14's whole purpose) fired on first contact. Fixed by
+  conductor hotfix within the five-leg boundary (mechanical, test-infra-only, red
+  observed in the only environment that can exhibit it, post-hoc adversarial review
+  dispatched). Class: PATH shape and exec-bit semantics are PER-OS; any test that
+  manipulates PATH or fabricates executables must use [IO.Path]::PathSeparator and grant
+  the exec bit - the same environment-class lesson as r4, one axis over (OS, not
+  attachment state).
+
+- 2026-07-26 (CORRECTION to the entry above, ordered by the hotfix post-hoc review - the
+  gate biting the conductor, which is the process working): the "UBUNTU LEG CAUGHT WHAT NO
+  DESK REVIEW COULD" entry overstated two counterfactuals, both mine. (F2) "no desk review
+  could" is DISPROVED by the record: round-1 verdict section A3 examined this exact
+  PATH-stripping helper for CI portability and cleared it - a hardcoded separator is a
+  STRUCTURAL fact, settled by reading, and a reviewer looked and missed rather than
+  could-not-have-seen. (F3) the commit's "only environment that can exhibit it" clause is
+  FALSE - WSL Ubuntu-24.04 is on this box and the post-hoc reviewer reproduced the failure
+  end-to-end there in one command, byte-exact fallback JSON included. (F4) "182/182" was
+  stated without its attached-vs-detached coordinate (true attached; detached is
+  181/0/1-skip). The CLASS LESSON STANDS unchanged; what falls is the inevitability
+  framing - and the difference matters because "could not have seen it" forecloses the
+  reading-check remedy that #57 now carries (two class siblings sat one grep away, one a
+  vacuously-green probe on the very ubuntu leg this incident vindicated).
+
+- 2026-07-26 (owner-observed calibration reading, positive): THE BRIEF GATES HELD AGAINST
+  TRAINED HELPFULNESS. During the #62 pre-merge one-liner, the car noticed an ADJACENT
+  same-class defect one line away and - instead of fixing it unauthorized (the default
+  agent gradient: scope creep dressed as helpfulness) - disclosed it with the exact words
+  "a contradiction I don't own" and left it. The owner's read: "Normal subagents would
+  have been overly helpful there." Why it worked: the brief put disclosure on the SUCCESS
+  branch ("do not fix beyond the ruled list without it being named"), which is the
+  gradient-shaping doctrine operating as designed. Cost: zero - one authorized follow-up
+  line. Class: truth-as-success-shape converts the helpfulness gradient into disclosure;
+  keep writing bounded scopes with named escape hatches into every directed brief.
+
+- 2026-07-26 (conductor self-caught, owner-adjudicated correction): THE CONDUCTOR FABRICATED
+  A COMMIT SHA IN A LANDED VERDICT HEADER. Landing the tooling-65 r1 verdict, the conductor
+  typed the base as 4f2ae978d1e5... where the real commit is 4f2ae978d4628c67... - a full
+  40-char SHA invented by extending a short prefix from memory, in the header field the
+  record itself names "the lookup key". Caught minutes later by the conductor re-deriving
+  the SHA via git rev-parse; the three view-train verdicts checked clean. Correction path
+  hit the reality-vs-spec valve: Land-Verdict.ps1's overwrite guard refused ("a record, not
+  a draft"), the conductor escalated instead of self-adjudicating -Force, and the owner
+  ruled option (a): re-land with the corrected header, disclosure in the commit, wrong
+  version preserved in git history and on the checkpoint branch. Owner's framing: "an
+  honest effort when the machine breaks. Until we figure out the correct pressure valves."
+  Class: CONDUCTOR-TYPED COORDINATES ARE UNVALIDATED - Land-Verdict accepts any string as
+  -Base; one git rev-parse --verify (and a check that the body's own base references match)
+  would have refused the fabrication at landing. Same class as the #65 gate one layer up:
+  hand-typed coordinates need mechanical resolution wherever they enter a durable record.
+  Tooling fix is small and belongs in Land-Verdict itself.
+
+- 2026-07-27 (conductor, morning open): the runtime's auto-mode classifier denied a COMPOUND
+  command because one segment was `git clean -fd` (worktree reset per the re-dispatch spec) -
+  the non-destructive copy bundled with it was lost too. Splitting into copy, then a targeted
+  Remove-Item of the single untracked file, sailed through. Cost: one split-and-retry round
+  trip. Class: bundling a destructive op into a compound command forfeits the whole command;
+  sequence destructive steps alone, after their prerequisites have already landed.
+
+## 2026-07-27 - reconstruction of the 07-26 evening (#74)
+
+Rows marked RECONSTRUCTED were never logged live - they are rebuilt from durable
+artifacts the morning after, which is itself the cost the first row records.
+
+- 2026-07-26 evening, RECONSTRUCTED (owner-caught 07-27, the finding that opened #74): THE
+  LOG ITSELF LAPSED. Eight rows logged by 20:05, then ZERO across the five busiest hours
+  (20:05 -> 00:58: #65 rounds 2-5 incl. the second swirl escalation and the owner's
+  amputation ruling, the #67 three-round train, the #69/#71 car + r1 REJECT). The morning
+  retro then ran on a log that looked complete and was not; the gap was found by the OWNER
+  asking "what happened?", not by any instrument. Cost: the evening's tool-level friction
+  evaporated with the context; a transcript-mine dispatch is reconstructing what it can.
+  Class: an as-it-happens discipline has no backstop - vigilance decays exactly when the
+  session is busiest, which is when friction is densest; only a close-time completeness
+  assertion (the #74 goodnight sweep, landed same day) distinguishes an empty evening from
+  an unswept one. Note: caps, the r4 rotation, and review findings from the window are NOT
+  re-rowed here - the landed verdicts already carry them; this log carries what THEY do not.
+
+- 2026-07-26 ~20:30-21:58, RECONSTRUCTED from the commit record and verdicts: THE SWIRL
+  FIRED TWICE IN ONE DAY, second time on #65 - r3 REJECT-ESCALATED (cap fired, owner
+  adjudication owed), owner ruled AMPUTATION of the citation-resolver header (de9cda2), r4
+  ran a fresh-reviewer rotation on the mechanical round-4 trigger (first non-drill use),
+  APPROVE at r5. Same class as the morning's #50+#32 swirl and the founding harness scar:
+  a PROSE artifact carrying structured claims (a header asserting resolver coverage)
+  attracts churn that closes findings and opens new ones in place. Cost: two extra review
+  rounds before the amputation dissolved the defect generator. Class: when successive
+  rounds rework the same prose surface, the surface is the defect - remove or mechanize it
+  rather than revise it; the swirl doctrine detects this but only AFTER rounds are spent,
+  so the cheaper catch is at design time (match the instrument to the artifact).
+
+The four rows below were RECONSTRUCTED by a read-only transcript-mine dispatch (#74,
+task-id friction-mine-0726-evening) against the conductor-session mirror at
+`entire/checkpoints/v1:f6/15a8f220c5/0/transcript.jsonl`; each carries a grep-able
+locator phrase so a second party can re-derive it from that file.
+
+- 2026-07-26 ~20:05, RECONSTRUCTED (mined): GITHUB PROJECTS PROPAGATION RACE - a compound
+  `gh project item-add; item-list; graphql update` for issue #72 failed with `Could not
+  resolve to a node with the global id of ''` because the item-list read ran before the
+  just-added item propagated; a `Start-Sleep -Seconds 3` retry succeeded. Cost: one
+  failed command + retry. Class: a just-mutated ProjectsV2 item is not immediately
+  readable - board writes need a poll-until-found or a propagation buffer, never an
+  assumption of read-after-write consistency. (Locator: grep the transcript for the
+  quoted error.)
+
+- 2026-07-27 ~01:01, RECONSTRUCTED (mined): WRITE-BEFORE-READ GUARD TRIPPED AT THE WORST
+  MOMENT - the goodnight rewrite of `RESUME-HERE.md` was refused with `File has not been
+  read yet. Read it first before writing to it.` although the file had been read earlier
+  in the same marathon session; a throwaway 10-line Read + retry succeeded. Cost: one
+  failed Write + extra Read at the single most time-pressured moment of the close.
+  Class: the harness's read-before-write credit does not durably survive a very long
+  session - defensively re-Read any long-lived file immediately before a late-session
+  Write. (Locator: grep for the quoted refusal.)
+
+- 2026-07-26 ~22:54, RECONSTRUCTED (mined): PARTIAL GIT-ARCHIVE EXTRACTION IS
+  WRONG-BY-DEFAULT - the #67 r1 reviewer's base-suite re-derivation extracted only
+  `board/web` from `git archive` and two suites failed on repo-relative dependencies
+  (`artifacts/`, `schema/`) outside that directory; full-tree extraction was the
+  reproducible form. Cost: one wasted archive+run cycle inside a review. Class: a
+  subdirectory is not self-contained for archive-based suite reproduction when tests
+  carry repo-relative paths - full-tree is the default, not the fallback. (Locator:
+  grep for "A first attempt extracting only".)
+
+- 2026-07-26 20:31-21:51, RECONSTRUCTED (mined, lower confidence as friction): the
+  GitNexus staleness notice fired identically after EVERY commit across all four #65
+  car rounds, and each round spent a disclosure clause on it - four disclosures of one
+  unchanged, already-accepted condition in one evening. Cost: negligible per instance;
+  the hazard is the crying-wolf shape this log has already rowed twice (07-22, 07-23).
+  Class: a notice that repeats unchanged after acceptance should self-suppress or fire
+  only when newly consequential; watch for recurrence before building anything.
+
+- 2026-07-27 ~08:00 (conductor, live): LAND-VERDICT'S -TaskId IS THE DISPATCH ID, NOT THE
+  ENVELOPE'S task-id - two id namespaces share one name. Fed the envelope form
+  (view-69-71-review-r2), got #32's documented lying error ("A dispatch that never
+  completed has no verdict to land") for a dispatch that had completed minutes earlier;
+  the r1 verdict header held the answer (its "task id" is the dispatch hash). Cost: one
+  failed landing + one diagnostic grep. Class: a parameter that shares a name with a
+  different field on the same artifact's envelope will be fed that field eventually -
+  rename one, or accept both and resolve; belongs with #32's error-message fix.
+
+- 2026-07-27 ~08:55 (conductor, live, two shell traps in one board-update sequence, second
+  produced a LYING third-party error): (1) backtick-escaped quotes inside a double-quoted
+  `gh api graphql -f query="..."` mangled at the parser ("Expected VALUE, actual:
+  UNKNOWN_CHAR") - fixed by GraphQL variables, no inline escaping. (2) The retry passed
+  `-f o=$map[$n]` in ARGUMENT MODE, where pwsh expands only simple `$var` - GitHub
+  received the literal string "System.Collections.Hashtable[69]" and answered "The single
+  select option Id does not belong to the field", which read as option-id regeneration
+  (the 07-26 ProjectV2 scar) and cost a re-derivation chase before the real cause
+  surfaced. Read-back verification caught both failures immediately (the mutation never
+  landed silently). Cost: two failed rounds + one wrong-diagnosis chase. Class: pwsh
+  argument mode does not expand index/member expressions - assign to a simple variable
+  first; and a third-party error names ITS view of the symptom, not your cause - check
+  what you actually sent before believing what the server says it means.
+
+- 2026-07-27 ~09:25 (CAR-CAUGHT, conductor's defect): THE #75 BRIEF NAMED A PRECEDENT THAT
+  DOES NOT EXIST. The brief told the car to add `TaskID` to `board/fold/fold.go`'s
+  `DispatchEntry` "following the recordDir precedent" - but recordDir is NOT on that struct
+  or anywhere in `board/fold`; it lives in `board/assemble`. Worse, `board/fold` is the
+  CROSS-LANGUAGE CONFORMANCE KERNEL (`schema/vectors/README.md`: the landed pwsh detector
+  and the Go port both conform to the fold vectors under the D18 cross-verifier), so
+  following the brief would have put a Go-only field into a two-implementation contract.
+  The car honest-stopped, cited its greps, and implemented at the correct layer. Cost: nil -
+  the gate caught it. Aggravating: the conductor HAD grepped `DispatchEntry` and seen its
+  full field list (no recordDir in it) minutes before writing the brief, then wrote the
+  precedent claim anyway - reading and then asserting the opposite is worse than not
+  looking. Class: A BRIEF'S "FOLLOW THE PRECEDENT AT X" IS A STRUCTURAL CLAIM AND MUST BE
+  RESOLVED BY OPENING X, never by memory of a related file; same family as the 07-23 row
+  where a brief asserted a defect that did not exist. What made it cheap: the brief put
+  honest stops on the SUCCESS branch, so the car reported the contradiction instead of
+  improvising - the gradient-shaping doctrine paying for itself a second time (cf. the
+  07-26 owner-observed calibration row).
+
+- 2026-07-27 ~09:29 (conductor, self-caught by verifying instead of believing): A FAILED
+  TASK REPORTED A HEALTHY SERVICE, AND LEFT AN UNTRACKED ORPHAN. The background task
+  running the board server (`go run ./server`) reported exit 255 / "failed", yet port 4600
+  was still listening and `/api/snapshot` returned seq 470 against the real store -
+  `go run` compiles to a temp binary and execs a CHILD, so killing or losing the parent
+  leaves the child serving with no task tracking it. Two misleading halves: a red that is
+  not a red (the service is up), and a live process the session cannot cleanly stop or
+  observe through its own task system. Cost: nil this time - the notification was checked
+  rather than believed, which is the only reason it did not read as "the board is down".
+  Class: `go run` is a WRAPPER, not the process; any long-running service started through
+  it needs its liveness judged by PROBING THE SERVICE, never by the launcher's exit code -
+  and orphan cleanup belongs in the session-end sweep (a port check, not a task list).
+  Same family as the CI-watch scar one layer down: sampling a launcher is not observing a
+  service.
+
+- 2026-07-27 ~09:37 (conductor, self-caught before merge): I APPENDED TO A FILE A CAR HAD
+  CHECKED OUT, guaranteeing a merge conflict in the one file every car is REQUIRED to
+  touch. Three friction rows landed on dev (e0a6a43, 4f7f05f, and this one) while car #79
+  was live and - correctly, per the log-as-it-happens rule - appending its OWN rows to
+  `docs/friction-log.md` in its worktree. Both parties did the right thing and the
+  collision is structural: an append-only log plus concurrent branches means every
+  multi-car day ends in a conflict on the same trailing lines. Cost: nil so far (resolvable
+  by keeping both sets - the rows are independent appends, never edits to each other), but
+  it is a standing tax and a place where a careless resolution could DROP a car's row,
+  which is silent loss of the record (Law 4). Class: the friction log is a
+  MULTI-WRITER APPEND SURFACE with no merge strategy declared; the resolution rule is
+  always UNION, never pick-a-side, and a conductor merging one must diff both parents'
+  additions before resolving. Candidate mechanisms if this recurs: a `.gitattributes`
+  union merge driver for this one file, or per-session section files that concatenate -
+  neither built today, deliberately (one occurrence is not yet a pattern).
+
+- 2026-07-27 ~10:05 (two independent observers, same class, one morning): BROWSER-TEST PORT
+  CONTENTION IS A LOAD-DEPENDENT FLAKE FAMILY, and the fix is already demonstrated one
+  directory over. The #75 reviewer saw `browser-health-trend-cascade.test.js` fail 4 tests
+  inside a full-suite run under concurrent Chromium+Go-server load, then pass 4/4 alone
+  under identical conditions; the #75 car then saw `browser-dispatch-row-taskid.test.js`
+  fail with `bind: Only one usage of each socket address ... is normally permitted`,
+  passing 5/5 alone and 225/225 on a full-suite re-run. Contrast, measured the same
+  morning: #79's probe suite binds port 0 (kernel-assigned) and its reviewer ran THREE
+  CONCURRENT instances with zero collisions while a developer's board held 4600. Cost so
+  far: two false reds and two re-runs, plus the standing tax of teaching everyone to
+  re-run before believing. Class: a test that binds a FIXED port cannot be run concurrently
+  with itself or its siblings, and the flake it produces is indistinguishable at a glance
+  from a real failure - which is the crying-wolf shape this shop treats as worse than no
+  instrument. The remedy is not vigilance, it is port 0 plus reading the bound address
+  back, already proven here. Deliberately NOT fixed inside the #75 train (out of its
+  scope, pre-existing); the reviewer was asked to rule whether it is a real fragility
+  worth its own ticket rather than have the conductor decide it alone.
+
+- 2026-07-27 ~12:20 (design-87 author, SELF-DISCLOSED; RECURRENCE of a logged class):
+  PWSH .NET STATIC FILE APIS IGNORE Set-Location - AGAIN, and this time it also made a
+  fault injection VACUOUS. The #87 design author used `[System.IO.File]` with a RELATIVE
+  path inside its worktree; .NET resolves against `[Environment]::CurrentDirectory`, which
+  `Set-Location` does not change, so the write landed in the SHARED CHECKOUT as a 0-byte
+  untracked file. Second-order cost, and the worse half: the run that was supposed to
+  fault-inject the citation gate therefore injected NOTHING and reported green - a
+  decorative guard produced by a path bug. Caught by the author, cleaned, and redone with
+  absolute paths plus an explicit `[Environment]::CurrentDirectory` set; shared checkout
+  verified clean by the conductor independently (`git status --porcelain` empty, the stray
+  path absent). Cost: one wasted injection cycle, no tracked state touched.
+  **This exact class is already in this log at 2026-07-26** (round-4 reviewer, same
+  mechanism, same shared-checkout target). A logged instance did not immunise the next
+  agent, because nothing MECHANICAL stands between a relative .NET path and the shared
+  checkout - the rule lives only in prose that a fresh dispatch may never read. Class:
+  pwsh maintains TWO current directories, and worktree isolation is enforced by discipline
+  rather than by mechanism. Candidate remedy if it recurs a third time: brief-level
+  boilerplate is already failing, so the next tier is a guard that refuses writes outside
+  the dispatch's own worktree, or simply banning bare `[System.IO.File]` in favour of
+  cmdlets that honour `Set-Location`.
+  SECOND, SEPARATE LESSON from the same disclosure, worth as much as the first: **the
+  citation gate scans `git ls-files` ONLY, so an UNTRACKED file is invisible to it.** The
+  author's first green run never saw the new document at all and proved nothing; it only
+  became a real check after staging. Any repo-policy gate keyed to `git ls-files` silently
+  passes new work until it is staged - which is exactly when an author is most likely to
+  believe they have been checked.
+
+- 2026-07-27 ~13:00 (design-87 author, SELF-DISCLOSED, caught by CHECKING not trusting): A
+  POWERSHELL BLOCK ABORTED MID-WAY AND LEFT A FAULT INJECTION LIVE ON DISK. The author
+  injected a bad citation to prove the gate non-vacuous, then ran Pester; Pester's non-zero
+  exit aborted the rest of the block, so the RESTORE never executed and the corrupted file
+  sat on disk. It was caught only because the author verified the restore by sha256 instead
+  of assuming the block had completed. Cost: nil - caught immediately; but the failure mode
+  is a corrupted artifact silently surviving a review. Class: **a multi-statement shell
+  block is not a transaction.** Any injection sequence must verify its own restore by hash
+  as a SEPARATE step, never trust that the block ran to the end - and note the shape is the
+  inverse of the usual worry: the danger is not that the injection fails to apply, it is
+  that the RESTORE fails to apply and nothing says so. Same family as the same author's
+  round-1 shared-checkout write: both are "I assumed the code I wrote actually ran".
+  Standing consequence adopted in briefs from this point: every fault-injection instruction
+  now carries "verify the restore by sha256 rather than assuming the block completed".
+
+- 2026-07-27 ~13:03 (conductor, self-caught while setting up round 2): I DISPATCHED A
+  REVIEWER INTO THE AUTHOR'S OWN WORKTREE. Design review round 1 was pointed at
+  `starcar-wt/design-87`, which is the design AUTHOR's worktree, not a detached review
+  copy. This repo has a scar for exactly this (2026-07-22: a reviewer detected live
+  mutation by file mtime and correctly quarantined its verdict to a frozen commit). It was
+  harmless only because the author happened not to be running at that moment - luck, not
+  design. Corrected for round 2 with a separate detached worktree at the rev-2 commit.
+  Class: ONE WORKTREE = ONE ACTOR is a rule the conductor keeps honouring for CARS and
+  forgetting for DESIGN dispatches, because a design "is only a document" - but a document
+  under review is exactly as mutable as code. The pattern to hold: every review of any
+  artifact gets its own detached worktree at the frozen SHA, with no exception for prose.
+
+- 2026-07-27 ~13:15 (design-87 REVIEWER, self-corrected after the AUTHOR disputed it;
+  reviewer-recommended landing, and it does NOT count against the document):
+  `ConvertFrom-Json` SILENTLY COERCES AN ISO-8601 STRING TO A LOCAL `System.DateTime`, AND
+  A LANDED VERDICT PUBLISHED THE RESULT AS AN OBSERVED COORDINATE. The round-1 design
+  verdict quoted a probe-log span as `07:18:40`-`19:08:35`. The raw bytes read
+  `2026-07-24T11:18:40.178633+00:00` and `2026-07-25T23:08:35.962940+00:00`. Same 20
+  records - the reviewer had rendered UTC into machine-local Eastern time and stated it as
+  the field's value. Measured by the reviewer on re-check: `ConvertFrom-Json` returns
+  `System.DateTime`, NOT `String`, and renders local. The AUTHOR caught it and disclosed a
+  divergence from its own reviewer's verdict rather than quietly adopting the reviewer's
+  numbers - which is the loudly-not-quietly rule paying out in the direction it is hardest
+  to apply, upward at a gate. Class: **a tool's implicit type conversion is invisible until
+  you read raw bytes**; any timestamp, id, or coordinate quoted into a durable record must
+  come from the raw text, never from a parsed object's default rendering. Fourth member of
+  today's family (pwsh two current directories; a shell block that is not a transaction;
+  gates blind to untracked files) - every one is "a layer did something I did not ask for
+  and did not announce".
+  **THE RECORD IS NOT EDITED.** The round-1 verdict is landed, integrity-hashed and public
+  with the wrong coordinate in it; the correction lives in the round-2 verdict that found
+  it. That is the showcase-never-edits-the-record rule working as designed - a reader
+  following the series sees the error and its correction, which is worth more than a
+  silently-clean artifact.
+
+- 2026-07-27 ~13:50 (adapter-84 car, SELF-DISCLOSED, caught by DIFFING not remembering): A
+  RESTORE FROM A STALE BACKUP SILENTLY REVERTED COMPLETED WORK. Mid-fix-cycle the car took a
+  fault injection, then restored from a backup file in `/tmp` that PREDATED its own round-2
+  edits - so the restore did not undo the injection, it undid the FIX. Both of that round's
+  Law-1 remedies vanished from disk with no error and no signal. Caught because the car ran
+  `git diff` against HEAD and saw a 4-line whitespace delta where it expected the full
+  round-2 diff; re-applied from its documented edits, re-verified green, then sha256-pinned
+  before touching anything else. Cost: nil, disclosed rather than smoothed.
+  Class: **a backup is only a restore point if it was taken AFTER the work you want to
+  keep.** The failure is silent by construction - restoring a file always "succeeds", and
+  the only signal is that the content is wrong, which nothing checks. Third member of
+  today's assume-it-worked family (a shell block that aborted mid-way leaving an injection
+  live; a design author's write landing in the wrong repo; this). The durable habit, now
+  written into review briefs: **verify a restore against HEAD by diff or hash, never against
+  your own memory of what the file held** - and prefer `git checkout -- <path>` or an
+  out-of-repo clone over hand-rolled backup files, because git already knows the correct
+  content and a `/tmp` copy does not.
+
+- 2026-07-27 ~15:35 (car-caused, reviewer-caught, conductor complicit): READING AN ISSUE
+  BODY WITHOUT ITS COMMENTS MISSES THE OWNER RULINGS - and in this shop the rulings ARE
+  the comments. The #91 car ran `gh issue view 90 --json body -q '.body'` and concluded
+  from the body alone that #90 covered only CSS work with "no area concept at all". #90
+  in fact carries an OWNER RULING in its comments - "Four columns ... PHASE is ruled to
+  mean the issue's `area:*` label ... this is no longer a CSS-only ticket" - which is
+  precisely what the brief had said. The car then published an accusation against the
+  brief into a commit message about an OPEN ticket, where a future car scoping #90 off
+  that message would have dropped the column the owner explicitly ruled in.
+  **The conductor made it worse by CONCEDING.** Told the car had found an error in a
+  ticket the conductor itself wrote, the conductor accepted it without checking and
+  relayed it to the owner as fact. `CLAUDE.md` lists "conceding a finding you could have
+  disproved" among the only REAL failures, right beside defending one you cannot -
+  agreeableness pointed inward is still agreeableness, and accepting blame is as much a
+  failure to verify as deflecting it. Caught by the adversarial reviewer, which opened
+  #90 WITH its comments.
+  Class: **in this repo an issue's BODY is the request and its COMMENTS are the rulings.**
+  The tracking doctrine's own carve-out puts owner rulings in comments by design ("the
+  provenance is that it came from the HUMAN"), so `--json body` is a structurally
+  incomplete read of any ticket that has been discussed. Standing habit, now written into
+  briefs: **`gh issue view N --comments`, always** - and a finding derived from a body-only
+  read is not yet a finding.
+
+- 2026-07-27, structural fact FOUND BY THE MINE (not friction, recorded so nobody
+  re-digs): the per-dispatch "Entire-Checkpoint" blobs on the checkpoint branch are
+  periodic snapshots of the SINGLE conductor session, not separate car/reviewer
+  transcripts - a dispatched agent's own tool-by-tool work is mirrored ONLY as the
+  final report block embedded in the conductor's transcript. Consequence for every
+  future reconstruction and chaos-drill grade: sub-agent-level friction below what an
+  agent chooses to narrate is NOT recoverable from the public mirror. The mine's two
+  "suspicious injected system-reminder" flags were both explained benign on triage:
+  one was the repo's own GitNexus PreToolUse context hook, the other the harness
+  re-listing the goodnight skill mid-run because #74's edit landed while the miner was
+  running - the miner's refuse-and-report reflex was correct anyway.
+
+- 2026-07-27 ~09:30 (car/probe-79, live, #79): PSEVENTING A DOTNET PROCESS WITH A RAW
+  `.add_OutputDataReceived({...})` SCRIPT BLOCK CRASHES THE WHOLE PWSH HOST - a
+  `System.Diagnostics.Process`'s async output/error events fire on a threadpool thread
+  with no PowerShell runspace attached; a bare `{...}` handler throws "There is no
+  Runspace available to run scripts in this thread" and takes the entire pwsh process
+  down with it (observed: `Invoke-Pester` itself died mid-suite, not just the one test).
+  `Register-ObjectEvent -InputObject $proc -EventName OutputDataReceived -Action {...}`
+  is the correct mechanism - its `-Action` runs on the engine's event queue, which has a
+  real runspace. Cost: one ~5-minute hung/crashed background run plus manual process
+  cleanup (stray `board-server-probe.exe`/`go.exe` left running) before the cause was
+  isolated. Class: any PowerShell code that spawns a real subprocess and wants to react
+  to its async output/error streams must use `Register-ObjectEvent`, never a raw .NET
+  event-delegate script block - this generalizes past this one probe to any future
+  suite that drives a long-lived process from pwsh (`scripts/probes/
+  ManifestBoardJoin.Probes.Tests.ps1`'s `Start-BoardServerAgainst` is now the landed
+  exemplar).
+
+- 2026-07-27 ~09:45 (car/probe-79, live, #79): A JUST-KILLED WINDOWS PROCESS CAN STILL
+  DELETE-LOCK ITS OWN .EXE FOR A SHORT WINDOW AFTER `Process.WaitForExit()` RETURNS - a
+  single `Remove-Item -Recurse -Force -ErrorAction SilentlyContinue` on the scratch
+  directory containing `board-server-probe.exe` silently left the whole directory
+  behind (no error surfaced, because `SilentlyContinue` swallowed it) even though the
+  process handle had already exited; a manual `Remove-Item` moments later succeeded
+  with no special handling. Cost: one leftover ~debris directory under
+  `%TEMP%\mbj-probe-*` caught only by an explicit post-run `Get-ChildItem` audit
+  (would have silently violated #43's standing no-debris ticket otherwise). Class:
+  cleanup code that deletes a directory containing a just-terminated process's own
+  binary needs a short bounded retry (this probe uses 10 attempts x 300ms), never a
+  single silently-swallowed attempt - `SilentlyContinue` on a cleanup step turns a
+  transient OS lock into permanent, invisible debris.
+
+- 07-27 | **The quiesce is only as good as the last thing pushed after it - and the
+  harness itself is what pushes.** PR #92 was quiesced by the book: index regenerated,
+  committed, CI watched to terminal green at `0fd4a83`, nothing dispatched. Then the
+  out-of-family review agents were launched, and the producer hook wrote two `dispatched`
+  records into `artifacts/` on its own - which is the harness working exactly as designed.
+  Those pushes left `artifacts/index.md` stale and the PR-to-main staleness gate (#20)
+  reded on both legs at `35ef62d` (run 30301608699). Cost: one red CI cycle plus a
+  regenerate-commit-push-rewatch loop, and the PR body's CI coordinates went stale twice
+  in twenty minutes. Class: **the quiesce step is written as a moment, but the thing it
+  asserts is a PROPERTY that any later push can break - including a push nobody typed.**
+  The gate caught it, which is the system working; the cheaper fix is that a quiesce is
+  not complete until dispatching stops, and reviewing a PR IS dispatching.
+
+- 07-27 | **A verification claim in a PR body is a living document and rots on the first
+  push.** The #92 body asserted `dev` at `0fd4a83`, run 30299683622, 332 index rows. Three
+  commits later every one of those coordinates was false, on the most public surface this
+  repo has, while the PR sat open for review. Nobody looked at it wrong; the claim was true
+  when written. Cost: no wrong decision (caught before the merge ruling), corrected in
+  place with the supersession stated rather than quietly re-written. Class: the
+  living-contracts rule ("the commit that invalidates a document updates that document, in
+  the same commit") has no mechanical reach into GitHub-hosted prose. A push that moves the
+  head of an open PR invalidates that PR's own assertion block and nothing anywhere knows
+  it. Candidate mechanism if this recurs: the watcher already knows the sha and the run id.
+
+- 07-27 | **The producer cannot record an out-of-family review: no envelope task-id, and
+  the transcript format is unreadable.** The owner's Copilot CLI review of PR #92 fired
+  SubagentStop twice (20:16:49Z, 20:18:33Z) and both firings landed in `artifacts/_faults.log`
+  as `transcript read failure: no assistant message with text found in
+  ...\.copilot\session-state\<id>\events.jsonl` plus `payload carries no envelope task-id to
+  pair on (agent_name is a type, not a pairing key)`. It also posted nothing to the PR. Cost:
+  none yet - the store honestly recorded that it could not record. Class: the recurrence of
+  the 07-25 Copilot-pairing class, now with a second cause stacked on it (transcript
+  grammar), and it is the concrete shape of the forward note in `CLAUDE.md`'s PR cycle -
+  "a Copilot review is a `returned` record from a different producer". The external adapter
+  the artifact schema's open `producer` posture was designed for does not exist yet, so
+  every out-of-family review is currently invisible to the board that exists to show reviews.
+
+- 07-27 | **A torn line in the SubagentStop probe log - the reconciler's own input is not
+  write-atomic.** `Reconcile-DispatchRecords.ps1` emitted `WARNING: could not parse
+  probe-log line - skipped: }` during the goodnight sweep. Audited all 4074 lines of
+  `.claude/probe-logs/subagent-stop.jsonl`: exactly one is malformed, line 3615, a lone
+  `}` between two well-formed ~1450-char records. The neighbours both parse, so nothing
+  obviously truncated - the signature is an interleaved concurrent append (two hook
+  processes writing the same file, one's tail landing on its own line). Cost: none proven,
+  and that is the problem. Class: **the instrument built to catch dispatches whose records
+  were never written has an input that can silently lose a firing to a torn write, and its
+  failure mode is a WARNING it survives.** A skipped line is indistinguishable from a
+  dispatch that never fired, which is the exact blindness `Reconcile-DispatchRecords.ps1`
+  exists to remove. Filed as a ticket rather than fixed inline.
+
+- 07-27 | **`gh api repos/O/R/pulls/comments/{id}/replies` returns 404; the reply path
+  needs the PR NUMBER, not the comment id alone.** The documented-looking shape is wrong -
+  the working call is `repos/O/R/pulls/92/comments/{id}/replies`. Cost: one failed call
+  and a wrong first diagnosis (read as "the comment id is stale" rather than "the path is
+  incomplete"). Class: an API path that is *almost* right fails in a way that points at the
+  data instead of at the path, so the first hypothesis is always the wrong one.
+
+- 07-27 | **The bot resolves its own review threads, so "unresolved thread count" is NOT a
+  measure of OUR triage completeness.** `CLAUDE.md`'s PR-cycle definition-of-done is a
+  GraphQL query counting unresolved `reviewThreads`, and it is written as the mechanical
+  check that every thread closed with its provenance. Measured on PR #92: four of Qodo's
+  five threads read `RESOLVED` before the conductor resolved anything - the bot
+  auto-resolves the ones it labels "Review recommended" and leaves only "Action required"
+  open. Cost: none this time (all five were triaged with replies anyway), but the query
+  would have returned a passing number for a PR nobody had triaged at all. Class: **a
+  definition-of-done that can be satisfied by a third party is not a definition of done.**
+  The check measures thread state, which we do not solely control; what it is meant to
+  measure is whether WE replied. Sharpen it to count threads lacking a reply from us, not
+  threads lacking resolution.
+
+- 07-27 | **Running a `.ps1` through the Bash tool produced a FALSE GREEN, not an error.**
+  Dispatched `./scripts/Watch-CI.ps1 ... 2>&1 | tail -6; echo "WATCH-EXIT=$?"` via the Bash
+  tool. Bash executed the PowerShell script as a shell script, choked on the comment-block
+  opener (`syntax error near unexpected token 'newline' ... '<#'`) - **and reported
+  `WATCH-EXIT=0`**, because `$?` captured `tail`'s exit through the pipe, not the script's.
+  Cost: caught immediately by reading the output, then re-run correctly through the
+  PowerShell tool (green, run 30304491679). Class: **recurrence of the known bash/pwsh
+  boundary class, with a sharper edge than the logged instances - this one does not mangle
+  a string, it fabricates a GREEN VERIFICATION.** `Watch-CI.ps1`'s whole design is that its
+  exit code keeps RED distinct from could-not-observe (0/10/1), and running it through the
+  wrong shell collapses all three into 0. Two compounding causes: the wrong tool for the
+  file type, and `$?` after a pipeline reporting the LAST stage rather than the script.
+  Standing fix is the existing rule (pwsh work goes through the PowerShell tool); the new
+  part worth carrying is that this particular misroute lands on the honesty surface.

@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-57",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 57,
+    "title": "Hardcoded PATH-separator class: vacuous SubstrateFloor probe on Linux + LandVerdictRider sibling; gate it mechanically",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/57"
+  },
+  "normalisation": [],
+  "integrity": "sha256:5ae1d03832bc553d2cbd90a447da5648632775d0472dfc30ca55c5c4af9ac0a9"
+}

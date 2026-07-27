@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-77",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 77,
+    "title": "Dispatches lane CSS rider: expanded superseded-entry wrap + grid band-stretch (align-items), with geometry-test extension",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/77"
+  },
+  "normalisation": [],
+  "integrity": "sha256:1fc9eeb6dc49cb354dcf803caa81f870eaaee597cdc4bceeba5451d9160522e7"
+}

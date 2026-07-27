@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-80",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 80,
+    "title": "Screenshot-evidence gate: every docs/screenshots/ directory carries a labelled README (validated-what, captured-at, divergence)",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/80"
+  },
+  "normalisation": [],
+  "integrity": "sha256:62d35d79182d1f0d6150b3fa969daedb917d74a530641acd6aa217c8c1f472ba"
+}

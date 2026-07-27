@@ -1,0 +1,19 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "52-hygiene-review-r1",
+  "session_id": "70b173ed-7b83-485a-b71a-5adb0591db07",
+  "at": "2026-07-24T19:43:20Z",
+  "outcome": "approve-for-merge",
+  "findings": "0",
+  "abstract": "Round-2 delta 44ed2b4 is a comment-only fix that closes round-1 MAJOR-1 - both wrong numeric file:line citations removed from the poll_test.go test comment and replaced with a function-name anchor deferring to the verified-correct struct comment above pollInFlight in poll.go; zero numeric citations remain, prose still matches the unchanged test body, go test 5/5 ok, gofmt clean, Co-authored-by trailer present; no new defects introduced.",
+  "subject_basis": "minted-id",
+  "task_id": "52-hygiene-review-r1",
+  "provenance": {
+    "runtime": "copilot",
+    "agent_name": "car"
+  },
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:b4ea519588a44aedc8851c60cc6f7d32bcb6a66f0a8e2ac1cb199835a2cc6b59"
+}

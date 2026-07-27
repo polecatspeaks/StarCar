@@ -1,10 +1,12 @@
 {
-  "$comment": "Recognition vocabulary for the 'kind' field (spec S3.2: vocabularies are DATA, never a schema enum, because an unrecognised value must be a discovery, not a bug). Reporting an unrecognised kind is A.2's job.",
+  "$comment": "Recognition vocabulary for the 'kind' field (spec S3.2: vocabularies are DATA, never a schema enum, because an unrecognised value must be a discovery, not a bug). Reporting an unrecognised kind is A.2's job. #84: 'ticket' and 'ticket-sync' are the freight adapter's two record kinds - a ticket is its own kind (owner ruling, never a reused 'intent': that would make a ticket indistinguishable from a manifest without inspecting the payload) - NEITHER is folded (board/fold has no case for either; board/assemble reads ticket-kind records raw, the same way it already reads manifest payloads off intent-kind records, and board/server reads ticket-sync-kind records raw for freight's own freshness signal).",
   "values": [
     "dispatched",
     "returned",
     "presumed-lost",
     "intent",
-    "ruling"
+    "ruling",
+    "ticket",
+    "ticket-sync"
   ]
 }

@@ -67,10 +67,10 @@ const POSITION_CASES = [
   { position: 'wholly-unregistered-position', expectedPositionRegister: 'needs-attention' }
 ];
 
-// Freshness axis: the five mechanism-closed kinds (design S5.2) and their
-// mapping to a register, restated independently here (not imported from
-// compose.js) so this test can catch compose.js getting its OWN mapping
-// wrong.
+// Freshness axis: the six mechanism-closed kinds (design S5.2, amended #29
+// 2026-07-26 to split 'stale' into 'stale'/'idle') and their mapping to a
+// register, restated independently here (not imported from compose.js) so
+// this test can catch compose.js getting its OWN mapping wrong.
 const FRESHNESS_CASES = [
   { freshness: { kind: 'not-applicable' }, expectedFreshnessRegister: 'nominal' },
   { freshness: { kind: 'never-polled' }, expectedFreshnessRegister: 'in-progress' },
@@ -78,6 +78,13 @@ const FRESHNESS_CASES = [
   {
     freshness: { kind: 'stale', asOf: '2026-07-23T00:00:00Z', ageBucketMs: 40000 },
     expectedFreshnessRegister: 'needs-attention'
+  },
+  // #29: an idle yard (nothing in flight, data simply old) renders CALM -
+  // nominal, never needs-attention. Only the register differs from 'stale'
+  // above; the age-disclosure shape (ageBucketMs) is identical by design.
+  {
+    freshness: { kind: 'idle', asOf: '2026-07-23T00:00:00Z', ageBucketMs: 40000 },
+    expectedFreshnessRegister: 'nominal'
   },
   {
     freshness: { kind: 'failed', reason: { code: 'store-unreadable', detail: 'boom' } },
@@ -125,9 +132,10 @@ test('YB-6 three-axis matrix: every position register x every freshness kind x c
       }
     }
   }
-  // Non-vacuity: the matrix must actually have run all 3x5x2 = 30 cases,
-  // not silently iterated zero times over an empty fixture.
-  assert.equal(caseCount, 30);
+  // Non-vacuity: the matrix must actually have run all 3x6x2 = 36 cases
+  // (3 positions x 6 freshness kinds, post-#29, x 2 capability states), not
+  // silently iterated zero times over an empty fixture.
+  assert.equal(caseCount, 36);
 });
 
 test('mostSevereRegister: unknown register strings are treated as the most severe, never as calm', () => {
@@ -165,4 +173,65 @@ test('Rule 3: a stale lane\'s secondary line uses ONLY the server-issued ageBuck
     hasRenderer: true
   });
   assert.ok(lines.secondary.includes('40'), `expected the ageBucketMs-derived figure in: ${lines.secondary}`);
+});
+
+// #29 (issue #29, "IDLE is a state - a yard at rest is not stale"): an idle
+// lane must render CALM - nominal register - and the word "idle" must
+// appear BY NAME in the secondary line, distinctly from "stale", so a
+// reader can tell at a glance which of the two old-data cases they are
+// looking at (never a bare number with no distinguishing word - that would
+// be indistinguishable from a mis-registered "stale" reading calm by
+// accident).
+test('#29: an idle lane renders CALM (nominal register) and names "idle" verbatim, distinct from "stale"', () => {
+  const register = composeRegister({
+    position: 'live',
+    positionDefs,
+    freshness: { kind: 'idle', asOf: '2020-01-01T00:00:00Z', ageBucketMs: 40000 },
+    hasRenderer: true
+  });
+  assert.equal(register, 'nominal', 'an idle yard (nothing in flight) must render calm, never needs-attention');
+
+  const lines = composeLines({
+    position: 'live',
+    positionDefs,
+    freshness: { kind: 'idle', asOf: '2020-01-01T00:00:00Z', ageBucketMs: 40000 },
+    hasRenderer: true
+  });
+  assert.ok(lines.secondary.includes('idle'), `expected the word "idle" verbatim in: ${lines.secondary}`);
+  assert.ok(!lines.secondary.includes('stale'), `an idle line must never also say "stale": ${lines.secondary}`);
+  assert.ok(lines.secondary.includes('40'), `idle must still honestly carry the ageBucketMs-derived figure: ${lines.secondary}`);
+});
+
+// #67 (FORMAT NIT, owner 2026-07-26 17:16): every duration this board
+// renders becomes compact clock time - no unit-suffix forms ("40s" is now
+// forbidden text on this surface; freshness ages are as much "a duration
+// display" as dispatch elapsed is, per the issue's own "board-wide" scope).
+test('#67: a stale line renders its ageBucketMs as compact clock time, never a unit-suffixed number', () => {
+  const lines = composeLines({
+    position: 'live',
+    positionDefs,
+    freshness: { kind: 'stale', asOf: '2020-01-01T00:00:00Z', ageBucketMs: 40000 },
+    hasRenderer: true
+  });
+  assert.equal(lines.secondary, 'stale, 0:40', `expected clock-formatted stale line, got: ${lines.secondary}`);
+});
+
+test('#67: an idle line renders its ageBucketMs as compact clock time, never a unit-suffixed number', () => {
+  const lines = composeLines({
+    position: 'live',
+    positionDefs,
+    freshness: { kind: 'idle', asOf: '2020-01-01T00:00:00Z', ageBucketMs: 40000 },
+    hasRenderer: true
+  });
+  assert.equal(lines.secondary, 'idle, quiet 0:40', `expected clock-formatted idle line, got: ${lines.secondary}`);
+});
+
+test('#67: an ageBucketMs past a minute renders M:SS, not raw seconds (a stale lane really can be old)', () => {
+  const lines = composeLines({
+    position: 'live',
+    positionDefs,
+    freshness: { kind: 'stale', asOf: '2020-01-01T00:00:00Z', ageBucketMs: 125000 },
+    hasRenderer: true
+  });
+  assert.equal(lines.secondary, 'stale, 2:05', `expected clock-formatted stale line, got: ${lines.secondary}`);
 });

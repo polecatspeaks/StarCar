@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "ae9c59ae16e969916",
+  "session_id": "8a347c36-20b4-427a-ae0b-46855aa7bb72",
+  "at": "2026-07-27T13:26:49Z",
+  "outcome": "done-with-findings",
+  "findings": "Honest-stop on brief step 2 (fold.go DispatchEntry placement contradicted by schema/vectors/README.md's D18 cross-language conformance kernel and by recordDir's own actual precedent location, which is board/assemble/assemble.go, not fold.go as the brief described) - implemented functionally equivalent task-id threading at the architecturally correct layer instead, with the reasoning and grep evidence recorded in commit d43dac8. GitNexus MCP tooling was unavailable in this session (no .gitnexus/run.cjs in the worktree, no GitNexus tool exposed) - substituted manual diff/grep verification of blast radius. No documentation found stale by this change (checked design, spec, contracts, glossary, README, setup docs - recordDir's own precedent never required updating the spec's dispatchesPayload field description either). All four commits are red-first with quoted observed failures and green counts stated per hop; final suites at HEAD 82f64b5: Node board/web 223/223, Go board 98 PASS/0 FAIL/vet clean, Pester scripts/tests 227/223/0/4, Pester scripts/probes 24/24, probe-yard-snapshot.mjs PASS, CodeCitationPolicy 13/13.",
+  "abstract": "Threaded the human task-id handle (#47 envelope echo) through the dispatches lane and trains-lane car-chip, following the recordDir precedent's real location (board/assemble, not fold.go, to protect the fold package's cross-language pwsh/Go conformance contract) - winner-aware resolution (never first-write-wins), optional wire field, honest hash fallback with the full subject reachable via native title tooltip on both surfaces, proven red-first at every hop plus a real-Chromium non-vacuity fault injection.",
+  "subject_basis": "runtime-id",
+  "task_id": "view-75-car-r1",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:63474a93212a243ee37b1f84912ea6f546c147cf752e37a7e6870746d1d55175"
+}

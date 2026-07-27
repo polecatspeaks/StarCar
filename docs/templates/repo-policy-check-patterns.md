@@ -41,7 +41,27 @@ what they cannot see - Law 7); documented-but-unread variables are lying documen
 (the reader sets them and nothing happens - Law 1). Both directions matter; checking
 only one lets the other rot.
 
-## 3. The citation checker (aspirational tier - build when citations accumulate)
+## 3. The citation checker (LANDED #65, 2026-07-26 - `scripts/tests/CitationResolverPolicy.Tests.ps1`)
+
+Landed after the citation-truth defect class hit nine-plus instances across two trains
+in two days (view train #28+#12, review rounds 1-3), caught only by expensive
+adversarial review attention. The cheap tier below is BINDING (file exists + line in
+range); the expensive tier (content-anchoring) is landed as a REPORT-ONLY diagnostic,
+not yet binding - only a small fraction of the resolvable literal-path citations in
+this repo carry a backtick-quoted symbol token on the citing line at all (the gate's
+own report-only check states the live count on every run), too sparse a population to
+bind without real false-flag risk, exactly the caveat this section already named
+before anyone measured it. The gate also unwraps comment/prose line wraps before matching (a citation split across
+a line break so the trailing fragment reads as its own bare filename - the real scar was
+a kebab-case client filename broken exactly at its own hyphen, with the line number
+stranded on the next line - defeats a naive single-line or basename search) - the scar
+this section's original text did not anticipate, found and fixed by the round-3 reviewer
+of the #28+#12 train, ported here as the scanner's core technique. (Deliberately not
+spelled out as a literal `file.ext:N` example here: this very document is itself
+scanned by that gate, and a worked example written in the live coordinate shape would
+either be a false citation to a nonexistent target or an accidental true one that drifts
+- the same self-reference problem `scripts/tests/CodeCitationPolicy.Tests.ps1` already
+discloses for its own `#123456` example.)
 
 Docs here cite `file.ts:123` heavily. A checker that parses citations from
 `docs/**` and verifies the file exists (cheap tier) and the cited line's content still

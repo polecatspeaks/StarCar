@@ -1,0 +1,19 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "tooling-41-39-38-car-r1",
+  "session_id": "70b173ed-7b83-485a-b71a-5adb0591db07",
+  "at": "2026-07-25T14:35:59Z",
+  "outcome": "done-with-findings",
+  "findings": "1 - Task C brief stated \"three unaccounted properties (model, body_file, manifest)\" but the schema has five unaccounted (model, body_file, subject_basis, task_id, provenance); manifest is NOT a starcar-artifact.schema.json property; subject_basis/task_id/provenance ARE. All five are now disclosed in index-format.md and the test passes.",
+  "abstract": "Three tasks landed across three commits on car/tooling-41-39-38. Task A (#41, c6344ab): car-brief.md template updated - both car body and reviewer addendum now instruct readers to DERIVE Pester totals at their base commit rather than accept fixed numbers. Task B (#39, 1235079): false comment in Produce-Artifact.ps1 corrected (board does NOT do model-mix rendering; model is provenance-only). Task C (#38, c4f39e2): new Schema.Tests.ps1 test mechanically enforces that every starcar-artifact.schema.json property is either in index-format.md canonical order or the new unordered-extras disclosure sentence; went red (5 unaccounted, not 3 as brief claimed), then green after doc sentence; base 289 + 1 = 290 passed / 0 failed.",
+  "subject_basis": "minted-id",
+  "task_id": "tooling-41-39-38-car-r1",
+  "provenance": {
+    "runtime": "copilot",
+    "agent_name": "car"
+  },
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:568fbd0fe1476760167c3d53f1d1a36a62c4dba30e468c453ef1f09e3a1ee8b9"
+}

@@ -12,17 +12,27 @@
 
 export const EXPECTED_LANE_IDS = Object.freeze(['dispatches', 'gates', 'trains', 'freight', 'fuel']);
 
-// Lane ids whose position (dark/bagged) means the wire carries NO "data"
-// key at all by design (board/server/snapshot.go:41-45's "absence of the
-// key itself is what signals no payload") - the view's renderer for these
-// is the honest-absence chrome (Car 4's adjudication: distinguished from
-// each other, never rendered identically).
-const NO_DATA_BY_DESIGN = new Set(['freight', 'fuel']);
+// Lane ids whose position (bagged) means the wire carries NO "data" key at
+// all by design (board/server/snapshot.go's `Lane` struct doc comment -
+// cited by SYMBOL, not line, per #69/#71 fix cycle round 2 MAJOR-R1-4 and
+// docs/contracts/gating-matrix.md:49's own already-landed lesson: a
+// line-number citation into a file this SAME train's commit still edits
+// drifts on every later insertion, and the #65 gate does not check in-range
+// shifts. The `Lane` struct's doc comment reads "absence of the key itself
+// is what signals "no payload" on the wire") - the view's renderer for
+// these is the honest-absence chrome (Car 4's adjudication: distinguished
+// from each other, never rendered identically).
+//
+// #84: 'freight' left this set when the lane went live - it now expects a
+// real `data.tickets` array like any other live lane (EXPECTED_DATA_KEY
+// below), the same capability axis dispatches/gates/trains already use.
+// 'fuel' stays: still bagged, no adapter change in this ticket.
+const NO_DATA_BY_DESIGN = new Set(['fuel']);
 
 // For a live lane expecting data, the wire array key its payload must
 // carry (spec YB-5's $defs: trainsPayload.trains, gatesPayload.gates,
-// dispatchesPayload.dispatches).
-const EXPECTED_DATA_KEY = { dispatches: 'dispatches', gates: 'gates', trains: 'trains' };
+// dispatchesPayload.dispatches, (#84) freightPayload.tickets).
+const EXPECTED_DATA_KEY = { dispatches: 'dispatches', gates: 'gates', trains: 'trains', freight: 'tickets' };
 
 /**
  * design Rule 1's capability axis: does this view know how to render this

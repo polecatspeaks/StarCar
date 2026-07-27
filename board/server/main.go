@@ -84,6 +84,13 @@ func main() {
 		log.Fatalf("board server: could not resolve the working directory: %v", err)
 	}
 	repoRootDir := resolveDefaultRepoRoot(cwd)
+	if cfg.RepoRoot == "" {
+		// #28: threaded through so githubArtifactsPrefix can compute
+		// StorePath's position relative to the REPO ROOT rather than cwd -
+		// never overridden by env (repoRootDir is resolved, not configured;
+		// STARCAR_STORE_PATH is the one override point for the store itself).
+		cfg.RepoRoot = repoRootDir
+	}
 	if cfg.StorePath == "" {
 		cfg.StorePath = filepath.Join(repoRootDir, "artifacts")
 	}
@@ -107,4 +114,3 @@ func main() {
 		log.Fatalf("board server: %v", err)
 	}
 }
-

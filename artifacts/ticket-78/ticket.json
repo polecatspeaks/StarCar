@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-78",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 78,
+    "title": "Doc rider: four r3-verdict comment/caption corrections + app.js citation to symbol form (#69/#71 follow-up)",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/78"
+  },
+  "normalisation": [],
+  "integrity": "sha256:bdc97541bc59d5509dbdd4cc3737cb8032f9dc45b4106bad66f028b65ecc2312"
+}

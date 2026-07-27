@@ -132,4 +132,212 @@ dispatch batch between regenerations.
 | ab8b2e7effb839f82 | dispatched | 2026-07-24T10:13:18Z |  | ab8b2e7effb839f82/dispatched-20260724T101318Z.json |
 | ab8b2e7effb839f82 | returned | 2026-07-24T10:30:30Z | REJECT | ab8b2e7effb839f82/returned-20260724T103030Z.json |
 | 51-fix-car-r1 | dispatched | 2026-07-24T17:10:20Z |  | 51-fix-car-r1/dispatched-20260724T171020Z.json |
+| 51-fix-car-r1 | returned | 2026-07-24T17:26:29Z | done-with-findings | 51-fix-car-r1/returned-20260724T172629Z.json |
 | 51-fix-review-r1 | dispatched | 2026-07-24T17:27:29Z |  | 51-fix-review-r1/dispatched-20260724T172729Z.json |
+| 51-fix-review-r1 | returned | 2026-07-24T17:38:46Z | done-with-findings | 51-fix-review-r1/returned-20260724T173846Z.json |
+| 52-hygiene-car-r1 | dispatched | 2026-07-24T19:21:45Z |  | 52-hygiene-car-r1/dispatched-20260724T192145Z.json |
+| 53-guard-car-r1 | dispatched | 2026-07-24T19:22:28Z |  | 53-guard-car-r1/dispatched-20260724T192228Z.json |
+| 53-guard-car-r1 | returned | 2026-07-24T19:29:25Z | completed | 53-guard-car-r1/returned-20260724T192925Z.json |
+| 53-guard-review-r1 | dispatched | 2026-07-24T19:30:07Z |  | 53-guard-review-r1/dispatched-20260724T193007Z.json |
+| 52-hygiene-review-r1 | dispatched | 2026-07-24T19:33:18Z |  | 52-hygiene-review-r1/dispatched-20260724T193318Z.json |
+| 53-guard-review-r1 | returned | 2026-07-24T19:34:23Z | approve-for-merge | 53-guard-review-r1/returned-20260724T193423Z.json |
+| 52-hygiene-car-r1 | returned | 2026-07-24T19:42:01Z | completed | 52-hygiene-car-r1/returned-20260724T194201Z.json |
+| 52-hygiene-review-r1 | returned | 2026-07-24T19:43:20Z | approve-for-merge | 52-hygiene-review-r1/returned-20260724T194320Z.json |
+| tooling-41-39-38-car-r1 | dispatched | 2026-07-25T14:18:38Z |  | tooling-41-39-38-car-r1/dispatched-20260725T141838Z.json |
+| tooling-41-39-38-review-r1 | dispatched | 2026-07-25T14:30:31Z |  | tooling-41-39-38-review-r1/dispatched-20260725T143031Z.json |
+| tooling-41-39-38-car-r1 | returned | 2026-07-25T14:35:59Z | done-with-findings | tooling-41-39-38-car-r1/returned-20260725T143559Z.json |
+| tooling-41-39-38-review-r1 | returned | 2026-07-25T14:36:05Z | approve-for-merge | tooling-41-39-38-review-r1/returned-20260725T143605Z.json |
+| 41-suite-split-car-r1 | dispatched | 2026-07-25T17:36:32Z |  | 41-suite-split-car-r1/dispatched-20260725T173632Z.json |
+| 41-suite-split-review-r1 | dispatched | 2026-07-25T17:42:47Z |  | 41-suite-split-review-r1/dispatched-20260725T174247Z.json |
+| 41-suite-split-car-r1 | returned | 2026-07-25T17:46:46Z | completed | 41-suite-split-car-r1/returned-20260725T174646Z.json |
+| 41-suite-split-review-r1 | returned | 2026-07-25T17:46:53Z | approve-for-merge | 41-suite-split-review-r1/returned-20260725T174653Z.json |
+| register-35-36-37-car-r1 | dispatched | 2026-07-25T22:56:44Z |  | register-35-36-37-car-r1/dispatched-20260725T225644Z.json |
+| register-35-36-37-review-r1 | dispatched | 2026-07-25T23:07:44Z |  | register-35-36-37-review-r1/dispatched-20260725T230744Z.json |
+| register-35-36-37-car-r1 | returned | 2026-07-25T23:13:21Z | completed | register-35-36-37-car-r1/returned-20260725T231321Z.json |
+| register-35-36-37-review-r1 | returned | 2026-07-25T23:13:32Z | approve-for-merge | register-35-36-37-review-r1/returned-20260725T231332Z.json |
+| af5f0b4f753a8f9d7 | dispatched | 2026-07-26T11:19:26Z |  | af5f0b4f753a8f9d7/dispatched-20260726T111926Z.json |
+| af5f0b4f753a8f9d7 | returned | 2026-07-26T11:54:02Z | done | af5f0b4f753a8f9d7/returned-20260726T115402Z.json |
+| ad18f715d2df17fe5 | dispatched | 2026-07-26T11:55:40Z |  | ad18f715d2df17fe5/dispatched-20260726T115540Z.json |
+| ad18f715d2df17fe5 | returned | 2026-07-26T12:15:18Z | REJECT | ad18f715d2df17fe5/returned-20260726T121518Z.json |
+| af5f0b4f753a8f9d7 | returned | 2026-07-26T12:44:27Z | done-with-findings | af5f0b4f753a8f9d7/returned-20260726T124427Z.json |
+| ad18f715d2df17fe5 | returned | 2026-07-26T13:01:18Z | REJECT | ad18f715d2df17fe5/returned-20260726T130118Z.json |
+| af5f0b4f753a8f9d7 | returned | 2026-07-26T13:15:18Z | done | af5f0b4f753a8f9d7/returned-20260726T131518Z.json |
+| ad18f715d2df17fe5 | returned | 2026-07-26T13:25:24Z | APPROVE | ad18f715d2df17fe5/returned-20260726T132524Z.json |
+| af5f0b4f753a8f9d7 | returned | 2026-07-26T13:41:01Z | done | af5f0b4f753a8f9d7/returned-20260726T134101Z.json |
+| a5234897d26a4e293 | dispatched | 2026-07-26T13:42:24Z |  | a5234897d26a4e293/dispatched-20260726T134224Z.json |
+| a5234897d26a4e293 | returned | 2026-07-26T13:56:54Z | REJECT | a5234897d26a4e293/returned-20260726T135654Z.json |
+| af5f0b4f753a8f9d7 | returned | 2026-07-26T14:07:31Z | done | af5f0b4f753a8f9d7/returned-20260726T140731Z.json |
+| a5234897d26a4e293 | returned | 2026-07-26T14:16:59Z | APPROVE | a5234897d26a4e293/returned-20260726T141659Z.json |
+| a94fcd2c88a32d991 | dispatched | 2026-07-26T14:20:48Z |  | a94fcd2c88a32d991/dispatched-20260726T142048Z.json |
+| a94fcd2c88a32d991 | returned | 2026-07-26T14:25:14Z | done | a94fcd2c88a32d991/returned-20260726T142514Z.json |
+| ae2db65a15d4b58a2 | dispatched | 2026-07-26T14:25:52Z |  | ae2db65a15d4b58a2/dispatched-20260726T142552Z.json |
+| ae2db65a15d4b58a2 | returned | 2026-07-26T14:34:19Z | APPROVE | ae2db65a15d4b58a2/returned-20260726T143419Z.json |
+| ae17d6a1ac77dc264 | dispatched | 2026-07-26T14:40:42Z |  | ae17d6a1ac77dc264/dispatched-20260726T144042Z.json |
+| ae17d6a1ac77dc264 | returned | 2026-07-26T14:55:44Z | CONFIRM | ae17d6a1ac77dc264/returned-20260726T145544Z.json |
+| ac9289f01a6a15ced | dispatched | 2026-07-26T15:09:01Z |  | ac9289f01a6a15ced/dispatched-20260726T150901Z.json |
+| ac9289f01a6a15ced | returned | 2026-07-26T15:44:58Z | done-with-findings | ac9289f01a6a15ced/returned-20260726T154458Z.json |
+| afe1a2c703e2e615e | dispatched | 2026-07-26T15:46:01Z |  | afe1a2c703e2e615e/dispatched-20260726T154601Z.json |
+| afe1a2c703e2e615e | returned | 2026-07-26T16:08:09Z | REJECT | afe1a2c703e2e615e/returned-20260726T160809Z.json |
+| ac9289f01a6a15ced | returned | 2026-07-26T16:19:48Z | done | ac9289f01a6a15ced/returned-20260726T161948Z.json |
+| afe1a2c703e2e615e | returned | 2026-07-26T16:26:50Z | APPROVE | afe1a2c703e2e615e/returned-20260726T162650Z.json |
+| a076bf6c0a94e302f | dispatched | 2026-07-26T16:29:35Z |  | a076bf6c0a94e302f/dispatched-20260726T162935Z.json |
+| aae450cea6c656f9e | dispatched | 2026-07-26T16:30:01Z |  | aae450cea6c656f9e/dispatched-20260726T163001Z.json |
+| aae450cea6c656f9e | returned | 2026-07-26T16:41:16Z | done | aae450cea6c656f9e/returned-20260726T164116Z.json |
+| a076bf6c0a94e302f | returned | 2026-07-26T16:41:18Z | done | a076bf6c0a94e302f/returned-20260726T164118Z.json |
+| a67cb0075007e7753 | dispatched | 2026-07-26T16:42:13Z |  | a67cb0075007e7753/dispatched-20260726T164213Z.json |
+| a7fbcee7ccaec45d8 | dispatched | 2026-07-26T16:42:41Z |  | a7fbcee7ccaec45d8/dispatched-20260726T164241Z.json |
+| a67cb0075007e7753 | returned | 2026-07-26T16:54:23Z | REJECT | a67cb0075007e7753/returned-20260726T165423Z.json |
+| a7fbcee7ccaec45d8 | returned | 2026-07-26T16:58:03Z | REJECT | a7fbcee7ccaec45d8/returned-20260726T165803Z.json |
+| a076bf6c0a94e302f | returned | 2026-07-26T17:06:11Z | done | a076bf6c0a94e302f/returned-20260726T170611Z.json |
+| aae450cea6c656f9e | returned | 2026-07-26T17:09:50Z | done | aae450cea6c656f9e/returned-20260726T170950Z.json |
+| a67cb0075007e7753 | returned | 2026-07-26T17:14:57Z | REJECT | a67cb0075007e7753/returned-20260726T171457Z.json |
+| a7fbcee7ccaec45d8 | returned | 2026-07-26T17:18:07Z | REJECT | a7fbcee7ccaec45d8/returned-20260726T171807Z.json |
+| a076bf6c0a94e302f | returned | 2026-07-26T17:28:56Z | done | a076bf6c0a94e302f/returned-20260726T172856Z.json |
+| aae450cea6c656f9e | returned | 2026-07-26T17:30:49Z | done | aae450cea6c656f9e/returned-20260726T173049Z.json |
+| a67cb0075007e7753 | returned | 2026-07-26T17:36:09Z | APPROVE | a67cb0075007e7753/returned-20260726T173609Z.json |
+| a7fbcee7ccaec45d8 | returned | 2026-07-26T17:39:07Z | APPROVE | a7fbcee7ccaec45d8/returned-20260726T173907Z.json |
+| aef700efc7cc87570 | dispatched | 2026-07-26T17:49:48Z |  | aef700efc7cc87570/dispatched-20260726T174948Z.json |
+| aef700efc7cc87570 | returned | 2026-07-26T18:19:00Z | done-with-findings | aef700efc7cc87570/returned-20260726T181900Z.json |
+| a13a5df25c7c6bf77 | dispatched | 2026-07-26T18:20:10Z |  | a13a5df25c7c6bf77/dispatched-20260726T182010Z.json |
+| a13a5df25c7c6bf77 | returned | 2026-07-26T18:43:22Z | REJECT | a13a5df25c7c6bf77/returned-20260726T184322Z.json |
+| aef700efc7cc87570 | returned | 2026-07-26T18:57:53Z | done | aef700efc7cc87570/returned-20260726T185753Z.json |
+| a13a5df25c7c6bf77 | returned | 2026-07-26T19:06:33Z | REJECT | a13a5df25c7c6bf77/returned-20260726T190633Z.json |
+| aef700efc7cc87570 | returned | 2026-07-26T19:09:54Z | done | aef700efc7cc87570/returned-20260726T190954Z.json |
+| a13a5df25c7c6bf77 | returned | 2026-07-26T19:20:15Z | REJECT | a13a5df25c7c6bf77/returned-20260726T192015Z.json |
+| aef700efc7cc87570 | returned | 2026-07-26T19:31:24Z | done | aef700efc7cc87570/returned-20260726T193124Z.json |
+| a13a5df25c7c6bf77 | returned | 2026-07-26T19:39:26Z | APPROVE | a13a5df25c7c6bf77/returned-20260726T193926Z.json |
+| a19ef853c23ba9742 | dispatched | 2026-07-26T19:41:35Z |  | a19ef853c23ba9742/dispatched-20260726T194135Z.json |
+| a19ef853c23ba9742 | returned | 2026-07-26T20:03:47Z | done-with-findings | a19ef853c23ba9742/returned-20260726T200347Z.json |
+| ae6398614a373c807 | dispatched | 2026-07-26T20:04:47Z |  | ae6398614a373c807/dispatched-20260726T200447Z.json |
+| ae6398614a373c807 | returned | 2026-07-26T20:21:10Z | REJECT | ae6398614a373c807/returned-20260726T202110Z.json |
+| a19ef853c23ba9742 | returned | 2026-07-26T20:33:11Z | done | a19ef853c23ba9742/returned-20260726T203311Z.json |
+| ae6398614a373c807 | returned | 2026-07-26T20:41:06Z | APPROVE | ae6398614a373c807/returned-20260726T204106Z.json |
+| a19ef853c23ba9742 | returned | 2026-07-26T20:43:18Z | done | a19ef853c23ba9742/returned-20260726T204318Z.json |
+| a19ef853c23ba9742 | returned | 2026-07-26T20:45:17Z | done | a19ef853c23ba9742/returned-20260726T204517Z.json |
+| acb10c126ac3a7488 | dispatched | 2026-07-26T20:47:31Z |  | acb10c126ac3a7488/dispatched-20260726T204731Z.json |
+| acb10c126ac3a7488 | returned | 2026-07-26T21:30:05Z | done-with-findings | acb10c126ac3a7488/returned-20260726T213005Z.json |
+| a678b799208107386 | dispatched | 2026-07-26T21:32:10Z |  | a678b799208107386/dispatched-20260726T213210Z.json |
+| a678b799208107386 | returned | 2026-07-26T21:59:02Z | REJECT | a678b799208107386/returned-20260726T215902Z.json |
+| acb10c126ac3a7488 | returned | 2026-07-26T22:18:41Z | done | acb10c126ac3a7488/returned-20260726T221841Z.json |
+| a678b799208107386 | returned | 2026-07-26T22:34:41Z | REJECT | a678b799208107386/returned-20260726T223441Z.json |
+| acb10c126ac3a7488 | returned | 2026-07-26T22:41:46Z | done | acb10c126ac3a7488/returned-20260726T224146Z.json |
+| a678b799208107386 | returned | 2026-07-26T22:50:37Z | APPROVE | a678b799208107386/returned-20260726T225037Z.json |
+| ab2bd332be0eebc2c | dispatched | 2026-07-26T23:01:41Z |  | ab2bd332be0eebc2c/dispatched-20260726T230141Z.json |
+| ab2bd332be0eebc2c | returned | 2026-07-26T23:35:12Z | SUCCESS | ab2bd332be0eebc2c/returned-20260726T233512Z.json |
+| a965df3347dae4a72 | dispatched | 2026-07-26T23:36:21Z |  | a965df3347dae4a72/dispatched-20260726T233621Z.json |
+| a965df3347dae4a72 | returned | 2026-07-26T23:57:18Z | REJECT | a965df3347dae4a72/returned-20260726T235718Z.json |
+| ab2bd332be0eebc2c | returned | 2026-07-27T00:31:48Z | SUCCESS | ab2bd332be0eebc2c/returned-20260727T003148Z.json |
+| a965df3347dae4a72 | returned | 2026-07-27T00:46:27Z | REJECT | a965df3347dae4a72/returned-20260727T004627Z.json |
+| ab2bd332be0eebc2c | returned | 2026-07-27T01:01:07Z | SUCCESS | ab2bd332be0eebc2c/returned-20260727T010107Z.json |
+| a965df3347dae4a72 | returned | 2026-07-27T01:10:03Z | REJECT-ESCALATED | a965df3347dae4a72/returned-20260727T011003Z.json |
+| ab2bd332be0eebc2c | returned | 2026-07-27T01:28:30Z | SUCCESS | ab2bd332be0eebc2c/returned-20260727T012830Z.json |
+| acf9a7451ccf63594 | dispatched | 2026-07-27T01:29:22Z |  | acf9a7451ccf63594/dispatched-20260727T012922Z.json |
+| acf9a7451ccf63594 | returned | 2026-07-27T01:44:06Z | REJECT | acf9a7451ccf63594/returned-20260727T014406Z.json |
+| ab2bd332be0eebc2c | returned | 2026-07-27T01:51:27Z | SUCCESS | ab2bd332be0eebc2c/returned-20260727T015127Z.json |
+| acf9a7451ccf63594 | returned | 2026-07-27T01:58:29Z | APPROVE | acf9a7451ccf63594/returned-20260727T015829Z.json |
+| a0ea6918ba39a1bda | dispatched | 2026-07-27T02:08:48Z |  | a0ea6918ba39a1bda/dispatched-20260727T020848Z.json |
+| a0ea6918ba39a1bda | returned | 2026-07-27T02:35:44Z | success | a0ea6918ba39a1bda/returned-20260727T023544Z.json |
+| aa9858b26c4f2f91e | dispatched | 2026-07-27T02:36:44Z |  | aa9858b26c4f2f91e/dispatched-20260727T023644Z.json |
+| aa9858b26c4f2f91e | returned | 2026-07-27T02:53:57Z | REJECT | aa9858b26c4f2f91e/returned-20260727T025357Z.json |
+| a0ea6918ba39a1bda | returned | 2026-07-27T03:07:42Z | success | a0ea6918ba39a1bda/returned-20260727T030742Z.json |
+| aa9858b26c4f2f91e | returned | 2026-07-27T03:21:39Z | REJECT | aa9858b26c4f2f91e/returned-20260727T032139Z.json |
+| a0ea6918ba39a1bda | returned | 2026-07-27T03:28:48Z | success | a0ea6918ba39a1bda/returned-20260727T032848Z.json |
+| aa9858b26c4f2f91e | returned | 2026-07-27T03:36:27Z | APPROVE | aa9858b26c4f2f91e/returned-20260727T033627Z.json |
+| a5ddbb7039bee5958 | dispatched | 2026-07-27T03:47:04Z |  | a5ddbb7039bee5958/dispatched-20260727T034704Z.json |
+| a5ddbb7039bee5958 | returned | 2026-07-27T04:34:43Z | success | a5ddbb7039bee5958/returned-20260727T043443Z.json |
+| a103c4067cf9267a3 | dispatched | 2026-07-27T04:35:47Z |  | a103c4067cf9267a3/dispatched-20260727T043547Z.json |
+| a103c4067cf9267a3 | returned | 2026-07-27T04:57:49Z | REJECT | a103c4067cf9267a3/returned-20260727T045749Z.json |
+| ae3d64acd969fcdf2 | dispatched | 2026-07-27T10:57:00Z |  | ae3d64acd969fcdf2/dispatched-20260727T105700Z.json |
+| a4b530cbc88da1cfe | dispatched | 2026-07-27T11:04:37Z |  | a4b530cbc88da1cfe/dispatched-20260727T110437Z.json |
+| a4b530cbc88da1cfe | returned | 2026-07-27T11:20:43Z | done-with-findings | a4b530cbc88da1cfe/returned-20260727T112043Z.json |
+| ae3d64acd969fcdf2 | returned | 2026-07-27T11:32:52Z | done | ae3d64acd969fcdf2/returned-20260727T113252Z.json |
+| a8928de8b3b8e6b95 | dispatched | 2026-07-27T11:34:13Z |  | a8928de8b3b8e6b95/dispatched-20260727T113413Z.json |
+| a8928de8b3b8e6b95 | returned | 2026-07-27T11:57:04Z | REJECT | a8928de8b3b8e6b95/returned-20260727T115704Z.json |
+| ae3d64acd969fcdf2 | returned | 2026-07-27T12:31:01Z | done | ae3d64acd969fcdf2/returned-20260727T123101Z.json |
+| a8928de8b3b8e6b95 | returned | 2026-07-27T12:45:39Z | APPROVE | a8928de8b3b8e6b95/returned-20260727T124539Z.json |
+| ae9c59ae16e969916 | dispatched | 2026-07-27T12:57:18Z |  | ae9c59ae16e969916/dispatched-20260727T125718Z.json |
+| a7b9079a789c94890 | dispatched | 2026-07-27T13:13:23Z |  | a7b9079a789c94890/dispatched-20260727T131323Z.json |
+| ae9c59ae16e969916 | returned | 2026-07-27T13:26:49Z | done-with-findings | ae9c59ae16e969916/returned-20260727T132649Z.json |
+| a353ad2db7e6ad627 | dispatched | 2026-07-27T13:28:15Z |  | a353ad2db7e6ad627/dispatched-20260727T132815Z.json |
+| a7b9079a789c94890 | returned | 2026-07-27T13:37:04Z | done | a7b9079a789c94890/returned-20260727T133704Z.json |
+| af1b76cf7eab52dc7 | dispatched | 2026-07-27T13:38:19Z |  | af1b76cf7eab52dc7/dispatched-20260727T133819Z.json |
+| a353ad2db7e6ad627 | returned | 2026-07-27T13:55:38Z | REJECT | a353ad2db7e6ad627/returned-20260727T135538Z.json |
+| af1b76cf7eab52dc7 | returned | 2026-07-27T14:04:28Z | REJECT | af1b76cf7eab52dc7/returned-20260727T140428Z.json |
+| ae9c59ae16e969916 | returned | 2026-07-27T14:08:10Z | done | ae9c59ae16e969916/returned-20260727T140810Z.json |
+| a7b9079a789c94890 | returned | 2026-07-27T14:14:34Z | done | a7b9079a789c94890/returned-20260727T141434Z.json |
+| a353ad2db7e6ad627 | returned | 2026-07-27T14:25:33Z | REJECT | a353ad2db7e6ad627/returned-20260727T142533Z.json |
+| af1b76cf7eab52dc7 | returned | 2026-07-27T14:26:15Z | APPROVE | af1b76cf7eab52dc7/returned-20260727T142615Z.json |
+| ae9c59ae16e969916 | returned | 2026-07-27T14:42:02Z | done | ae9c59ae16e969916/returned-20260727T144202Z.json |
+| a353ad2db7e6ad627 | returned | 2026-07-27T14:53:05Z | APPROVE | a353ad2db7e6ad627/returned-20260727T145305Z.json |
+| ad9b6aad6153127f4 | dispatched | 2026-07-27T14:59:50Z |  | ad9b6aad6153127f4/dispatched-20260727T145950Z.json |
+| ad9b6aad6153127f4 | returned | 2026-07-27T15:26:04Z | done | ad9b6aad6153127f4/returned-20260727T152604Z.json |
+| a60fcb87fea862f02 | dispatched | 2026-07-27T15:27:31Z |  | a60fcb87fea862f02/dispatched-20260727T152731Z.json |
+| a60fcb87fea862f02 | returned | 2026-07-27T15:49:53Z | REJECT | a60fcb87fea862f02/returned-20260727T154953Z.json |
+| a5264318d735a62f8 | dispatched | 2026-07-27T15:57:16Z |  | a5264318d735a62f8/dispatched-20260727T155716Z.json |
+| a84d35af573e0a7d1 | dispatched | 2026-07-27T15:58:11Z |  | a84d35af573e0a7d1/dispatched-20260727T155811Z.json |
+| a84d35af573e0a7d1 | returned | 2026-07-27T16:22:45Z | done | a84d35af573e0a7d1/returned-20260727T162245Z.json |
+| afe18ef8acbb02719 | dispatched | 2026-07-27T16:25:12Z |  | afe18ef8acbb02719/dispatched-20260727T162512Z.json |
+| afe18ef8acbb02719 | returned | 2026-07-27T16:46:18Z | REJECT | afe18ef8acbb02719/returned-20260727T164618Z.json |
+| a5264318d735a62f8 | returned | 2026-07-27T16:51:58Z | success | a5264318d735a62f8/returned-20260727T165158Z.json |
+| af9695467e625f504 | dispatched | 2026-07-27T16:54:14Z |  | af9695467e625f504/dispatched-20260727T165414Z.json |
+| a84d35af573e0a7d1 | returned | 2026-07-27T17:03:12Z | done | a84d35af573e0a7d1/returned-20260727T170312Z.json |
+| afe18ef8acbb02719 | returned | 2026-07-27T17:15:56Z | REJECT | afe18ef8acbb02719/returned-20260727T171556Z.json |
+| af9695467e625f504 | returned | 2026-07-27T17:26:31Z | REJECT | af9695467e625f504/returned-20260727T172631Z.json |
+| a84d35af573e0a7d1 | returned | 2026-07-27T17:29:21Z | done | a84d35af573e0a7d1/returned-20260727T172921Z.json |
+| afe18ef8acbb02719 | returned | 2026-07-27T17:41:00Z | APPROVE | afe18ef8acbb02719/returned-20260727T174100Z.json |
+| a5264318d735a62f8 | returned | 2026-07-27T17:55:39Z | success | a5264318d735a62f8/returned-20260727T175539Z.json |
+| af9695467e625f504 | returned | 2026-07-27T18:23:33Z | REJECT | af9695467e625f504/returned-20260727T182333Z.json |
+| a84d35af573e0a7d1 | returned | 2026-07-27T18:32:45Z | done | a84d35af573e0a7d1/returned-20260727T183245Z.json |
+| a5264318d735a62f8 | returned | 2026-07-27T18:33:29Z | success | a5264318d735a62f8/returned-20260727T183329Z.json |
+| afe18ef8acbb02719 | returned | 2026-07-27T18:44:44Z | REJECT | afe18ef8acbb02719/returned-20260727T184444Z.json |
+| af9695467e625f504 | returned | 2026-07-27T18:45:05Z | APPROVE | af9695467e625f504/returned-20260727T184505Z.json |
+| ticket-1 | ticket | 2026-07-27T18:47:07Z |  | ticket-1/ticket.json |
+| ticket-10 | ticket | 2026-07-27T18:47:07Z |  | ticket-10/ticket.json |
+| ticket-11 | ticket | 2026-07-27T18:47:07Z |  | ticket-11/ticket.json |
+| ticket-14 | ticket | 2026-07-27T18:47:07Z |  | ticket-14/ticket.json |
+| ticket-15 | ticket | 2026-07-27T18:47:07Z |  | ticket-15/ticket.json |
+| ticket-16 | ticket | 2026-07-27T18:47:07Z |  | ticket-16/ticket.json |
+| ticket-17 | ticket | 2026-07-27T18:47:07Z |  | ticket-17/ticket.json |
+| ticket-19 | ticket | 2026-07-27T18:47:07Z |  | ticket-19/ticket.json |
+| ticket-2 | ticket | 2026-07-27T18:47:07Z |  | ticket-2/ticket.json |
+| ticket-22 | ticket | 2026-07-27T18:47:07Z |  | ticket-22/ticket.json |
+| ticket-23 | ticket | 2026-07-27T18:47:07Z |  | ticket-23/ticket.json |
+| ticket-25 | ticket | 2026-07-27T18:47:07Z |  | ticket-25/ticket.json |
+| ticket-3 | ticket | 2026-07-27T18:47:07Z |  | ticket-3/ticket.json |
+| ticket-43 | ticket | 2026-07-27T18:47:07Z |  | ticket-43/ticket.json |
+| ticket-44 | ticket | 2026-07-27T18:47:07Z |  | ticket-44/ticket.json |
+| ticket-45 | ticket | 2026-07-27T18:47:07Z |  | ticket-45/ticket.json |
+| ticket-55 | ticket | 2026-07-27T18:47:07Z |  | ticket-55/ticket.json |
+| ticket-56 | ticket | 2026-07-27T18:47:07Z |  | ticket-56/ticket.json |
+| ticket-57 | ticket | 2026-07-27T18:47:07Z |  | ticket-57/ticket.json |
+| ticket-58 | ticket | 2026-07-27T18:47:07Z |  | ticket-58/ticket.json |
+| ticket-59 | ticket | 2026-07-27T18:47:07Z |  | ticket-59/ticket.json |
+| ticket-6 | ticket | 2026-07-27T18:47:07Z |  | ticket-6/ticket.json |
+| ticket-60 | ticket | 2026-07-27T18:47:07Z |  | ticket-60/ticket.json |
+| ticket-61 | ticket | 2026-07-27T18:47:07Z |  | ticket-61/ticket.json |
+| ticket-63 | ticket | 2026-07-27T18:47:07Z |  | ticket-63/ticket.json |
+| ticket-64 | ticket | 2026-07-27T18:47:07Z |  | ticket-64/ticket.json |
+| ticket-66 | ticket | 2026-07-27T18:47:07Z |  | ticket-66/ticket.json |
+| ticket-68 | ticket | 2026-07-27T18:47:07Z |  | ticket-68/ticket.json |
+| ticket-70 | ticket | 2026-07-27T18:47:07Z |  | ticket-70/ticket.json |
+| ticket-72 | ticket | 2026-07-27T18:47:07Z |  | ticket-72/ticket.json |
+| ticket-73 | ticket | 2026-07-27T18:47:07Z |  | ticket-73/ticket.json |
+| ticket-76 | ticket | 2026-07-27T18:47:07Z |  | ticket-76/ticket.json |
+| ticket-77 | ticket | 2026-07-27T18:47:07Z |  | ticket-77/ticket.json |
+| ticket-78 | ticket | 2026-07-27T18:47:07Z |  | ticket-78/ticket.json |
+| ticket-80 | ticket | 2026-07-27T18:47:07Z |  | ticket-80/ticket.json |
+| ticket-81 | ticket | 2026-07-27T18:47:07Z |  | ticket-81/ticket.json |
+| ticket-82 | ticket | 2026-07-27T18:47:07Z |  | ticket-82/ticket.json |
+| ticket-83 | ticket | 2026-07-27T18:47:07Z |  | ticket-83/ticket.json |
+| ticket-85 | ticket | 2026-07-27T18:47:07Z |  | ticket-85/ticket.json |
+| ticket-86 | ticket | 2026-07-27T18:47:07Z |  | ticket-86/ticket.json |
+| ticket-87 | ticket | 2026-07-27T18:47:07Z |  | ticket-87/ticket.json |
+| ticket-sync | ticket-sync | 2026-07-27T18:47:07Z |  | ticket-sync/ticket-sync.json |
+| aa29fe4a9fbb90268 | dispatched | 2026-07-27T18:58:06Z |  | aa29fe4a9fbb90268/dispatched-20260727T185806Z.json |
+| aa29fe4a9fbb90268 | returned | 2026-07-27T19:13:52Z | success | aa29fe4a9fbb90268/returned-20260727T191352Z.json |
+| a06d658c5485bd454 | dispatched | 2026-07-27T19:15:10Z |  | a06d658c5485bd454/dispatched-20260727T191510Z.json |
+| a06d658c5485bd454 | returned | 2026-07-27T19:31:19Z | REJECT | a06d658c5485bd454/returned-20260727T193119Z.json |
+| aa29fe4a9fbb90268 | returned | 2026-07-27T19:37:09Z | success | aa29fe4a9fbb90268/returned-20260727T193709Z.json |
+| a06d658c5485bd454 | returned | 2026-07-27T19:44:59Z | APPROVE | a06d658c5485bd454/returned-20260727T194459Z.json |
+| js-review-92 | dispatched | 2026-07-27T20:11:14Z |  | js-review-92/dispatched-20260727T201114Z.json |
+| ps-review-92 | dispatched | 2026-07-27T20:11:19Z |  | ps-review-92/dispatched-20260727T201119Z.json |

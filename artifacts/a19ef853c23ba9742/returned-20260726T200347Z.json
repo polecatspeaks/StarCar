@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a19ef853c23ba9742",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-26T20:03:47Z",
+  "outcome": "done-with-findings",
+  "findings": "Disclosure only, not blocking, routed to issue #1 for the owner: board/web/js/lanes.js:13's EXPECTED_LANE_IDS wire/server-determined lane order (dispatches, gates, trains, freight, fuel) differs from the ui-mockup-brief's illustrative order (trains, gates, dispatches, freight, fuel) - contract wins meanwhile, left untouched. Also disclosed: the mockups' footer store-record/fold counts (\"store: 65 to 17 dispatches\") have no wire field (schema/yard-snapshot.schema.json has none) - adding one is a wire change, out of this ticket's CSS/layout/markup scope, not implemented. Neither finding blocks the deliverable; both are documented in-repo (README.md adjudication section, dom-writer.js renderFooter comment).",
+  "abstract": "Implemented the owner-ruled shared visual language (no single keeper) across board/web's CSS, dom-writer.js, and render.js - STARCAR wordmark, near-black CTC-panel ground, lane label plates with purpose subtitles and freshness lines, and a footer status strip carrying registry completeness plus the previously-unrendered real storePathDisplay wire field. Register tokens verified byte-identical to contract via real-browser computed style. Found and fixed, via CSS only, a live HAVAGLANCE defect where the real store's ~79 dispatch records blew out the single-column dispatches list and pushed every other lane off-screen - replaced with a bounded, scrollable, multi-column grid plus title-attribute tooltips so nothing is silently lost. Font decision (system stacks, no network fetch) and two other mock deviations adjudicated and documented in the mockups README. Red-first throughout: 80/80 node tests (71 base plus 9 new), Go 73/73 unchanged, Pester scripts/tests 195/195, store-checks 204/204, probes 24/24. Committed at 45b0e12455979ca8b51555cdb2a19e352aa9be84 on car/view-62.",
+  "subject_basis": "runtime-id",
+  "task_id": "view-62-car-r1",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:8ab0271a8bf036131c40f9faa540f45c95798c2be9e6c17fb623afd2f805e63a"
+}
