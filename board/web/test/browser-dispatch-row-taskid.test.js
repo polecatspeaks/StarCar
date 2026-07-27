@@ -38,7 +38,14 @@ async function dispatchRowBySubjectHash(subjectHash) {
       textContent: el.textContent,
       title: el.getAttribute('title'),
       overflow: style.overflow,
-      textOverflow: style.textOverflow
+      textOverflow: style.textOverflow,
+      // fix cycle r2 (R1-m2): scrollWidth > clientWidth is the GENUINE,
+      // length-dependent truncation signal - overflow/text-overflow being
+      // computed correctly is necessary but not sufficient (an id short
+      // enough to fit never actually truncates even with both properties
+      // set).
+      scrollWidth: el.scrollWidth,
+      clientWidth: el.clientWidth
     };
   }, subjectHash);
 }
@@ -54,7 +61,11 @@ async function carChipBySubjectHash(subjectHash) {
 test('#75: a dispatch row whose winning record carries task_id shows the task-id as its VISIBLE text in a real browser, subject hash reachable only via the title tooltip', async () => {
   const row = await dispatchRowBySubjectHash('view-75-with-task-id');
   assert.ok(row, 'expected a .solari-subject element whose title attribute is the record-dir hash subject "view-75-with-task-id"');
-  assert.equal(row.textContent, 'view-75-car-r1', 'REGRESSION (#75): the visible dispatch row title must be the task-id, not the hash');
+  assert.equal(
+    row.textContent,
+    'view-75-extremely-long-human-task-id-handle-for-the-fix-cycle-r2-ellipsis-check',
+    'REGRESSION (#75): the visible dispatch row title must be the task-id, not the hash'
+  );
   assert.equal(row.title, 'view-75-with-task-id', 'the full subject hash must stay reachable via the native title tooltip');
 });
 
@@ -65,11 +76,21 @@ test('#75: a dispatch row whose winning record carries NO task_id falls back hon
   assert.equal(row.title, 'view-75-without-task-id');
 });
 
-test('#75: a long task-id still gets .solari-subject\'s ellipsis truncation (board.css, verified by computed style rather than assumed)', async () => {
+test('#75 fix cycle r2 (R1-m2): a GENUINELY long task-id (79 chars, longer than the hash it replaces) actually truncates via .solari-subject\'s ellipsis - not just computed style, but real overflow', async () => {
   const row = await dispatchRowBySubjectHash('view-75-with-task-id');
   assert.ok(row, 'test precondition not met');
   assert.equal(row.overflow, 'hidden', 'REGRESSION (#75): .solari-subject must still compute overflow:hidden for a task-id-titled row');
   assert.equal(row.textOverflow, 'ellipsis', 'REGRESSION (#75): .solari-subject must still compute text-overflow:ellipsis for a task-id-titled row');
+  // The instrument-honesty finding (fix cycle r2, R1-m2): overflow/text-
+  // overflow being computed correctly is necessary but not sufficient - an
+  // id short enough to fit inside .solari-subject's own width would compute
+  // the identical style while never actually truncating anything. Assert
+  // the GENUINE, length-dependent signal too: the element's own content is
+  // wider than its box.
+  assert.ok(
+    row.scrollWidth > row.clientWidth,
+    `REGRESSION (R1-m2): the fixture's task-id (79 chars) must genuinely overflow .solari-subject's box (scrollWidth ${row.scrollWidth} vs clientWidth ${row.clientWidth}) - otherwise this test cannot tell a truncating id from a merely-computed-style one`
+  );
 });
 
 test('#75: the trains lane car-chip gets the SAME task-id/fallback treatment as the dispatches lane, real browser', async () => {

@@ -526,7 +526,10 @@ function renderGates(doc, body, linkCfg) {
 }
 
 // DISPATCHES: Solari split-flap direction (mockup merge 1b) - dense
-// monospace rows: subject, state word, elapsed.
+// monospace rows: identity (task-id when the wire has one, else the
+// record-dir hash subject - #75 fix cycle r2, R1-m3: this comment used to
+// say plain "subject", stale as of this function's own identity-cluster
+// build below), state word, elapsed.
 function renderDispatches(doc, body, linkCfg) {
   const wrap = el(doc, 'div', 'lane-body lane-body-dispatches');
   wrap.appendChild(

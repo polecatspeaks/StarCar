@@ -468,13 +468,17 @@ export function buildScratchStoreForTaskIdTitles() {
     );
   }
 
-  // (a) with task_id.
+  // (a) with task_id - GENUINELY LONG (79 chars, longer than the 33-char
+  // subject hash it replaces), fix cycle r2 (R1-m2): the sibling ellipsis-
+  // truncation test claims to prove a long id truncates rather than wraps,
+  // so the fixture must actually construct that case rather than merely
+  // overflowing by accident of the grid column's own width.
   write('view-75-with-task-id', 'dispatched', '2026-07-27T09:00:00Z');
   write('view-75-with-task-id', 'returned', '2026-07-27T09:05:00Z', {
     outcome: 'done',
     findings: 'none',
     abstract: 'the human handle should render, not this record-dir hash',
-    task_id: 'view-75-car-r1'
+    task_id: 'view-75-extremely-long-human-task-id-handle-for-the-fix-cycle-r2-ellipsis-check'
   });
 
   // (b) no task_id - the honest fallback floor.
