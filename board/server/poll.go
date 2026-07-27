@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -360,11 +361,45 @@ func (s *Server) buildSnapshot(scanResult *store.ScanResult, scanErr error, poll
 		newLastGood = &nowStr
 		liveFreshnessVal = computeLiveFreshness(scanResult.Records, out.Dispatches, now, int64(s.cfg.StalenessMs), nowStr)
 		freightFreshnessVal = computeFreightFreshness(scanResult.Records, now, int64(s.cfg.StalenessMs), nowStr)
+
+		// #84 fix cycle round 2, R1-M2: tickets present with NO heartbeat is
+		// the exact HAVAGLANCE contradiction round 1 measured live in a real
+		// browser - freight reads "not yet polled" (freightFreshnessVal
+		// stays "never-polled" by design; that word is still correct in
+		// isolation, since freight genuinely has not proven a completed
+		// run) while real ticket rows render beside it. This can arise from
+		// a real partial adapter failure (Sync-Freight.ps1 writes ticket
+		// files before the heartbeat - R1-M4) or from a malformed/future-
+		// dated heartbeat record failing store.Scan's own quarantine while
+		// its sibling tickets survive. Rather than inventing a fourth
+		// freshness kind, this raises a board condition that ties the two
+		// facts together - loud, never silent (Law 1).
+		if freightFreshnessVal.Kind == "never-polled" && len(assembled.Freight.Tickets) > 0 {
+			conditions = append(conditions, WireBoardCondition{
+				Code:     "freight-tickets-without-heartbeat",
+				Detail:   fmt.Sprintf("%d ticket record(s) exist but no ticket-sync heartbeat was found - the queue below cannot yet be trusted as the product of a completed run", len(assembled.Freight.Tickets)),
+				Register: store.RegisterForCode("freight-tickets-without-heartbeat"),
+			})
+		}
 	}
 
 	if newLastGood != nil {
 		s.lastGoodAsOf["live"] = newLastGood
-		s.lastGoodAsOf["freight"] = newLastGood
+		// #84 fix cycle round 2, R1-M1: freight's lastGood tracking is
+		// gated on the freight adapter having ACTUALLY produced good data
+		// (freightFreshnessVal != never-polled) - unlike "live"
+		// (dispatches/gates/trains), where ANY successful scan is
+		// definitionally good data (DR3-5a's honest-empty rule), freight's
+		// own definition of "good" is deliberately different: it means "a
+		// ticket-sync heartbeat was found" (computeFreightFreshness's own
+		// doc comment). Never gate on Kind != "failed" alone - "stale" is
+		// deliberately STILL good (Case 3: the last-known queue keeps
+		// rendering, never blanked); only "never-polled" (no heartbeat ever
+		// observed) must be excluded, so a lane that has never proven a
+		// single completed run can never later claim "showing last good".
+		if freightFreshnessVal.Kind != "never-polled" {
+			s.lastGoodAsOf["freight"] = newLastGood
+		}
 	}
 
 	for _, spec := range laneRegistry {
@@ -398,8 +433,19 @@ func (s *Server) buildSnapshot(scanResult *store.ScanResult, scanErr error, poll
 			case "freight":
 				lane.Freshness = freightFreshnessVal
 				if polled && scanErr == nil {
+					// lane.Data is ALWAYS the current live payload on a
+					// successful scan (even when never-polled - the R1-M2
+					// board condition above discloses the inconsistency,
+					// this still renders the real tickets honestly). The
+					// LASTGOOD RETENTION MAP below is the one gated on
+					// never-polled (#84 fix cycle round 2, R1-M1) - it
+					// exists only to survive a LATER scan failure, and a
+					// lane that has never proven a completed run must
+					// never later claim it is "showing last good".
 					lane.Data = assembled.Freight
-					s.lastGoodLaneData[spec.ID] = assembled.Freight
+					if freightFreshnessVal.Kind != "never-polled" {
+						s.lastGoodLaneData[spec.ID] = assembled.Freight
+					}
 				} else if polled && scanErr != nil {
 					lane.Data = s.lastGoodLaneData[spec.ID]
 				}

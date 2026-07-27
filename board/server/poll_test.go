@@ -139,6 +139,76 @@ func TestPollOnceFreightNeverPolledOnEmptyStore(t *testing.T) {
 	}
 }
 
+// TestPollOnceFreightTicketsWithoutHeartbeatRaisesCondition (#84 fix cycle
+// round 2, R1-M2): a store carrying kind=ticket records but NO kind=ticket-
+// sync heartbeat is EXACTLY the contradiction review round 1 measured live -
+// freight reads "not yet polled" (never-polled) while real ticket rows
+// render beside it, a HAVAGLANCE failure ("Live not yet polled #84 first
+// ticket Backlog", one glance, two contradictory facts). This can arise from
+// a real partial adapter failure (Sync-Freight.ps1 writes ticket files
+// before the heartbeat, R1-M4) or from a malformed/future-dated heartbeat
+// being quarantined by store.Scan while its sibling ticket records survive.
+// Fix: a board condition makes the inconsistency LOUD rather than silent -
+// this never invents a new freshness kind (freight genuinely has not proven
+// a completed run, so "never-polled" stays the correct word for THAT axis),
+// it adds the missing signal that ties the two facts together.
+func TestPollOnceFreightTicketsWithoutHeartbeatRaisesCondition(t *testing.T) {
+	root := t.TempDir()
+	writeRecord(t, root, "ticket-84/ticket.json", validTicketJSON("ticket-84", "2026-07-23T11:59:50Z", 84, "Light up the FREIGHT lane", "Backlog", "https://github.com/polecatspeaks/StarCar/issues/84"))
+	// deliberately NO ticket-sync/ticket-sync.json
+	srv := newTestServer(t, root)
+
+	now := time.Date(2026, 7, 23, 12, 0, 0, 0, time.UTC)
+	snap, _, err := srv.PollOnce(now)
+	if err != nil {
+		t.Fatalf("PollOnce: %v", err)
+	}
+	freight := laneByID(snap, "freight")
+	if freight.Freshness.Kind != "never-polled" {
+		t.Fatalf("test precondition not met: freight freshness = %q, want never-polled (no heartbeat present)", freight.Freshness.Kind)
+	}
+	payload, ok := freight.Data.(assemble.FreightPayload)
+	if !ok || len(payload.Tickets) != 1 {
+		t.Fatalf("test precondition not met: expected 1 ticket rendered alongside never-polled freshness, got %#v", freight.Data)
+	}
+
+	var found *WireBoardCondition
+	for i := range snap.Board {
+		if snap.Board[i].Code == "freight-tickets-without-heartbeat" {
+			found = &snap.Board[i]
+		}
+	}
+	if found == nil {
+		t.Fatalf("REGRESSION (R1-M2): expected a 'freight-tickets-without-heartbeat' board condition when tickets exist with no heartbeat, got board conditions %+v", snap.Board)
+	}
+	if found.Register != "needs-attention" {
+		t.Errorf("freight-tickets-without-heartbeat register = %q, want needs-attention (this IS a real inconsistency, never a calm note)", found.Register)
+	}
+}
+
+// TestPollOnceFreightTicketsWithHeartbeatRaisesNoCondition is the negative
+// control for TestPollOnceFreightTicketsWithoutHeartbeatRaisesCondition -
+// the SAME ticket record, with a heartbeat present, must raise ZERO
+// freight-tickets-without-heartbeat conditions (never a condition that fires
+// on ticket presence alone, only on the absence pairing).
+func TestPollOnceFreightTicketsWithHeartbeatRaisesNoCondition(t *testing.T) {
+	root := t.TempDir()
+	writeRecord(t, root, "ticket-sync/ticket-sync.json", validTicketSyncJSON("2026-07-23T11:59:50Z"))
+	writeRecord(t, root, "ticket-84/ticket.json", validTicketJSON("ticket-84", "2026-07-23T11:59:50Z", 84, "Light up the FREIGHT lane", "Backlog", "https://github.com/polecatspeaks/StarCar/issues/84"))
+	srv := newTestServer(t, root)
+
+	now := time.Date(2026, 7, 23, 12, 0, 0, 0, time.UTC)
+	snap, _, err := srv.PollOnce(now)
+	if err != nil {
+		t.Fatalf("PollOnce: %v", err)
+	}
+	for _, c := range snap.Board {
+		if c.Code == "freight-tickets-without-heartbeat" {
+			t.Fatalf("a heartbeat-backed ticket must NOT raise freight-tickets-without-heartbeat, got %+v", c)
+		}
+	}
+}
+
 // TestPollOnceFreightFreshWhenTicketSyncRecent (#84, Case 2): a recent
 // ticket-sync heartbeat record (age <= stalenessMs) reads freight as fresh,
 // with the freight lane's Data carrying the real assembled ticket list -
@@ -232,6 +302,56 @@ func TestPollOnceFreightRetainsLastGoodOnScanFailure(t *testing.T) {
 	}
 }
 
+// TestPollOnceFreightNeverPolledScanFailureNeverClaimsLastGood (#84 fix
+// cycle round 2, R1-M1): a freight lane that has NEVER actually run (poll 1
+// is an empty store - no ticket-sync heartbeat at all, freshness
+// never-polled) must NOT claim "showing last good" once the store vanishes.
+// TestPollOnceFreightRetainsLastGoodOnScanFailure (above) cannot catch this
+// - its poll-1 store SEEDS a heartbeat, so it only proves the case where
+// freight genuinely had good data to retain. This test proves the sibling
+// case: no good data was EVER observed, so LastGoodAsOf and Data must both
+// stay nil/absent on the subsequent scan failure - "no good data has ever
+// been read" (compose.js's freshnessLine), never a fabricated "showing last
+// good from <timestamp>" claim about a lane that has never proven a run.
+func TestPollOnceFreightNeverPolledScanFailureNeverClaimsLastGood(t *testing.T) {
+	root := t.TempDir()
+	// Deliberately NO ticket-sync record and NO ticket records - poll 1 is a
+	// genuinely empty store, so freight's own freshness reads never-polled
+	// (never "fresh" the way DR3-5a's honest-empty rule reads for
+	// dispatches/gates/trains - freight's definition of "good" is
+	// deliberately different, per poll.go's own computeFreightFreshness doc
+	// comment).
+	srv := newTestServer(t, root)
+
+	now := time.Date(2026, 7, 23, 12, 0, 0, 0, time.UTC)
+	snap1, _, err := srv.PollOnce(now)
+	if err != nil {
+		t.Fatalf("first PollOnce: %v", err)
+	}
+	freight1 := laneByID(snap1, "freight")
+	if freight1.Freshness.Kind != "never-polled" {
+		t.Fatalf("test precondition not met: freight freshness on poll 1 (empty store) = %q, want never-polled", freight1.Freshness.Kind)
+	}
+
+	if err := os.RemoveAll(root); err != nil {
+		t.Fatalf("removing store dir: %v", err)
+	}
+	snap2, _, err := srv.PollOnce(now.Add(1 * time.Second))
+	if err != nil {
+		t.Fatalf("second PollOnce: %v", err)
+	}
+	freight2 := laneByID(snap2, "freight")
+	if freight2.Freshness.Kind != "failed" {
+		t.Fatalf("freight freshness = %q, want failed once the store directory vanishes", freight2.Freshness.Kind)
+	}
+	if freight2.Freshness.LastGoodAsOf != nil {
+		t.Fatalf("REGRESSION (R1-M1): freight LastGoodAsOf = %q, want nil - this lane has NEVER produced good data (no ticket-sync heartbeat was ever observed), so it must never claim \"showing last good\"", *freight2.Freshness.LastGoodAsOf)
+	}
+	if freight2.Data != nil {
+		t.Fatalf("REGRESSION (R1-M1): freight Data on scan failure = %#v, want nil - nothing good was ever observed to retain", freight2.Data)
+	}
+}
+
 // TestPollOnceStaleAfterThreshold: freshness "stale" fires once the newest
 // observed record's "at" is older than stalenessMs AND something is
 // IN FLIGHT (this fixture's sole record is "dispatched", never returned) -
@@ -270,6 +390,17 @@ func TestPollOnceStaleAfterThreshold(t *testing.T) {
 func TestPollOnceScanFailureIsFailedWithLastGood(t *testing.T) {
 	root := t.TempDir()
 	writeRecord(t, root, "s1/dispatched-1.json", validDispatchedJSON("s1", "2026-07-23T11:59:59Z"))
+	// #84 fix cycle round 2, R1-M1: this test's blanket loop below checks
+	// EVERY live lane, including freight - which since R1-M1 only ever
+	// carries lastGood when it has genuinely produced good data (a
+	// ticket-sync heartbeat was found, computeFreightFreshness's own
+	// definition of "good"). Without one, freight would legitimately have
+	// NO lastGood to retain (TestPollOnceFreightNeverPolledScanFailureNever
+	// ClaimsLastGood covers exactly that divergent case) - a heartbeat is
+	// seeded here so THIS test's blanket "every live lane retains its good
+	// data" assertion stays meaningful for freight too, matching its
+	// original design intent (S6 row 1) rather than silently excluding it.
+	writeRecord(t, root, "ticket-sync/ticket-sync.json", validTicketSyncJSON("2026-07-23T11:59:59Z"))
 	srv := newTestServer(t, root)
 
 	now := time.Date(2026, 7, 23, 12, 0, 0, 0, time.UTC)

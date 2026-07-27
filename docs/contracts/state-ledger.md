@@ -78,6 +78,14 @@ C.2's own commit invalidated this row and did not true it, a living-contracts mi
 own reviewer also missed (the same class the plan folds as F7). Trued here, in the
 commit that caught it.
 
+**Amended (#84 fix cycle round 2, R1-m6, 2026-07-27):** `scripts/Sync-Freight.ps1` is a
+SECOND producer that stales the index the same way `Produce-Artifact.ps1` already does
+(and, like it, never regenerates `index.md` itself - confirmed by grep, no producer
+script in this repo does) - this row's existing contract already covers it without
+amendment: dev-branch staleness is the documented, gated-only-at-PR-to-main posture
+above, unchanged by which script produced the drift. Recorded here so the freight
+adapter's own contribution to index staleness is not mistaken for an undocumented gap.
+
 ## Question 1, amended (2026-07-23, yard-board train Car 4, plan task 4.4)
 
 **The dispatch-harness claim above stays true for the harness's OWN components** (the

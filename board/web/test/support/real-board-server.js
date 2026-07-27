@@ -608,6 +608,26 @@ export function buildScratchStoreFreightStale() {
   return storeDir;
 }
 
+// #84 fix cycle round 2, R1-M2: tickets exist but NO ticket-sync heartbeat -
+// the exact HAVAGLANCE contradiction round 1 measured live by injecting a
+// mid-run failure into the real adapter ("Live not yet polled #84 first
+// ticket Backlog"). This builder reproduces the OBSERVABLE STORE SHAPE that
+// failure leaves behind, without needing to run the real adapter and kill it
+// mid-write - the board reads the filesystem, not the adapter's process, so
+// the shape is what matters for this regression guard.
+export function buildScratchStoreFreightTicketsWithoutHeartbeat() {
+  const storeDir = mkdtempSync(join(tmpdir(), 'starcar-board-freight-tickets-no-heartbeat-'));
+  freightWrite(storeDir, 'ticket-84', 'ticket', '2026-07-23T11:59:50Z', {
+    ticket: {
+      number: 84,
+      title: 'Light up the FREIGHT lane',
+      status: 'Backlog',
+      url: 'https://github.com/polecatspeaks/StarCar/issues/84'
+    }
+  });
+  return storeDir;
+}
+
 function goBinary() {
   // CI (docs/setup.md's Go toolchain row): actions/setup-go puts `go` on
   // PATH for the whole job, same as the existing "Run board Go vet +

@@ -234,7 +234,7 @@ Describe 'Sync-Freight' {
         (Test-Path (Join-Path $storeRoot 'ticket-sync/ticket-sync.json')) | Should -BeTrue -Because 'the adapter DID run, even though the queue is empty - this is what distinguishes Case 2 from Case 1 (never ran)'
     }
 
-    It 'a malformed items fixture (the "gh call" equivalent of a failure) writes NOTHING and exits nonzero - failure surfaces as staleness, never a fresh-looking failure marker' {
+    It 'a malformed items fixture (a failure BEFORE the write loop even starts) writes NOTHING and exits nonzero' {
         $repo = New-FixtureRepo
         $storeRoot = Join-Path $repo 'artifacts'
         $badItemsPath = Join-Path $repo 'bad-items.json'
@@ -244,6 +244,32 @@ Describe 'Sync-Freight' {
         $result.ExitCode | Should -Not -Be 0
 
         (Test-Path (Join-Path $storeRoot 'ticket-sync/ticket-sync.json')) | Should -BeFalse -Because 'a failed run must write NOTHING, including the heartbeat - the freshness axis is the only failure signal'
+        (Get-Content (Join-Path $storeRoot '_faults.log') -Raw -Encoding UTF8) | Should -Match 'freight-sync' -Because 'the failure must be raised, never dropped silently (Law 4)'
+    }
+
+    It '#84 fix cycle round 2 (R1-M4): a MID-RUN failure (partway through the write loop) leaves the earlier ticket write on disk but NEVER writes the heartbeat - pins the CORRECTED contract (writes are not atomic as a set; the heartbeat-last ordering is the actual guarantee)' {
+        $repo = New-FixtureRepo
+        $storeRoot = Join-Path $repo 'artifacts'
+        New-Item -ItemType Directory -Path $storeRoot -Force | Out-Null
+        # ticket-90 is forced to fail its own directory creation - a FILE
+        # (not a directory) already occupies that exact path, so
+        # New-Item -ItemType Directory throws when the loop reaches it.
+        # Item #1 is listed FIRST (Get-BoardQueueItems/the write loop both
+        # preserve fixture order), so #1's write completes successfully
+        # BEFORE #90's failure aborts the run - a genuine mid-run partial
+        # failure reached through the script's real public interface, never
+        # a code-level injection.
+        Set-Content -Path (Join-Path $storeRoot 'ticket-90') -Value 'blocking file, not a directory' -Encoding utf8
+        $itemsPath = New-ItemsFixture -Dir $repo -Items @(
+            (New-BoardItem -Number 1 -Title 'first ticket' -Status 'Backlog' -Url 'https://github.com/polecatspeaks/StarCar/issues/1')
+            (New-BoardItem -Number 90 -Title 'blocked ticket' -Status 'Backlog' -Url 'https://github.com/polecatspeaks/StarCar/issues/90')
+        )
+
+        $result = Invoke-SyncFreight -StoreRoot $storeRoot -ItemsJsonPath $itemsPath
+        $result.ExitCode | Should -Not -Be 0 -Because "script output: $($result.Output -join "`n")"
+
+        (Test-Path (Join-Path $storeRoot 'ticket-1/ticket.json')) | Should -BeTrue -Because 'REGRESSION (R1-M4): the earlier write in the loop must survive a LATER failure - this is the measured, corrected contract, no longer "writes nothing"'
+        (Test-Path (Join-Path $storeRoot 'ticket-sync/ticket-sync.json')) | Should -BeFalse -Because 'the heartbeat is written LAST and must NEVER appear after a mid-run failure - this is the one guarantee that still holds and is what board/server R1-M2 depends on'
         (Get-Content (Join-Path $storeRoot '_faults.log') -Raw -Encoding UTF8) | Should -Match 'freight-sync' -Because 'the failure must be raised, never dropped silently (Law 4)'
     }
 }

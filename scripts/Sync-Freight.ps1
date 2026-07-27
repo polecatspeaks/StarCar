@@ -20,6 +20,13 @@
 #      per-record `--only` commit (never `-a`, never a bare `git add`, so a co-staged
 #      conductor file is never swept into this commit - C2R1-M2's rule, applied here)
 #
+# INDEX STALENESS (#84 fix cycle round 2, R1-m6, documented rather than left implicit):
+# this script does NOT regenerate `artifacts/index.md` - same posture as every other
+# producer in this repo (`Produce-Artifact.ps1` does not either). Covered by the
+# already-landed contract in `docs/contracts/state-ledger.md`'s Question 2: dev-branch
+# staleness is expected and undocumented-refresh-cadence-owned; CI gates index freshness
+# only at PR-to-main / push-to-main (#20).
+#
 # NO SUPERSESSION (#84 owner ruling item 3, "the fold is not involved" - board/fold has
 # no case for kind=ticket at all, algorithm.go's bySubject switch only groups
 # dispatched/returned/presumed-lost/intent). There is therefore no "latest wins" authority
@@ -32,16 +39,32 @@
 # trap the #84 owner ruling and the conductor's probe both warned against.
 #
 # FAILURE SURFACES AS STALENESS, NEVER A SEPARATE MARKER (#84 brief's own open design
-# question, answered and disclosed here): a failed run (the gh call throws, a write
-# fails) writes NOTHING - not even a "we tried and failed" record - and exits nonzero.
-# The ticket-sync heartbeat's own `at` therefore only ever advances on a fully successful
-# run, so board/server's own computeFreightFreshness (board/server/poll.go) naturally
-# reads an increasingly stale age across repeated failures - never a fresh-looking
-# failure marker that could itself go silently stale. This mirrors the shape #29 already
-# established for the whole-store scan (poll.go's computeLiveFreshness): "old" already
-# means "something is not updating", so a second failure vocabulary would duplicate a
-# signal the freshness axis already carries. Faults are still raised, never dropped
-# silently (Law 4) - via _faults.log, the same convention Produce-Artifact.ps1 uses.
+# question, answered and disclosed here) - CORRECTED (#84 fix cycle round 2, R1-M4: the
+# prior wording here claimed "a failed run writes NOTHING", which review round 1 measured
+# FALSE - an injected mid-run failure left a real ticket-<n>/ticket.json on disk plus a
+# _faults.log line, exit 1). What is actually true, stated precisely: writes are NOT
+# atomic as a set. Ticket files are written and departed directories removed ONE AT A TIME
+# as the loop runs; a failure partway through leaves whatever was already written on disk.
+# The ticket-sync heartbeat is still written LAST, only once every write/removal above has
+# completed without error - THAT part of the design holds - so the one guarantee this
+# script actually provides is: the heartbeat's own `at` only ever advances on a FULLY
+# successful run. A partial failure therefore produces one of two states, both now HANDLED
+# rather than silently wrong:
+#   - no heartbeat existed before this run: board/server's computeFreightFreshness
+#     (board/server/poll.go) reads never-polled, and if the partial run left any ticket
+#     file behind, poll.go's own R1-M2 fix raises a "freight-tickets-without-heartbeat"
+#     board condition - loud, never silent (Law 1).
+#   - a heartbeat from an EARLIER successful run already existed: it is untouched (this
+#     script only ever writes it as the LAST step of the current attempt), so
+#     computeFreightFreshness keeps reading that earlier `at`, and staleness climbs
+#     exactly as if this run had failed cleanly - the queue simply does not reflect this
+#     run's own (possibly partial) changes yet.
+# Board/server's OWN detection (R1-M2), not an atomic-write guarantee here, is what keeps
+# a partial failure from ever rendering a silent contradiction. Faults are still raised,
+# never dropped silently (Law 4) - via _faults.log, the same convention Produce-
+# Artifact.ps1 uses. A future revision could make the write set atomic (stage to a temp
+# tree, swap in one operation) to close this gap at the SOURCE rather than downstream;
+# not done here, disclosed as a real, live gap rather than re-asserted false.
 #
 # TESTABILITY: -ItemsJsonPath lets a caller inject a `gh project item-list` fixture
 # instead of calling gh live (mirrors -DefaultsPath's override-point convention

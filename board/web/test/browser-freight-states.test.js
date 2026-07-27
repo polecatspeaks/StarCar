@@ -7,12 +7,14 @@
 // fundamentally different fixture content, not one shared scratch store.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { rmSync } from 'node:fs';
 import { chromium } from 'playwright';
 import {
   startRealBoardServer,
   buildScratchStoreFreightNeverPolled,
   buildScratchStoreFreightFreshEmpty,
-  buildScratchStoreFreightStale
+  buildScratchStoreFreightStale,
+  buildScratchStoreFreightTicketsWithoutHeartbeat
 } from './support/real-board-server.js';
 
 async function readFreightLane(page) {
@@ -32,6 +34,15 @@ async function readFreightLane(page) {
       }))
     };
   });
+}
+
+// #84 fix cycle round 2: reads the board-conditions strip's raw text (#30's
+// grouped chrome, expanded via <details open> so per-instance text is
+// present in the DOM without a click) - used by the R1-M2 regression below
+// to prove the freight-tickets-without-heartbeat condition is genuinely
+// user-visible, not just present in the wire payload.
+async function readBoardConditionsText(page) {
+  return page.evaluate(() => document.querySelector('.board-conditions-strip')?.textContent ?? '');
 }
 
 test('#84 Case 1 (NEVER RUN): freight reads "not yet polled", never "the queue is empty"', async () => {
@@ -111,6 +122,92 @@ test('#84 Case 3 (STALE): freight reads "stale, <duration>", and the last-known 
     assert.equal(freight.rows[0].title, 'Light up the FREIGHT lane');
     assert.equal(freight.rows[0].status, 'Backlog');
     assert.equal(freight.registerClass, 'register-needs-attention', `OBSERVED register class: ${freight.registerClass} (stale must render hot)`);
+  } finally {
+    await browser.close();
+    await server.stop();
+  }
+});
+
+// #84 fix cycle round 2, R1-M2: tickets exist but no heartbeat rendered
+// "not yet polled" beside real ticket rows with ZERO board condition at
+// review round 1 - reproduced here as a real browser regression guard.
+test('#84 fix cycle r2 (R1-M2): tickets WITHOUT a heartbeat raise a visible board condition, never a silent "not yet polled" beside real rows', async () => {
+  const server = await startRealBoardServer({ storePath: buildScratchStoreFreightTicketsWithoutHeartbeat() });
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage();
+    await page.goto(`${server.baseUrl}/`);
+    await page.waitForFunction(
+      () => {
+        const lanes = [...document.querySelectorAll('.lane')];
+        const freight = lanes.find((l) => l.querySelector('.lane-title')?.textContent === 'Freight');
+        return freight && freight.querySelectorAll('.freight-row').length > 0;
+      },
+      { timeout: 15000 }
+    );
+    const freight = await readFreightLane(page);
+    // The contradictory PAIR round 1 measured verbatim: "not yet polled"
+    // secondary line, real ticket row(s) rendered beside it.
+    assert.equal(freight.secondary, 'not yet polled', `OBSERVED freight secondary line: ${JSON.stringify(freight)}`);
+    assert.equal(freight.rows.length, 1, `OBSERVED freight rows: ${JSON.stringify(freight.rows)}`);
+    assert.equal(freight.rows[0].number, '#84');
+
+    // REGRESSION GUARD (R1-M2): this pairing must now be VISIBLE - a real
+    // board condition, rendered in the conditions strip, not silent.
+    const boardConditionsText = await readBoardConditionsText(page);
+    assert.ok(
+      boardConditionsText.includes('freight-tickets-without-heartbeat'),
+      `REGRESSION (R1-M2): expected the board-conditions strip to disclose the contradiction, got: ${JSON.stringify(boardConditionsText)}`
+    );
+  } finally {
+    await browser.close();
+    await server.stop();
+  }
+});
+
+// #84 fix cycle round 2, R1-M1: a freight lane that has NEVER produced good
+// data must not later claim "showing last good" once a scan fails. Unlike
+// the other browser cases, this one is DYNAMIC - it starts on an empty
+// store (never-polled), then removes the store directory mid-test and
+// re-observes, mirroring the reviewer's own measured recipe exactly.
+test('#84 fix cycle r2 (R1-M1): a NEVER-POLLED freight lane never claims "showing last good" after a scan failure', async () => {
+  const storePath = buildScratchStoreFreightNeverPolled();
+  const server = await startRealBoardServer({ storePath });
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage();
+    await page.goto(`${server.baseUrl}/`);
+    await page.waitForFunction(
+      () => {
+        const lanes = [...document.querySelectorAll('.lane')];
+        const freight = lanes.find((l) => l.querySelector('.lane-title')?.textContent === 'Freight');
+        return freight && freight.querySelector('.lane-secondary')?.textContent === 'not yet polled';
+      },
+      { timeout: 15000 }
+    );
+    const before = await readFreightLane(page);
+    assert.equal(before.secondary, 'not yet polled', `OBSERVED before store loss: ${JSON.stringify(before)}`);
+
+    rmSync(storePath, { recursive: true, force: true });
+
+    await page.waitForFunction(
+      () => {
+        const lanes = [...document.querySelectorAll('.lane')];
+        const freight = lanes.find((l) => l.querySelector('.lane-title')?.textContent === 'Freight');
+        return freight && freight.querySelector('.lane-secondary')?.textContent?.startsWith('source failed');
+      },
+      { timeout: 15000 }
+    );
+    const after = await readFreightLane(page);
+    assert.ok(after.secondary.startsWith('source failed'), `OBSERVED after store loss: ${JSON.stringify(after)}`);
+    assert.ok(
+      after.secondary.includes('no good data has ever been read'),
+      `REGRESSION (R1-M1): expected "no good data has ever been read" (never proven a run), got: ${JSON.stringify(after)}`
+    );
+    assert.ok(
+      !after.secondary.includes('showing last good'),
+      `REGRESSION (R1-M1): a lane that has NEVER produced good data must not claim "showing last good", got: ${JSON.stringify(after)}`
+    );
   } finally {
     await browser.close();
     await server.stop();

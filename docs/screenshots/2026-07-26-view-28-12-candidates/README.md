@@ -60,3 +60,20 @@ captioned here per NORTH STAR ("the commit that invalidates a document
 updates that document, in the same commit") rather than left to mislead a
 reader silently. `health-trend-and-provenance.png` is unaffected (see
 above) and carries no such note.
+
+**DISCLOSED DIVERGENCE (#84 fix cycle round 2, R1-M3, 2026-07-27):** all
+THREE images in this directory - `calm-yard.png`, `hot-yard.png`, AND
+`health-trend-and-provenance.png` - show `FREIGHT / the inbound ticket
+queue / Dark / no equipment on this lane` (lane 4 in every capture, whether
+against the ambient real store or the minimal health-trend scratch fixture)
+- opened and reconfirmed before writing this sentence, correcting an
+earlier draft of this note that wrongly assumed the third image carried no
+freight lane at all. That rendering is no longer current: issue #84 landed
+a store-mediated GitHub ticket adapter (`scripts/Sync-Freight.ps1`) and
+flipped freight's registry position to `live`
+(`board/server/laneregistry.go`), with three distinct freshness states of
+its own. This is unrelated to what these images were captured to evidence
+(#28's ticket-link and #12's health-trend badge, both still accurate) and
+they are not recaptured - the remedy is this caption, per the car-brief
+template's own instruction, never a fresh screenshot chasing a UI that
+will keep changing.

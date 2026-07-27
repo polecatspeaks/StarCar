@@ -1221,6 +1221,62 @@ test('#84: renderBoard renders freight Case 3 (stale) with the stale secondary l
   assert.equal(root.querySelectorAll('.freight-status')[0].textContent, 'Backlog');
 });
 
+// #84 fix cycle round 2, R1-m3: recordDir was already carried on the wire
+// (schema/yard-snapshot.schema.json's freightPayload advertises it as "#28
+// clickable provenance") but renderFreight never rendered it - fixed by
+// linking the "#N" number token to its store record directory, the same
+// convention every other lane's subject/name token already uses, DISTINCT
+// from the title's own direct github.com issue-URL link.
+test('#84 fix cycle r2 (R1-m3): a freight row\'s "#N" number links to its record directory when github config + recordDir are both present, DISTINCT from the title\'s issue-URL link', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot(
+    [
+      {
+        id: 'freight',
+        title: 'Freight',
+        position: 'live',
+        freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' },
+        data: {
+          tickets: [
+            { number: 84, title: 'Light up the FREIGHT lane', status: 'Backlog', url: 'https://github.com/polecatspeaks/StarCar/issues/84', recordDir: 'ticket-84' }
+          ]
+        }
+      }
+    ],
+    githubCfg
+  );
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const numbers = root.querySelectorAll('.freight-number');
+  assert.equal(numbers.length, 1);
+  assert.equal(numbers[0].tagName, 'a');
+  assert.equal(numbers[0].attributes.href, 'https://github.com/polecatspeaks/StarCar/tree/dev/artifacts/ticket-84');
+
+  const titles = root.querySelectorAll('.freight-title');
+  assert.equal(titles[0].attributes.href, 'https://github.com/polecatspeaks/StarCar/issues/84', 'the title link must stay the DIRECT issue URL, never the recordDir link');
+});
+
+test('#84 fix cycle r2 (R1-m3): a freight row with NO recordDir renders its number as plain text, never a broken link', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([
+    {
+      id: 'freight',
+      title: 'Freight',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' },
+      data: { tickets: [{ number: 84, title: 'Light up the FREIGHT lane', status: 'Backlog', url: 'https://github.com/polecatspeaks/StarCar/issues/84' }] }
+    }
+  ]);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const numbers = root.querySelectorAll('.freight-number');
+  assert.equal(numbers.length, 1);
+  assert.equal(numbers[0].tagName, 'span');
+  assert.equal(numbers[0].textContent, '#84');
+});
+
 // --- #67: compact clock time (owner FORMAT NIT, 2026-07-26 17:16) ---
 
 test('#67: a dispatch elapsed time renders compact clock time (4m32s -> "4:32"), never a unit-suffixed number', () => {

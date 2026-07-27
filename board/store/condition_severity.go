@@ -86,6 +86,14 @@ var conditionSeverity = map[string]ConditionTier{
 	"recognition-vocabulary-unreadable": TierFlag,
 	"shop-default-budget-unreadable":    TierFlag,
 	"fold-fault":                        TierFlag,
+
+	// board/server/poll.go (#84 fix cycle round 2, R1-M2): tickets exist
+	// with no ticket-sync heartbeat is a genuine data-integrity
+	// inconsistency (the queue cannot yet be trusted as the product of a
+	// completed run) - never an expected pattern the way a vocabulary
+	// discovery is, so FLAG-tier, same family as the assemble.go
+	// integrity-violation rows above.
+	"freight-tickets-without-heartbeat": TierFlag,
 }
 
 // RegisterForCode resolves a board condition's CODE to its rendered

@@ -42,11 +42,14 @@ type Freshness struct {
 	LastGoodAsOf *string          `json:"lastGoodAsOf,omitempty"`
 }
 
-// Lane mirrors $defs.lane. Data is omitted entirely for lanes with no
-// adapter (freight/fuel, dark/bagged) - the landed wire schema carries no
-// surfacesData flag (a design S5.2 mention that did not make it into the
-// schema car's landed $defs; disclosed in this car's report), so absence of
-// the key itself is what signals "no payload" on the wire.
+// Lane mirrors $defs.lane. Data is omitted entirely for a lane with NO
+// adapter at all (fuel, bagged - #84 fix cycle round 2, R1-m1: CORRECTED,
+// this comment used to also name freight/dark here, stale since #84 flipped
+// freight's registry position to live and gave it a real adapter) - the
+// landed wire schema carries no surfacesData flag (a design S5.2 mention
+// that did not make it into the schema car's landed $defs; disclosed in
+// that car's report), so absence of the key itself is what signals "no
+// payload" on the wire for the lane(s) it still applies to.
 type Lane struct {
 	ID        string    `json:"id"`
 	Title     string    `json:"title"`
