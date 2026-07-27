@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a0ea6918ba39a1bda",
+  "session_id": "15c84ef1-8e84-4d98-aacd-17cce34752cb",
+  "at": "2026-07-27T03:28:48Z",
+  "outcome": "success",
+  "findings": "none",
+  "abstract": "Fixed the round-2 REJECT's MAJOR-R2-1/MINOR-R2-1 (one edit): render.test.js's queued-ancient fixture car now carries outcome done, matching real wire constraints (assemble.go only sets Outcome when state is returned; the artifact schema requires it for kind=returned) and re-arming the declaredNotObserved guard the fixture was meant to pin. Re-armament verified directly: fault-injected the exact guard deletion, observed 42/43 with the queued-ancient test failing for the stated reason, quoted the AssertionError, then restored render.js and confirmed byte-identical via sha256 match before and after. Same-pass isolation sweep confirmed the other non-terminal fixtures (rolling-dispatched, quarantined-state) correctly model the wire with no outcome and needed no change; added one symbol-cited comment at isTrainTerminal documenting that its stateRegister conjunct is defence-in-depth, not dead code, since no wire-realistic fixture can isolate it from the outcome conjunct. NOTE-3: verify-lane-filters.mjs now captures getComputedStyle on the hot-outcome car-outcome chip directly, observing rgb(255, 74, 58) against the real Go server, matching the reviewer's own independent probe. Suite counts at commit 4b97749: board/web node --test 169/169 (unchanged, fixture-fix/comment-only round), Pester scripts/tests 223/227 passed 4 skipped 0 failed (both citation gates green), scripts/probes 24/24, probe-yard-snapshot.mjs PASS, Go not re-run per instruction since untouched. Self-checked the diff: no new file:line numeric citations, changes confined to the named closed list.",
+  "subject_basis": "runtime-id",
+  "task_id": "view-67-car-r3",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:213012e2d1bc7a9e12be462320eae5de18854c5330f8473c83267d278859273a"
+}
