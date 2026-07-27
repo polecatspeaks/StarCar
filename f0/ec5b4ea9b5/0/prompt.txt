@@ -21,3 +21,17 @@ ok the retro was part of it, also we had no friction log from yesterday to revie
 ---
 
 let's go with the goodnight skill update. can we also mine the friction log?
+
+---
+
+<task-notification>
+<task-id>bu6bh1p7a</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\8a347c36-20b4-427a-ae0b-46855aa7bb72\tasks\bu6bh1p7a.output</output-file>
+<status>completed</status>
+<summary>Background command "Watch CI to terminal state for cebfa91 (background)" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+ok so some more feedback on the board UI. Right now the dispatches only show what looks like a hash as the train title, and the trains lane looks like it's old static info?[Image #1] Do we have cards for these issues are are this fast follow on feedbacks?
