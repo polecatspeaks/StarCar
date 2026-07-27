@@ -134,10 +134,39 @@ and breaks things there is no stable quickstart to assert, and an instrument re-
 yesterday's README would cry wolf - which our own severity philosophy calls worse than no
 instrument. The tier downgrade is the price and is written down rather than glossed.*
 
-Two surfaces stay unguarded even after CI lands, named so nobody assumes otherwise:
-comprehensibility (a machine proves commands run, never that a human could follow them)
-and screenshot drift (a stale image on a status-board project is both the likeliest and
-the most embarrassing rot this repo can ship).
+One surface stays unguarded even after CI lands, named so nobody assumes otherwise:
+comprehensibility (a machine proves commands run, never that a human could follow them).
+
+**SCREENSHOTS ARE A VALIDATION DEVICE, NOT A LIVING DOCUMENT (owner ruling, 2026-07-27),
+and this paragraph used to say the opposite.** It named screenshot drift as the second
+permanently-unguarded surface - "a stale image on a status-board project is both the
+likeliest and the most embarrassing rot this repo can ship" - and that framing was the
+defect. In the owner's words: *"Screenshots are a validation device. They exist to
+validate changes at the time of change, not keep an ongoing tally of the screen
+rendering."* Once that is true, "drift" is the wrong noun for what happens to them. An
+image captured to validate a change on the day of the change does not ROT when the code
+moves on, any more than a landed verdict rots; it simply becomes what it always was, a
+dated observation. The living-document rule above binds documents that make standing
+claims, and a validation capture makes none.
+
+**What DOES rot is an unlabelled one, and that is the guardable thing.** An image with no
+record of what it validated, when, and at which commit is not evidence at all - it is a
+picture, and a reader who mistakes it for current rendering has been misled by our own
+artifact. So the obligation is LABELLING, never recapture: every screenshot directory
+carries a README stating what the images validated, the commit they were captured at, and
+any known divergence since. That is mechanically checkable (the DocPolicy `Status:` gate's
+own shape, one surface over), it asserts something durable rather than something that
+expires hourly, and it does not cry wolf - which recapture-on-drift would, since the board's
+own captures include the ambient artifact store and that store grows with every dispatch.
+
+*Scar, twice in two days, which is what earned the ruling: the #69/#71 train's round-2
+Major forced a DISCLOSED STALENESS block into one screenshot README, and #75's review then
+found the same class again - two committed board images depicting a hash-as-identity
+rendering that the very train under review was replacing, in an enumeration that claimed
+the documentation surface was "checked and clear" without opening `docs/screenshots/` at
+all. Three of four screenshot directories held no README of any kind. The gap was declared
+in this file and then hit anyway, twice: a named unguarded surface is a debt, not an
+excuse.*
 
 **The showcase never edits the record.** This repo is deliberately a demonstration of how
 the process works, which creates standing pressure to make the process LOOK good - and

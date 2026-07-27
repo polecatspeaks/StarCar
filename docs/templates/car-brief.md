@@ -121,6 +121,15 @@ not compliance.
 DOC CHECK: <the documents this diff plausibly invalidates> - is each updated in the same
 commit? Open every file:line the diff's docs cite and confirm the citation is true. A
 stale document or a dead citation is a MAJOR finding; documents rank equal to code here.
+SCREENSHOTS ARE PART OF THIS SURFACE AND ARE NAMED HERE BECAUSE THEY WERE TWICE MISSED
+(#69/#71 round 2, #75 round 1): whenever the diff changes what the board RENDERS, open
+`docs/screenshots/` - not the enumeration the car reports, the directory itself - and rule
+on whether any committed image depicts the rendering this diff replaces. Screenshots are a
+VALIDATION DEVICE, never a living document (owner ruling 2026-07-27, CLAUDE.md NORTH STAR),
+so the remedy is never recapture: it is a README stating what the images validated, the
+commit they were captured at, and the divergence this diff introduces. An affirmative
+"documentation is clear" claim that never opened this directory is itself the finding,
+because it is a claim about a surface the claimant did not look at.
 DOC SENTENCE CHECK (if user-facing docs, or code they describe, are touched): <the claims
 at issue> - trace each from prose to the command it names to the code that runs to what a
 stranger observes, file:line at every hop, and state the trace. This is the PR-stage gate
@@ -134,6 +143,11 @@ returned) - never by reading CSS or reasoning about the cascade, and never a bar
 pass/fail with no printed value (#40's own carrier item 1 ends "Report observed
 values."; naming a register without printing what was measured is unverifiable by a
 second party).
+SCREENSHOT COROLLARY (#75): a diff that reaches this check is by definition a diff that
+changes rendering, so it is also the diff most likely to have left a committed image
+depicting the OLD rendering. Pair this check with the DOC CHECK's screenshot clause above -
+measure what the board renders now, then open `docs/screenshots/` and rule on whether any
+image still shows what it used to.
 THIS IS A FLOOR, NOT A REPLACEMENT FOR JUDGMENT: measurement establishes what the board
 IS rendering; you still RULE on whether that is CORRECT against the design authority
 (the mockup brief, the three-register law, the issue's own text) - a verdict that reports
