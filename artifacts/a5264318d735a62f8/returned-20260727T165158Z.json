@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "a5264318d735a62f8",
+  "session_id": "8a347c36-20b4-427a-ae0b-46855aa7bb72",
+  "at": "2026-07-27T16:51:58Z",
+  "outcome": "success",
+  "findings": "Implemented and landed #84 (freight lane) end to end at commit bc552df on car/adapter-84 (base 51fb403). All work is red-first with observed failures quoted, restored, and re-verified green. Three non-vacuous fault injections performed and reverted (store.go typed-decode, Sync-Freight.ps1 removal logic, poll.go computeFreightFreshness), each with the observed failure text quoted in the report. The three Law-1 absence/staleness states were proven distinct through a real Playwright/Chromium browser against a real board/server Go binary and real scratch stores, not a DOM-class or regex assertion. Suite arithmetic: Go board 108/108 PASS (base 98/98); board/web node 234/234 PASS (base 225/225); scripts/tests Pester 235/0/4-skipped/239 (base 223/0/4/227); scripts/probes 29/29 unchanged; StoreIntegrity 271/271 unchanged. Documentation (design doc, spec, state ledger) trued in the same commit. Two honest, disclosed limitations noted (index-format.md field order untested against a real ticket record; dom-writer.js's now-unreachable dark-body branch left uncovered rather than faked) plus a disclosed tooling gap (no direct GitNexus impact/detect_changes tool access, only passive hook injections observed).",
+  "abstract": "Lit up the FREIGHT lane (#84) - a store-mediated GitHub ticket adapter reading Project 6's Backlog/Todo items via scripts/Sync-Freight.ps1, writing kind:ticket records the board reads raw (never through fold, per owner ruling), with an independent kind:ticket-sync heartbeat driving freight's own three-state Law 1 freshness (never-polled / fresh / stale), each state proven distinct through a real browser. All suites green, red-first throughout, three fault injections confirmed non-vacuous and reverted, docs trued in-commit.",
+  "subject_basis": "runtime-id",
+  "task_id": "adapter-84-car-r1",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:54231955fa69bd9e33e37101dcf61c9f53f4163286c9fdb9712743d345238eff"
+}
