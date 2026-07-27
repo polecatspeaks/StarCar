@@ -16,7 +16,10 @@ const positionDefs = [
   { id: 'dark', label: 'Dark', register: 'nominal' },
   { id: 'bagged', label: 'Bagged', register: 'nominal' }
 ];
-const outcomeDefs = [{ id: 'REJECT', label: 'Reject', register: 'nominal' }];
+const outcomeDefs = [
+  { id: 'REJECT', label: 'Reject', register: 'nominal' },
+  { id: 'done', label: 'Done', register: 'nominal' }
+];
 const roleDefs = [{ id: 'car', label: 'Car', register: 'nominal' }];
 const livenessDefs = [
   { id: 'returned', label: 'Returned', register: 'nominal' },
@@ -657,8 +660,8 @@ function trainFixture(id, cars, declaredNotObserved = []) {
   return { id, title: id, cars, declaredNotObserved };
 }
 
-function carFixture(subject, state, at) {
-  return { subject, role: 'car', state, at };
+function carFixture(subject, state, at, outcome) {
+  return outcome ? { subject, role: 'car', state, at, outcome } : { subject, role: 'car', state, at };
 }
 
 test('#67 NEVER FILTER A HOT ROW (DOM level): a train with an in-flight car renders its track regardless of recency', () => {
@@ -673,11 +676,11 @@ test('#67 NEVER FILTER A HOT ROW (DOM level): a train with an in-flight car rend
       data: {
         trains: [
           trainFixture('train:rolling-ancient', [carFixture('rolling-car', 'dispatched', '2020-01-01T00:00:00Z')]),
-          trainFixture('train:t1', [carFixture('c1', 'returned', '2026-07-01T00:00:00Z')]),
-          trainFixture('train:t2', [carFixture('c2', 'returned', '2026-07-02T00:00:00Z')]),
-          trainFixture('train:t3', [carFixture('c3', 'returned', '2026-07-03T00:00:00Z')]),
-          trainFixture('train:t4', [carFixture('c4', 'returned', '2026-07-04T00:00:00Z')]),
-          trainFixture('train:t5', [carFixture('c5', 'returned', '2026-07-05T00:00:00Z')])
+          trainFixture('train:t1', [carFixture('c1', 'returned', '2026-07-01T00:00:00Z', 'done')]),
+          trainFixture('train:t2', [carFixture('c2', 'returned', '2026-07-02T00:00:00Z', 'done')]),
+          trainFixture('train:t3', [carFixture('c3', 'returned', '2026-07-03T00:00:00Z', 'done')]),
+          trainFixture('train:t4', [carFixture('c4', 'returned', '2026-07-04T00:00:00Z', 'done')]),
+          trainFixture('train:t5', [carFixture('c5', 'returned', '2026-07-05T00:00:00Z', 'done')])
         ]
       }
     }
@@ -700,11 +703,11 @@ test('#67: the trains history summary renders true derived counts', () => {
       freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
       data: {
         trains: [
-          trainFixture('train:t1', [carFixture('c1', 'returned', '2026-07-01T00:00:00Z')]),
-          trainFixture('train:t2', [carFixture('c2', 'returned', '2026-07-02T00:00:00Z')]),
-          trainFixture('train:t3', [carFixture('c3', 'returned', '2026-07-03T00:00:00Z')]),
-          trainFixture('train:t4', [carFixture('c4', 'returned', '2026-07-04T00:00:00Z')]),
-          trainFixture('train:t5', [carFixture('c5', 'returned', '2026-07-05T00:00:00Z')])
+          trainFixture('train:t1', [carFixture('c1', 'returned', '2026-07-01T00:00:00Z', 'done')]),
+          trainFixture('train:t2', [carFixture('c2', 'returned', '2026-07-02T00:00:00Z', 'done')]),
+          trainFixture('train:t3', [carFixture('c3', 'returned', '2026-07-03T00:00:00Z', 'done')]),
+          trainFixture('train:t4', [carFixture('c4', 'returned', '2026-07-04T00:00:00Z', 'done')]),
+          trainFixture('train:t5', [carFixture('c5', 'returned', '2026-07-05T00:00:00Z', 'done')])
         ]
       }
     }
@@ -713,5 +716,7 @@ test('#67: the trains history summary renders true derived counts', () => {
 
   const summary = root.querySelectorAll('.history-summary');
   assert.equal(summary.length, 1);
-  assert.equal(summary[0].textContent, 'showing last 4 of 5 returned - full record in the store');
+  // #67 R2 NOTE-1: trains use the owner's exact ticket wording, no noun -
+  // a train is never literally "returned" on the wire.
+  assert.equal(summary[0].textContent, 'showing last 4 of 5 - full record in the store');
 });

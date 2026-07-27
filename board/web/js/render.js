@@ -193,18 +193,43 @@ export function buildBoardViewModel(snapshot, clientConditions = []) {
 // derived, never wire-native. A train is TERMINAL (fully returned, history-
 // eligible) iff every declared manifest member has a record
 // (declaredNotObserved is empty - an undelivered member is the owner's
-// "queued", never terminal) AND every one of its cars already carries the
-// one liveness state whose register is nominal (car.stateRegister, already
-// computed above by describeVocab against the wire's OWN liveness defs -
-// this reads that register, it never recomputes or hardcodes a state word,
-// so "returned" vs "dispatched"/"overdue"/"presumed-lost"/anything
-// unrecognised stays the server's own closed set, not a client-side
-// taxonomy). Anything else (rolling, stalled for adjudication, an
-// unrecognised car state) is conservatively non-terminal - always visible,
-// per this ticket's "when in doubt, show the row" instruction.
+// "queued", never terminal) AND every one of its cars already carries BOTH
+// the one liveness state AND the one outcome whose register is nominal
+// (car.stateRegister / car.outcomeRegister, already computed above by
+// describeVocab against the wire's OWN liveness/outcomes defs - this reads
+// those registers, it never recomputes or hardcodes a state/outcome word).
+//
+// #67 FIX CYCLE ROUND 2 (view-67-car-r2 MAJOR-R1-1): the round-1 version of
+// this function checked stateRegister ONLY. A train whose cars all
+// RETURNED (stateRegister nominal) but whose OUTCOME is hot - 'error'
+// (needs-attention per board-defs.json), an unrecognised word like
+// 'BLOCKED' (needs-attention, vocab.js's Law-1 fallback), even
+// 'done-with-findings' (in-progress) - was wrongly treated as terminal and
+// could be capped out with ZERO residual signal (the lane's own register
+// stays nominal per composeRegister, and the honesty summary only ever
+// says "N of M returned"). dom-writer.js's renderTrains DOES render a
+// separately register-colored outcome chip per car (`car-outcome
+// ${registerClass(car.outcomeRegister)}`) - so outcome severity is real,
+// rendered signal this predicate must not blind itself to. Fixed: BOTH
+// axes must be nominal. REJECT still ages out correctly - board-defs.json
+// pins REJECT to nominal register by doctrine (a REJECT is a SUCCESS
+// outcome in this shop, same posture as the gates lane) - no special case
+// needed. A car with NO outcome at all (outcomeRegister null - the schema
+// makes TrainCar.Outcome optional) is conservatively NOT nominal either:
+// schema/starcar-artifact.schema.json requires outcome/findings/abstract
+// for every kind=returned record, so a genuinely-returned car with no
+// outcome would itself be a discovery, and "when in doubt, show the row"
+// applies the same way it does to an unrecognised word.
+//
+// Anything else (rolling, stalled for adjudication, an unrecognised car
+// state or outcome) is conservatively non-terminal - always visible, per
+// this ticket's "when in doubt, show the row" instruction.
 function isTrainTerminal(train) {
   if (train.declaredNotObserved.length > 0) return false;
-  return train.cars.length > 0 && train.cars.every((c) => c.stateRegister === 'nominal');
+  return (
+    train.cars.length > 0 &&
+    train.cars.every((c) => c.stateRegister === 'nominal' && c.outcomeRegister === 'nominal')
+  );
 }
 
 // #67: a train carries no top-level `at` either - its own recency signal is
@@ -222,10 +247,19 @@ function trainRecencyAt(train) {
 // ASSERTED, never silent - null (never rendered) when nothing is hidden, so
 // an unfiltered lane carries no noise line at all (the same honest-absence
 // posture this file already uses elsewhere, e.g. lanePurpose above).
-function historySummaryLine(hiddenCount, terminalTotal) {
+//
+// #67 FIX CYCLE ROUND 2 (view-67-car-r2 NOTE-1): a DISPATCH really is
+// wire-verbatim "returned" (liveness is a real state word on the wire), but
+// a TRAIN never carries that word at all - "returned" here would describe
+// a derived, client-side judgment as if it were the data's own vocabulary,
+// which also under-describes what a hot OUTCOME (this round's own fix)
+// could be hiding. `noun` is optional (dispatches keep "returned", literally
+// true there); trains use the owner's exact ticket wording with no noun.
+function historySummaryLine(hiddenCount, terminalTotal, noun = '') {
   if (hiddenCount <= 0) return null;
   const shown = terminalTotal - hiddenCount;
-  return `showing last ${shown} of ${terminalTotal} returned - full record in the store`;
+  const nounPart = noun ? ` ${noun}` : '';
+  return `showing last ${shown} of ${terminalTotal}${nounPart} - full record in the store`;
 }
 
 function buildLaneBody(lane, vocab, hasRenderer) {
@@ -262,7 +296,7 @@ function buildLaneBody(lane, vocab, hasRenderer) {
           recordDir: c.recordDir ?? null
         }))
       }));
-      // #67 (SCOPE EXTENSION, owner 2026-07-26 21:09): non-terminal trains
+      // #67 (SCOPE EXTENSION, owner 2026-07-26 17:09): non-terminal trains
       // (rolling/queued/stalled-for-adjudication/unrecognised, per
       // isTrainTerminal above) are ALWAYS visible; fully-returned trains are
       // history, capped by recency - selection only, register computation
@@ -274,6 +308,10 @@ function buildLaneBody(lane, vocab, hasRenderer) {
       return {
         kind: 'trains',
         trains: visible,
+        // #67 FIX CYCLE ROUND 2 (NOTE-1): no noun - a train is never
+        // literally "returned" on the wire (only its cars carry that word),
+        // so this uses the owner's exact ticket wording rather than
+        // borrowing the dispatches lane's noun.
         historySummary: historySummaryLine(hiddenCount, terminalTotal)
       };
     }
@@ -317,13 +355,24 @@ function buildLaneBody(lane, vocab, hasRenderer) {
       // ALREADY-COMPUTED stateRegister (nominal <=> 'returned' is the one
       // liveness state the wire's own vocab maps there) - this never
       // recomputes or hardcodes the liveness taxonomy, it only selects
-      // which already-registered rows render. Probed: no pre-dispatch
-      // ("queued") state exists anywhere on this wire (schema/yard-
-      // snapshot.schema.json's $defs.dispatchesPayload and board/fold's
-      // closed liveness set both enumerate exactly dispatched/overdue/
-      // returned/presumed-lost - grep of board/server/*.go turned up no
-      // fifth state), so there is no "queued" slot for this lane to render
-      // - none invented, per this ticket's own instruction.
+      // which already-registered rows render. NOT applicable to a train's
+      // hot-OUTCOME concern (#67 fix cycle round 2 MAJOR-R1-1): this
+      // renderer (renderDispatches, dom-writer.js) never renders `outcome`
+      // as its own register-colored element the way renderTrains does for
+      // a car - the predicate here already matches everything this lane
+      // actually displays as severity.
+      //
+      // Probed: no pre-dispatch ("queued") state exists anywhere on this
+      // wire. board/fold's OWN liveness set (design S5.6) is closed to
+      // exactly dispatched/overdue/returned/presumed-lost - grep of
+      // board/server/*.go turned up no fifth state - so there is no
+      // "queued" slot for this lane to render, none invented, per this
+      // ticket's own instruction. CORRECTED (#67 fix cycle round 2
+      // MINOR-R1-1): the WIRE schema itself does NOT enumerate this set -
+      // schema/yard-snapshot.schema.json's $defs.dispatchesPayload declares
+      // `state` as an open string (Law 7: an unrecognised value is a
+      // discovery, never a validation failure), so the closed-set claim
+      // belongs to board/fold alone, never to the schema.
       const { visible, hiddenCount, terminalTotal } = capTerminalHistory(dispatches, {
         isTerminal: (d) => d.stateRegister === 'nominal'
       });
@@ -336,7 +385,10 @@ function buildLaneBody(lane, vocab, hasRenderer) {
         // capped view) - this is a distinct honesty count from history
         // capping and must not shrink when returned history is capped.
         yardInventoryCount: dispatches.filter((d) => !d.assigned).length,
-        historySummary: historySummaryLine(hiddenCount, terminalTotal)
+        // #67 FIX CYCLE ROUND 2 (NOTE-1): "returned" is kept here - a
+        // dispatch really does carry that word verbatim on the wire, unlike
+        // a train.
+        historySummary: historySummaryLine(hiddenCount, terminalTotal, 'returned')
       };
     }
     case 'freight':

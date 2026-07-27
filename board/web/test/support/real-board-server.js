@@ -189,7 +189,12 @@ export function buildScratchStoreWithHealthTrendFamilies() {
 //   (c) 5 one-car trains, each fully returned on 5 distinct days - same cap/
 //       hide-1 proof at the trains lane;
 //   (d) 1 train whose sole car is still DISPATCHED - proves a train with an
-//       in-flight car survives capping regardless of recency.
+//       in-flight car survives capping regardless of recency;
+//   (e) 1 train whose sole car is RETURNED (stateRegister nominal) but
+//       whose OUTCOME is 'error' (needs-attention per board-defs.json),
+//       dated far in the past - the #67 fix cycle round 2 MAJOR-R1-1
+//       regression proof: a train can be fully returned by STATE and still
+//       be hot by OUTCOME, and must never be capped either way.
 export function buildScratchStoreWithLaneFilterFixtures() {
   const storeDir = mkdtempSync(join(tmpdir(), 'starcar-board-lane-filter-store-'));
 
@@ -261,6 +266,20 @@ export function buildScratchStoreWithLaneFilterFixtures() {
     manifest: { title: 'Lane filter rolling train', members: [{ subject: 'lane-filter-rolling-car', role: 'car' }] }
   });
   write('lane-filter-rolling-car', 'dispatched', '2020-01-01T00:00:00Z');
+
+  // (e) #67 fix cycle round 2 MAJOR-R1-1: 1 train whose sole car RETURNED
+  // (stateRegister nominal) but with a hot OUTCOME ('error', needs-
+  // attention) - dated far in the past, same as (d), so a recency-only cap
+  // would have wrongly buried it.
+  write('train:lane-filter-hot-outcome', 'intent', '2020-01-01T00:00:00Z', {
+    manifest: { title: 'Lane filter hot-outcome train', members: [{ subject: 'lane-filter-hot-outcome-car', role: 'car' }] }
+  });
+  write('lane-filter-hot-outcome-car', 'dispatched', '2020-01-01T00:00:00Z');
+  write('lane-filter-hot-outcome-car', 'returned', '2020-01-01T01:00:00Z', {
+    outcome: 'error',
+    findings: 'none',
+    abstract: 'returned, but outcome is hot - must never be capped (MAJOR-R1-1)'
+  });
 
   return storeDir;
 }

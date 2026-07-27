@@ -13,6 +13,14 @@
 //   (b) the honesty summary line renders with true counts;
 //   (c) a duration renders in the new compact-clock format.
 //
+// #67 FIX CYCLE ROUND 2 (view-67-car-r2 MAJOR-R1-1): the fixture now also
+// carries a train whose sole car is RETURNED (stateRegister nominal) but
+// whose OUTCOME is 'error' (needs-attention) - the round-1 defect this
+// evidence proves fixed: isTrainTerminal used to check stateRegister only,
+// so this exact shape could be capped with zero residual signal. Its
+// survival (and the visible red "error" outcome chip) is this round's #40
+// evidence.
+//
 // Reuses the SAME real-server launcher + fixture builder
 // board/web/test/support/real-board-server.js already provides (Law 6: one
 // hand-rolled "start the real server" implementation, one lane-filter
