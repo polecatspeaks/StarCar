@@ -600,3 +600,40 @@ locator phrase so a second party can re-derive it from that file.
   binary needs a short bounded retry (this probe uses 10 attempts x 300ms), never a
   single silently-swallowed attempt - `SilentlyContinue` on a cleanup step turns a
   transient OS lock into permanent, invisible debris.
+
+- 07-27 | **The quiesce is only as good as the last thing pushed after it - and the
+  harness itself is what pushes.** PR #92 was quiesced by the book: index regenerated,
+  committed, CI watched to terminal green at `0fd4a83`, nothing dispatched. Then the
+  out-of-family review agents were launched, and the producer hook wrote two `dispatched`
+  records into `artifacts/` on its own - which is the harness working exactly as designed.
+  Those pushes left `artifacts/index.md` stale and the PR-to-main staleness gate (#20)
+  reded on both legs at `35ef62d` (run 30301608699). Cost: one red CI cycle plus a
+  regenerate-commit-push-rewatch loop, and the PR body's CI coordinates went stale twice
+  in twenty minutes. Class: **the quiesce step is written as a moment, but the thing it
+  asserts is a PROPERTY that any later push can break - including a push nobody typed.**
+  The gate caught it, which is the system working; the cheaper fix is that a quiesce is
+  not complete until dispatching stops, and reviewing a PR IS dispatching.
+
+- 07-27 | **A verification claim in a PR body is a living document and rots on the first
+  push.** The #92 body asserted `dev` at `0fd4a83`, run 30299683622, 332 index rows. Three
+  commits later every one of those coordinates was false, on the most public surface this
+  repo has, while the PR sat open for review. Nobody looked at it wrong; the claim was true
+  when written. Cost: no wrong decision (caught before the merge ruling), corrected in
+  place with the supersession stated rather than quietly re-written. Class: the
+  living-contracts rule ("the commit that invalidates a document updates that document, in
+  the same commit") has no mechanical reach into GitHub-hosted prose. A push that moves the
+  head of an open PR invalidates that PR's own assertion block and nothing anywhere knows
+  it. Candidate mechanism if this recurs: the watcher already knows the sha and the run id.
+
+- 07-27 | **The producer cannot record an out-of-family review: no envelope task-id, and
+  the transcript format is unreadable.** The owner's Copilot CLI review of PR #92 fired
+  SubagentStop twice (20:16:49Z, 20:18:33Z) and both firings landed in `artifacts/_faults.log`
+  as `transcript read failure: no assistant message with text found in
+  ...\.copilot\session-state\<id>\events.jsonl` plus `payload carries no envelope task-id to
+  pair on (agent_name is a type, not a pairing key)`. It also posted nothing to the PR. Cost:
+  none yet - the store honestly recorded that it could not record. Class: the recurrence of
+  the 07-25 Copilot-pairing class, now with a second cause stacked on it (transcript
+  grammar), and it is the concrete shape of the forward note in `CLAUDE.md`'s PR cycle -
+  "a Copilot review is a `returned` record from a different producer". The external adapter
+  the artifact schema's open `producer` posture was designed for does not exist yet, so
+  every out-of-family review is currently invisible to the board that exists to show reviews.
