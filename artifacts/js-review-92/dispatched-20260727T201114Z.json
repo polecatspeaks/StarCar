@@ -1,0 +1,12 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "dispatched",
+  "subject": "js-review-92",
+  "session_id": "f695ab87-6bdf-45e6-94c8-14c19a1af4b5",
+  "at": "2026-07-27T20:11:14Z",
+  "budget": 1800.0,
+  "subject_basis": "minted-id",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:3fd91830e22f7a00420bfcf2b2d7553c3d3fd59bfa042f4e3b7a1e9a5496e80b"
+}
