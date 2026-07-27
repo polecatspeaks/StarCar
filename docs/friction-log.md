@@ -637,3 +637,36 @@ locator phrase so a second party can re-derive it from that file.
   "a Copilot review is a `returned` record from a different producer". The external adapter
   the artifact schema's open `producer` posture was designed for does not exist yet, so
   every out-of-family review is currently invisible to the board that exists to show reviews.
+
+- 07-27 | **A torn line in the SubagentStop probe log - the reconciler's own input is not
+  write-atomic.** `Reconcile-DispatchRecords.ps1` emitted `WARNING: could not parse
+  probe-log line - skipped: }` during the goodnight sweep. Audited all 4074 lines of
+  `.claude/probe-logs/subagent-stop.jsonl`: exactly one is malformed, line 3615, a lone
+  `}` between two well-formed ~1450-char records. The neighbours both parse, so nothing
+  obviously truncated - the signature is an interleaved concurrent append (two hook
+  processes writing the same file, one's tail landing on its own line). Cost: none proven,
+  and that is the problem. Class: **the instrument built to catch dispatches whose records
+  were never written has an input that can silently lose a firing to a torn write, and its
+  failure mode is a WARNING it survives.** A skipped line is indistinguishable from a
+  dispatch that never fired, which is the exact blindness `Reconcile-DispatchRecords.ps1`
+  exists to remove. Filed as a ticket rather than fixed inline.
+
+- 07-27 | **`gh api repos/O/R/pulls/comments/{id}/replies` returns 404; the reply path
+  needs the PR NUMBER, not the comment id alone.** The documented-looking shape is wrong -
+  the working call is `repos/O/R/pulls/92/comments/{id}/replies`. Cost: one failed call
+  and a wrong first diagnosis (read as "the comment id is stale" rather than "the path is
+  incomplete"). Class: an API path that is *almost* right fails in a way that points at the
+  data instead of at the path, so the first hypothesis is always the wrong one.
+
+- 07-27 | **The bot resolves its own review threads, so "unresolved thread count" is NOT a
+  measure of OUR triage completeness.** `CLAUDE.md`'s PR-cycle definition-of-done is a
+  GraphQL query counting unresolved `reviewThreads`, and it is written as the mechanical
+  check that every thread closed with its provenance. Measured on PR #92: four of Qodo's
+  five threads read `RESOLVED` before the conductor resolved anything - the bot
+  auto-resolves the ones it labels "Review recommended" and leaves only "Action required"
+  open. Cost: none this time (all five were triaged with replies anyway), but the query
+  would have returned a passing number for a PR nobody had triaged at all. Class: **a
+  definition-of-done that can be satisfied by a third party is not a definition of done.**
+  The check measures thread state, which we do not solely control; what it is meant to
+  measure is whether WE replied. Sharpen it to count threads lacking a reply from us, not
+  threads lacking resolution.
