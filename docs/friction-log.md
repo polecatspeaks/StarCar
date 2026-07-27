@@ -309,3 +309,55 @@ artifacts the morning after, which is itself the cost the first row records.
   rounds rework the same prose surface, the surface is the defect - remove or mechanize it
   rather than revise it; the swirl doctrine detects this but only AFTER rounds are spent,
   so the cheaper catch is at design time (match the instrument to the artifact).
+
+The four rows below were RECONSTRUCTED by a read-only transcript-mine dispatch (#74,
+task-id friction-mine-0726-evening) against the conductor-session mirror at
+`entire/checkpoints/v1:f6/15a8f220c5/0/transcript.jsonl`; each carries a grep-able
+locator phrase so a second party can re-derive it from that file.
+
+- 2026-07-26 ~20:05, RECONSTRUCTED (mined): GITHUB PROJECTS PROPAGATION RACE - a compound
+  `gh project item-add; item-list; graphql update` for issue #72 failed with `Could not
+  resolve to a node with the global id of ''` because the item-list read ran before the
+  just-added item propagated; a `Start-Sleep -Seconds 3` retry succeeded. Cost: one
+  failed command + retry. Class: a just-mutated ProjectsV2 item is not immediately
+  readable - board writes need a poll-until-found or a propagation buffer, never an
+  assumption of read-after-write consistency. (Locator: grep the transcript for the
+  quoted error.)
+
+- 2026-07-27 ~01:01, RECONSTRUCTED (mined): WRITE-BEFORE-READ GUARD TRIPPED AT THE WORST
+  MOMENT - the goodnight rewrite of `RESUME-HERE.md` was refused with `File has not been
+  read yet. Read it first before writing to it.` although the file had been read earlier
+  in the same marathon session; a throwaway 10-line Read + retry succeeded. Cost: one
+  failed Write + extra Read at the single most time-pressured moment of the close.
+  Class: the harness's read-before-write credit does not durably survive a very long
+  session - defensively re-Read any long-lived file immediately before a late-session
+  Write. (Locator: grep for the quoted refusal.)
+
+- 2026-07-26 ~22:54, RECONSTRUCTED (mined): PARTIAL GIT-ARCHIVE EXTRACTION IS
+  WRONG-BY-DEFAULT - the #67 r1 reviewer's base-suite re-derivation extracted only
+  `board/web` from `git archive` and two suites failed on repo-relative dependencies
+  (`artifacts/`, `schema/`) outside that directory; full-tree extraction was the
+  reproducible form. Cost: one wasted archive+run cycle inside a review. Class: a
+  subdirectory is not self-contained for archive-based suite reproduction when tests
+  carry repo-relative paths - full-tree is the default, not the fallback. (Locator:
+  grep for "A first attempt extracting only".)
+
+- 2026-07-26 20:31-21:51, RECONSTRUCTED (mined, lower confidence as friction): the
+  GitNexus staleness notice fired identically after EVERY commit across all four #65
+  car rounds, and each round spent a disclosure clause on it - four disclosures of one
+  unchanged, already-accepted condition in one evening. Cost: negligible per instance;
+  the hazard is the crying-wolf shape this log has already rowed twice (07-22, 07-23).
+  Class: a notice that repeats unchanged after acceptance should self-suppress or fire
+  only when newly consequential; watch for recurrence before building anything.
+
+- 2026-07-27, structural fact FOUND BY THE MINE (not friction, recorded so nobody
+  re-digs): the per-dispatch "Entire-Checkpoint" blobs on the checkpoint branch are
+  periodic snapshots of the SINGLE conductor session, not separate car/reviewer
+  transcripts - a dispatched agent's own tool-by-tool work is mirrored ONLY as the
+  final report block embedded in the conductor's transcript. Consequence for every
+  future reconstruction and chaos-drill grade: sub-agent-level friction below what an
+  agent chooses to narrate is NOT recoverable from the public mirror. The mine's two
+  "suspicious injected system-reminder" flags were both explained benign on triage:
+  one was the repo's own GitNexus PreToolUse context hook, the other the harness
+  re-listing the goodnight skill mid-run because #74's edit landed while the miner was
+  running - the miner's refuse-and-report reflex was correct anyway.
