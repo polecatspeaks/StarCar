@@ -10,11 +10,35 @@
 # consist with per-member role/state/outcome, a declared member with no record renders in
 # declaredNotObserved (the completeness assertion the whole design rests on), and member
 # dispatch records come back assigned:true. That finding collapsed a design-rung train
-# into this narrow tooling ticket. Today nothing asserts that join mechanically: the
-# existing Go tests (board/assemble/assemble_test.go) cover Assemble() in isolation with
-# constructed fold.Output/store.Record values, never the real server reading a real
-# store over HTTP. If the join regresses, the next conductor re-derives the same probe
-# from scratch, or worse trusts a stale comment - this file is the fix.
+# into this narrow tooling ticket.
+#
+# CORRECTED (#79 fix cycle round 2, R1-M1, a Law 1 finding caught by review, not by this
+# car): this paragraph previously claimed "nothing asserts that join mechanically" and
+# named board/assemble/assemble_test.go's "constructed fold.Output/store.Record values"
+# as the only existing coverage. Both halves are false. board/server/wireschema_test.go's
+# TestAssembledSnapshotValidatesAgainstWireSchema (:20-152) already writes a PLAN-shaped
+# manifest with car and gate members plus dispatched/returned records as REAL FILES on
+# disk (writeRecord, board/server/poll_test.go:23-32, os.WriteFile into t.TempDir()),
+# runs srv.PollOnce (board/server/poll.go:253's real store-scan-through-fold-through-
+# assemble pipeline), and asserts the gates lane has exactly 1 gate with its RecordDir
+# and Findings (wireschema_test.go:129-137) and the trains lane has 1 train with 2
+# manifest tickets and carA's RecordDir (:112-123) - it passes today (verified locally,
+# `go test ./server -run TestAssembledSnapshotValidatesAgainstWireSchema`: PASS in
+# 0.02s). Issue #79's own text already carried the accurate, narrower claim: "no test
+# drives the real server over a real store and asserts the four rendered properties
+# TOGETHER" - this header had flattened that into an absolute.
+#
+# What wireschema_test.go DOES assert, from a real on-disk store via PollOnce: gates-lane
+# count and RecordDir/Findings, trains-lane count/tickets/RecordDir. What it does NOT
+# assert, and what this suite adds: real HTTP /api/snapshot (the actual served wire
+# bytes, never an in-process struct), the verdict word and gate name rendered VERBATIM,
+# per-member role/state/outcome on the consist, declaredNotObserved (the completeness
+# case - wireschema_test.go's fixture declares no unobserved member), assigned:true
+# flowing from manifest membership, and the zero-conditions non-vacuity guard - all
+# TOGETHER, from a pwsh-sealed store built the same way scripts/Produce-Artifact.ps1
+# builds one. If the join regresses, the next conductor re-derives the same probe from
+# scratch, or worse trusts a stale comment - this file is the fix, alongside (never in
+# place of) wireschema_test.go's own coverage.
 #
 # PROBED FACTS this suite is built against (re-run any you doubt):
 #   - board/server/config.go:100 - STARCAR_STORE_PATH is the ONE override point for the
@@ -32,19 +56,30 @@
 #     arrives on this suite's redirected ErrorDataReceived stream, never stdout).
 #   - board/store/store.go's typedRecord (store.go:113-134) already declares every field
 #     scripts/Produce-Artifact.ps1 writes (schema, kind, subject, session_id, at, outcome,
-#     findings, abstract, budget, model, subject_basis, task_id, manifest, normalisation,
-#     integrity) - a sealed record using exactly those keys raises zero
+#     findings, abstract, budget, model, subject_basis, task_id, producer, manifest,
+#     normalisation, integrity) - a sealed record using exactly those keys raises zero
 #     "record-unrecognised-fields" board conditions (verified: the well-formed store below
 #     raises zero conditions of any kind).
 #   - board/assemble/assemble.go:124 gates a Gate lane entry on `m.Role == "gate"`
 #     (manifest-declared role, not schema-recognition) AND `d.State == "returned"` -
 #     both must hold or no gate entry renders (assemble.go:100-158's whole loop).
+#   - CI DEPENDENCY (#79 fix cycle round 2, R1-m2, disclosed - not fixed here; the
+#     step-ordering decision belongs to the conductor): .github/workflows/ci.yml's "Run
+#     substrate-floor probes" step (:214-228) runs `Invoke-Pester -Path ./scripts/probes`
+#     on both matrix legs (:113-117, windows-latest + ubuntu-latest) BEFORE "Set up Go
+#     (board/)" (:263) - this suite therefore depends on whichever Go toolchain the
+#     runner image ships by default, never one `actions/setup-go@v5` prepared, and
+#     board/go.mod's `go 1.26` against an older shipped toolchain can trigger a
+#     GOTOOLCHAIN auto-download plus a cold-cache `go build` on every run rather than a
+#     clean skip if Go is absent at all (a missing `go` makes this suite hard-fail, not
+#     skip - Passed=0/Failed=5, per this file's own two-candidate lookup in BeforeAll).
 #
 # NON-VACUITY, proven at landing (#79, fault-injection log below; every injection made
-# directly to THIS FILE's well-formed fixture parameters, run, reverted, sha256-checked
-# byte-identical before/after - see this car's dispatch report for the four quoted red
-# messages and the before/after hashes):
-#   (a) GatesRoleOverride 'gate' -> 'car' on gateA: the gates lane assertion reds (0 gates
+# directly to THIS FILE's well-formed fixture parameters - re-derivable straight from the
+# `New-ScratchStore` switches quoted in each line below, run, reverted, sha256-checked
+# byte-identical before/after every one; independently re-derived, all five, by
+# `artifacts/reviews/2026-07-27-probe-79-review-r1-REJECT.md`'s round-1 review):
+#   (a) GateARole 'gate' -> 'car' on gateA: the gates lane assertion reds (0 gates
 #       observed, 1 expected) - assemble.go:124's role gate is load-bearing, not a no-op.
 #   (b) EmptyMembers $true: the trains-consist assertion reds on a null car lookup -
 #       manifest.members really drives train.Cars, never a hardcoded fixture echo.
@@ -99,6 +134,15 @@ Describe 'Manifest-to-board join (#79, pinning #76''s PROBE RESULT)' {
         # --- sealed-record helpers (Law 6: Get-Sha256Hex is scripts/Artifact.psm1's own
         # function, the SAME one Produce-Artifact.ps1:363-365 calls - never a second copy
         # of the hashing rule) ---------------------------------------------------------
+        # SCOPE (#79 fix cycle round 2, R1-m3): this suite pins the JOIN, never the SEAL -
+        # board/store/store.go:131 declares `Integrity string` and recomputes nothing
+        # against it, and schema/starcar-artifact.schema.json:100-104 only pattern-checks
+        # the shape (`^sha256:[0-9a-f]{64}$`). Verified: swapping the computed digest for
+        # sha256: followed by sixty-four zeros still leaves this suite 5 passed / 0 failed.
+        # Calling Get-Sha256Hex here is still the Law-6-correct move (one owner, no second
+        # hashing rule) and matches how a real producer seals a record - it is just not,
+        # today, a property this suite's assertions would catch if the shop's
+        # canonicalisation rule ever changed underneath it.
         function New-Sealed {
             param([Parameter(Mandatory)][System.Collections.Specialized.OrderedDictionary]$Record)
             $bodyJson = $Record | ConvertTo-Json -Depth 20 -Compress
