@@ -88,6 +88,35 @@ test('withGroupOpen/withStripOpen never mutate the input state (pure update)', (
   assert.deepEqual(original, frozen, 'the input state object must be unchanged');
 });
 
+// #69/#71 fix-cycle round 2 (MINOR-R1-3): a storage-shaped fake whose
+// getItem/setItem THROW - fakeStorage above never throws, so neither catch
+// branch in condition-open-state.js (loadOpenState:44-46,
+// saveOpenState:66-71) was ever exercised before this pair. Mirrors a real
+// browser's documented failure modes: sessionStorage access can throw
+// SecurityError in some private-browsing configurations, and setItem can
+// throw QuotaExceededError when storage is full - both real DOMException
+// classes, not hypothetical.
+function throwingStorage(message) {
+  return {
+    getItem() {
+      throw new Error(message);
+    },
+    setItem() {
+      throw new Error(message);
+    }
+  };
+}
+
+test('loadOpenState: a THROWING getItem (private-browsing SecurityError shape) degrades to the collapsed default, never propagates', () => {
+  const storage = throwingStorage('SecurityError: storage disabled');
+  assert.deepEqual(loadOpenState(storage), defaultOpenState());
+});
+
+test('saveOpenState: a THROWING setItem (QuotaExceededError shape) is swallowed - never throws out of saveOpenState', () => {
+  const storage = throwingStorage('QuotaExceededError: storage full');
+  assert.doesNotThrow(() => saveOpenState(storage, withStripOpen(defaultOpenState(), true)));
+});
+
 test('withStripOpen: the strip flag is independent of every group flag', () => {
   let state = withGroupOpen(defaultOpenState(), 'discovery', true);
   state = withStripOpen(state, true);
