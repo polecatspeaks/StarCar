@@ -389,6 +389,46 @@ test('#62: a solari-subject carries the full subject as a title attribute (CSS t
   assert.equal(subjects[0].attributes.title, '2026-07-22-harness-design-round4-REJECT-ESCALATED');
 });
 
+test('#75: a dispatch row with a wire taskId shows the task-id as its VISIBLE title, with the full subject hash reachable via the title tooltip (never lost)', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([
+    {
+      id: 'dispatches',
+      title: 'Dispatches',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+      data: { dispatches: [{ subject: 'a103c4067cf9267a3', state: 'returned', at: '2026-07-23T18:00:00Z', assigned: true, taskId: 'view-75-car-r1' }] }
+    }
+  ]);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const subjects = root.querySelectorAll('.solari-subject');
+  assert.equal(subjects.length, 1);
+  assert.equal(subjects[0].textContent, 'view-75-car-r1', 'the task-id, never the hash, is the visible title when present');
+  assert.equal(subjects[0].attributes.title, 'a103c4067cf9267a3', 'the full subject hash stays reachable in the native tooltip regardless of which text is visible');
+});
+
+test('#75: a dispatch row with NO wire taskId falls back honestly to the subject hash as its visible title (Law 1: never invent a label) - unchanged from before #75', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([
+    {
+      id: 'dispatches',
+      title: 'Dispatches',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+      data: { dispatches: [{ subject: 'a103c4067cf9267a3', state: 'dispatched', at: '2026-07-23T18:00:00Z', assigned: true }] }
+    }
+  ]);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const subjects = root.querySelectorAll('.solari-subject');
+  assert.equal(subjects.length, 1);
+  assert.equal(subjects[0].textContent, 'a103c4067cf9267a3');
+  assert.equal(subjects[0].attributes.title, 'a103c4067cf9267a3');
+});
+
 test('#62 N3: an empty-but-live gates lane (zero gates in this fold) states its absence honestly, rather than rendering a blank pane; a non-empty gates lane does not', () => {
   const doc = createMiniDocument();
 
@@ -480,6 +520,60 @@ test('#28: a car subject with NO recordDir (or no github config) renders as plai
   assert.equal(subjects.length, 1);
   assert.notEqual(subjects[0].tagName, 'a', 'expected plain text, not a link, when recordDir/github config is absent');
   assert.equal(subjects[0].attributes.href, undefined);
+});
+
+test('#75: a car chip with a wire taskId shows the task-id as its VISIBLE identity, with the full subject hash reachable via a title tooltip (same treatment as the dispatches lane)', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([
+    {
+      id: 'trains',
+      title: 'Trains',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+      data: {
+        trains: [
+          {
+            id: 'train:view-75',
+            title: 'T',
+            tickets: [],
+            cars: [{ subject: 'a103c4067cf9267a3', role: 'car', state: 'returned', at: '2026-07-23T18:00:00Z', taskId: 'view-75-car-r1' }],
+            declaredNotObserved: []
+          }
+        ]
+      }
+    }
+  ]);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const subjects = root.querySelectorAll('.car-subject');
+  assert.equal(subjects.length, 1);
+  assert.equal(subjects[0].textContent, 'view-75-car-r1', 'the task-id, never the hash, is the visible identity when present');
+  assert.equal(subjects[0].attributes.title, 'a103c4067cf9267a3', 'the full subject hash stays reachable in the native tooltip');
+});
+
+test('#75: a car chip with NO wire taskId falls back honestly to the subject hash as its visible identity, still carrying it in the title tooltip', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([
+    {
+      id: 'trains',
+      title: 'Trains',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+      data: {
+        trains: [
+          { id: 'train:view-75', title: 'T', tickets: [], cars: [{ subject: 'a103c4067cf9267a3', role: 'car', state: 'dispatched', at: '2026-07-23T18:00:00Z' }], declaredNotObserved: [] }
+        ]
+      }
+    }
+  ]);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const subjects = root.querySelectorAll('.car-subject');
+  assert.equal(subjects.length, 1);
+  assert.equal(subjects[0].textContent, 'a103c4067cf9267a3');
+  assert.equal(subjects[0].attributes.title, 'a103c4067cf9267a3');
 });
 
 test('#28: a train\'s declared tickets render as issue links', () => {

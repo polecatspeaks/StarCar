@@ -313,7 +313,11 @@ function buildLaneBody(lane, vocab, hasRenderer) {
           // #28: single-sourced from store.Record.Path server-side
           // (assemble.recordDirBySubject) - never re-derived from
           // `subject` here (Law 6).
-          recordDir: c.recordDir ?? null
+          recordDir: c.recordDir ?? null,
+          // #75: the human task-id handle, null when this car has not yet
+          // returned with one - dom-writer.js falls back to `subject`
+          // honestly rather than inventing a label (Law 1).
+          taskId: c.taskId ?? null
         }))
       }));
       // #67 (SCOPE EXTENSION, owner 2026-07-26 17:09): non-terminal trains
@@ -367,6 +371,7 @@ function buildLaneBody(lane, vocab, hasRenderer) {
         budgetSource: d.budget_source ?? null,
         assigned: Boolean(d.assigned),
         recordDir: d.recordDir ?? null, // #28
+        taskId: d.taskId ?? null, // #75: human handle, null falls back to `subject` (dom-writer.js)
         superseded: d.superseded || [] // #71: same subject, same directory as recordDir above
       }));
       // #67 (owner finding after #62 live-board feedback): every non-
