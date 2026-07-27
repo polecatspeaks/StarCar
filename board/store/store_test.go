@@ -190,6 +190,42 @@ func TestScanUnknownFieldRecordDisclosed(t *testing.T) {
 	}
 }
 
+// TestScanUnknownFieldConditionCarriesRecordDir (#69/#71: clickable
+// provenance, board-conditions surface) - the condition names the directory
+// its OWN offending file lives in, derived from the already-known rel path
+// (RecordDirFromRelPath), single-sourced, never re-parsed from Detail text.
+func TestScanUnknownFieldConditionCarriesRecordDir(t *testing.T) {
+	a := newAdapter(t)
+	root := t.TempDir()
+	writeFixture(t, root, "subj/dispatched-1.json", `{
+		"schema": "starcar-artifact/1",
+		"kind": "dispatched",
+		"subject": "subj",
+		"session_id": "session-1",
+		"at": "2026-07-23T10:00:00Z",
+		"normalisation": [],
+		"integrity": `+fakeIntegrity+`,
+		"surprise_field": "unrecognised"
+	}`)
+
+	result, err := a.Scan(root, time.Now().UTC())
+	if err != nil {
+		t.Fatalf("Scan: %v", err)
+	}
+	var found bool
+	for _, c := range result.Conditions {
+		if c.Code == "record-unrecognised-fields" {
+			found = true
+			if c.RecordDir != "subj" {
+				t.Errorf("RecordDir = %q, want %q", c.RecordDir, "subj")
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected a 'record-unrecognised-fields' board condition, got %v", result.Conditions)
+	}
+}
+
 // TestScanMalformedAtQuarantined is the red-first pin for issue #24 (C3R-3,
 // binding on this task): a record whose "at" is unparseable/malformed, OR
 // ZONELESS (no Z/offset suffix - schema-valid because JSON Schema "format" is
@@ -304,6 +340,41 @@ func TestScanSchemaShapeFailureQuarantined(t *testing.T) {
 	}
 	if !found {
 		t.Fatalf("expected a 'record-quarantined' board condition naming the file, got %v", result.Conditions)
+	}
+}
+
+// TestScanQuarantinedConditionCarriesRecordDir (#69/#71: clickable
+// provenance) - a quarantined record's own condition names its directory
+// (derived from the file's own rel path, RecordDirFromRelPath), so the view
+// can link straight to the offending record even though the record itself
+// never survived into result.Records.
+func TestScanQuarantinedConditionCarriesRecordDir(t *testing.T) {
+	a := newAdapter(t)
+	root := t.TempDir()
+	writeFixture(t, root, "bad/dispatched-1.json", `{
+		"schema": "starcar-artifact/1",
+		"kind": "dispatched",
+		"subject": "bad",
+		"at": "2026-07-23T10:00:00Z",
+		"normalisation": [],
+		"integrity": `+fakeIntegrity+`
+	}`)
+
+	result, err := a.Scan(root, time.Now().UTC())
+	if err != nil {
+		t.Fatalf("Scan: %v", err)
+	}
+	var found bool
+	for _, c := range result.Conditions {
+		if c.Code == "record-quarantined" {
+			found = true
+			if c.RecordDir != "bad" {
+				t.Errorf("RecordDir = %q, want %q", c.RecordDir, "bad")
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected a 'record-quarantined' board condition, got %v", result.Conditions)
 	}
 }
 

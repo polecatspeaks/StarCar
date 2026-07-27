@@ -11,7 +11,6 @@ package assemble
 import (
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 	"sort"
 	"strings"
 
@@ -48,11 +47,20 @@ func Assemble(in Input) Result {
 		}
 	}
 	sort.Strings(collidedSubjects)
+
+	// #28: single pass over the raw records, single-sourced from
+	// store.Record.Path (recordDirBySubject's own doc comment). Moved ABOVE
+	// the collision loop (#69/#71): every board condition constructed in
+	// this function now carries RecordDir when its own subject resolves one,
+	// so recordDirs must already exist before the first condition is built.
+	recordDirs := recordDirBySubject(in.Records)
+
 	for _, s := range collidedSubjects {
 		result.Conditions = append(result.Conditions, store.BoardCondition{
-			Code:     "subject-namespace-collision",
-			Detail:   fmt.Sprintf("subject %q appears in both fold.dispatches and fold.intents - the train: partition rule should make this impossible", s),
-			Register: store.RegisterForCode("subject-namespace-collision"),
+			Code:      "subject-namespace-collision",
+			Detail:    fmt.Sprintf("subject %q appears in both fold.dispatches and fold.intents - the train: partition rule should make this impossible", s),
+			Register:  store.RegisterForCode("subject-namespace-collision"),
+			RecordDir: recordDirs[s],
 		})
 	}
 
@@ -62,10 +70,6 @@ func Assemble(in Input) Result {
 	memberClaims := map[string][]string{}
 	assignedSubjects := map[string]bool{}
 
-	// #28: single pass over the raw records, single-sourced from
-	// store.Record.Path (recordDirBySubject's own doc comment).
-	recordDirs := recordDirBySubject(in.Records)
-
 	for _, intent := range in.Fold.Intents {
 		if !strings.HasPrefix(intent.Subject, trainPrefix) {
 			continue // not a manifest (design S5.5); v0's four surfaces render no other intent kind
@@ -74,9 +78,10 @@ func Assemble(in Input) Result {
 		raw, found := findRawIntentRecord(in.Records, intent.Subject, intent.At)
 		if !found {
 			result.Conditions = append(result.Conditions, store.BoardCondition{
-				Code:     "manifest-record-not-found",
-				Detail:   fmt.Sprintf("the fold named %q at %q as the winning manifest, but no matching raw record was found", intent.Subject, intent.At),
-				Register: store.RegisterForCode("manifest-record-not-found"),
+				Code:      "manifest-record-not-found",
+				Detail:    fmt.Sprintf("the fold named %q at %q as the winning manifest, but no matching raw record was found", intent.Subject, intent.At),
+				Register:  store.RegisterForCode("manifest-record-not-found"),
+				RecordDir: recordDirs[intent.Subject],
 			})
 			continue
 		}
@@ -84,9 +89,10 @@ func Assemble(in Input) Result {
 		title, tickets, members, ok := manifestPayload(raw)
 		if !ok {
 			result.Conditions = append(result.Conditions, store.BoardCondition{
-				Code:     "manifest-payload-unreadable",
-				Detail:   fmt.Sprintf("%q's manifest payload could not be read", intent.Subject),
-				Register: store.RegisterForCode("manifest-payload-unreadable"),
+				Code:      "manifest-payload-unreadable",
+				Detail:    fmt.Sprintf("%q's manifest payload could not be read", intent.Subject),
+				Register:  store.RegisterForCode("manifest-payload-unreadable"),
+				RecordDir: recordDirs[intent.Subject],
 			})
 			continue
 		}
@@ -135,9 +141,10 @@ func Assemble(in Input) Result {
 				findings, findingsFound := findingsForReturnedSubject(in.Records, m.Subject, d.At)
 				if !findingsFound {
 					result.Conditions = append(result.Conditions, store.BoardCondition{
-						Code:     "gate-findings-record-not-found",
-						Detail:   fmt.Sprintf("the fold named %q at %q as a returned gate winner, but no matching raw returned record was found for its findings", m.Subject, d.At),
-						Register: store.RegisterForCode("gate-findings-record-not-found"),
+						Code:      "gate-findings-record-not-found",
+						Detail:    fmt.Sprintf("the fold named %q at %q as a returned gate winner, but no matching raw returned record was found for its findings", m.Subject, d.At),
+						Register:  store.RegisterForCode("gate-findings-record-not-found"),
+						RecordDir: recordDirs[m.Subject],
 					})
 				}
 				result.Gates.Gates = append(result.Gates.Gates, Gate{
@@ -166,9 +173,10 @@ func Assemble(in Input) Result {
 		trains := append([]string(nil), memberClaims[subj]...)
 		sort.Strings(trains)
 		result.Conditions = append(result.Conditions, store.BoardCondition{
-			Code:     "manifest-membership-collision",
-			Detail:   fmt.Sprintf("dispatch %q is claimed by more than one manifest: %s", subj, strings.Join(trains, ", ")),
-			Register: store.RegisterForCode("manifest-membership-collision"),
+			Code:      "manifest-membership-collision",
+			Detail:    fmt.Sprintf("dispatch %q is claimed by more than one manifest: %s", subj, strings.Join(trains, ", ")),
+			Register:  store.RegisterForCode("manifest-membership-collision"),
+			RecordDir: recordDirs[subj],
 		})
 	}
 
@@ -178,10 +186,25 @@ func Assemble(in Input) Result {
 	for _, d := range in.Fold.Dispatches {
 		m, err := dispatchWireMap(d, assignedSubjects[d.Subject], recordDirs[d.Subject])
 		if err != nil {
+			// #69/#71 fix cycle round 2 (MAJOR-R1-3): CORRECTED - the prior
+			// version of this comment claimed "no test outside board/fold can
+			// construct a fold.DispatchEntry that reaches this branch"
+			// because d.winnerKind is unexported. That is false: winnerKind
+			// only SELECTS this branch (set internally by fold.Fold, inside
+			// package fold); it is Spend (board/fold/fold.go, EXPORTED) that
+			// carries the value MarshalJSON cannot encode, and
+			// fold.Output.Dispatches is exported too. A package outside
+			// board/fold reaches this branch by running the real fold.Fold
+			// to get a genuine "returned"-winner entry, then mutating that
+			// entry's exported Spend field - see
+			// TestAssembleDispatchRenderFailedIsReachable
+			// (board/assemble/assemble_test.go), which does exactly that and
+			// asserts the resulting condition's RecordDir.
 			result.Conditions = append(result.Conditions, store.BoardCondition{
-				Code:     "dispatch-render-failed",
-				Detail:   fmt.Sprintf("subject %q could not be rendered to the wire shape: %v", d.Subject, err),
-				Register: store.RegisterForCode("dispatch-render-failed"),
+				Code:      "dispatch-render-failed",
+				Detail:    fmt.Sprintf("subject %q could not be rendered to the wire shape: %v", d.Subject, err),
+				Register:  store.RegisterForCode("dispatch-render-failed"),
+				RecordDir: recordDirs[d.Subject],
 			})
 			continue
 		}
@@ -302,6 +325,15 @@ func manifestPayload(r store.Record) (title string, tickets []string, members []
 // producer ever violated the convention, this function would silently keep
 // whichever directory it saw first rather than crash - a latent
 // divergence this comment now names rather than hides.
+//
+// #69/#71 fix cycle round 2 (MINOR-R1-1, Law 6): the dir-from-path rule
+// itself (filepath.Dir + "." means no directory component) used to be
+// INLINED here as a second copy of board/store.RecordDirFromRelPath
+// (store.go), on the stated justification that store's two call sites fire
+// at SCAN TIME, before this function's own map exists - true, but that
+// explains why the CALL SITES differ, never why the RULE was copied. This
+// package already imports board/store (see the import block above), so the
+// exported helper is called directly; no copy remains.
 func recordDirBySubject(records []store.Record) map[string]string {
 	out := make(map[string]string, len(records))
 	for _, r := range records {
@@ -312,8 +344,8 @@ func recordDirBySubject(records []store.Record) map[string]string {
 		if _, seen := out[subject]; seen {
 			continue
 		}
-		dir := filepath.ToSlash(filepath.Dir(r.Path))
-		if dir == "." || dir == "" {
+		dir := store.RecordDirFromRelPath(r.Path)
+		if dir == "" {
 			continue // Path had no directory component - no link rather than a wrong one
 		}
 		out[subject] = dir

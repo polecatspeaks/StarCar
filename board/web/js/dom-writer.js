@@ -28,8 +28,22 @@
 // ticket token) and the car-health-bar badge (#12) - both built from
 // board/web/js/links.js and board/web/js/findings.js's pure helpers; this
 // file's only job is turning their output into DOM.
-import { buildRecordLink, buildIssueLink } from './links.js';
+//
+// #69 (owner fast-follow: "closes back up every page refresh"): the
+// conditions strip's open/collapsed state is PULLED from an already-loaded
+// openState object (condition-open-state.js's pure shape) and REAPPLIED on
+// every render - never captured by scraping the outgoing DOM before
+// clearing it. app.js is the single source of truth: it reads sessionStorage
+// fresh before each repaint (surviving both a DOM rebuild and a page
+// refresh identically, since both start from the SAME persisted read) and
+// keeps it current via a 'toggle' event listener, independent of render
+// timing. This file only ever WRITES the `open` attribute a caller already
+// decided; it never reads sessionStorage itself (dom-writer.js stays
+// impure-storage-free, matching this module's own "the ONLY module that
+// touches the DOM" boundary - sessionStorage is browser state, not DOM).
+import { buildRecordLink, buildIssueLink, buildVocabLink, vocabFilenameForDiscoveryDetail } from './links.js';
 import { formatClockDuration } from './format.js';
+import { defaultOpenState, isGroupOpen } from './condition-open-state.js';
 
 function el(doc, tag, className, text) {
   const node = doc.createElement(tag);
@@ -84,6 +98,92 @@ function healthTrendBadgeText(healthTrend) {
   }
 }
 
+// #71 (clickable provenance, remaining #28 surfaces): a superseded entry is
+// a PRIOR record for the SAME subject that lost to the row's own winner
+// (board/fold/algorithm.go's foldDispatchSubject - precedence, then
+// latest-at) - it lives in the SAME store-root-relative directory as the
+// row's own recordDir (board/assemble's one-directory-per-subject
+// convention, the same one #28's recordDir already relies on), so no new
+// wire field is needed: every superseded entry links through the row's
+// OWN recordDir, never re-derived. Honest-absence (null, not an empty
+// list) when there is nothing to supersede - matches every other
+// honest-absence convention in this file (declared-not-observed,
+// renderHistorySummary).
+//
+// #71 fix-cycle round 2 (MAJOR-R1-1, owner ruling recorded at issue #69,
+// 2026-07-27): round 1 appended this block as a SIBLING of the row/chip
+// into the shared grid/flex container (.solari-rows / .track-cars), so a
+// wrap boundary could land the block next to a DIFFERENT subject's cell -
+// measured live: a 5-line unlabelled timestamp stack wrapped onto the line
+// below the subject that owned it, immediately beside an unrelated
+// subject's own cell. The owner ruling: nest the block INSIDE its owner
+// row/chip (a DOM child, so it can never be laid out by the grid/flex
+// container as an independent cell/item and can never orphan) behind a
+// quiet per-row <details>/<summary> disclosure, COLLAPSED by default - the
+// SAME chrome idiom `renderBoardConditionsStrip` (#30) already uses for
+// exactly this "quiet, expandable, never a headline" posture. This
+// preserves #67's density: a collapsed disclosure is a single summary
+// line, not the raw list.
+//
+// #69/#71-M1 (disclosed, not owner-ruled - see fix-cycle round 2 report):
+// this disclosure's open/closed state is EPHEMERAL, not persisted through
+// condition-open-state.js's sessionStorage mechanism. Chosen as the
+// MINIMAL option: #69's persistence keys by a closed, small vocabulary
+// (the strip + a handful of condition CODES, board/store/condition_
+// severity.go) but a per-row disclosure would need one key per SUBJECT -
+// an open-ended, store-size-dependent key set with no eviction story, on a
+// mechanism (sessionStorage) that already has no size ledger. Ephemeral
+// also matches this file's own render cycle unforced: `renderBoard`
+// (this file's own top-level export, cited by SYMBOL - fix cycle round 3
+// MAJOR-R2-2, this comment's own bare "(line 141)" was already false the
+// instant round 2 committed it, MAJOR-R1-4's class reproduced in the same
+// commit as the lecture about it, docs/contracts/gating-matrix.md:49)
+// clears `root.textContent` on every repaint, so even a native `open`
+// attribute set by a prior render is already discarded before the next
+// paint - persisting it would require NEW capture-and-reapply plumbing
+// mirroring #69's, not a re-use of it. Reopens on the next click, same as
+// every `<details>` on the web with no persistence wired at all.
+//
+// #69/#71 fix-cycle round 2 (MINOR-R1-2), CORRECTED fix cycle round 3
+// (MAJOR-R2-3): the wire schema now constrains superseded[] items to
+// {kind: string, at: string} both required (schema/yard-snapshot.schema.
+// json's $defs.dispatchSupersededItem), but that constraint is NEVER
+// enforced on the runtime hop a browser actually takes - $defs.lane.data
+// (schema/yard-snapshot.schema.json's own $comment explains why: a lane's
+// data shape is chosen by which lane it is, not one closed schema union)
+// does not $ref dispatchesPayload/trainsPayload, so ingest.js's validator
+// (validate.js, the real vendored cfworker-json-schema engine) applies NO
+// constraint to superseded[] items - measured: a malformed item validates
+// clean through it, before and after this schema addition. The ONLY
+// consumer of the new $def is scripts/tests/WirePayload.Tests.ps1's
+// fragment extraction, which wraps the $def standalone and therefore sees
+// a constraint the real runtime validator never applies. THIS FUNCTION'S
+// OWN FILTER, below, is the entire runtime protection, full stop - not
+// "defense in depth" alongside a wire-level gate that does not exist. A
+// malformed item (missing/non-string kind or at) is skipped, never
+// rendered as literal "undefined undefined" (Law 1: honest-absence over a
+// guessed/garbled fact) - matching this file's other honest-absence
+// conventions (declared-not-observed, renderHistorySummary). If EVERY item
+// in the array is malformed, the whole disclosure renders as absent (no
+// empty <details> with a "0 superseded" summary and nothing inside it) -
+// the same "never an empty list" posture the original honest-absence
+// comment above already commits to.
+function renderSupersededDisclosure(doc, wrapperClassName, entryClassName, superseded, recordDir, linkCfg) {
+  if (!superseded || superseded.length === 0) return null;
+  const validItems = superseded.filter((item) => typeof item?.kind === 'string' && typeof item?.at === 'string');
+  if (validItems.length === 0) return null;
+  const details = el(doc, 'details', `${wrapperClassName}-disclosure`);
+  details.appendChild(el(doc, 'summary', `${wrapperClassName}-summary`, `${validItems.length} superseded`));
+  const wrap = el(doc, 'div', wrapperClassName);
+  for (const item of validItems) {
+    // VERBATIM kind + at - never translated, same posture as every other
+    // detector-owned string this file renders.
+    wrap.appendChild(factOrLink(doc, entryClassName, `${item.kind} ${item.at}`, buildRecordLink(linkCfg, recordDir)));
+  }
+  details.appendChild(wrap);
+  return details;
+}
+
 function healthTrendRegisterClass(trend) {
   if (trend === 'converged' || trend === 'declining') return 'register-nominal';
   if (trend === 'stalled') return 'register-needs-attention';
@@ -95,8 +195,13 @@ function healthTrendRegisterClass(trend) {
  * @param {Element} root
  * @param {ReturnType<import('./render.js').buildBoardViewModel>} vm
  * @param {{connected: boolean}} connection
+ * @param {{strip: boolean, groups: Record<string, boolean>}} [openState] -
+ *   #69: the conditions strip's persisted open/collapsed state, already
+ *   loaded by the caller (app.js) - defaults to fully-collapsed so every
+ *   existing call site (tests, any caller that predates this ticket) keeps
+ *   its prior behaviour unchanged.
  */
-export function renderBoard(doc, root, vm, connection) {
+export function renderBoard(doc, root, vm, connection, openState = defaultOpenState()) {
   root.textContent = ''; // clear() without needing a real DOM API for it
 
   root.appendChild(renderChrome(doc, vm, connection));
@@ -117,7 +222,7 @@ export function renderBoard(doc, root, vm, connection) {
   });
   root.appendChild(lanesRoot);
 
-  root.appendChild(renderFooter(doc, vm));
+  root.appendChild(renderFooter(doc, vm, linkCfg, openState));
 }
 
 // #62: shared visual language (owner ruling: no single keeper) - every one
@@ -166,7 +271,7 @@ function renderChrome(doc, vm, connection) {
 // there, a carrier-rule miss): now actually routed - see issue #1, comment
 // https://github.com/polecatspeaks/StarCar/issues/1#issuecomment-5085235534
 // (2026-07-26), item 2.
-function renderFooter(doc, vm) {
+function renderFooter(doc, vm, linkCfg, openState) {
   const footer = el(doc, 'footer', 'board-footer');
 
   const laneCountText = `registry declares ${vm.laneCompleteness.declared} lane(s) - ${vm.laneCompleteness.observed} rendered`;
@@ -177,7 +282,7 @@ function renderFooter(doc, vm) {
   }
 
   if (vm.boardConditionGroups.length > 0) {
-    footer.appendChild(renderBoardConditionsStrip(doc, vm));
+    footer.appendChild(renderBoardConditionsStrip(doc, vm, linkCfg, openState));
   }
 
   return footer;
@@ -186,34 +291,72 @@ function renderFooter(doc, vm) {
 // #30: CHROME, not headline (item 3) - a native <details>/<summary> pair
 // needs zero JS to expand/collapse, so this is the smallest DOM surface
 // that satisfies "a single summary line that expands" without adding a
-// click handler. COLLAPSED BY DEFAULT (no "open" attribute set) always,
-// regardless of severity - even an all-FLAG board never auto-expands the
-// strip, because the yard lanes staying above the fold is the whole point
-// of placing this in chrome rather than as a headline.
-function renderBoardConditionsStrip(doc, vm) {
+// click handler. COLLAPSED BY DEFAULT (openState.strip false, the same
+// default this repo has always shipped) regardless of severity - even an
+// all-FLAG board never auto-expands the strip UNLESS a reader has
+// previously opened it this session (#69) - the yard lanes staying above
+// the fold on FIRST paint is still the whole point of chrome placement.
+//
+// data-conditions-strip identifies this element for app.js's toggle
+// listener (#69) - a stable marker independent of className, which board.css
+// may restyle without breaking the persistence wiring.
+function renderBoardConditionsStrip(doc, vm, linkCfg, openState) {
   const strip = el(doc, 'details', `board-conditions-strip ${registerClass(vm.boardConditionsRegister)}`);
+  strip.setAttribute('data-conditions-strip', '');
+  if (openState && openState.strip) strip.setAttribute('open', '');
   strip.appendChild(el(doc, 'summary', `board-conditions-summary ${registerClass(vm.boardConditionsRegister)}`, vm.boardConditionSummary));
 
   const groups = el(doc, 'ul', 'board-condition-groups');
   for (const group of vm.boardConditionGroups) {
-    groups.appendChild(renderBoardConditionGroup(doc, group));
+    groups.appendChild(renderBoardConditionGroup(doc, group, linkCfg, openState));
   }
   strip.appendChild(groups);
   return strip;
 }
 
+// #69/#71 (clickable provenance, extending #28 to the board-conditions
+// surface): the ONE place a condition instance's honest link target is
+// chosen. A "discovery" (NOTE-tier, undeclared kind/outcome VALUE - never a
+// store subject) links to the schema/vocab/*.json file that would declare
+// it; every other condition class links to its own recordDir when the wire
+// supplied one (a config-load fault, an aggregate count, or a client-raised
+// condition never has one, and factOrLink's own href-is-falsy branch
+// degrades those to identical-layout plain text - "no link, never a broken
+// one", #28's own rule, unchanged).
+function boardConditionInstanceHref(linkCfg, group, instance) {
+  if (group.code === 'discovery') {
+    return buildVocabLink(linkCfg, vocabFilenameForDiscoveryDetail(instance.detail));
+  }
+  return buildRecordLink(linkCfg, instance.recordDir);
+}
+
 // #30 (GROUP BY CLASS): one row per condition CODE, itself a <details> -
-// "expandable to per-instance details" - collapsed by default for the same
-// reason the outer strip is.
-function renderBoardConditionGroup(doc, group) {
+// "expandable to per-instance details" - collapsed by default (#69: unless
+// this code was previously opened THIS SESSION - isGroupOpen defaults to
+// closed for any code with no recorded entry, which is exactly how a
+// newly-appearing condition class still renders per #30's original rule).
+// data-condition-code identifies this element for app.js's toggle listener.
+function renderBoardConditionGroup(doc, group, linkCfg, openState) {
   const item = el(doc, 'li', `board-condition-group ${registerClass(group.register)}`);
-  const details = el(doc, 'details');
+  const details = el(doc, 'details', 'board-condition-group-details');
+  details.setAttribute('data-condition-code', group.code);
+  if (isGroupOpen(openState, group.code)) details.setAttribute('open', '');
   details.appendChild(el(doc, 'summary', 'board-condition-group-summary', `${group.code} (x${group.count})`));
   const instances = el(doc, 'ul', 'board-condition-instances');
   for (const instance of group.instances) {
     // VERBATIM - never translated, the same posture as every other
     // detector-owned string this repo renders (state words, outcome words).
-    instances.appendChild(el(doc, 'li', `board-condition-instance ${registerClass(instance.register)}`, instance.detail));
+    // #69/#71: rendered through factOrLink so a resolvable target becomes a
+    // real link (quiet .provenance-link affordance) with IDENTICAL layout
+    // to the plain form when no target resolves.
+    instances.appendChild(
+      factOrLink(
+        doc,
+        `board-condition-instance ${registerClass(instance.register)}`,
+        instance.detail,
+        boardConditionInstanceHref(linkCfg, group, instance)
+      )
+    );
   }
   details.appendChild(instances);
   item.appendChild(details);
@@ -315,6 +458,11 @@ function renderTrains(doc, body, linkCfg) {
       if (car.gate) {
         chip.appendChild(el(doc, 'span', 'car-gate', car.gate));
       }
+      // #71 fix-cycle r2 (MAJOR-R1-1): appended INSIDE the chip, never to
+      // `cars` (the flex-wrap container) - the disclosure can only ever
+      // grow ITS OWN chip's box, never bleed onto a neighbouring chip.
+      const supersededDisclosure = renderSupersededDisclosure(doc, 'car-superseded', 'car-superseded-entry', car.superseded, car.recordDir, linkCfg);
+      if (supersededDisclosure) chip.appendChild(supersededDisclosure);
       cars.appendChild(chip);
     }
     track.appendChild(cars);
@@ -379,19 +527,35 @@ function renderDispatches(doc, body, linkCfg) {
   const rows = el(doc, 'div', 'solari-rows');
   for (const d of body.dispatches) {
     const row = el(doc, 'div', `solari-row ${registerClass(d.stateRegister)}${d.assigned ? '' : ' unassigned'}`);
+    // #71 fix cycle r3 (MAJOR-R2-1): the subject/state/elapsed cluster lives
+    // in its OWN wrapper (`solari-row-main`), never as direct flex children
+    // of `.solari-row` itself - see board.css's `.solari-row`/`.solari-row-
+    // main` comment for why (round 2's `flex-wrap: wrap` on `.solari-row`
+    // wrapped this cluster onto a second line too, not just the disclosure).
+    const main = el(doc, 'div', 'solari-row-main');
     const subject = factOrLink(doc, 'solari-subject', d.subject, buildRecordLink(linkCfg, d.recordDir));
     // #62: board.css truncates a long subject id with an ellipsis (the
     // fixed-height dispatches grid) - the native title tooltip keeps the
     // full id reachable, never silently lost. Survives becoming a link
     // (#28) - the title attribute goes on the anchor/span either way.
     subject.setAttribute('title', d.subject);
-    row.appendChild(subject);
-    row.appendChild(el(doc, 'span', 'solari-state', d.state)); // VERBATIM
+    main.appendChild(subject);
+    main.appendChild(el(doc, 'span', 'solari-state', d.state)); // VERBATIM
     if (d.elapsedSeconds !== null) {
       // #67 (FORMAT NIT): compact clock time, never "272s" - the ONE
       // formatter every duration on this board shares (format.js, Law 6).
-      row.appendChild(el(doc, 'span', 'solari-elapsed', formatClockDuration(d.elapsedSeconds)));
+      main.appendChild(el(doc, 'span', 'solari-elapsed', formatClockDuration(d.elapsedSeconds)));
     }
+    row.appendChild(main);
+    // #71 fix-cycle r2 (MAJOR-R1-1), fix cycle r3 (MAJOR-R2-1): appended
+    // INSIDE the row, never to `rows` (the grid container) - the disclosure
+    // can only ever grow ITS OWN row's grid cell, never wrap onto a
+    // neighbouring subject's cell. Appended AFTER `main`, never inside it,
+    // so `.solari-row`'s column-direction layout stacks it below the
+    // single-line cluster rather than letting it compete for space on that
+    // cluster's own flex line.
+    const supersededDisclosure = renderSupersededDisclosure(doc, 'solari-superseded', 'solari-superseded-entry', d.superseded, d.recordDir, linkCfg);
+    if (supersededDisclosure) row.appendChild(supersededDisclosure);
     rows.appendChild(row);
   }
   wrap.appendChild(rows);

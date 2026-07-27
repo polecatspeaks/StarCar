@@ -156,6 +156,28 @@ test('#30 groupBoardConditions: one group per CODE, with a count and every insta
   assert.equal(unrecognised.register, 'needs-attention');
 });
 
+// #69/#71 (clickable provenance, board-conditions surface): groupBoardConditions
+// carries the wire's recordDir through per instance, never re-derived
+// client-side (Law 6) - null (never undefined) when the wire condition
+// carries none, so a client-raised condition (no recordDir field at all)
+// degrades identically to a server condition that explicitly had none.
+test('#69/#71 groupBoardConditions: recordDir is carried through per instance, null when absent', () => {
+  const snapshot = makeSnapshot([{ id: 'dispatches', title: 'Dispatches', position: 'live', freshness: { kind: 'never-polled' }, data: { dispatches: [] } }]);
+  snapshot.board = [
+    { code: 'manifest-record-not-found', detail: 'x', register: 'needs-attention', recordDir: 'train-x' },
+    { code: 'board-defs-unreadable', detail: 'y', register: 'needs-attention' }
+  ];
+  const vm = buildBoardViewModel(snapshot);
+
+  const withDir = vm.boardConditionGroups.find((g) => g.code === 'manifest-record-not-found');
+  assert.ok(withDir);
+  assert.equal(withDir.instances[0].recordDir, 'train-x');
+
+  const withoutDir = vm.boardConditionGroups.find((g) => g.code === 'board-defs-unreadable');
+  assert.ok(withoutDir);
+  assert.equal(withoutDir.instances[0].recordDir, null, 'absent wire recordDir must render as null, never undefined');
+});
+
 test('#30 groupBoardConditions: register is authoritative from the server per instance - the view never recomputes it, only rolls it up (most-severe-wins if a class ever carries mixed registers)', () => {
   const snapshot = makeSnapshot([{ id: 'dispatches', title: 'Dispatches', position: 'live', freshness: { kind: 'never-polled' }, data: { dispatches: [] } }]);
   // Defensive case: the same code observed at two different registers (never
@@ -392,6 +414,40 @@ test('dispatches: dispatches carry recordDir', () => {
   ]);
   const vm = buildBoardViewModel(snapshot);
   assert.equal(vm.lanes[0].body.dispatches[0].recordDir, 'orphan-1');
+});
+
+// #71: superseded is on the wire (schema/yard-snapshot.schema.json's
+// dispatchesPayload.dispatches.superseded, always present per
+// fold.DispatchEntry.MarshalJSON) but was never carried into the dispatches
+// lane's view model before this ticket - trains cars already carried it
+// (buildLaneBody's 'trains' case), dom-writer.js just never rendered
+// either. This pins the dispatches-lane half of that gap.
+test('#71: dispatches carry superseded (same subject, same recordDir), honest-empty when the wire carries none', () => {
+  const snapshot = makeSnapshot([
+    {
+      id: 'dispatches',
+      title: 'Dispatches',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' },
+      data: {
+        dispatches: [
+          {
+            subject: 'orphan-1',
+            state: 'returned',
+            at: '2026-07-23T00:00:00Z',
+            assigned: false,
+            recordDir: 'orphan-1',
+            superseded: [{ kind: 'dispatched', at: '2026-07-22T23:00:00Z' }]
+          },
+          { subject: 'orphan-2', state: 'dispatched', at: '2026-07-23T00:00:00Z', assigned: false, recordDir: 'orphan-2' }
+        ]
+      }
+    }
+  ]);
+  const vm = buildBoardViewModel(snapshot);
+  const byId = Object.fromEntries(vm.lanes[0].body.dispatches.map((d) => [d.subject, d]));
+  assert.deepEqual(byId['orphan-1'].superseded, [{ kind: 'dispatched', at: '2026-07-22T23:00:00Z' }]);
+  assert.deepEqual(byId['orphan-2'].superseded, [], 'no wire superseded array must render honest-empty, never nil/undefined');
 });
 
 test('dispatches: yard inventory (unassigned) count is tallied, never hidden', () => {

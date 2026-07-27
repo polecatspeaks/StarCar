@@ -14,6 +14,7 @@ import { buildBoardViewModel } from './render.js';
 import { renderBoard } from './dom-writer.js';
 import { splitFrames, classifyFrame, createDisconnectWatchdog } from './sse-protocol.js';
 import { SSE_EVENT_NAME } from './wire-constants.js';
+import { loadOpenState, saveOpenState, withGroupOpen, withStripOpen } from './condition-open-state.js';
 
 const root = document.getElementById('board-root');
 
@@ -23,7 +24,38 @@ let connected = false;
 function repaint() {
   if (!ingestState.snapshot) return; // nothing validated yet - first paint waits for it
   const vm = buildBoardViewModel(ingestState.snapshot, ingestState.clientConditions);
-  renderBoard(document, root, vm, { connected });
+  // #69: read fresh from sessionStorage on EVERY repaint, never a stale
+  // in-memory mirror - this is what makes the strip's open state survive
+  // both a DOM rebuild (repaint fires on every applied snapshot/connection
+  // change, tearing down and rebuilding the whole tree) and a page refresh
+  // (sessionStorage itself outlives this module's in-memory state)
+  // IDENTICALLY, from the same single source of truth. handleConditionToggle
+  // below is the only writer; this is the only reader.
+  const openState = loadOpenState(window.sessionStorage);
+  renderBoard(document, root, vm, { connected }, openState);
+}
+
+// #69 (owner fast-follow: "closes back up every page refresh"): a native
+// <details> element's 'toggle' event does NOT bubble (HTML living
+// standard), so a single delegated listener on `root` must be attached in
+// the CAPTURING phase (the third `addEventListener` argument) - capturing
+// reaches every descendant on the way DOWN to the event's target
+// regardless of that event's own bubbles flag, which is the standard
+// workaround for non-bubbling events. Reading event.target.open (the real
+// DOM boolean the browser just updated) rather than re-deriving state from
+// attributes avoids a second, fuzzier read of the same fact (Law 6).
+function handleConditionToggle(event) {
+  const target = event.target;
+  if (!target || typeof target.hasAttribute !== 'function') return;
+  let state = loadOpenState(window.sessionStorage);
+  if (target.hasAttribute('data-conditions-strip')) {
+    state = withStripOpen(state, target.open);
+  } else if (target.hasAttribute('data-condition-code')) {
+    state = withGroupOpen(state, target.getAttribute('data-condition-code'), target.open);
+  } else {
+    return; // not one of ours - never react to an unrelated <details>/<summary> toggle
+  }
+  saveOpenState(window.sessionStorage, state);
 }
 
 function handlePayloadText(rawText, validator) {
@@ -109,6 +141,12 @@ async function streamLoop(validator) {
 }
 
 async function main() {
+  // #69: attached ONCE, before the first paint - `root` itself is never
+  // replaced (only its children are, on every repaint), so a single
+  // capturing-phase listener here outlives every DOM rebuild for the rest
+  // of the tab's life.
+  root.addEventListener('toggle', handleConditionToggle, true);
+
   const schemaResp = await fetch('/schema/yard-snapshot.schema.json');
   const schema = await schemaResp.json();
   const validator = createValidator(schema);

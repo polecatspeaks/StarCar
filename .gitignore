@@ -2,6 +2,11 @@
 testResults.xml
 __pycache__/
 .ci-checks/
+# #69/#71: verify-conditions-persistence.mjs's scratch store lives UNDER
+# repo root (never os.tmpdir()) so config.githubArtifactsPrefix resolves
+# non-empty for its real-link proof; the script's own try/finally always
+# removes it, this is a safety net only, for a hard-killed run.
+.scratch-store-69-71-*
 # board/web/package.json (issue #33): the Playwright TEST dependency,
 # never shipped - the board/web/ runtime itself still has no npm
 # dependency (docs/setup.md's Node.js row).

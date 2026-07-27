@@ -51,3 +51,43 @@ func TestFoldDiscoveriesAndFaultsSurfaceAsBoardConditions(t *testing.T) {
 		t.Fatalf("an unrecognised kind must render loudly by name as a board condition, NOTE-tier (register nominal, #30); got board=%v", snap.Board)
 	}
 }
+
+// TestConditionRecordDirSurvivesToWire (#69/#71: clickable provenance,
+// extending #28 to the board-conditions surface) proves store.BoardCondition
+// .RecordDir (set at scan time, board/store/store.go) reaches the wire's
+// WireBoardCondition.RecordDir through toWireCondition, end to end via a
+// real PollOnce over a real store directory - not just the unit-level
+// passthrough, so a future edit to toWireCondition's field list is caught
+// by the same test that already exercises the whole poll pipeline.
+func TestConditionRecordDirSurvivesToWire(t *testing.T) {
+	root := t.TempDir()
+	writeRecord(t, root, "s1/dispatched-1.json", `{
+		"schema": "starcar-artifact/1",
+		"kind": "dispatched",
+		"subject": "s1",
+		"session_id": "s1",
+		"at": "2026-07-23T10:00:00Z",
+		"normalisation": [],
+		"integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+		"surprise_field": "unrecognised"
+	}`)
+	srv := newTestServer(t, root)
+	now := time.Date(2026, 7, 23, 10, 0, 5, 0, time.UTC)
+	snap, _, err := srv.PollOnce(now)
+	if err != nil {
+		t.Fatalf("PollOnce: %v", err)
+	}
+
+	var found bool
+	for _, c := range snap.Board {
+		if c.Code == "record-unrecognised-fields" {
+			found = true
+			if c.RecordDir != "s1" {
+				t.Errorf("wire RecordDir = %q, want %q", c.RecordDir, "s1")
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected a record-unrecognised-fields board condition on the wire, got board=%v", snap.Board)
+	}
+}

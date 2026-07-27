@@ -352,8 +352,66 @@ body {
   font-size: 0.85rem;
 }
 
+/* #71 (clickable provenance, remaining #28 surfaces): a superseded record
+   is quiet chrome, never a headline - "a prior record that lost" is a
+   detail a reader expands into, not a fact competing with the row's own
+   current state word. text-dim (never a register color - superseded is
+   presentational history, not a live severity signal) + .provenance-link's
+   own color:inherit (board.css's existing #28 idiom) when it renders as a
+   link. */
+.car-superseded,
+.solari-superseded {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+}
+
+/* #71 fix-cycle r2 (MAJOR-R1-1, owner ruling #69): the superseded block is
+   now nested INSIDE its owner chip/row (dom-writer.js), rendered behind a
+   <details>/<summary> disclosure - same quiet-chrome idiom as
+   .board-conditions-strip (#30) above. COLLAPSED by default (no `open`
+   attribute is ever set - #69/#71-M1's ephemeral choice, see dom-writer.js's
+   renderSupersededDisclosure comment), so the common case (no reader has
+   expanded it) costs one small summary line, never the full list -
+   preserving #67's density argument.
+
+   CORRECTED, fix cycle r3 (MAJOR-R2-1): the two owners no longer share one
+   mechanism, and no longer share one rule - `.car-chip` and `.solari-row`
+   diverged this round (see `.solari-row`'s own comment above for why).
+   `.car-superseded-disclosure` keeps `flex-basis: 100%`, the "force this
+   flex item onto its own line WITHIN the flex container" hack: `.car-chip`
+   stays `display:flex; flex-wrap:wrap` (round 2 review measured this half
+   CLEAN - chips are content-sized, never grid-cell-constrained, so nothing
+   else on that line is at risk of an unwanted wrap). `.solari-superseded-
+   disclosure` needs NO flex-basis at all: `.solari-row` is now a COLUMN-
+   direction flex container (see above), where this disclosure is simply
+   the second block-stacked child - flex-basis:100% in a COLUMN container
+   sizes the cross-axis dimension (HEIGHT, not width), which would be
+   wrong here, so it is declared separately below rather than shared. */
+.car-superseded-disclosure {
+  flex-basis: 100%;
+  margin-left: 0.5rem;
+}
+
+.solari-superseded-disclosure {
+  margin-left: 0.5rem;
+}
+
+.car-superseded-summary,
+.solari-superseded-summary {
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
 .car-chip {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.35rem;
   align-items: center;
   border: 1px solid var(--border);
@@ -564,11 +622,41 @@ body {
   overflow-y: auto;
 }
 
+/* #71 fix cycle r3 (MAJOR-R2-1): CORRECTED. Round 2's `.solari-row {
+   flex-wrap: wrap }` was measured, real Chromium, to wrap the
+   subject/state/elapsed cluster too - NOT just the disclosure - on every
+   row, including rows with no disclosure at all (row height 22px -> 51-
+   73px, .solari-rows cropping rows mid-row again, the exact #62 hazard the
+   comment below this one already documents). The claim that only a
+   flex-basis:100% item can force a break was false: plain `flex-wrap:
+   wrap` reflows ANY item that does not fit the current line, with or
+   without flex-basis:100% - that property only guarantees WHERE a forced
+   break lands, it does not exempt earlier siblings from wrapping too when
+   the container is narrower than their combined natural width (exactly
+   what a 13rem grid column is, next to a long subject id).
+
+   Corrected mechanism: `.solari-row` no longer sets flex-wrap at all (back
+   to the base value, matching `256d8d5`/`b865cba`). The subject/state/
+   elapsed cluster is written into its OWN wrapper, `.solari-row-main`
+   (dom-writer.js), which is a plain `display:flex` row with no wrap - it
+   is IMPOSSIBLE for its own children to reflow because nothing here tells
+   them to. `.solari-row` itself is a COLUMN-direction flex container
+   holding two block-stacked children: `.solari-row-main` (the one-line
+   cluster) then, when present, `.solari-superseded-disclosure` - stacking
+   by DOM order in a column container needs no flex-wrap and cannot
+   accidentally catch a sibling that should not have wrapped. */
 .solari-row {
   display: flex;
-  gap: 0.6rem;
+  flex-direction: column;
+  gap: 0.15rem;
   padding: 0.1rem 0.3rem;
   border-left: 3px solid currentColor;
+  min-width: 0;
+}
+
+.solari-row-main {
+  display: flex;
+  gap: 0.6rem;
   min-width: 0;
   /* One line per row (mockup convention, every variant): a long subject id
      truncates with an ellipsis rather than wrapping to a second line -
@@ -577,7 +665,10 @@ body {
      docs/screenshots/2026-07-26-register-check-candidates/). The
      VERBATIM state word itself is never truncated (flex:none on
      .solari-state below) - only the subject id, which is also shown in
-     full via the browser's native title tooltip (dom-writer.js). */
+     full via the browser's native title tooltip (dom-writer.js). This
+     wrapper carries no flex-wrap, so this line-per-row guarantee no
+     longer depends on every child individually fitting - see the comment
+     on `.solari-row` above (#71 fix cycle r3, MAJOR-R2-1). */
   white-space: nowrap;
 }
 
