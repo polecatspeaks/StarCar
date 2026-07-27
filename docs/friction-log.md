@@ -467,6 +467,33 @@ locator phrase so a second party can re-derive it from that file.
   passes new work until it is staged - which is exactly when an author is most likely to
   believe they have been checked.
 
+- 2026-07-27 ~13:00 (design-87 author, SELF-DISCLOSED, caught by CHECKING not trusting): A
+  POWERSHELL BLOCK ABORTED MID-WAY AND LEFT A FAULT INJECTION LIVE ON DISK. The author
+  injected a bad citation to prove the gate non-vacuous, then ran Pester; Pester's non-zero
+  exit aborted the rest of the block, so the RESTORE never executed and the corrupted file
+  sat on disk. It was caught only because the author verified the restore by sha256 instead
+  of assuming the block had completed. Cost: nil - caught immediately; but the failure mode
+  is a corrupted artifact silently surviving a review. Class: **a multi-statement shell
+  block is not a transaction.** Any injection sequence must verify its own restore by hash
+  as a SEPARATE step, never trust that the block ran to the end - and note the shape is the
+  inverse of the usual worry: the danger is not that the injection fails to apply, it is
+  that the RESTORE fails to apply and nothing says so. Same family as the same author's
+  round-1 shared-checkout write: both are "I assumed the code I wrote actually ran".
+  Standing consequence adopted in briefs from this point: every fault-injection instruction
+  now carries "verify the restore by sha256 rather than assuming the block completed".
+
+- 2026-07-27 ~13:03 (conductor, self-caught while setting up round 2): I DISPATCHED A
+  REVIEWER INTO THE AUTHOR'S OWN WORKTREE. Design review round 1 was pointed at
+  `starcar-wt/design-87`, which is the design AUTHOR's worktree, not a detached review
+  copy. This repo has a scar for exactly this (2026-07-22: a reviewer detected live
+  mutation by file mtime and correctly quarantined its verdict to a frozen commit). It was
+  harmless only because the author happened not to be running at that moment - luck, not
+  design. Corrected for round 2 with a separate detached worktree at the rev-2 commit.
+  Class: ONE WORKTREE = ONE ACTOR is a rule the conductor keeps honouring for CARS and
+  forgetting for DESIGN dispatches, because a design "is only a document" - but a document
+  under review is exactly as mutable as code. The pattern to hold: every review of any
+  artifact gets its own detached worktree at the frozen SHA, with no exception for prose.
+
 - 2026-07-27, structural fact FOUND BY THE MINE (not friction, recorded so nobody
   re-digs): the per-dispatch "Entire-Checkpoint" blobs on the checkpoint branch are
   periodic snapshots of the SINGLE conductor session, not separate car/reviewer
