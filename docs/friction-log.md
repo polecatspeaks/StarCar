@@ -517,6 +517,24 @@ locator phrase so a second party can re-derive it from that file.
   following the series sees the error and its correction, which is worth more than a
   silently-clean artifact.
 
+- 2026-07-27 ~13:50 (adapter-84 car, SELF-DISCLOSED, caught by DIFFING not remembering): A
+  RESTORE FROM A STALE BACKUP SILENTLY REVERTED COMPLETED WORK. Mid-fix-cycle the car took a
+  fault injection, then restored from a backup file in `/tmp` that PREDATED its own round-2
+  edits - so the restore did not undo the injection, it undid the FIX. Both of that round's
+  Law-1 remedies vanished from disk with no error and no signal. Caught because the car ran
+  `git diff` against HEAD and saw a 4-line whitespace delta where it expected the full
+  round-2 diff; re-applied from its documented edits, re-verified green, then sha256-pinned
+  before touching anything else. Cost: nil, disclosed rather than smoothed.
+  Class: **a backup is only a restore point if it was taken AFTER the work you want to
+  keep.** The failure is silent by construction - restoring a file always "succeeds", and
+  the only signal is that the content is wrong, which nothing checks. Third member of
+  today's assume-it-worked family (a shell block that aborted mid-way leaving an injection
+  live; a design author's write landing in the wrong repo; this). The durable habit, now
+  written into review briefs: **verify a restore against HEAD by diff or hash, never against
+  your own memory of what the file held** - and prefer `git checkout -- <path>` or an
+  out-of-repo clone over hand-rolled backup files, because git already knows the correct
+  content and a `/tmp` copy does not.
+
 - 2026-07-27, structural fact FOUND BY THE MINE (not friction, recorded so nobody
   re-digs): the per-dispatch "Entire-Checkpoint" blobs on the checkpoint branch are
   periodic snapshots of the SINGLE conductor session, not separate car/reviewer
