@@ -600,3 +600,11 @@ locator phrase so a second party can re-derive it from that file.
   binary needs a short bounded retry (this probe uses 10 attempts x 300ms), never a
   single silently-swallowed attempt - `SilentlyContinue` on a cleanup step turns a
   transient OS lock into permanent, invisible debris.
+
+- 2026-07-27 ~16:04 (conductor, live, RECURRENCE of the 07-26 ProjectsV2 class): `gh project
+  item-add` for just-created issue #94 failed with a generic GraphQL "Something went wrong"
+  (reference F902:6338E...); a single retry after `Start-Sleep 3` succeeded, exit 0. Same
+  shape as the 07-26 propagation-race row: a board write immediately after an issue
+  mutation is not reliably servable. Cost: one failed command + retry. Class confirmed
+  twice now: ProjectsV2 writes adjacent to fresh mutations get one bounded retry with a
+  short buffer as standard practice, never a bare single attempt.
