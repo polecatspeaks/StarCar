@@ -59,7 +59,7 @@ ambient store's ever-changing content into an unrelated diff) and
 captioned here per NORTH STAR ("the commit that invalidates a document
 updates that document, in the same commit") rather than left to mislead a
 reader silently. `health-trend-and-provenance.png` is unaffected (see
-above) and carries no such note.
+above) and carries no such #75 note.
 
 **DISCLOSED DIVERGENCE (#84 fix cycle round 2, R1-M3, 2026-07-27):** all
 THREE images in this directory - `calm-yard.png`, `hot-yard.png`, AND
