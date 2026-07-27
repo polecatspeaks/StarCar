@@ -291,3 +291,49 @@ dispatch batch between regenerations.
 | a5264318d735a62f8 | returned | 2026-07-27T18:33:29Z | success | a5264318d735a62f8/returned-20260727T183329Z.json |
 | afe18ef8acbb02719 | returned | 2026-07-27T18:44:44Z | REJECT | afe18ef8acbb02719/returned-20260727T184444Z.json |
 | af9695467e625f504 | returned | 2026-07-27T18:45:05Z | APPROVE | af9695467e625f504/returned-20260727T184505Z.json |
+| ticket-1 | ticket | 2026-07-27T18:47:07Z |  | ticket-1/ticket.json |
+| ticket-10 | ticket | 2026-07-27T18:47:07Z |  | ticket-10/ticket.json |
+| ticket-11 | ticket | 2026-07-27T18:47:07Z |  | ticket-11/ticket.json |
+| ticket-14 | ticket | 2026-07-27T18:47:07Z |  | ticket-14/ticket.json |
+| ticket-15 | ticket | 2026-07-27T18:47:07Z |  | ticket-15/ticket.json |
+| ticket-16 | ticket | 2026-07-27T18:47:07Z |  | ticket-16/ticket.json |
+| ticket-17 | ticket | 2026-07-27T18:47:07Z |  | ticket-17/ticket.json |
+| ticket-19 | ticket | 2026-07-27T18:47:07Z |  | ticket-19/ticket.json |
+| ticket-2 | ticket | 2026-07-27T18:47:07Z |  | ticket-2/ticket.json |
+| ticket-22 | ticket | 2026-07-27T18:47:07Z |  | ticket-22/ticket.json |
+| ticket-23 | ticket | 2026-07-27T18:47:07Z |  | ticket-23/ticket.json |
+| ticket-25 | ticket | 2026-07-27T18:47:07Z |  | ticket-25/ticket.json |
+| ticket-3 | ticket | 2026-07-27T18:47:07Z |  | ticket-3/ticket.json |
+| ticket-43 | ticket | 2026-07-27T18:47:07Z |  | ticket-43/ticket.json |
+| ticket-44 | ticket | 2026-07-27T18:47:07Z |  | ticket-44/ticket.json |
+| ticket-45 | ticket | 2026-07-27T18:47:07Z |  | ticket-45/ticket.json |
+| ticket-55 | ticket | 2026-07-27T18:47:07Z |  | ticket-55/ticket.json |
+| ticket-56 | ticket | 2026-07-27T18:47:07Z |  | ticket-56/ticket.json |
+| ticket-57 | ticket | 2026-07-27T18:47:07Z |  | ticket-57/ticket.json |
+| ticket-58 | ticket | 2026-07-27T18:47:07Z |  | ticket-58/ticket.json |
+| ticket-59 | ticket | 2026-07-27T18:47:07Z |  | ticket-59/ticket.json |
+| ticket-6 | ticket | 2026-07-27T18:47:07Z |  | ticket-6/ticket.json |
+| ticket-60 | ticket | 2026-07-27T18:47:07Z |  | ticket-60/ticket.json |
+| ticket-61 | ticket | 2026-07-27T18:47:07Z |  | ticket-61/ticket.json |
+| ticket-63 | ticket | 2026-07-27T18:47:07Z |  | ticket-63/ticket.json |
+| ticket-64 | ticket | 2026-07-27T18:47:07Z |  | ticket-64/ticket.json |
+| ticket-66 | ticket | 2026-07-27T18:47:07Z |  | ticket-66/ticket.json |
+| ticket-68 | ticket | 2026-07-27T18:47:07Z |  | ticket-68/ticket.json |
+| ticket-70 | ticket | 2026-07-27T18:47:07Z |  | ticket-70/ticket.json |
+| ticket-72 | ticket | 2026-07-27T18:47:07Z |  | ticket-72/ticket.json |
+| ticket-73 | ticket | 2026-07-27T18:47:07Z |  | ticket-73/ticket.json |
+| ticket-76 | ticket | 2026-07-27T18:47:07Z |  | ticket-76/ticket.json |
+| ticket-77 | ticket | 2026-07-27T18:47:07Z |  | ticket-77/ticket.json |
+| ticket-78 | ticket | 2026-07-27T18:47:07Z |  | ticket-78/ticket.json |
+| ticket-80 | ticket | 2026-07-27T18:47:07Z |  | ticket-80/ticket.json |
+| ticket-81 | ticket | 2026-07-27T18:47:07Z |  | ticket-81/ticket.json |
+| ticket-82 | ticket | 2026-07-27T18:47:07Z |  | ticket-82/ticket.json |
+| ticket-83 | ticket | 2026-07-27T18:47:07Z |  | ticket-83/ticket.json |
+| ticket-85 | ticket | 2026-07-27T18:47:07Z |  | ticket-85/ticket.json |
+| ticket-86 | ticket | 2026-07-27T18:47:07Z |  | ticket-86/ticket.json |
+| ticket-87 | ticket | 2026-07-27T18:47:07Z |  | ticket-87/ticket.json |
+| ticket-sync | ticket-sync | 2026-07-27T18:47:07Z |  | ticket-sync/ticket-sync.json |
+| aa29fe4a9fbb90268 | dispatched | 2026-07-27T18:58:06Z |  | aa29fe4a9fbb90268/dispatched-20260727T185806Z.json |
+| aa29fe4a9fbb90268 | returned | 2026-07-27T19:13:52Z | success | aa29fe4a9fbb90268/returned-20260727T191352Z.json |
+| a06d658c5485bd454 | dispatched | 2026-07-27T19:15:10Z |  | a06d658c5485bd454/dispatched-20260727T191510Z.json |
+| a06d658c5485bd454 | returned | 2026-07-27T19:31:19Z | REJECT | a06d658c5485bd454/returned-20260727T193119Z.json |
