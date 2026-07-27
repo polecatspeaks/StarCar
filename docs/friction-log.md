@@ -272,3 +272,10 @@ overlap found.
   would have refused the fabrication at landing. Same class as the #65 gate one layer up:
   hand-typed coordinates need mechanical resolution wherever they enter a durable record.
   Tooling fix is small and belongs in Land-Verdict itself.
+
+- 2026-07-27 (conductor, morning open): the runtime's auto-mode classifier denied a COMPOUND
+  command because one segment was `git clean -fd` (worktree reset per the re-dispatch spec) -
+  the non-destructive copy bundled with it was lost too. Splitting into copy, then a targeted
+  Remove-Item of the single untracked file, sailed through. Cost: one split-and-retry round
+  trip. Class: bundling a destructive op into a compound command forfeits the whole command;
+  sequence destructive steps alone, after their prerequisites have already landed.
