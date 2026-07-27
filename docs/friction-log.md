@@ -670,3 +670,18 @@ locator phrase so a second party can re-derive it from that file.
   The check measures thread state, which we do not solely control; what it is meant to
   measure is whether WE replied. Sharpen it to count threads lacking a reply from us, not
   threads lacking resolution.
+
+- 07-27 | **Running a `.ps1` through the Bash tool produced a FALSE GREEN, not an error.**
+  Dispatched `./scripts/Watch-CI.ps1 ... 2>&1 | tail -6; echo "WATCH-EXIT=$?"` via the Bash
+  tool. Bash executed the PowerShell script as a shell script, choked on the comment-block
+  opener (`syntax error near unexpected token 'newline' ... '<#'`) - **and reported
+  `WATCH-EXIT=0`**, because `$?` captured `tail`'s exit through the pipe, not the script's.
+  Cost: caught immediately by reading the output, then re-run correctly through the
+  PowerShell tool (green, run 30304491679). Class: **recurrence of the known bash/pwsh
+  boundary class, with a sharper edge than the logged instances - this one does not mangle
+  a string, it fabricates a GREEN VERIFICATION.** `Watch-CI.ps1`'s whole design is that its
+  exit code keeps RED distinct from could-not-observe (0/10/1), and running it through the
+  wrong shell collapses all three into 0. Two compounding causes: the wrong tool for the
+  file type, and `$?` after a pipeline reporting the LAST stage rather than the script.
+  Standing fix is the existing rule (pwsh work goes through the PowerShell tool); the new
+  part worth carrying is that this particular misroute lands on the honesty surface.
