@@ -1,27 +1,46 @@
 # Manifest member identity: the plan names the plan, and the binding is an observation
 
 Status: Open
-Stage: **rev 2** - round-1 REJECT (3 Major, 5 Minor, 8 Notes) folded with `[DR1-n, folded]`
-markers; awaiting delta re-review. Verdict:
-`artifacts/reviews/2026-07-27-design-87-review-r1-REJECT.md` - **note for a reader on this
-branch: that file is NOT here.** It landed on `dev` (commit `8c90dbe`) after
-`design/member-identity-87` was cut, so it resolves after merge or via
-`git show dev:artifacts/reviews/2026-07-27-design-87-review-r1-REJECT.md`. Verified
-present on `dev` and absent here rather than assumed; the round-1 `#76` verdict cited in
-§1 and the round-3 dual-runtime verdict cited in §0 ARE both present on this branch.
+Stage: **rev 3 - THE CAPPED ROUND.** Round-2 delta REJECT (2 Major, 3 Minor, 6 Notes,
+declining from 3M/5m) folded with `[DR2-n, folded]` markers; awaiting delta re-review.
+Verdicts: `artifacts/reviews/2026-07-27-design-87-review-r1-REJECT.md` and
+`artifacts/reviews/2026-07-27-design-87-review-r2-REJECT.md` - **note for a reader on this
+branch: NEITHER file is here.** Round 1 landed on `dev` at `8c90dbe`; round 2 landed on
+`dev` after this branch's rev-2 commit. Both resolve after merge or via
+`git show dev:artifacts/reviews/<name>`. Verified absent here and present on `dev` rather
+than assumed - the class the round-2 verdict ruled a SUFFICIENT disclosure and observed
+recurs on **every** delta-reviewed design, since the round-N verdict always lands after the
+branch was cut. The round-1 `#76` verdict cited in §1 and the round-3 dual-runtime verdict
+cited in §0 ARE both present on this branch.
+
+**THE CAP, recorded in the document because it binds the next round and not only the
+conductor:** the round-2 reviewer set round 3 as the **last round at this rung**. Both of
+its Majors were defects created by round 2's own fixes - the sharpest of the three swirl
+conditions - and a further occurrence escalates to the owner rather than dispatching a
+round 4.
 Issue: #87 (blocks #76, #85, #86; does not block #84)
 Date: 2026-07-27
 Rung: design (rung 1). Inherits the owner ruling on #76 (2026-07-27) and the round-1
 verdict `artifacts/reviews/2026-07-27-tooling-76-review-r1-REJECT.md`.
 
-**What changed in rev 2, in one glance.** Three Majors, all adopted, none appealed: a false
-PR-5 measurement corrected and re-derived (§2b, §2c, §1, §5.7 - `description` turns out to
-be present on **both** runtime families, so D8's premise got stronger); the Law-1 requirement
-traced its last hop to the sentence a human actually reads (new §5.3a, §8 gains the view
-layer and its 209 tests); and an ordering rule that had escaped into prose is now pinned by
-a vector rather than deleted (§5.6 V12). Five Minors folded, three new vectors (V12-V14),
-one new probe (PR-7), §2c shrunk from six rows to four, §10 Q3 closed by measurement and
-Q7 opened.
+**What changed in rev 3, in one glance.** Two Majors, both adopted, neither appealed. The
+join's `subject` clause is **recharacterized from legacy to STRUCTURAL**: rev 2's own
+per-family rewrite had quietly made it the permanent binding path for a LIVE runtime family
+while three sections still described it as serving six fossil manifests - including an open
+question that invited the reviewer to delete it (§5.5, §7, §10 Q4). Following that thread
+past the finding exposed a **cross-clause bind no vector reached**, so **V15** is added. And
+**V13's MUST-NOT clause is DELETED rather than re-homed** (§5.6), because the operation it
+forbade is byte-identical to one it permits and V7's precedence already guards what it was
+protecting - the one place this revision REMOVES a rule, routed to **Q8** for attack. Three
+Minors folded (the "all six land" claim corrected to five-plus-one-split; the record schema
+added to §8; a SHAPE question added to Q2 with **V16**), and the **Q7 ruling folded**:
+single ordered consist, on Law 6, with the `isTrainTerminal` carry named.
+
+*Rev 2, for continuity:* three Majors adopted - a false PR-5 measurement corrected and
+re-derived (`description` is present on **both** runtime families, strengthening D8); the
+Law-1 requirement traced its last hop to the sentence a human reads (§5.3a, §8's view layer
+and its 209 tests); an ordering rule pinned by V12 rather than deleted. Five Minors, PR-7,
+§2c shrunk six rows to four, Q3 closed by measurement.
 
 ---
 
@@ -395,16 +414,28 @@ construction** (`scripts/Produce-Artifact.ps1:358` writes `task_id` only when
 `$Kind -eq 'returned'`, and `schema/vectors/valid-presumed-lost.json` has none); and
 **0 exist in the store today** (PR-7), so nothing is live-broken.
 
-The consequence, stated rather than left to a car: under §5.5 a `presumed-lost` record
-resolves its handle by the FALLBACK clause to a runtime `subject`, so for a `runtime-id`
-family member it **binds to nothing and lands in epoch 2** - the member renders declared
-while its own loss record renders unattributed. Two true statements, no Law-1 hole, but the
-board fails to say the one thing the dispatcher most needs (*this member died*), which is a
-Law-3 cost and is named as such in §6. **The fix is D8's, not a new rule:** if a
-`presumed-lost` record inherits the `task_id` its `dispatched` sibling was stamped with,
-the epoch collapses to 3 and the loss renders on the member row. That inheritance question
-is an explicit D8 obligation (§5.7) and a vector (V14), because a producer that stamps only
-`dispatched` and `returned` would leave exactly this hole open.
+The consequence **splits by family, and rev 3's §5.5 recharacterization is what makes the
+split visible** - a `presumed-lost` record always resolves its handle through the SECOND
+clause (it has no `task_id`), and what that clause finds is not the same on both families:
+
+| Family | `presumed-lost` record's `subject` | Result |
+|---|---|---|
+| **Copilot / `minted-id`** | **IS the shop handle** (`Produce-Artifact.ps1:187-190`) | **BINDS. Epoch 3, the loss renders on the member row, and the killed-session case works today with no D8 at all.** |
+| **Claude / `runtime-id`** | a runtime UUID | **binds to nothing; epoch 2** - the member renders declared while its own loss record renders unattributed |
+
+For the Claude half: two true statements, no Law-1 hole, but the board fails to say the one
+thing the dispatcher most needs (*this member died*), which is a Law-3 cost and is named as
+such in §6. **The fix is D8's, not a new rule:** if a `presumed-lost` record inherits the
+`task_id` its `dispatched` sibling was stamped with, the epoch collapses to 3 there too.
+That inheritance question is an explicit D8 obligation (§5.7) and a vector (V14), because a
+producer that stamps only `dispatched` and `returned` would leave exactly this hole open.
+
+*Caught by me at rev 3, not by a reviewer, and recorded because it is the shape the cap
+exists for:* rev 2 stated this consequence as if it were universal. The DR2-M1 correction -
+that the second clause is structural for a live family - made that statement **false for the
+minted-id family**, where the loss binds perfectly well. A fix creating a defect one section
+over is exactly what the round-2 verdict charged twice; finding this one before shipping it
+is the same check applied inward.
 
 ### 5.3 What the trains lane renders
 
@@ -438,11 +469,27 @@ rather than leaving a car to improvise it: **one ordered `cars` array carrying e
 member**, with `state` gaining a value for the unbound case and `at` relaxed to optional
 (absent renders absent - Law 1, and `taskId`/`recordDir` already set the precedent for
 optional-when-unknowable at `yard-snapshot.schema.json:128-135`). The two-array split then
-collapses, which is also what retires the false sentence in §5.3a. **Naming the alternative
-so the reviewer can reject my choice:** keeping two arrays and adding an explicit
-`declaredIndex` to each entry would preserve order without relaxing the required set - more
-wire, more to keep in sync, and it leaves the unbound member outside the consist a human
-reads. I chose the single array; §10 Q7 puts the trade to the reviewer.
+collapses, which is also what retires the false sentence in §5.3a.
+
+**RULED at round 2, and this is now a decision rather than a proposal `[Q7 ruling, folded]`.**
+The reviewer took the single ordered consist, on an argument stronger than the one I made:
+**Law 6.** Two arrays that every consumer must re-merge is one structure maintained in two
+places, and the merge rule gets reimplemented by the view, by the node tests, and by every
+future adapter - `constitution.md:46-51`'s *"never maintains a second copy of anything that
+can drift"* applied to a wire shape rather than to a value. The `declaredIndex` alternative
+also leaves the unbound member outside the array a human reads, which is most of what §5.3a
+exists to fix. The alternative is kept named below rather than deleted so the reversal stays
+legible, but it is closed.
+
+*Alternative, closed:* keep `cars` and `declaredNotObserved` split and add an explicit
+`declaredIndex` to each entry, reassembling order client-side. Rejected on Law 6 above.
+
+**One carry the ruling names for the implementing car, and it is easy to get wrong:**
+`board/web/js/render.js:247-248`'s `isTrainTerminal` reads `train.declaredNotObserved.length`
+to decide terminality. Under one array that field is gone, so the predicate must be
+**REWRITTEN against the new shape - never deleted.** Deleting it would make a train with a
+permanently-unbound member terminal, which #67 already ruled wrong (*an undelivered member is
+the owner's "queued", never terminal*). §8's view row carries it.
 
 ### 5.3a The rendered sentence - the last hop, which rev 1 never reached
 
@@ -504,8 +551,43 @@ that condition rather than replacing it.
 
 The rule in one sentence, so the reviewer can check §5.6 against it: **a record binds to a
 member when the record's resolved handle equals the member's resolved identity, where each
-side resolves `task_id` first and falls back to `subject`.** The fallback is what keeps the
-legacy corpus rendering; it is a legacy clause, not a general escape hatch.
+side resolves `task_id` first and falls back to `subject`.**
+
+**The `subject` clause is STRUCTURAL, not legacy `[DR2-M1, folded]`.** Rev 2 called it *"a
+legacy clause, not a general escape hatch"* - and rev 2's own §5.7 rewrite, three sections
+later, falsified that in the same commit. **The correction, and it is the sharpest thing
+this round changed:** the `subject` clause is the permanent binding mechanism for a LIVE
+runtime family, and it is not going away. The chain, re-verified by me against the code and
+the corpus rather than taken from the verdict:
+
+1. A Copilot-family **dispatched** record's `subject` **is** the shop-minted handle -
+   `scripts/Produce-Artifact.ps1:187-190` reads it verbatim from `tool_input.name` and
+   discloses `subject_basis = minted-id`.
+2. **No dispatched record of any family carries `task_id`** -
+   `scripts/Produce-Artifact.ps1:358` writes it only when `$Kind -eq 'returned'`; corpus
+   confirms **83 dispatched records, 0 with `task_id`** (PR-7).
+3. Therefore a Copilot in-flight record resolves its handle through the **second** clause,
+   every time, forever - and binds correctly to a member whose identity is a `task_id`.
+
+So the clause serves three populations, only one of which is a fossil:
+
+| Population | Which clause binds it | Fossil or live? |
+|---|---|---|
+| The six landed `train:board-v0` manifests | `subject` on BOTH sides | **fossil**, closed, 0 of 16 records carry `task_id` (PR-7) |
+| **Copilot-family in-flight dispatches** | member `task_id` ↔ record `subject` | **LIVE and PERMANENT** - `description` never needs to carry a handle for this family (§5.7) |
+| `presumed-lost` records, any family | `subject` | **live**, and never carries `task_id` by construction (§5.2) |
+
+**Naming this correctly matters beyond tidiness**, which is why it was a Major: §10 Q4 asked
+the reviewer to rule on DROPPING this clause and priced it as costing six fossil manifests.
+On the corrected basis the true cost of dropping it is that **an entire live runtime family
+stops binding in flight**. A ruling made on the old basis would have deleted load-bearing
+structure. Q4 now carries the corrected basis and the ruling made on it.
+
+**And it exposes a gap in §5.6 that no round has named:** the middle row above is a
+**cross-clause** bind - the member resolves by `task_id`, the record by `subject`. V5 pins
+`task_id`↔`task_id`; V6 pins `subject`↔`subject`. **Neither pins the cross.** V15 is added
+for it, because a permanent live binding path with no vector is the exact shape §0 exists to
+prevent.
 
 **Everything else about this rule - precedence proof, ambiguity, duplicates,
 normalisation, the empty case - is FORMAT and lives in §5.6.** I am deliberately not
@@ -515,8 +597,8 @@ Two facts the rule was checked against, both measured:
 
 - **The legacy corpus is safe.** PR-4: the six landed manifests declare 10 distinct member
   subjects, all runtime ids; those subjects own 16 `returned` records; **0 carry
-  `task_id`.** So the fallback clause, not the primary clause, serves every one of them,
-  and it will keep doing so - runtime ids are not reissued.
+  `task_id`.** So the second clause, not the first, serves every one of them, and it will
+  keep doing so - runtime ids are not reissued.
 - **The rule is symmetric.** Both sides resolve by the same two-clause precedence, so there
   is one rule to test and one place it can be wrong.
 
@@ -525,19 +607,26 @@ Two facts the rule was checked against, both measured:
 **Deliverable, not built here.** A schema delta plus conformance vectors in the landed
 `schema/vectors/` pattern plus red-first tests.
 
-**Every obligation §0 defers must land in a vector, and after round 2 all six do
-`[DR1-m4, folded]`** - rev 1 deferred six and pinned five, which is the carrier rule's own
-failure shape inside one document. The mapping, so a reviewer can check it rather than
-trust it:
+**Every obligation §0 defers must land somewhere nameable, and the honest count is FIVE
+pinned by vectors plus ONE SPLIT `[DR1-m4, folded; DR2-m1, corrected]`.** Rev 1 deferred six
+and pinned five. Rev 2 claimed in bold that all six now land - **which its own table
+contradicted one row down**, since the intra-manifest duplicate case routes to §10 Q5, an
+open question, not a vector. That is the same overstatement class as the finding it was
+fixing, one notch smaller, on the exact claim that had just failed. Corrected below, and the
+table is now the authority over any sentence above it:
 
-| §0 defers | Pinned by |
-|---|---|
-| the member's identity key | V1, V2, V11 |
-| the `required` set | V3, V4 |
-| the record-to-member join rule | V5, V6, V12 |
-| its precedence | V7 |
-| ambiguity and duplicates | V8, V9 (+ §10 Q5 for the intra-manifest case) |
-| **what "amendment" may and may not touch** | **V13** *(the one rev 1 left homeless)* |
+| §0 defers | Pinned by | Complete? |
+|---|---|---|
+| the member's identity key | V1, V2, V11 | yes |
+| the `required` set | V3, V4 | yes |
+| the record-to-member join rule | V5, V6, **V15** | yes - **V12 removed from this row `[DR2-m1, folded]`**: it pins consist ORDER, a rendering concern, not the join. V15 takes its place because the cross-clause bind IS a join case |
+| its precedence | V7 | yes |
+| ambiguity and duplicates | V8, V9 | **PARTIAL, and named as such.** The record-side duplicate is pinned; the **intra-manifest member duplicate is NOT** - it is §10 Q5, open, because JSON Schema cannot express uniqueness over a computed key and the enforcer (schema, producer, or board disclosure) is unchosen. This is the one obligation still without a vector |
+| what "amendment" may touch | **V13** | yes for the MAY half; **the MAY-NOT half is empty by construction** - see the ruling below |
+
+Vectors that pin obligations arising AFTER §0's list, kept out of the table above so it
+cannot inflate: **V10** (D6's no-drop), **V12** (DR1-M3's ordering rule), **V14**
+(`presumed-lost`), **V16** (DR2-m3's stamped-handle shape).
 
 The vector set must pin, at minimum:
 
@@ -555,16 +644,69 @@ The vector set must pin, at minimum:
 | V10 | `join-unbound-member` | a member binding to no record renders under its identity (D6) |
 | V11 | `member-identity-both-keys` | a member carrying both keys validates and resolves by V7's precedence - the shape a transitional manifest could take |
 | **V12** *(new, `[DR1-M3, folded]`)* | `consist-ordered-membership` | **the consist contains EVERY declared member, exactly once, in DECLARED ORDER, with bound and unbound members interleaved as the manifest declares them.** This is the pin that takes §5.3's ordering rule out of prose. Fixture: a 4-member manifest declared car/gate/car/gate where members 1 and 3 are bound and 2 and 4 are not - a two-array wire cannot satisfy it, which is the point |
-| **V13** *(new, `[DR1-m4, folded]`)* | `amendment-scope` | **what a manifest amendment may and may not touch** - the sixth obligation §0 deferred and rev 1's V-set pinned nowhere. A superseding manifest MAY add, remove or reorder members and MAY change a member's `role`/`gate`; it MUST NOT change an existing member's identity. Two directions: an amendment that grows the consist supersedes cleanly; **an amendment that rewrites a member's `task_id` is REJECTED** - that is the mutation D2 forbids, and without this vector nothing stops a future producer reintroducing shape A's amendment |
-| **V14** *(new, `[DR1-m4, folded]`)* | `presumed-lost-binding` | a `presumed-lost` record's handle resolution and binding, both directions: **without** an inherited `task_id` it falls back to `subject` and lands its member in epoch 2 (today's honest behaviour, pinned so it is a known state rather than a surprise); **with** D8's inheritance it binds and the loss renders on the member row. The killed-session class the owner's ruling names as the manifest's purpose gets an executable landing rather than a sentence |
+| **V13** *(rev 2, **REWRITTEN at rev 3** `[DR2-M2, folded]`)* | `amendment-scope` | **what a manifest amendment MAY touch**, which is now the whole of it: a superseding manifest MAY add, remove and reorder members and MAY change a member's `role`/`gate`, and the later manifest wins wholesale (the fold's existing intent-winner selection, not a merge). Two directions, both record-shaped and both satisfiable: a consist that GROWS supersedes cleanly (the six landed manifests' own 1-2-4-6-8-10 shape); a consist that SHRINKS supersedes cleanly and the removed member's records become unattributed, disclosed by D7 (§6). **The rev-2 MUST-NOT clause is DELETED - see the ruling below.** |
+| **V15** *(new at rev 3, `[DR2-M1, folded]`)* | `join-cross-clause-minted` | **a member identified by `task_id` binds to a record whose handle resolves through the `subject` clause** - the Copilot in-flight case, which §5.5 now shows is a LIVE and PERMANENT binding path and which no vector reached. Fixture: member `{task_id: x-car-r1, role: car}`; dispatched record `{subject: x-car-r1, subject_basis: minted-id}` with no `task_id`. V5 pins `task_id`↔`task_id` and V6 pins `subject`↔`subject`; **this is the cross, and it is the one a whole runtime family runs through every time** |
+| **V16** *(new at rev 3, `[DR2-m3, folded]`)* | `stamped-handle-shape` | **what happens when D8 stamps a NON-handle.** If the Claude convention is missed, the producer writes conductor prose (`Design #87 member identity`) into a field the record schema calls *"the shop-minted dispatch id"*. Pins the honest degrade end to end - the prose binds to no member, the record is unattributed, D7 raises its condition - **and pins whatever shape rule §10 Q2's ruling establishes**, so the store does not silently accumulate records whose `task_id` is not a task id. Red-first; gated on Q2 like the rest of D8 |
+| **V14** *(rev 2, **SCOPED PER-FAMILY at rev 3**)* | `presumed-lost-binding` | a `presumed-lost` record's handle resolution, **three directions, because rev 3's §5.5 correction split this by family**: (a) **`minted-id`** - `subject` IS the handle, so it **BINDS through the second clause and the loss renders on the member row TODAY**, with no D8 at all; (b) **`runtime-id` without D8** - `subject` is a UUID, it binds to nothing, the member sits in epoch 2 and the record is unattributed (today's honest behaviour, pinned so it is a known state rather than a surprise); (c) **`runtime-id` with D8's inheritance** - binds, and the loss renders. **Rev 2 pinned only (b) and (c) and described them as universal, which the DR2-M1 correction falsified for family (a)** |
 
-Every one of V5-V10 and V12/V14 is a behavioural claim about code that does not exist, so
-each lands **red first** and fails for its own stated reason before any board change.
+#### The V13 ruling: the MUST-NOT clause is DELETED, not re-homed `[DR2-M2, folded]`
 
-**Non-vacuity note the implementing car must honour (#40):** V6, V10 and V13 would pass
-today for the wrong reason - V6 because the current join already matches subject-to-subject;
-V10 vacuously if the member happens to carry `subject`; **V13 vacuously because no amendment
-mechanism exists to violate it yet.** V12 is the reverse case and the most valuable: it
+Rev 2's V13 forbade an amendment from rewriting an existing member's identity. **That clause
+was unsatisfiable and I am removing it rather than finding it an enforcer.** The defect, and
+it is structural rather than temporary: given `v1 = [{task_id: A}, {task_id: B}]`, "rewrite A
+to C" and "remove A, add C" both yield `[{task_id: C}, {task_id: B}]` - **byte-identical
+records.** Identifying *an existing member* across a supersession requires the identity that
+changed, so no record-shaped vector can tell a forbidden operation from a permitted one. Rev
+2's own non-vacuity note half-spotted this and misattributed it to "no amendment mechanism
+exists yet"; the cause does not go away when one does.
+
+**Two options were on the table. I take (b) - drop the clause - and the reasoning is not
+convenience:**
+
+1. **The thing the clause was protecting is already protected, by V7.** Rev 2 justified it as
+   *"without this vector nothing stops a future producer reintroducing shape A's amendment."*
+   Re-examined, that is false. Shape A's amendment ADDED `subject` to a member at dispatch
+   time. Under V7/V11 a member carrying both keys resolves its identity by `task_id`
+   precedence - **so shape A's mutation cannot change a member's resolved identity even if a
+   producer performed it.** The precedence rule, which is satisfiable and already pinned, is
+   the real guard. V13 was a second guard over a door V7 already holds.
+2. **The forbidden operation's outcome is honest anyway.** The realistic case is a conductor
+   fixing a typo (`desing-87-r1` → `design-87-r1`). Semantically that IS remove-plus-add, it
+   is permitted, and what follows is correct on every surface: the old handle's records (if
+   any) become unattributed and D7 discloses them; the new member renders unbound. **There is
+   no bad state to prevent.**
+3. **A gate with nothing to catch is a pruning candidate**, by this repo's own Healing Loop
+   (`docs/the-healing-loop.md:60-61`: *"imported ceremony that never caught anything here is
+   a pruning candidate"*). Naming an enforcer for a rule whose violation is indistinguishable
+   and whose outcome is already honest installs exactly that.
+
+**Option (a), considered and NOT taken, stated so the reviewer can overrule me:** name
+`scripts/New-TrainManifest.ps1`'s amend path as the enforcer. It genuinely does know the
+OPERATION, because the operator requested it, and #76's round-1 verdict proved it testable
+there (its F3 injection - *"amend replaces `task_id` instead of adding `subject`"* - went red).
+**Why I declined:** that would move a CONTRACT rule into ONE tool, which is Law 6 inverted -
+a second producer, or a hand-written manifest, would not be bound by it, so the contract
+would be enforced in a place that does not own it. If the owner later wants an operator-facing
+guard, its honest form is a **warning in the producer tool** ("this renames a member and will
+orphan its records"), not a rule in the format contract. Recorded in §7 with that trigger.
+
+**What still lands:** §0's sixth deferred obligation is *"what amendment may and may not
+touch"*. The MAY half is real, record-shaped and satisfiable, and V13 keeps it. The MAY-NOT
+half turns out to be **empty by construction** - D1 mints identity once, D2 gives the manifest
+no runtime fact to mutate toward, and V7 neutralises the one historical attempt. An obligation
+whose honest answer is "nothing is forbidden here, and here is why" has landed, not evaporated.
+
+Every one of V5-V10 and V12/V14/V15/V16 is a behavioural claim about code that does not
+exist, so each lands **red first** and fails for its own stated reason before any board change.
+
+**Non-vacuity note the implementing car must honour (#40):** V6, V10 and V13 would pass today
+for the wrong reason - V6 because the current join already matches subject-to-subject; V10
+vacuously if the member happens to carry `subject`; **V13 because the fold's intent-winner
+selection already makes the later manifest win, so its MAY half is satisfied by machinery
+that predates this design** (this replaces rev 2's wrong reason for the same vector).
+**V15 is the newly dangerous one:** it would pass today against a member carrying `subject`
+instead of `task_id`, which is not the case it exists to pin - the fixture must give the
+member a `task_id` and ONLY a `task_id`. V12 is the reverse case and the most valuable: it
 **must be red on arrival** against the current two-array wire, and a V12 that passes before
 the wire changes has been written to the wire instead of to the requirement. Each must be
 fault-injected once and observed red, or it is a guard nobody watched fire.
@@ -602,8 +744,10 @@ and the producer stamps it as `task_id` on the `dispatched` record. This is not 
 mechanism C3R-1e ruled against - that ruling forbids inventing a value by parsing
 `tool_input.prompt` for a field that does not exist; this reads a field that does.
 
-**D8 must also rule on `presumed-lost` `[DR1-m4, folded]`:** a stamp that fires only on
-`dispatched` leaves the killed-session record unbindable (§5.2). The obligation is that a
+**D8 must also rule on `presumed-lost` `[DR1-m4, folded; scoped at rev 3]`:** a stamp that
+fires only on `dispatched` leaves the killed-session record unbindable **on the Claude family
+only** - §5.2's table shows the `minted-id` family already binds its loss records through
+§5.5's second clause, with no D8 involved. The obligation is that a Claude-family
 `presumed-lost` record carries the same handle its `dispatched` sibling was stamped with -
 pinned by V14, because this is the one kind whose whole purpose is the case where no agent
 survives to echo an envelope.
@@ -688,7 +832,8 @@ for Copilot, which needs no convention) until some other wire is found.
 | `board/fold` | Measured (#87 substrate): manifests do not ride the fold's dispatch-lifecycle machinery. Untouched. |
 | Building the D8 wire | Its own ticket. Trigger: §10 Q2's owner ruling. |
 | Retroactively adding `task_id` to the six landed manifests | **NO-BACKFILL. Never.** The fallback clause exists so that history keeps rendering as history. |
-| Stamping `task_id` on `minted-id`-family records so the fallback clause becomes legacy-only | Hygiene, not correctness. Trigger: the D8 wire landing, which is when one universal handle field becomes achievable. |
+| ~~Stamping `task_id` on `minted-id`-family records so the fallback clause becomes legacy-only~~ **RE-TRIGGERED at rev 3 `[DR2-M1, folded]`** | Rev 2 triggered this on *"the D8 wire landing"* - but rev 2's own §5.7 established that **D8 never lands for the Copilot family**, because `tool_input.name` already carries the handle. So the trigger could never fire and the second clause of §5.5 was permanent **by construction rather than by decision**. Corrected: the second clause is **STRUCTURAL and stays** (§5.5, and the reviewer's ruling on the corrected Q4 basis). Stamping `task_id` onto minted-id records is now pure hygiene with **no correctness value at all** - it would only make the two clauses agree on a family that already binds. **Trigger: none. This is retired, not deferred**, and V15 pins the cross-clause bind it would have papered over. |
+| A producer-tool WARNING when an amendment renames a member (orphaning its records) `[DR2-M2, folded]` | Not a contract rule - see the V13 ruling in §5.6 for why the MUST-NOT was deleted rather than re-homed. Trigger: the owner asking for an operator-facing guard, at which point it lands in `scripts/New-TrainManifest.ps1` as a warning, never in the format contract. |
 | ~~Renaming the wire's `declaredNotObserved` field~~ **MOVED IN SCOPE at round 2 `[DR1-M2, folded]`** | Rev 1 parked this and called it "named so it is not assumed done". That was wrong: the field, its schema description, and **the human sentence at `board/web/js/dom-writer.js:481`** are where D6's requirement actually lands. All three are now §8 obligations with a named owner. The out-of-scope row is kept struck rather than deleted, so the reversal is legible. |
 | A producer-side check that a handle about to be stamped is not already live in the store (D8 collision PREVENTION, as opposed to D9's disclosure) | §5.7a names it; it is the same contract decision as D8 itself. Trigger: §10 Q2's owner ruling, if the owner wants prevention rather than disclosure. |
 
@@ -710,6 +855,7 @@ an honest outcome, disclosed by D7, not a defect.
 | `schema/yard-snapshot.schema.json` | **`:137`'s `required: ["subject","role","state","at"]` on `cars` items must relax** - an unbound member has neither `state` nor `at`, so D6 is unimplementable without it `[DR1-M2, folded]`. Plus the ordered-consist shape (V12), the `declaredNotObserved` field's retirement or redefinition, **and `:143`'s description, which is false whenever a bound record exists** | same car, same commit as the assembler |
 | **`board/web/js/dom-writer.js` (`:481`) and `board/web/js/render.js` (`:243-250`)** `[DR1-M2, folded]` | **The rendered sentence `declared, not yet observed: <names>` is the surface where the falsehood actually reaches a human**, and rev 1 named no view file at all. It must say only what the board can back (*no departure bound*), and the consist must render in declared order. `board/web/js/render.js:247-248`'s train-terminality rule is checked and stays correct as written (`isTrainTerminal` returns false while `declaredNotObserved` is non-empty, so an unbound member keeps a train non-terminal - which #67 already ratified) - named here so a later round does not re-open it, and flagged because collapsing the two arrays per §5.3 forces this predicate to be rewritten against the new shape rather than deleted | **the #85/#86 car, same commit - explicitly the SAME car as the assembler and wire change, because a wire change without the view leaves the false sentence rendering off a renamed field.** Coordinate with #84 |
 | **`board/web/test/**` (209 node tests, incl. `dom-writer.test.js`, `render.test.js`)** | Red-first coverage for the rendered-string change and ordered consist. **Rev 1 named no owner for 209 tests** | same car |
+| **`schema/starcar-artifact.schema.json:80-82`** `[DR2-m2, folded]` | The `task_id` description reads *"Optional, **returned-only**. … the shop-minted dispatch id **echoed back by the report's starcar-artifact envelope** (`task-id:` line)"*. **D8 falsifies BOTH halves** - it makes `task_id` dispatched-also (and `presumed-lost`-also, §5.7) and CONDUCTOR-sourced rather than envelope-echoed. Rev 2 listed the Copilot adapter vector for exactly this reason and omitted the schema whose description D8 contradicts head-on, which is an inconsistency inside the table that does this job. Same class as R1-M3, which this train has already paid a Major for once | the D8 producer car, SAME COMMIT as the stamp - this is the record contract, so it cannot lag the code by even one commit |
 | **`schema/vectors/adapter/copilot-launch-minted-from-name.json:14`** `[DR1-M1, folded]` | The landed vector declares `tool_input` as `{name, agent_type, prompt}` - **no `description`** - while all 20 live Copilot payloads carry one (PR-5). A car building D8 against this vector concludes the Copilot family cannot carry a handle. **Reconcile the vector to the measured live shape, or record in its provenance line why it deliberately omits the key** | the D8 producer car, gated on §10 Q2; the vector is `#47` territory so the reconciliation is disclosed to that ticket's owner rather than done silently |
 | `schema/vocab/` | **Untouched.** No new vocabulary; the conditions are codes, and `store.RegisterForCode` already owns their register | - |
 | `scripts/New-TrainManifest.ps1` (on branch `car/tooling-76`, unmerged) | Its identity handling changes; its sealing, dual-schema pre-write validation, supersession-not-in-place amendment and worked commands were all verified sound by the round-1 reviewer and are reusable | the #76 car, after this design is approved |
@@ -732,7 +878,25 @@ an honest outcome, disclosed by D7, not a defect.
 
 ## §9b - Disposition of the prior round
 
-**Round 2 (this revision): every finding from
+**Round 3 (this revision): every finding and every ruling from
+`artifacts/reviews/2026-07-27-design-87-review-r2-REJECT.md` (design review round 2, delta,
+REJECT, 2 Major / 3 Minor / 6 Notes - declining from 3M/5m).** Both Majors were defects
+**created by round 2's own fixes**, which is why the reviewer set a cap: round 3 is the last
+round at this rung, and a further fix-created Major escalates to the owner rather than
+dispatching round 4. No blanks; no appeals.
+
+| Prior item | Kind | Disposition | Where |
+|---|---|---|---|
+| **DR2-M1** - the round-2 per-family rewrite made the `subject` clause load-bearing for a LIVE family while three places still called it legacy-only; Q4 asked for a ruling on a false cost basis | finding | **ADOPTED IN FULL, and the chain re-verified by me against the code and corpus rather than taken from the verdict.** §5.5 now carries a three-population table and calls the clause **STRUCTURAL**; Q4 is closed with its defective basis kept visible, because a soft-spot question priced wrongly is worse than none; §7's minted-id stamping row is **retired, not re-triggered** - rev 2 gated it on a D8 landing that §5.7 says never happens for that family. **Went past the finding:** the corrected reading exposes a **cross-clause** bind (member `task_id` ↔ record `subject`) that V5 and V6 both miss and that a whole runtime family runs through every dispatch - **V15** added. | §5.5, §5.6 V15, §7, §10 Q4 |
+| **DR2-M2** - V13 (`amendment-scope`) is unsatisfiable: the forbidden operation is byte-identical to a permitted one, and no enforcer is named | finding | **ADOPTED. Option (b) taken - the MUST-NOT clause is DELETED, not re-homed**, with the reasoning on the page: V7's precedence already neutralises shape A's mutation (so the clause guarded a door V7 holds); the "forbidden" operation's outcome is honest anyway; and a gate with nothing to catch is a pruning candidate (`docs/the-healing-loop.md:60-61`). Option (a) is named and declined for a stated reason - it would move a CONTRACT rule into ONE tool, Law 6 inverted - and re-homed to §7 as an operator-facing WARNING with a trigger. §0's sixth obligation still lands: the MAY half is real and satisfiable; the MAY-NOT half is **empty by construction**, which is an answer rather than an evaporation. Routed to **Q8** for attack, because this is the one place rev 3 removes a rule. | §5.6 V13 + ruling, §7, §10 Q8 |
+| **DR2-m1** - "all six now land" overstates its own table; V12 misfiled under the join-rule row | finding | **ADOPTED.** The bolded claim is replaced by the honest count - **five pinned, one SPLIT** - the table gains a "Complete?" column naming the intra-manifest duplicate as the one obligation still without a vector, and the table is declared authoritative over any sentence above it. V12 removed from the join row (it pins consist order, a rendering concern); **V15 takes that slot because a cross-clause bind genuinely is a join case**. Vectors covering post-§0 obligations (V10, V12, V14, V16) are listed separately so they cannot inflate the count. | §5.6 |
+| **DR2-m2** - §8 omits `schema/starcar-artifact.schema.json`, whose `task_id` description D8 falsifies twice | finding | **ADOPTED.** §8 gains the row at `:80-82` naming both falsified halves (returned-only, and envelope-echoed) with the D8 producer car as owner and a **same-commit** binding, because it is the record contract. The inconsistency was exactly the class the table already handled correctly for the Copilot adapter vector. | §8 |
+| **DR2-m3** - D8 specifies no shape check before stamping `description` into `task_id` | finding | **ADOPTED, and widened past the finding.** Q2 gains a **third half** distinguishing SHAPE from COLLISION, with three named answers for the owner and my stated preference (stamp only on a match, else omit and fault) deliberately not decided. The point the finding makes and rev 2 missed: the BOARD degrades honestly, **the STORE does not** - it accumulates plausible non-handles that every later consumer inherits. **V16** pins both the honest-degrade path and whatever rule Q2 settles. | §5.6 V16, §10 Q2 |
+| **Q7 RULING: take the single ordered consist** | **ruling** | **ADOPTED.** Folded at §5.3 as a decision rather than a proposal, on the reviewer's Law 6 argument, which is stronger than the one I offered - I had priced it as "more wire to keep in sync"; the reviewer named `constitution.md:46-51`. The `declaredIndex` alternative is kept named-and-closed rather than deleted. The `isTrainTerminal` carry is folded at §5.3 and §8. | §5.3, §8, §10 Q7 |
+| **Reviewer self-correction: the round-1 timestamp coordinates were the reviewer's error, not mine** | **ruling** | **ACCEPTED, and nothing in this document changes** - my rendering was already the raw-byte one. Recorded here because the process point outlives the fact: I disclosed a divergence from my own reviewer instead of quietly adopting its numbers, and that is what surfaced a `ConvertFrom-Json` coercion hazard now landed in `docs/friction-log.md` (commit `c2b133e`). **Quietly adopting would have cost nothing visible and buried a real substrate hazard.** | §2b PR-5 (unchanged) |
+| *Reviewer rulings that went the design's way and are NOT re-opened:* the eight round-1 folds walked PRESENT with zero absent and zero drifted; PR-7 re-derived exactly; the per-family D8 narrowing verified TRUE; §5.3a genuinely OWNS the rendered string; V12 writable-by-a-stranger and red-on-arrival honestly achievable; §5.7a a real argument; Q3's closure; Q6; the verdict-path disclosure judged SUFFICIENT and the correct form; the `memberClaims` catch confirmed real and MISSED by the reviewer | **rulings** | **ACCEPTED; none re-litigated.** | throughout |
+
+**Round 2: every finding from
 `artifacts/reviews/2026-07-27-design-87-review-r1-REJECT.md` (design review round 1,
 REJECT, 3 Major / 5 Minor / 8 Notes).** No blanks; nothing adopted silently and nothing
 dropped.
@@ -801,6 +965,26 @@ question:** D9 discloses a duplicated handle but does not prevent one, and preve
 be a producer-side liveness check (§7). The design stands under either answer, which is why
 D8 was made separable.
 
+**Q2's THIRD half, added at rev 3 `[DR2-m3, folded]` - SHAPE, which is a different question
+from collisions and rev 2 never asked it.** D8 specifies no check on what it stamps. If the
+Claude convention is simply missed, the producer writes conductor prose - PR-5's own samples
+are `Design #87 member identity`, `Car #76 train manifest minting` - into a field
+`schema/starcar-artifact.schema.json:80-82` calls *"the shop-minted dispatch id"*. **The
+BOARD degrades honestly** (verified: prose binds to no member, the record is unattributed,
+D7 raises its condition, §5.7a's table row), **but the STORE does not**: it accumulates
+records whose `task_id` is not a task id, and every consumer that trusts the field
+thereafter - the dispatches lane's row title, `taskIDsBySubject`, any future adapter -
+inherits a plausible-looking non-handle. That is a Law 1 exposure on a surface the board is
+not the only reader of. **Three answers are available and the owner picks:** (i) no check,
+disclosure only - cheapest, and the store carries junk; (ii) a **shape** rule on the record
+schema (`task_id` matches the shop's handle pattern) so a non-handle is rejected at write
+time - firm, and it makes a missed convention loud at the producer instead of silent in the
+store; (iii) stamp only when the value matches the pattern, else omit and raise a producer
+fault - the honest-degrade form, and the one most consistent with §5.7a's argument.
+**V16 pins whichever is chosen**, and pins today's honest-degrade path either way. I have a
+preference (iii) and am deliberately not deciding: this is the same contract question as the
+rest of Q2 and it is the owner's.
+
 **~~Q3. Does the join need canonicalisation?~~ CLOSED - SETTLED BY MEASUREMENT `[DR1-m2,
 folded]`.** Rev 1 left this open because *"I did not enumerate"* - which was the defect, not
 the question: it was one command away the whole time. Enumerated at round 2 (PR-7, my own
@@ -813,13 +997,32 @@ prevents an uppercase handle. If one ever appears, V7's precedence is unaffected
 canonicalisation vector becomes owed - and D9/V8 already disclose the collision rather than
 resolving it silently, so the failure stays loud in the meantime.
 
-**Q4. Is the fallback clause in §5.5 worth its price?** It exists solely for six landed
-manifests and 10 dispatch subjects. The alternative - `task_id` only, and accept that the
-`train:board-v0` records stop rendering their consist - is simpler by one clause forever.
-I ruled that Law 4 forbids it (a rendered train silently losing its cars), and read
-NO-BACKFILL as covering rendering and not only validation. **That reading is mine, not the
-doctrine's literal text, and it deserves attack.** **Cost if I am wrong:** one unnecessary
-clause carried permanently, and a precedence rule (V7) that would not otherwise be needed.
+**~~Q4. Is the fallback clause in §5.5 worth its price?~~ CLOSED - AND THE QUESTION ITSELF
+WAS DEFECTIVE `[DR2-M1, folded]`.**
+
+Rev 2 asked this on a **false cost basis**: *"it exists solely for six landed manifests and
+10 dispatch subjects"*, and invited a ruling on DROPPING it. That basis was falsified by
+rev 2's own §5.7 rewrite, in the same commit - and this is the part worth keeping visible,
+because **a soft-spot question priced wrongly is worse than no question at all.** §10 exists
+to surface soft spots accurately; a reviewer or owner ruling on the stated basis would have
+deleted a clause a **live runtime family depends on every time it dispatches**. The section
+whose job is honest self-attack had become a route to a wrong decision.
+
+**Corrected basis:** the second clause of §5.5 binds three populations - six fossil
+manifests, **every Copilot-family in-flight dispatch (live, permanent)**, and **every
+`presumed-lost` record of any family**. The true cost of dropping it is not "old records stop
+rendering their consist"; it is that a live family stops binding in flight and the
+killed-session record kind stops binding at all.
+
+**RULING (reviewer, round 2), on the corrected basis: the clause is not merely worth its
+price - it is STRUCTURAL. Keep it, and stop calling it legacy.** Folded at §5.5, where the
+"legacy clause" characterization is replaced by the three-population table; at §7, where the
+minted-id stamping row that would have retired it is itself retired; and at V15, which pins
+the cross-clause bind the corrected reading exposed.
+
+*What I got right and want kept:* the Law 4 / NO-BACKFILL reading (a rendered train silently
+losing its cars is a lie of omission) was ruled correct at round 1 and is untouched. The
+error was in the SCOPE I priced, not in the doctrine I applied.
 
 **Q5. Where should the duplicate-identity-within-one-manifest rule live?** §6 defers it to
 the format half without deciding whether it is a schema rejection (JSON Schema cannot
@@ -835,17 +1038,27 @@ ordering rule in §5.3, now folded as DR1-M3. The sentence is unchanged. Recorde
 later round does not re-open a settled question; **the standing form of the question moves
 to Q7**, which is where this revision's new format-adjacent prose sits.
 
-**Q7 (NEW at round 2). Single ordered consist, or two arrays plus an explicit index?**
-DR1-M2 forced this into the open: D6 + V12 need every declared member in one ordered array,
-which collides with `schema/yard-snapshot.schema.json:137`'s
-`required: ["subject","role","state","at"]` because an unbound member has neither `state` nor
-`at`. **My choice (§5.3): one `cars` array, `state` gains an unbound value, `at` relaxes to
-optional** - following the `taskId`/`recordDir` precedent for optional-when-unknowable.
-**The alternative I did not take:** keep `cars` and `declaredNotObserved` split, add a
-`declaredIndex` to each entry, reassemble order client-side. **Cost of my choice:** relaxing
-a required set that has held since the wire landed, and every existing consumer must tolerate
-an entry without `at`. **Cost of the alternative:** the wire keeps a shape whose two halves
-must be re-merged by every reader (Law 6's second-copy smell, one layer up), and the unbound
-member stays outside the consist a human reads - which is most of what §5.3a is about.
-**I am genuinely unsure**, this is the round-2 decision most likely to be wrong, and it is a
-wire-contract question the reviewer is better placed to rule on than I am.
+**~~Q7. Single ordered consist, or two arrays plus an explicit index?~~ CLOSED - RULED by the
+round-2 reviewer, folded at §5.3.** I asked because I was genuinely unsure and called it the
+round-2 decision most likely to be wrong. **Ruling: take the single ordered consist**, on
+Law 6 - two arrays every consumer must re-merge is one structure maintained in two places,
+and the merge rule gets reimplemented by the view, the node tests, and every future adapter.
+That is a stronger argument than the one I offered (I had priced it as "more wire, more to
+keep in sync"); the reviewer named the law. The `declaredIndex` alternative additionally
+leaves the unbound member outside the array a human reads, which is most of what §5.3a
+exists to fix. **Carry, now in §5.3 and §8:** `board/web/js/render.js:247-248`'s
+`isTrainTerminal` reads `declaredNotObserved.length` and must be REWRITTEN against the new
+shape, never deleted.
+
+**Q8 (NEW at rev 3). Was deleting V13's MUST-NOT clause the right call, or should the
+producer tool have been named as its enforcer?** §5.6's ruling takes option (b) - drop the
+clause - on three grounds: V7's precedence already neutralises the mutation the clause was
+written against; the forbidden operation's outcome is honest anyway (records orphaned and
+disclosed by D7); and a gate with nothing to catch is a pruning candidate by this repo's own
+Healing Loop. **Cost if I am wrong:** the format contract stays silent about an operation a
+future producer might perform carelessly, and the first person to notice is whoever reads a
+consist that lost a member. **Cost of the alternative:** a CONTRACT rule lives in ONE tool,
+so a second producer or a hand-written manifest is unbound by it - Law 6 inverted, which is
+why I declined. **This is the rev-3 decision most likely to be wrong**, it is the one place
+this revision REMOVES a rule rather than adding one, and removals deserve more scrutiny than
+additions because nothing later will trip over their absence.
