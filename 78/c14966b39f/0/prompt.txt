@@ -1,0 +1,177 @@
+Review a pull request and post your findings as inline review comments.
+
+REPOSITORY: polecatspeaks/StarCar (current directory)
+PULL REQUEST: #92, merging branch `dev` into `main`
+HEAD COMMIT: 0fd4a834fd845731d04e546d56a610c27463554b
+
+WHAT THE PROJECT IS
+StarCar is a status board for multi-agent software development. A Go server
+(board/server) polls a directory of JSON records (artifacts/) once a second,
+assembles them into a snapshot, and serves both a JSON API and a small
+vanilla-JS browser UI (board/web) that renders five "lanes". PowerShell scripts
+(scripts/) write those records and run repo-policy checks. It runs locally and
+unauthenticated; there is no deployment.
+
+THE REVIEW SURFACE
+The full diff is 407 files, but 264 are machine-generated JSON records under
+artifacts/ ΓÇö data, not authored code. Skip them. Review this:
+
+    git diff origin/main..dev -- . ':(exclude)artifacts'
+
+That is 143 files: board/ (Go + JS), docs/, scripts/ (PowerShell), schema/
+(JSON Schema), .github/ (CI).
+
+WHAT TO LOOK FOR, in rough priority order
+1. Correctness bugs in Go and JavaScript ΓÇö logic errors, nil/undefined
+   handling, races, incorrect state transitions, off-by-one, wrong comparisons,
+   resource leaks.
+2. Code and its comments or documentation disagreeing. Comments in this repo
+   make specific factual claims; check whether the code does what they say.
+3. Error handling that swallows failures, or reports a condition inaccurately ΓÇö
+   especially anywhere the UI could display something confidently wrong instead
+   of showing that a value is unknown.
+4. Security and robustness: path handling, unvalidated input, misplaced trust.
+5. PowerShell hazards in scripts/ ΓÇö quoting, path handling, error propagation,
+   exit codes.
+6. Schema and code disagreeing about the shape of data.
+7. Maintenance traps: duplicated logic that can drift, a constant defined twice,
+   a test that cannot fail.
+
+HOW TO POST
+Post ONE review containing all your inline comments, so they group into threads.
+Use the GitHub API via gh:
+
+    gh api repos/polecatspeaks/StarCar/pulls/92/reviews \
+      -X POST \
+      -f event=COMMENT \
+      -f commit_id=0fd4a834fd845731d04e546d56a610c27463554b \
+      -f body="<your overall summary: what you reviewed, what you did not, and your confidence>" \
+      -F 'comments[][path]=board/server/poll.go' \
+      -F 'comments[][line]=123' \
+      -F 'comments[][side]=RIGHT' \
+      -F 'comments[][body]=<the finding>'
+
+Repeat the four comments[] fields per finding. If that shape gives you trouble,
+build a JSON payload and pipe it:
+
+    gh api repos/polecatspeaks/StarCar/pulls/92/reviews -X POST --input payload.json
+
+where payload.json is:
+    {
+      "commit_id": "0fd4a834fd845731d04e546d56a610c27463554b",
+      "event": "COMMENT",
+      "body": "<summary>",
+      "comments": [
+        {"path":"board/server/poll.go","line":123,"side":"RIGHT","body":"<finding>"}
+      ]
+    }
+
+CONSTRAINTS THAT WILL OTHERWISE FAIL THE CALL
+- `line` must be a line that appears in the diff for that file, numbered in the
+  NEW version. A comment on an unchanged line outside the diff hunks is rejected
+  and takes the whole review with it.
+- `path` is repo-relative, forward slashes, exactly as git reports it.
+- Post nothing on artifacts/ paths.
+- If a finding is about a file as a whole rather than a line, put it in the
+  review `body` instead of as an inline comment.
+
+WRITING THE COMMENTS
+Each inline comment: what is wrong, why it matters, and your confidence. Say
+plainly whether it is a bug, something suspicious worth checking, or a style
+preference ΓÇö those get treated very differently.
+
+In the review body, state what you actually examined and what you did not. If
+the diff was too large to cover fully, say so and name the gaps. A partial
+review that declares its scope is useful; one that silently skips things is not.
+
+Do not summarize the diff. Do not list what the code does well. Post the problems.
+
+---
+
+Review a pull request and post your findings as inline review comments.
+
+REPOSITORY: polecatspeaks/StarCar (current directory)
+PULL REQUEST: #92, merging branch `dev` into `main`
+HEAD COMMIT: 0fd4a834fd845731d04e546d56a610c27463554b
+
+WHAT THE PROJECT IS
+StarCar is a status board for multi-agent software development. A Go server
+(board/server) polls a directory of JSON records (artifacts/) once a second,
+assembles them into a snapshot, and serves both a JSON API and a small
+vanilla-JS browser UI (board/web) that renders five "lanes". PowerShell scripts
+(scripts/) write those records and run repo-policy checks. It runs locally and
+unauthenticated; there is no deployment.
+
+THE REVIEW SURFACE
+The full diff is 407 files, but 264 are machine-generated JSON records under
+artifacts/ — data, not authored code. Skip them. Review this:
+
+    git diff origin/main..dev -- . ':(exclude)artifacts'
+
+That is 143 files: board/ (Go + JS), docs/, scripts/ (PowerShell), schema/
+(JSON Schema), .github/ (CI).
+
+WHAT TO LOOK FOR, in rough priority order
+1. Correctness bugs in Go and JavaScript — logic errors, nil/undefined
+   handling, races, incorrect state transitions, off-by-one, wrong comparisons,
+   resource leaks.
+2. Code and its comments or documentation disagreeing. Comments in this repo
+   make specific factual claims; check whether the code does what they say.
+3. Error handling that swallows failures, or reports a condition inaccurately —
+   especially anywhere the UI could display something confidently wrong instead
+   of showing that a value is unknown.
+4. Security and robustness: path handling, unvalidated input, misplaced trust.
+5. PowerShell hazards in scripts/ — quoting, path handling, error propagation,
+   exit codes.
+6. Schema and code disagreeing about the shape of data.
+7. Maintenance traps: duplicated logic that can drift, a constant defined twice,
+   a test that cannot fail.
+
+HOW TO POST
+Post ONE review containing all your inline comments, so they group into threads.
+Use the GitHub API via gh:
+
+    gh api repos/polecatspeaks/StarCar/pulls/92/reviews \
+      -X POST \
+      -f event=COMMENT \
+      -f commit_id=0fd4a834fd845731d04e546d56a610c27463554b \
+      -f body="<your overall summary: what you reviewed, what you did not, and your confidence>" \
+      -F 'comments[][path]=board/server/poll.go' \
+      -F 'comments[][line]=123' \
+      -F 'comments[][side]=RIGHT' \
+      -F 'comments[][body]=<the finding>'
+
+Repeat the four comments[] fields per finding. If that shape gives you trouble,
+build a JSON payload and pipe it:
+
+    gh api repos/polecatspeaks/StarCar/pulls/92/reviews -X POST --input payload.json
+
+where payload.json is:
+    {
+      "commit_id": "0fd4a834fd845731d04e546d56a610c27463554b",
+      "event": "COMMENT",
+      "body": "<summary>",
+      "comments": [
+        {"path":"board/server/poll.go","line":123,"side":"RIGHT","body":"<finding>"}
+      ]
+    }
+
+CONSTRAINTS THAT WILL OTHERWISE FAIL THE CALL
+- `line` must be a line that appears in the diff for that file, numbered in the
+  NEW version. A comment on an unchanged line outside the diff hunks is rejected
+  and takes the whole review with it.
+- `path` is repo-relative, forward slashes, exactly as git reports it.
+- Post nothing on artifacts/ paths.
+- If a finding is about a file as a whole rather than a line, put it in the
+  review `body` instead of as an inline comment.
+
+WRITING THE COMMENTS
+Each inline comment: what is wrong, why it matters, and your confidence. Say
+plainly whether it is a bug, something suspicious worth checking, or a style
+preference — those get treated very differently.
+
+In the review body, state what you actually examined and what you did not. If
+the diff was too large to cover fully, say so and name the gaps. A partial
+review that declares its scope is useful; one that silently skips things is not.
+
+Do not summarize the diff. Do not list what the code does well. Post the problems.
