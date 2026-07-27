@@ -359,6 +359,20 @@ locator phrase so a second party can re-derive it from that file.
   different field on the same artifact's envelope will be fed that field eventually -
   rename one, or accept both and resolve; belongs with #32's error-message fix.
 
+- 2026-07-27 ~08:55 (conductor, live, two shell traps in one board-update sequence, second
+  produced a LYING third-party error): (1) backtick-escaped quotes inside a double-quoted
+  `gh api graphql -f query="..."` mangled at the parser ("Expected VALUE, actual:
+  UNKNOWN_CHAR") - fixed by GraphQL variables, no inline escaping. (2) The retry passed
+  `-f o=$map[$n]` in ARGUMENT MODE, where pwsh expands only simple `$var` - GitHub
+  received the literal string "System.Collections.Hashtable[69]" and answered "The single
+  select option Id does not belong to the field", which read as option-id regeneration
+  (the 07-26 ProjectV2 scar) and cost a re-derivation chase before the real cause
+  surfaced. Read-back verification caught both failures immediately (the mutation never
+  landed silently). Cost: two failed rounds + one wrong-diagnosis chase. Class: pwsh
+  argument mode does not expand index/member expressions - assign to a simple variable
+  first; and a third-party error names ITS view of the symptom, not your cause - check
+  what you actually sent before believing what the server says it means.
+
 - 2026-07-27, structural fact FOUND BY THE MINE (not friction, recorded so nobody
   re-digs): the per-dispatch "Entire-Checkpoint" blobs on the checkpoint branch are
   periodic snapshots of the SINGLE conductor session, not separate car/reviewer
