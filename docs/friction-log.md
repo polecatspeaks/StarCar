@@ -422,6 +422,24 @@ locator phrase so a second party can re-derive it from that file.
   union merge driver for this one file, or per-session section files that concatenate -
   neither built today, deliberately (one occurrence is not yet a pattern).
 
+- 2026-07-27 ~10:05 (two independent observers, same class, one morning): BROWSER-TEST PORT
+  CONTENTION IS A LOAD-DEPENDENT FLAKE FAMILY, and the fix is already demonstrated one
+  directory over. The #75 reviewer saw `browser-health-trend-cascade.test.js` fail 4 tests
+  inside a full-suite run under concurrent Chromium+Go-server load, then pass 4/4 alone
+  under identical conditions; the #75 car then saw `browser-dispatch-row-taskid.test.js`
+  fail with `bind: Only one usage of each socket address ... is normally permitted`,
+  passing 5/5 alone and 225/225 on a full-suite re-run. Contrast, measured the same
+  morning: #79's probe suite binds port 0 (kernel-assigned) and its reviewer ran THREE
+  CONCURRENT instances with zero collisions while a developer's board held 4600. Cost so
+  far: two false reds and two re-runs, plus the standing tax of teaching everyone to
+  re-run before believing. Class: a test that binds a FIXED port cannot be run concurrently
+  with itself or its siblings, and the flake it produces is indistinguishable at a glance
+  from a real failure - which is the crying-wolf shape this shop treats as worse than no
+  instrument. The remedy is not vigilance, it is port 0 plus reading the bound address
+  back, already proven here. Deliberately NOT fixed inside the #75 train (out of its
+  scope, pre-existing); the reviewer was asked to rule whether it is a real fragility
+  worth its own ticket rather than have the conductor decide it alone.
+
 - 2026-07-27, structural fact FOUND BY THE MINE (not friction, recorded so nobody
   re-digs): the per-dispatch "Entire-Checkpoint" blobs on the checkpoint branch are
   periodic snapshots of the SINGLE conductor session, not separate car/reviewer
