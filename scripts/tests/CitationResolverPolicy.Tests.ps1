@@ -43,10 +43,29 @@
 # and inherited it as settled fact without testing it. #65's own round-2 reviewer
 # TESTED it: all three cited coordinates (schema:191 at 3076a40, config.go:42 at
 # 3076a40, dom-writer.js:201 at 6346d7d) were IN-RANGE at the commits in question - a
-# negative-control in-range shift left this gate 11 passed / 0 failed, and the content
-# anchor never even evaluates on any of the three (zero backtick tokens on their citing
-# lines). The #28+#12 train's own round-2 verdict was WRONG about what a resolver like
-# this one would catch; this file no longer repeats that claim as ground truth.
+# negative-control in-range shift left this gate 11 passed / 0 failed. THE PARENTHETICAL
+# THIS FILE ORIGINALLY ATTACHED HERE ("zero backtick tokens on their citing lines") WAS
+# ITSELF UNMEASURED AND WRONG for one of the three (#65 round 3, MAJOR-R2-1) - measured
+# now: `dom-writer.js:150`'s citing prose (schema:191's target, at 3076a40) carries no
+# backtick token; `elapsedbucket_test.go:26-27`'s citing prose (dom-writer.js:201's
+# target, at 6346d7d) carries none either. `docs/design/2026-07-21-v0-yard-skeleton-
+# design.md:611`'s citing prose (config.go:42's target, at 3076a40) DOES carry one:
+# `` measured: `StalenessMs` ships at `15000` (`board/server/config.go:42`) `` - one
+# qualifying backtick token, `StalenessMs`. Under round 1's `-match` (case-insensitive)
+# it would FALSE-HIT against `board/server/config.go:56`'s lowercase `stalenessMs`
+# prose (the exact collision CHECK (c)'s MINOR-2 note already names); under round 2's
+# own `-cmatch` (case-sensitive) it MISSES - correctly, because config.go:42 sat inside
+# the `Config` struct's field block, nowhere near either `StalenessMs` occurrence
+# (the field declaration at `:14` and `DefaultConfig()`'s assignment at `:63` are both
+# outside the +/-15 line window `:42` sits in). THE WIN THIS RECORDS: post-`-cmatch`,
+# this content anchor would have flagged ALL THREE of the view train's named findings as
+# misses, not zero - a 3-for-3 true-positive record on real defects, pinned as a
+# fixture below (`Test-ContentAnchorHit`'s "reproduces the historical config.go:42
+# false-hit/true-miss pair" case) rather than left as prose. The #28+#12 train's own
+# round-2 verdict was WRONG about what a BINDING resolver like this one would catch
+# (Class A/B checks alone do not reach in-range shifts); it was RIGHT, though nobody
+# measured it at the time, about what the content anchor - unbound, unread, sitting in
+# this file's own report-only diagnostic - already could.
 #
 # PRECEDENT SHAPE PORTED: scripts/tests/CodeCitationPolicy.Tests.ps1 (corpus-scan,
 # closed-set, self-calibrating, reds BY NAME) and board/store/condition_severity_test.go
@@ -234,34 +253,50 @@
 #       THE MEASURED TRUTH, stated plainly because round 1 got this backwards (round
 #       1's text called both round-1 misses "neither confirmed a real defect" - FALSE,
 #       and the exact error this whole gate exists to stop repeating): at round-1
-#       landing, this diagnostic scored 2 FOR 2 - its only two misses,
-#       `board/server/sse.go:77` (cited from `docs/contracts/gating-matrix.md:49`) and
-#       `artifacts/reviews/2026-07-22-harness-design-round1-REJECT.md:66` (cited from
-#       `docs/design/2026-07-22-dispatch-harness-design.md:97`), were BOTH real,
-#       confirmed Class-B in-range shifts - the exact class every BINDING check in this
-#       file (a) and (b) is disclosed as unable to catch. This diagnostic, unbound and
-#       unread in round 1's own CI run, silently carried the answer to two of this
-#       round's five Majors the whole time.
+#       landing, this diagnostic scored 2 FOR 2 in the LIVE round-1 corpus - its only
+#       two misses, `board/server/sse.go:77` (cited from `docs/contracts/gating-
+#       matrix.md:49`) and `artifacts/reviews/2026-07-22-harness-design-round1-
+#       REJECT.md:66` (cited from `docs/design/2026-07-22-dispatch-harness-design.md:97`),
+#       were BOTH real, confirmed Class-B in-range shifts - the exact class every
+#       BINDING check in this file (a) and (b) is disclosed as unable to catch.
 #
-#       THE ARGUMENT FOR STAYING REPORT-ONLY, made WITH that record rather than around
-#       it: a 2-for-2 true-positive rate is real signal, not proof of a safe FALSE-
-#       positive rate. Re-measured post-fix (both misses retargeted to symbol/heading
-#       citations, which removes them from this check's population rather than fixing
-#       them to a hit - see RESOLUTION POLICY above): of the resolvable literal-path
-#       citations, 6 carry a backtick-quoted token on the citing line at all; all 6 hit,
-#       0 miss. That leaves ZERO live miss examples anywhere in this corpus to check
-#       against the other failure mode - a citation that is GENUINELY CORRECT but whose
-#       citing prose simply does not repeat an identical token near the target (a
-#       paraphrase, a synonym, a renamed-but-still-correct reference). This gate has
-#       never observed that case even once, so binding now would mean the FIRST miss
-#       this check EVER produces post-binding is an untested, potentially wolf-crying
-#       CI failure - the exact instrument-quality risk the severity philosophy warns
+#       THE THIRD, HISTORICAL POINT (#65 round 3, MAJOR-R2-1 - added because round 2's
+#       "zero backtick tokens on their citing lines" claim about the view train's THREE
+#       named findings was itself unmeasured and wrong for one): had this diagnostic
+#       existed at commit `3076a40`, it would ALSO have flagged the view train's
+#       MAJOR-2 (`config.go:42`, cited with a `` `StalenessMs` `` backtick token from
+#       `docs/design/2026-07-21-v0-yard-skeleton-design.md:611`) - measured miss under
+#       `-cmatch` (the real `StalenessMs` occurrences sit at config.go `:14` and `:63`,
+#       both outside the +/-15 window `:42` sits in), reproduced as a fixture below.
+#       That makes the FULL historical record 3-FOR-3 true positives across every
+#       citation this gate's own header ever named, not 2-for-2 - this diagnostic,
+#       unbound and unread the whole time, silently carried the answer to every one of
+#       the view train's citation Majors from the start.
+#
+#       THE ARGUMENT FOR STAYING REPORT-ONLY, made WITH that full record rather than
+#       around it: a 3-for-3 true-positive rate (all historical, none of the three
+#       still live as coordinates today - each was fixed by a different process before
+#       this gate could bind on it) is real signal, not proof of a safe FALSE-positive
+#       rate. Re-measured on the CURRENT corpus (all three historical misses long since
+#       retargeted to symbol/heading citations, which removes them from this check's
+#       population rather than fixing them to a hit - see RESOLUTION POLICY above): of
+#       the resolvable literal-path citations, 6 carry a backtick-quoted token on the
+#       citing line at all; all 6 hit, 0 miss. That leaves ZERO CURRENT miss examples in
+#       this corpus's PRESENT state to check against the other failure mode - a
+#       citation that is GENUINELY CORRECT but whose citing prose simply does not
+#       repeat an identical token near the target (a paraphrase, a synonym, a
+#       renamed-but-still-correct reference). This gate has never observed THAT case
+#       even once, so binding now would mean the FIRST miss this check produces
+#       post-binding on a FUTURE citation is an untested, potentially wolf-crying CI
+#       failure - the exact instrument-quality risk the severity philosophy warns
 #       against, from the opposite direction of round 1's dismissiveness. Kept
 #       REPORT-ONLY, with an explicit, numeric revisit trigger rather than an open-ended
 #       "someday": bind it the next time EITHER (i) the tokened-citation population
 #       (n) grows past 20, giving enough data to also estimate a false-positive rate, OR
 #       (ii) a report-only miss is manually confirmed NOT to be a defect (establishing,
-#       for the first time, what this check's false-positive actually looks like).
+#       for the first time, what this check's false-positive actually looks like) - the
+#       3-for-3 record answers "does it find true positives," never "how often is it
+#       wrong," which is the only question standing between here and binding it.
 #       Matches this repo's own prior-art guidance verbatim (`docs/templates/repo-
 #       policy-check-patterns.md` SS3: "line numbers drift on every edit above them -
 #       the cheap tier ... avoids crying wolf; the expensive tier needs content-
@@ -297,8 +332,13 @@
 #     docs/templates/design-briefs.md and docs/templates/worked-adversary-and-gate-
 #     briefs.md, all resolving BY SUFFIX (#65 round 2, MINOR-3 - `Resolve-
 #     ElidedCitationTarget`, never the exact-basename lookup) to `artifacts/reviews/
-#     2026-07-22-car2-plan-review-round2-drill.md` (136 lines - both cited lines in
-#     range, now ACTUALLY CHECKED rather than silently waved through as round 1 did).
+#     2026-07-22-car2-plan-review-round2-drill.md` - 137 lines by this gate's own
+#     mandated method (`@(Get-Content -Path $p -Encoding UTF8).Count`, #65 round 2
+#     MINOR-R2-1 - `wc -l` reports 136, undercounting by one because the file's last
+#     line carries no trailing newline and `wc -l` counts newline characters, not
+#     lines; the same class of discrepancy CHECK (b) already disclosed for
+#     `Measure-Object -Line`, this time in a plain narrated number rather than in the
+#     resolver's own code) - both cited lines (105, 110) in range either way.
 #   Historical-marker exempt: 1 (the session-start-record.sh:76 fix landed at round-1
 #     landing).
 #   Ambiguous bare-basename (ratio, never silently resolved): 13, unchanged - none of
@@ -361,8 +401,14 @@ BeforeAll {
         '.mod'           = 'go.mod - Go module manifest; probed, no citation-shaped content'
         '.py'            = 'the sole tracked .py file (scripts/canonicalise-demo.py) is explicitly-disclosed PRESERVED WRECKAGE whose own header forbids editing it ("do not... fix the forgery - repairing it would destroy the fossil"); probed, no citation-shaped content regardless (#65 round 2, MAJOR-5)'
         '.html'          = 'probed at landing - zero coordinate-shaped citations in either tracked .html file; declared exempt rather than checked to avoid gating on a currently-empty case; revisit (move to $CheckedExtensions) the day a real .html file:line citation appears (#65 round 2, MAJOR-5)'
-        ''               = 'the sole extensionless tracked file at landing is LICENSE; probed, no citation-shaped content (license text, not code or docs that cite line numbers)'
+        ''               = 'the sole extensionless tracked file at landing is LICENSE; probed, no citation-shaped content (license text, not code or docs that cite line numbers). NARROWED to LICENSE specifically, not "any future extensionless file" (#65 round 3, MINOR-R2-2): see $script:DeclaredExemptExtensionlessFiles below - a NEW extensionless file (a Dockerfile, a shebang script) is not silently covered by this reason just because it shares the empty-string extension.'
     }
+    # #65 round 3, MINOR-R2-2: the bare '' extension key above covers the EXTENSION-LEVEL
+    # completeness check (Get-UnaccountedExtensions), but "extensionless" is not one
+    # reason - LICENSE is exempt because it is license text with no citations; a FUTURE
+    # extensionless file (a Dockerfile, a shebang script) would share the extension but
+    # not the reason. This allowlist is checked separately, by PATH, in its own It below.
+    $script:DeclaredExemptExtensionlessFiles = @('LICENSE')
     $script:ExtRe   = ($script:CheckedExtensions -replace '^\.', '') -join '|'
     $script:CoordRe = "(\.?[A-Za-z0-9_][A-Za-z0-9_./-]*\.(?:$($script:ExtRe))):(\d+)(?:-(\d+))?"
     $script:CommentLeaderRe = '^\s*(//|#)\s?'
@@ -383,6 +429,25 @@ BeforeAll {
         # on Count.
         param([string[]] $ObservedExtensions, [string[]] $CoveredExtensions)
         return @($ObservedExtensions | Where-Object { $CoveredExtensions -notcontains $_ })
+    }
+
+    function Get-DeclaredExemptFiles {
+        # #65 round 3, MINOR-R2-2: the completeness It only catches a NEW extension
+        # arriving - it never re-checks that an ALREADY-declared-exempt extension is
+        # still, in fact, citation-free (a .py or .html file that later acquires a real
+        # citation would be silently invisible forever, since its extension is already
+        # "accounted for"). This returns every non-artifacts tracked file whose
+        # extension is in the declared-exempt set, for the standing re-verification It.
+        param(
+            [Parameter(Mandatory)][string] $RepoRoot,
+            # NOT Mandatory (#42 round 3's own lesson, repeated here): PowerShell's
+            # Mandatory attribute rejects an empty-string ELEMENT inside a [string[]]
+            # argument, and '' (the extensionless case) is exactly one of the values
+            # this closed set carries. Every call site still always passes it.
+            [string[]]                      $DeclaredExemptExtensions
+        )
+        $all = @(Get-AllNonArtifactFiles -RepoRoot $RepoRoot)
+        return @($all | Where-Object { $DeclaredExemptExtensions -contains [System.IO.Path]::GetExtension($_) })
     }
 
     function Get-CheckedSourceFiles {
@@ -547,6 +612,36 @@ BeforeAll {
         return @($found)
     }
 
+    function Get-ContentAnchorTokens {
+        # #65 round 3, MAJOR-R2-1: extracted so the SAME token-extraction logic backs
+        # both the real-corpus diagnostic and the fixture that pins the historical
+        # 3-for-3 true-positive record, rather than that record living only in prose.
+        param([Parameter(Mandatory)][string] $Line)
+        $backtickRe = '`([A-Za-z_][A-Za-z0-9_]{2,})`'
+        return @([regex]::Matches($Line, $backtickRe) | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+    }
+
+    function Test-ContentAnchorWindow {
+        # Returns $true if ANY token appears (verbatim) in $WindowText. -CaseSensitive
+        # selects `-cmatch` (this gate's production choice, #65 round 2 MINOR-2) versus
+        # plain `-match` (round 1's, case-insensitive - kept here ONLY so the historical
+        # false-hit/true-miss pair can be reproduced and compared, never used in the
+        # production resolution path).
+        param(
+            [Parameter(Mandatory)][string[]] $Tokens,
+            [Parameter(Mandatory)][string]   $WindowText,
+            [switch]                          $CaseSensitive
+        )
+        foreach ($tok in $Tokens) {
+            if ($CaseSensitive) {
+                if ($WindowText -cmatch [regex]::Escape($tok)) { return $true }
+            } else {
+                if ($WindowText -match [regex]::Escape($tok)) { return $true }
+            }
+        }
+        return $false
+    }
+
     function Test-HistoricalCoordinateMarker {
         param(
             [Parameter(Mandatory)][string] $RepoRoot,
@@ -676,6 +771,30 @@ Describe 'Citation resolver: every file:line coordinate outside artifacts/ resol
             "`$CheckedExtensions or `$DeclaredExemptExtensions, do not leave it silent")
     }
 
+    It 'every DECLARED-EXEMPT extension is re-verified, standing, to still carry zero coordinate-shaped matches (#65 round 3, MINOR-R2-2 - the completeness test above only catches a NEW extension arriving, never a declared-exempt one silently acquiring a citation)' {
+        $exemptFiles = @(Get-DeclaredExemptFiles -RepoRoot $script:RepoRoot -DeclaredExemptExtensions @($script:DeclaredExemptExtensions.Keys))
+        $violators = @()
+        foreach ($f in $exemptFiles) {
+            $full = Join-Path $script:RepoRoot $f
+            if (-not (Test-Path $full -PathType Leaf)) { continue }
+            $text = Get-Content -Path $full -Raw -Encoding UTF8
+            if ([regex]::IsMatch($text, $script:CoordRe)) {
+                $violators += "$f (extension $([System.IO.Path]::GetExtension($f))) now carries a coordinate-shaped match - re-evaluate its exemption"
+            }
+        }
+        ($violators -join "`n") | Should -BeNullOrEmpty
+    }
+
+    It 'the extensionless exemption is scoped to its declared allowlist (LICENSE), not to "any extensionless file" (#65 round 3, MINOR-R2-2)' {
+        $observedExtensionless = @($script:AllNonArtifact | Where-Object { [System.IO.Path]::GetExtension($_) -eq '' })
+        $unaccounted = @($observedExtensionless | Where-Object { $script:DeclaredExemptExtensionlessFiles -notcontains $_ })
+        $unaccounted.Count | Should -Be 0 -Because (
+            "extensionless file(s) [$($unaccounted -join ', ')] are not in the declared " +
+            "allowlist (`$script:DeclaredExemptExtensionlessFiles = LICENSE only) - a new " +
+            "extensionless file shares the '' extension but not LICENSE's exemption reason; " +
+            "decide and add it explicitly, do not let it ride LICENSE's coattails")
+    }
+
     It 'every literal-path or uniquely-resolved-basename citation points at a file that exists at HEAD (Class A)' {
         $violators = @($script:DeadPath | ForEach-Object {
             "$($_.CitingFile):$($_.StartLine)$(if ($_.EndLine -ne $_.StartLine) { "-$($_.EndLine)" }) cites '$($_.Target):$($_.TargetLine)$(if ($_.TargetLine2) { "-$($_.TargetLine2)" })' - NO SUCH FILE"
@@ -706,12 +825,20 @@ Describe 'Citation resolver: every file:line coordinate outside artifacts/ resol
     }
 
     It 'reports ambiguous bare-basename citations by name, never silently resolved either way' {
-        $names = @($script:Ambiguous | ForEach-Object { "$($_.CitingFile):$($_.StartLine) -> '$($_.Target)' matches [$($_.ResolvedPath)]" })
-        # This uses the OBJECT the resolver returned (ResolvedPath carries the candidate
-        # list), so recompute display strings from the raw coordinates + a fresh resolve
-        # to keep the message self-contained without depending on iteration order above.
+        # #65 round 3, MINOR-R2-3: an AMBIGUOUS ELIDED coordinate must be re-resolved via
+        # Resolve-ElidedCitationTarget (suffix match), never the plain Resolve-
+        # CitationTarget (exact-basename equality) - the latter would look up the
+        # truncated ellipsis token (e.g. "drill.md") as if it were a real basename, find
+        # zero exact matches, and print a misleading "matches []" for an ambiguity that
+        # is real and has real candidates. Zero live instances at this HEAD (all 13
+        # ambiguous citations are ordinary bare basenames, not elided) - pinned as a
+        # scratch fixture below rather than left unverified.
         $display = @($script:Ambiguous | ForEach-Object {
-            $r = Resolve-CitationTarget -RepoRoot $script:RepoRoot -Coordinate $_ -BasenameMap $script:BasenameMap
+            if ($_.Elided) {
+                $r = Resolve-ElidedCitationTarget -RepoRoot $script:RepoRoot -Coordinate $_ -AllTrackedFiles $script:AllTrackedFiles
+            } else {
+                $r = Resolve-CitationTarget -RepoRoot $script:RepoRoot -Coordinate $_ -BasenameMap $script:BasenameMap
+            }
             "$($_.CitingFile):$($_.StartLine) -> '$($_.Target):$($_.TargetLine)' matches [$($r.ResolvedPath)]"
         })
         Set-ItResult -Skipped -Because (
@@ -720,7 +847,6 @@ Describe 'Citation resolver: every file:line coordinate outside artifacts/ resol
     }
 
     It 'reports the content-anchor heuristic (backtick-token-in-window), REPORT-ONLY per landing calibration (n too small to bind)' {
-        $backtickRe = '`([A-Za-z_][A-Za-z0-9_]{2,})`'
         $hit = 0; $miss = 0; $missNames = @()
         foreach ($c in $script:Ok) {
             if (-not $c.Target.Contains('/')) { continue }
@@ -728,8 +854,7 @@ Describe 'Citation resolver: every file:line coordinate outside artifacts/ resol
             $citingLines = @(Get-Content -Path $citingFull -Encoding UTF8)
             $lineIdx = [Math]::Min($c.EndLine, $citingLines.Count) - 1
             if ($lineIdx -lt 0) { continue }
-            $tokens = @([regex]::Matches($citingLines[$lineIdx], $backtickRe) |
-                ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+            $tokens = @(Get-ContentAnchorTokens -Line $citingLines[$lineIdx])
             if ($tokens.Count -eq 0) { continue }
             $targetFull = Join-Path $script:RepoRoot $c.Target
             $targetLines = @(Get-Content -Path $targetFull -Encoding UTF8)
@@ -737,20 +862,59 @@ Describe 'Citation resolver: every file:line coordinate outside artifacts/ resol
             $lo = [Math]::Max(0, $checkLine - 1 - 15)
             $hi = [Math]::Min($targetLines.Count - 1, $checkLine - 1 + 15)
             $windowText = ($targetLines[$lo..$hi] -join "`n")
-            $found = $false
-            # #65 round 2, MINOR-2: -match is case-INSENSITIVE by default, so a token
-            # like "StalenessMs" would false-HIT against unrelated prose that merely
-            # contains "stalenessMs" in a different casing (e.g. config.go:56's own
-            # lowercase-field prose) - a case collision, not a real content anchor.
-            # -cmatch is case-sensitive; identifier tokens are case-sensitive by nature.
-            foreach ($tok in $tokens) { if ($windowText -cmatch [regex]::Escape($tok)) { $found = $true; break } }
+            # #65 round 2, MINOR-2: -cmatch (case-sensitive) is the production choice -
+            # -match (case-insensitive) would false-HIT a PascalCase token like
+            # `StalenessMs` against unrelated lowercase prose (config.go:56's own
+            # lowercase-field prose is the live near-collision).
+            $found = Test-ContentAnchorWindow -Tokens $tokens -WindowText $windowText -CaseSensitive
             if ($found) { $hit++ } else { $miss++; $missNames += "$($c.CitingFile):$($c.StartLine) -> $($c.Target):$checkLine" }
         }
         Set-ItResult -Skipped -Because (
             "REPORT-ONLY (see header CHECK (c) for the honest report-only-vs-binding " +
-            "argument, made WITH this diagnostic's 2-for-2 true-positive record on its " +
-            "round-1 misses, not around it): hit=$hit miss=$miss at this HEAD. " +
-            "Misses: $(if ($missNames.Count -gt 0) { $missNames -join '; ' } else { '(none)' })")
+            "argument, made WITH this diagnostic's 3-for-3 historical true-positive " +
+            "record - see the 'Content-anchor 3-for-3 historical record' Describe below " +
+            "for the pinned reproduction - not around it): hit=$hit miss=$miss at this " +
+            "HEAD. Misses: $(if ($missNames.Count -gt 0) { $missNames -join '; ' } else { '(none)' })")
+    }
+}
+
+Describe 'Content-anchor 3-for-3 historical record (#65 round 3, MAJOR-R2-1)' {
+    # Reproduces the EXACT shape of the view train's MAJOR-2 (config.go:42, cited from
+    # docs/design/2026-07-21-v0-yard-skeleton-design.md:611 at commit 3076a40) as an
+    # in-memory fixture, without touching git: an exact-case token declared far above
+    # the cited line, a lowercase collision INSIDE the +/-15 window, and the exact-case
+    # re-occurrence OUTSIDE the window - the structural pattern that made round 1's
+    # `-match` false-hit and round 2's `-cmatch` correctly miss (a real defect, since
+    # the cited line has nothing to do with either StalenessMs occurrence). This moves
+    # the header's 3-for-3 claim from prose to a pinned assertion, per the review.
+    BeforeAll {
+        $script:FixtureTargetLines = @(
+            'StalenessMs int  // field declaration, exact case, line 1 - OUTSIDE the window'
+        ) + (2..16 | ForEach-Object { "filler line $_" }) + @(
+            'RepoRoot string  // line 17 - the WRONG cited line, mimics config.go:42'
+        ) + (18..31 | ForEach-Object { "filler line $_" }) + @(
+            '// port 4600, pollMs 1000, heartbeatMs 5000, stalenessMs 15000.  // line 32, lowercase collision, INSIDE the window'
+        ) + (33..39 | ForEach-Object { "filler line $_" }) + @(
+            'StalenessMs: 15000,  // line 40 - exact-case reoccurrence, OUTSIDE the window'
+        ) + (41..45 | ForEach-Object { "filler line $_" })
+        $script:FixtureCitingLine = 'measured: `StalenessMs` ships at `15000` (`config-like.go:17`) against a shop default'
+        $script:FixtureCheckLine  = 17
+        $script:FixtureTokens     = Get-ContentAnchorTokens -Line $script:FixtureCitingLine
+        $lo = [Math]::Max(0, $script:FixtureCheckLine - 1 - 15)
+        $hi = [Math]::Min($script:FixtureTargetLines.Count - 1, $script:FixtureCheckLine - 1 + 15)
+        $script:FixtureWindowText = ($script:FixtureTargetLines[$lo..$hi] -join "`n")
+    }
+
+    It 'the fixture carries exactly one qualifying backtick token, StalenessMs' {
+        $script:FixtureTokens | Should -Be @('StalenessMs')
+    }
+
+    It 'a case-INSENSITIVE match (round 1''s -match) FALSE-HITS against the lowercase collision' {
+        (Test-ContentAnchorWindow -Tokens $script:FixtureTokens -WindowText $script:FixtureWindowText) | Should -BeTrue
+    }
+
+    It 'the case-SENSITIVE match (round 2''s -cmatch, the production choice) correctly MISSES - the real defect this diagnostic would have caught' {
+        (Test-ContentAnchorWindow -Tokens $script:FixtureTokens -WindowText $script:FixtureWindowText -CaseSensitive) | Should -BeFalse
     }
 }
 
@@ -864,10 +1028,23 @@ Describe 'Line-wrap unwrapping and false-join suppression (scratch repo, #65)' {
             '// dom-writer.js:5 for details.'
         ) -Encoding UTF8
 
+        # Fixture 11 (#65 round 3, MINOR-R2-3 red-first proof): an AMBIGUOUS ELIDED
+        # citation - two files whose basename shares the elided suffix. The ambiguous
+        # report must show REAL candidates, never the "[]" a plain exact-basename
+        # lookup would print for a truncated ellipsis token.
+        New-Item -ItemType Directory -Path (Join-Path $script:Scratch 'subA') -Force | Out-Null
+        New-Item -ItemType Directory -Path (Join-Path $script:Scratch 'subB') -Force | Out-Null
+        1..10 | ForEach-Object { "line $_" } | Set-Content -Path (Join-Path $script:Scratch 'subA/report-thing.md') -Encoding UTF8
+        1..10 | ForEach-Object { "line $_" } | Set-Content -Path (Join-Path $script:Scratch 'subB/summary-thing.md') -Encoding UTF8
+        Set-Content -Path (Join-Path $script:Scratch 'elided-ambiguous.md') -Value @(
+            '# elided ambiguous'
+            'See the earlier citation, abbreviated as (`.../thing.md:3`).'
+        ) -Encoding UTF8
+
         git -C $script:Scratch add -A | Out-Null
         git -C $script:Scratch commit -q -m 'fixtures' | Out-Null
 
-        $script:AllFiles    = @('target.go', 'clean.md', 'dead-path.md', 'out-of-range.md', 'wrapped.js', 'no-false-join.go', 'elided.md', 'historical.md', 'elided-dead.md', 'ambiguous-oor.md', 'slash-wrap.md')
+        $script:AllFiles    = @('target.go', 'clean.md', 'dead-path.md', 'out-of-range.md', 'wrapped.js', 'no-false-join.go', 'elided.md', 'historical.md', 'elided-dead.md', 'ambiguous-oor.md', 'slash-wrap.md', 'elided-ambiguous.md')
         $script:BasenameMap = Get-BasenameMap -RepoRoot $script:Scratch
         $script:AllTracked  = @(git -C $script:Scratch ls-files)
         $script:Coords      = @(Find-CitationCoordinates -RepoRoot $script:Scratch -SourceFiles $script:AllFiles)
@@ -955,6 +1132,22 @@ Describe 'Line-wrap unwrapping and false-join suppression (scratch repo, #65)' {
         $c.Target | Should -Be 'board/web/js/dom-writer.js'
         $c.TargetLine | Should -Be 5
         (Resolve-CitationTarget -RepoRoot $script:Scratch -Coordinate $c -BasenameMap $script:BasenameMap).Status | Should -Be 'ok'
+    }
+
+    It 'an AMBIGUOUS ELIDED citation resolves via suffix match with REAL candidates, never "matches []" (#65 round 3, MINOR-R2-3 red-first proof)' {
+        $c = $script:Coords | Where-Object { $_.CitingFile -eq 'elided-ambiguous.md' }
+        $c.Count | Should -Be 1
+        $c.Elided | Should -BeTrue
+        $r = Resolve-ElidedCitationTarget -RepoRoot $script:Scratch -Coordinate $c -AllTrackedFiles $script:AllTracked
+        $r.Status | Should -Be 'ambiguous'
+        # The bug this pins: Resolve-CitationTarget's exact-basename lookup on the
+        # truncated token "thing.md" finds ZERO exact matches and returns
+        # ResolvedPath = $null, which would render as "matches []" - misleading for a
+        # real ambiguity. Resolve-ElidedCitationTarget's suffix match must show BOTH
+        # real candidates instead.
+        $r.ResolvedPath | Should -Not -BeNullOrEmpty
+        $r.ResolvedPath | Should -Match 'subA[/\\]report-thing\.md'
+        $r.ResolvedPath | Should -Match 'subB[/\\]summary-thing\.md'
     }
 }
 
