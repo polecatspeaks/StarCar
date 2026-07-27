@@ -1,4 +1,4 @@
-<!-- starcar-integrity: sha256=9213837f269737aeeb84a0390bc2bfe0ed5ea4260fd4dddcb74f1ad668983dc0 covers every byte below this line; recompute with scripts/Verify-Verdict.ps1 -->
+<!-- starcar-integrity: sha256=1fc2e50983f0a1464d474a9139d975b03d25263f010d6539e59d6019b1c074ad covers every byte below this line; recompute with scripts/Verify-Verdict.ps1 -->
 # Tooling train #65 citation-resolver gate review, round 1
 
 Status: Done
@@ -6,7 +6,7 @@ Record: verdict of record - historical by nature, never edited after landing
 Gate: car adversarial review
 Round: 1
 Target: `car/tooling-65 HEAD 3d76e65`
-Base reviewed: `4f2ae978d1e5a1a06e5d02cc07d747e70da2b2ee`
+Base reviewed: `4f2ae978d4628c67ee049a5c874961837cbf564f`
 Reviewer: car agent type, Opus, read-only, detached worktree, no delegation
 **Verdict: REJECT**
 
@@ -31,7 +31,7 @@ edition. Every reference below was followed before this file was written.
 
 | | |
 |---|---|
-| Base commit the reviewer read (**the lookup key**) | `4f2ae978d1e5a1a06e5d02cc07d747e70da2b2ee` |
+| Base commit the reviewer read (**the lookup key**) | `4f2ae978d4628c67ee049a5c874961837cbf564f` |
 
 | Dispatch, the locator within the session | `a965df3347dae4a72` |
 | Entire session (context, NOT a lookup key) | `15c84ef1-8e84-4d98-aacd-17cce34752cb` |
@@ -40,7 +40,7 @@ edition. Every reference below was followed before this file was written.
 Follow the citation:
 
 ```
-entire checkpoint explain 4f2ae978d1e5a1a06e5d02cc07d747e70da2b2ee
+entire checkpoint explain 4f2ae978d4628c67ee049a5c874961837cbf564f
 entire checkpoint search "<a distinctive phrase from the body below>"
 git log entire/checkpoints/v1 --oneline    # the independently-written public copy
 ```

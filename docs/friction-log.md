@@ -255,3 +255,20 @@ overlap found.
   gradient-shaping doctrine operating as designed. Cost: zero - one authorized follow-up
   line. Class: truth-as-success-shape converts the helpfulness gradient into disclosure;
   keep writing bounded scopes with named escape hatches into every directed brief.
+
+- 2026-07-26 (conductor self-caught, owner-adjudicated correction): THE CONDUCTOR FABRICATED
+  A COMMIT SHA IN A LANDED VERDICT HEADER. Landing the tooling-65 r1 verdict, the conductor
+  typed the base as 4f2ae978d1e5... where the real commit is 4f2ae978d4628c67... - a full
+  40-char SHA invented by extending a short prefix from memory, in the header field the
+  record itself names "the lookup key". Caught minutes later by the conductor re-deriving
+  the SHA via git rev-parse; the three view-train verdicts checked clean. Correction path
+  hit the reality-vs-spec valve: Land-Verdict.ps1's overwrite guard refused ("a record, not
+  a draft"), the conductor escalated instead of self-adjudicating -Force, and the owner
+  ruled option (a): re-land with the corrected header, disclosure in the commit, wrong
+  version preserved in git history and on the checkpoint branch. Owner's framing: "an
+  honest effort when the machine breaks. Until we figure out the correct pressure valves."
+  Class: CONDUCTOR-TYPED COORDINATES ARE UNVALIDATED - Land-Verdict accepts any string as
+  -Base; one git rev-parse --verify (and a check that the body's own base references match)
+  would have refused the fabrication at landing. Same class as the #65 gate one layer up:
+  hand-typed coordinates need mechanical resolution wherever they enter a durable record.
+  Tooling fix is small and belongs in Land-Verdict itself.
