@@ -35,3 +35,143 @@ let's go with the goodnight skill update. can we also mine the friction log?
 ---
 
 ok so some more feedback on the board UI. Right now the dispatches only show what looks like a hash as the train title, and the trains lane looks like it's old static info?[Image #1] Do we have cards for these issues are are this fast follow on feedbacks?
+
+---
+
+yeah queue those up behind the current train, unless they can roll now?
+
+---
+
+<task-notification>
+<task-id>b2jnb01xh</task-id>
+<tool-use-id>REDACTED</tool-use-id>
+<output-file>C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\8a347c36-20b4-427a-ae0b-46855aa7bb72\tasks\b2jnb01xh.output</output-file>
+<status>completed</status>
+<summary>Background command "Watch CI to terminal state for a8beef6 (background)" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>ae3d64acd969fcdf2</task-id>
+<tool-use-id>toolu_01UjwBn5gyDy3uydELKhZjtg</tool-use-id>
+<output-file>C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\8a347c36-20b4-427a-ae0b-46855aa7bb72\tasks\ae3d64acd969fcdf2.output</output-file>
+<status>completed</status>
+<summary>Agent "Car r2 fix cycle #69+#71" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>All seven findings are fixed, red-first verified, and committed across 5 logical commits on `car/view-69-71`, HEAD `2861bfd8a99d8213ca0058a999ab91706f4ccc9b`, base `256d8d5a5124113108025894d9c6a097123b2cfb`. Working tree is clean (`git status --porcelain` empty).
+
+## Per-finding summary
+
+**MAJOR-R1-1** (commit `3fa9b21`) — owner-ruled fix: `renderSupersededList` → `renderSupersededDisclosure` in `board/web/js/dom-writer.js`, now appended as a DOM child of its owner row/chip (`chip.appendChild(...)` / `row.appendChild(...)` instead of `cars.appendChild(...)` / `rows.appendChild(...)`), behind a collapsed-by-default `&lt;details&gt;/&lt;summary&gt;`. Red-first: two new structural tests in `board/web/test/dom-writer.test.js` seed 5 subjects (reviewer's own wrap-boundary recipe); observed red at base: `.track-cars must hold exactly one child per car ... 10 !== 5`. Green after fix: 44→46 tests in that file, then 208/208 for the whole suite. Verified live in a real browser too (`docs/screenshots/2026-07-26-view-69-71-candidates/superseded-collapsed-r2.png`, `superseded-expanded-r2.png`; `discInsideRow: true` observed via `closest('.solari-row').contains(disclosure)`). **M1 decision (disclosed, not owner-ruled): ephemeral, not sessionStorage-backed** — chosen as the minimal option since a per-row key would be one-per-subject (open-ended, no eviction story) and `renderBoard` already clears `root.textContent` every repaint regardless; documented in `docs/contracts/state-ledger.md` as an explicit "not a seventh field" disclosure for reviewer adjudication.
+
+**MAJOR-R1-2** (commit `97c3dc6`) — new `board/web/test/browser-conditions-persistence.test.js`, real Chromium/real Go binary per `browser-register-cascade.test.js`'s pattern. Non-vacuity: removed `app.js:148`'s listener (sha256 confirmed `9bbcb03a...`, matching the reviewer's own recorded value), observed red: `REGRESSION (#69 MAJOR-R1-2): the strip closed across a real DOM rebuild ... false !== true`; restored byte-identical, 2/2 green.
+
+**MAJOR-R1-3** (commit `ca20830`) — the "untestable branch" comment in `board/assemble/assemble.go` was false (`winnerKind` only selects the branch; `Spend`/`Output.Dispatches` are exported). Added `TestAssembleDispatchRenderFailedIsReachable`: real `fold.Fold` → mutate exported `Spend` to a channel → `Assemble()` → asserts `dispatch-render-failed` condition with `RecordDir="probe-subj"`. Non-vacuity: renamed the condition code string, observed red (`got [{dispatch-render-failed-INJECTED ...}]`), restored byte-identical (sha256 `f7d7a950...` confirmed). Comment corrected; the commit message's matching false claim is immutable history, noted rather than rewritten.
+
+**MAJOR-R1-4** (commit `d9ffcfe`) — `lanes.js:16`'s `snapshot.go:41-45` citation (shifted to :48 by this same train's own insertion) converted to symbol form per `gating-matrix.md:49`'s own already-landed lesson.
+
+**MINOR-R1-1** (commit `ca20830`, same as R1-3) — `store.RecordDirFromRelPath` exported; `assemble.go`'s `recordDirBySubject` now calls it instead of inlining `filepath.Dir` (unused `path/filepath` import removed). Refactor only, existing tests cover both call sites.
+
+**MINOR-R1-2** (commit `3fa9b21`, same as R1-1) — `schema/yard-snapshot.schema.json` gains `$defs.dispatchSupersededItem` (`kind`+`at` both required strings), `$ref`'d from both payloads; `dom-writer.js` filters malformed items (Law 1 honest-absence, all-malformed → no disclosure). Non-vacuity: guard disabled, both new tests red (`2 !== 1`, `1 !== 0`), restored, green. **Fallout fixed in the same commit**: `scripts/tests/WirePayload.Tests.ps1`'s `Test-PayloadDef` helper extracted a `$def` standalone without sibling `$defs`, so the new `$ref` silently failed (`Test-Json -ErrorAction SilentlyContinue`) — fixed by carrying the full `$defs` map into the wrapped document.
+
+**MINOR-R1-3** (commit `2861bfd`) — new `throwingStorage` fake + two tests pinning both catch branches in `condition-open-state.js`. Non-vacuity: each `try/catch` removed in turn, observed red (`SecurityError: storage disabled` uncaught; `QuotaExceededError: storage full` via `assert.doesNotThrow`'s own failure message), restored byte-identical both times (sha256 `0c0be511...` confirmed), 12/12 green.
+
+## Final suite totals at HEAD `2861bfd`
+
+- Go `board/...`: **94 PASS / 0 FAIL** (base 93 + 1 new = 94), `go vet ./...` exit 0, clean.
+- Node `board/web` (`node --test --test-reporter=tap`): **208 tests / 208 pass / 0 fail** (base 200 + 8 new = 208).
+- Pester `scripts/tests`: **223 passed / 0 failed / 4 skipped / 227 total** (matches base exactly).
+- Pester `scripts/probes`: **24 passed / 0 failed**.
+- `probe-yard-snapshot.mjs`: **PASS**.
+
+Base counts (93 Go / 200 Node / 223-4 Pester / 24 probes) were re-derived by me via `git stash` back to `256d8d5` before editing, not assumed from the review verdict.
+
+## Disclosures / honest notes
+
+- **M1 open question** (per brief): resolved as ephemeral/not-persisted — reasoning above and in `docs/contracts/state-ledger.md`'s new disclosure paragraph; this is the one item the brief asked me to decide and flag for the reviewer's adjudication, not an owner ruling.
+- I could not run GitNexus `detect_changes()` — no GitNexus MCP tool was bound in this session's toolset (only Bash/PowerShell/Read/Edit/Write/Glob/Grep were available), and no `.gitnexus/` directory exists in this worktree. Disclosed rather than silently skipped; not one of the 7 findings.
+- No contradictions found between the brief/verdict and the real code — every finding's file:line evidence checked out as described.
+
+## Files touched (all under `C:\Users\Chris\git\starcar-wt\car-view-69-71`)
+
+`board/web/js/dom-writer.js`, `board/web/css/board.css`, `board/web/js/lanes.js`, `board/web/js/app.js` (fault-injected and restored only, unmodified in final diff), `board/web/test/dom-writer.test.js`, `board/web/test/condition-open-state.test.js`, `board/web/test/browser-conditions-persistence.test.js` (new), `board/assemble/assemble.go`, `board/assemble/assemble_test.go`, `board/store/store.go`, `board/store/store_test.go`, `schema/yard-snapshot.schema.json`, `scripts/tests/WirePayload.Tests.ps1`, `docs/design/2026-07-21-v0-yard-skeleton-design.md`, `docs/contracts/state-ledger.md`, `docs/screenshots/2026-07-26-view-69-71-candidates/README.md` (new), `superseded-collapsed-r2.png` (new), `superseded-expanded-r2.png` (new).
+
+```starcar-artifact
+outcome: done
+findings: 0 Major, 0 Minor (all 7 round-1 findings fixed and verified; 1 disclosed M1 scope decision for reviewer adjudication)
+abstract: |
+  Fix cycle round 2 on view train #69+#71, all 7 findings from
+  artifacts/reviews/2026-07-27-view-69-71-review-r1-REJECT.md addressed,
+  red-first, on car/view-69-71 base 256d8d5 through HEAD 2861bfd, 5 commits
+  (3fa9b21, 97c3dc6, ca20830, d9ffcfe, 2861bfd), working tree clean.
+
+  MAJOR-R1-1: renderSupersededDisclosure now appends the superseded block as
+  a DOM CHILD of its owner row/chip (never a sibling of the shared grid/flex
+  container), behind a collapsed-by-default details/summary disclosure - the
+  conditions-strip idiom. Structural regression tests seed 5 subjects (the
+  reviewer's own wrap-boundary recipe), observed red at base (10 direct
+  children instead of 5), green after. Verified live in a real browser
+  (recaptured screenshots, discInsideRow true observed). M1 (disclosed, not
+  owner-ruled): the disclosure's open state is EPHEMERAL, never threaded
+  through sessionStorage - minimal option, reasoning in
+  docs/contracts/state-ledger.md's new disclosure paragraph, flagged here for
+  reviewer adjudication.
+
+  MAJOR-R1-2: new browser-conditions-persistence.test.js (real Chromium, real
+  Go binary, browser-register-cascade.test.js's pattern) pins app.js:148's
+  toggle listener. Non-vacuity: line removed (sha256 matched the review's own
+  recorded value), observed red ("the strip closed across a real DOM rebuild
+  ... false !== true"), restored byte-identical, green.
+
+  MAJOR-R1-3: the false "untestable outside board/fold" claim corrected;
+  TestAssembleDispatchRenderFailedIsReachable proves it reachable via real
+  fold.Fold + mutating exported Spend to a channel + real Assemble(), non-
+  vacuity proven by renaming the condition code and observing the assertion
+  fail for the stated reason, then restoring byte-identical.
+
+  MAJOR-R1-4: lanes.js's stale snapshot.go:41-45 line citation converted to a
+  symbol citation (the Lane struct's doc comment, quoted verbatim) per
+  gating-matrix.md:49's own already-landed lesson.
+
+  MINOR-R1-1 (Law 6): store.RecordDirFromRelPath exported; assemble.go's
+  recordDirBySubject calls it instead of inlining the identical rule: no
+  duplicate rule remains between the two files. Refactor only, existing
+  tests cover both call sites unchanged.
+
+  MINOR-R1-2: schema/yard-snapshot.schema.json's superseded items are now
+  type-constrained ({kind,at} both required strings via a new
+  $defs.dispatchSupersededItem, $ref'd from both payloads); dom-writer.js
+  guards the read (malformed items skipped, all-malformed renders absent,
+  never empty) - non-vacuity proven by disabling the guard and observing
+  both new tests red for the stated reason. Fallout fixed same-commit:
+  scripts/tests/WirePayload.Tests.ps1's fragment-extraction helper did not
+  carry sibling $defs, so the new $ref silently failed to resolve
+  (Test-Json -ErrorAction SilentlyContinue swallowed it) - fixed by wrapping
+  the full $defs map into the extracted standalone schema.
+
+  MINOR-R1-3: throwingStorage fake + two new tests pin both catch branches
+  in condition-open-state.js. Non-vacuity: each try/catch removed in turn,
+  observed red (uncaught SecurityError; uncaught QuotaExceededError via
+  assert.doesNotThrow's own message), restored byte-identical both times,
+  green.
+
+  Final suite totals at HEAD 2861bfd: Go board/... 94 PASS / 0 FAIL (base 93
+  + 1 new), go vet clean; Node board/web 208 tests / 208 pass / 0 fail (base
+  200 + 8 new); Pester scripts/tests 223 passed / 0 failed / 4 skipped / 227
+  total (matches base exactly - no new Pester tests added, two pre-existing
+  regressions from the schema change were fixed in the same commit that
+  caused them); Pester scripts/probes 24/24; probe-yard-snapshot.mjs PASS.
+  All base counts re-derived by this car via git stash back to 256d8d5
+  before editing, not assumed from the round-1 verdict.
+
+  Disclosed: GitNexus detect_changes() could not be run - no GitNexus MCP
+  tool was bound in this session's toolset and no .gitnexus/ directory
+  exists in this worktree; not one of the 7 findings, honest-disclosed
+  rather than silently skipped. No contradictions found between the brief/
+  verdict and the real code at base - every finding's file:line evidence
+  checked out as described.
+task-id: view-69-71-car-r2
+```</result>
+<usage><subagent_tokens>307489</subagent_tokens><tool_uses>226</tool_uses><duration_ms>2153790</duration_ms></usage>
+</task-notification>
