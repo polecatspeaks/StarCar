@@ -230,3 +230,6 @@ dispatch batch between regenerations.
 | a965df3347dae4a72 | returned | 2026-07-27T00:46:27Z | REJECT | a965df3347dae4a72/returned-20260727T004627Z.json |
 | ab2bd332be0eebc2c | returned | 2026-07-27T01:01:07Z | SUCCESS | ab2bd332be0eebc2c/returned-20260727T010107Z.json |
 | a965df3347dae4a72 | returned | 2026-07-27T01:10:03Z | REJECT-ESCALATED | a965df3347dae4a72/returned-20260727T011003Z.json |
+| ab2bd332be0eebc2c | returned | 2026-07-27T01:28:30Z | SUCCESS | ab2bd332be0eebc2c/returned-20260727T012830Z.json |
+| acf9a7451ccf63594 | dispatched | 2026-07-27T01:29:22Z |  | acf9a7451ccf63594/dispatched-20260727T012922Z.json |
+| acf9a7451ccf63594 | returned | 2026-07-27T01:44:06Z | REJECT | acf9a7451ccf63594/returned-20260727T014406Z.json |
