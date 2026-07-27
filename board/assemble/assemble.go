@@ -11,7 +11,6 @@ package assemble
 import (
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 	"sort"
 	"strings"
 
@@ -187,15 +186,20 @@ func Assemble(in Input) Result {
 	for _, d := range in.Fold.Dispatches {
 		m, err := dispatchWireMap(d, assignedSubjects[d.Subject], recordDirs[d.Subject])
 		if err != nil {
-			// #69/#71 HONEST DISCLOSURE: this RecordDir addition (like the
-			// rest of this branch) has NO test proving it - dispatchWireMap
-			// only fails when json.Marshal(d) fails, and d.winnerKind (the
-			// only field that can make MarshalJSON emit an unencodable
-			// "spend" value) is unexported, so no test outside board/fold
-			// can construct a fold.DispatchEntry that reaches this branch.
-			// Pre-existing gap (this whole condition class had zero test
-			// coverage before this ticket); added for Law 6 consistency
-			// with every other condition site, not verified red-first.
+			// #69/#71 fix cycle round 2 (MAJOR-R1-3): CORRECTED - the prior
+			// version of this comment claimed "no test outside board/fold can
+			// construct a fold.DispatchEntry that reaches this branch"
+			// because d.winnerKind is unexported. That is false: winnerKind
+			// only SELECTS this branch (set internally by fold.Fold, inside
+			// package fold); it is Spend (board/fold/fold.go, EXPORTED) that
+			// carries the value MarshalJSON cannot encode, and
+			// fold.Output.Dispatches is exported too. A package outside
+			// board/fold reaches this branch by running the real fold.Fold
+			// to get a genuine "returned"-winner entry, then mutating that
+			// entry's exported Spend field - see
+			// TestAssembleDispatchRenderFailedIsReachable
+			// (board/assemble/assemble_test.go), which does exactly that and
+			// asserts the resulting condition's RecordDir.
 			result.Conditions = append(result.Conditions, store.BoardCondition{
 				Code:      "dispatch-render-failed",
 				Detail:    fmt.Sprintf("subject %q could not be rendered to the wire shape: %v", d.Subject, err),
@@ -321,6 +325,15 @@ func manifestPayload(r store.Record) (title string, tickets []string, members []
 // producer ever violated the convention, this function would silently keep
 // whichever directory it saw first rather than crash - a latent
 // divergence this comment now names rather than hides.
+//
+// #69/#71 fix cycle round 2 (MINOR-R1-1, Law 6): the dir-from-path rule
+// itself (filepath.Dir + "." means no directory component) used to be
+// INLINED here as a second copy of board/store.RecordDirFromRelPath
+// (store.go), on the stated justification that store's two call sites fire
+// at SCAN TIME, before this function's own map exists - true, but that
+// explains why the CALL SITES differ, never why the RULE was copied. This
+// package already imports board/store (see the import block above), so the
+// exported helper is called directly; no copy remains.
 func recordDirBySubject(records []store.Record) map[string]string {
 	out := make(map[string]string, len(records))
 	for _, r := range records {
@@ -331,8 +344,8 @@ func recordDirBySubject(records []store.Record) map[string]string {
 		if _, seen := out[subject]; seen {
 			continue
 		}
-		dir := filepath.ToSlash(filepath.Dir(r.Path))
-		if dir == "." || dir == "" {
+		dir := store.RecordDirFromRelPath(r.Path)
+		if dir == "" {
 			continue // Path had no directory component - no link rather than a wrong one
 		}
 		out[subject] = dir

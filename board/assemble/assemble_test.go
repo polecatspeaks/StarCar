@@ -716,3 +716,79 @@ func TestAssembleGateFindingsRecordNotFoundDisclosed(t *testing.T) {
 		t.Fatalf("expected a gate-findings-record-not-found board condition, got %v", result.Conditions)
 	}
 }
+
+// TestAssembleDispatchRenderFailedIsReachable (#69/#71 fix cycle round 2,
+// MAJOR-R1-3) - CORRECTS a false claim that used to sit at assemble.go's
+// dispatch-render-failed branch and in this train's own commit message:
+// "d.winnerKind (the only field that can make MarshalJSON emit an
+// unencodable spend value) is unexported, so no test outside board/fold can
+// construct a fold.DispatchEntry that reaches this branch." winnerKind
+// SELECTS the branch, but it is Spend (fold.go:112, EXPORTED) that carries
+// the unencodable value, and Output.Dispatches (fold/output.go) is exported
+// too - so a package OUTSIDE board/fold can reach it without ever touching
+// winnerKind directly: run the REAL fold.Fold on a genuine returned-wins
+// record pair (which sets winnerKind == "returned" internally, inside
+// package fold, the only place that can), then mutate the returned entry's
+// exported Spend field to a value json.Marshal cannot encode (a channel).
+// Reached through the real Assemble() entry point, never dispatchWireMap
+// called directly, so this also proves the condition's RecordDir survives
+// end to end exactly like every other population site's own RecordDir test.
+func TestAssembleDispatchRenderFailedIsReachable(t *testing.T) {
+	records := []store.Record{
+		recAt("probe-subj/dispatched-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "dispatched", "subject": "probe-subj",
+			"session_id": "s1", "at": "2026-07-27T09:00:00Z", "normalisation": []any{}, "integrity": "sha256:0",
+		}),
+		recAt("probe-subj/returned-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "returned", "subject": "probe-subj",
+			"session_id": "s1", "at": "2026-07-27T10:00:00Z", "outcome": "done",
+			"findings": "f", "abstract": "a", "spend": map[string]any{"tokens": 1},
+			"normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+
+	// Find the real "returned"-winner entry the fold itself produced
+	// (winnerKind set internally, inside package fold - never by this test)
+	// and mutate ONLY its exported Spend field to something json.Marshal
+	// cannot encode. A channel is Go's canonical "cannot be JSON-encoded"
+	// value (encoding/json's own documented limitation), the same choice
+	// the round-1 reviewer's disproof probe used.
+	mutated := false
+	for i := range out.Dispatches {
+		if out.Dispatches[i].Subject == "probe-subj" {
+			out.Dispatches[i].Spend = make(chan int)
+			mutated = true
+		}
+	}
+	if !mutated {
+		t.Fatalf("test precondition not met: expected a 'probe-subj' entry in fold.Fold's output, got %+v", out.Dispatches)
+	}
+
+	result := Assemble(Input{Records: records, Fold: out})
+
+	var found bool
+	for _, cond := range result.Conditions {
+		if cond.Code == "dispatch-render-failed" {
+			found = true
+			if !strings.Contains(cond.Detail, "probe-subj") {
+				t.Errorf("condition detail must name the subject, got %q", cond.Detail)
+			}
+			if cond.RecordDir != "probe-subj" {
+				t.Errorf("RecordDir = %q, want %q", cond.RecordDir, "probe-subj")
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected a dispatch-render-failed board condition (branch was claimed unreachable outside board/fold - disproven), got %v", result.Conditions)
+	}
+
+	// The subject must NOT also appear in the ordinary dispatches list -
+	// dispatchWireMap's error path `continue`s past the append (assemble.go)
+	// rather than emitting a half-built entry.
+	for _, d := range result.Dispatches.Dispatches {
+		if d["subject"] == "probe-subj" {
+			t.Errorf("probe-subj should not appear in Dispatches.Dispatches when its render failed, got %v", d)
+		}
+	}
+}

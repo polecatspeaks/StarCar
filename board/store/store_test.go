@@ -193,7 +193,7 @@ func TestScanUnknownFieldRecordDisclosed(t *testing.T) {
 // TestScanUnknownFieldConditionCarriesRecordDir (#69/#71: clickable
 // provenance, board-conditions surface) - the condition names the directory
 // its OWN offending file lives in, derived from the already-known rel path
-// (recordDirFromRelPath), single-sourced, never re-parsed from Detail text.
+// (RecordDirFromRelPath), single-sourced, never re-parsed from Detail text.
 func TestScanUnknownFieldConditionCarriesRecordDir(t *testing.T) {
 	a := newAdapter(t)
 	root := t.TempDir()
@@ -345,7 +345,7 @@ func TestScanSchemaShapeFailureQuarantined(t *testing.T) {
 
 // TestScanQuarantinedConditionCarriesRecordDir (#69/#71: clickable
 // provenance) - a quarantined record's own condition names its directory
-// (derived from the file's own rel path, recordDirFromRelPath), so the view
+// (derived from the file's own rel path, RecordDirFromRelPath), so the view
 // can link straight to the offending record even though the record itself
 // never survived into result.Records.
 func TestScanQuarantinedConditionCarriesRecordDir(t *testing.T) {

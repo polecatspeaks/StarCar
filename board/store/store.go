@@ -207,7 +207,7 @@ func (a *Adapter) Scan(storeRoot string, now time.Time) (ScanResult, error) {
 				Code:      "record-quarantined",
 				Detail:    fmt.Sprintf("%s: %s", rel, quarantineReason),
 				Register:  RegisterForCode("record-quarantined"),
-				RecordDir: recordDirFromRelPath(rel),
+				RecordDir: RecordDirFromRelPath(rel),
 			})
 			continue
 		}
@@ -319,23 +319,28 @@ func (a *Adapter) readOne(path, rel string, now time.Time) (Record, *BoardCondit
 			Code:      "record-unrecognised-fields",
 			Detail:    fmt.Sprintf("%s: record carries %d unrecognised field(s): %s", rel, len(unknown), strings.Join(unknown, ", ")),
 			Register:  RegisterForCode("record-unrecognised-fields"),
-			RecordDir: recordDirFromRelPath(rel),
+			RecordDir: RecordDirFromRelPath(rel),
 		}
 		return rec, &cond, ""
 	}
 	return rec, nil, ""
 }
 
-// recordDirFromRelPath (#69/#71) derives a record's store-root-relative
-// DIRECTORY from its own already-known rel path - the identical rule
-// board/assemble's recordDirBySubject applies (filepath.Dir, "." means no
-// directory component, no link rather than a wrong one), inlined here
-// because these two conditions (record-quarantined, record-unrecognised-
-// fields) fire at SCAN TIME, before Assemble ever sees the record, so
-// recordDirBySubject's map (built from the full Records slice downstream)
-// is not yet available - Law 6: same rule, single reason, two call sites
-// because of a real ordering constraint, not a duplicated decision.
-func recordDirFromRelPath(rel string) string {
+// RecordDirFromRelPath (#69/#71) derives a record's store-root-relative
+// DIRECTORY from its own already-known rel path - filepath.Dir, "." means
+// no directory component, no link rather than a wrong one. EXPORTED (#69/
+// #71 fix cycle round 2, MINOR-R1-1, Law 6): board/assemble's
+// recordDirBySubject used to inline this identical three-line rule rather
+// than call it, on the stated justification that recordDirFromRelPath's
+// two SCAN-TIME call sites here (record-quarantined, record-unrecognised-
+// fields, both fire before Assemble ever sees the record) could not reach
+// assemble's own recordDirBySubject (built later, from the full Records
+// slice). That reasoning explains why the CALL SITES differ, never why the
+// CODE was copied - board/assemble already imports board/store
+// (assemble.go's own import block), so this package's exported helper is
+// reachable from there regardless of ordering. Two call sites, one rule,
+// singly sourced.
+func RecordDirFromRelPath(rel string) string {
 	dir := filepath.ToSlash(filepath.Dir(rel))
 	if dir == "." || dir == "" {
 		return ""
