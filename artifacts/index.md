@@ -247,3 +247,9 @@ dispatch batch between regenerations.
 | a5ddbb7039bee5958 | returned | 2026-07-27T04:34:43Z | success | a5ddbb7039bee5958/returned-20260727T043443Z.json |
 | a103c4067cf9267a3 | dispatched | 2026-07-27T04:35:47Z |  | a103c4067cf9267a3/dispatched-20260727T043547Z.json |
 | a103c4067cf9267a3 | returned | 2026-07-27T04:57:49Z | REJECT | a103c4067cf9267a3/returned-20260727T045749Z.json |
+| ae3d64acd969fcdf2 | dispatched | 2026-07-27T10:57:00Z |  | ae3d64acd969fcdf2/dispatched-20260727T105700Z.json |
+| a4b530cbc88da1cfe | dispatched | 2026-07-27T11:04:37Z |  | a4b530cbc88da1cfe/dispatched-20260727T110437Z.json |
+| a4b530cbc88da1cfe | returned | 2026-07-27T11:20:43Z | done-with-findings | a4b530cbc88da1cfe/returned-20260727T112043Z.json |
+| ae3d64acd969fcdf2 | returned | 2026-07-27T11:32:52Z | done | ae3d64acd969fcdf2/returned-20260727T113252Z.json |
+| a8928de8b3b8e6b95 | dispatched | 2026-07-27T11:34:13Z |  | a8928de8b3b8e6b95/dispatched-20260727T113413Z.json |
+| a8928de8b3b8e6b95 | returned | 2026-07-27T11:57:04Z | REJECT | a8928de8b3b8e6b95/returned-20260727T115704Z.json |

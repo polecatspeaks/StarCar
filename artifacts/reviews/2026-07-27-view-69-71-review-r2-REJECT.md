@@ -1,0 +1,455 @@
+<!-- starcar-integrity: sha256=64071469d31579742c240c18d5aa9f9ab608be5c4f15269ffbcf0ad1e6384ce5 covers every byte below this line; recompute with scripts/Verify-Verdict.ps1 -->
+# View train #69+#71 car review, round 2 (delta)
+
+Status: Done
+Record: verdict of record - historical by nature, never edited after landing
+Gate: car adversarial sentence-check review (delta re-review)
+Round: 2
+Target: `car/view-69-71 fix-cycle r2 HEAD 2861bfd`
+Base reviewed: `256d8d5a5124113108025894d9c6a097123b2cfb`
+Reviewer: car agent type, Opus, read-only, detached worktree, no delegation
+**Verdict: REJECT**
+
+> Extracted VERBATIM from the session transcript by `scripts/Land-Verdict.ps1` --
+> task id `a8928de8b3b8e6b95`. The conductor did not retype a word of what follows. Verbatim by
+> construction rather than by discipline, because the author being reviewed is the
+> one landing the review, and a hand-copied verdict is a hand-maintained mirror at a
+> process boundary.
+>
+> Integrity: the `starcar-integrity` line at the top of this file hashes EVERY byte
+> below it - this header's claims as well as the verbatim body. Recompute with
+> `scripts/Verify-Verdict.ps1 -Path <this file>`. An independently-written copy of the
+> same body exists on the Entire checkpoint branch; that copy, not the hash, is the
+> defence against whoever controls this script.
+>
+> Path normalisation: the repository root was rewritten to ``<repo>`` and the operator home directory to ``~``, BEFORE hashing. Mechanical and narrow: only those two roots, longest-first, no other substitution. This is portability, not curation - findings, verdicts and counts are untouched, and the un-normalised original is on the Entire checkpoint branch.
+
+## Provenance
+
+Cited the way a paper cites a source: the work, the exact locator within it, and the
+edition. Every reference below was followed before this file was written.
+
+| | |
+|---|---|
+| Base commit the reviewer read (**the lookup key**) | `256d8d5a5124113108025894d9c6a097123b2cfb` |
+
+| Dispatch, the locator within the session | `a8928de8b3b8e6b95` |
+| Entire session (context, NOT a lookup key) | `8a347c36-20b4-427a-ae0b-46855aa7bb72` |
+| Landed by | `scripts/Land-Verdict.ps1` - verbatim extraction, never retyped |
+
+Follow the citation:
+
+```
+entire checkpoint explain 256d8d5a5124113108025894d9c6a097123b2cfb
+entire checkpoint search "<a distinctive phrase from the body below>"
+git log entire/checkpoints/v1 --oneline    # the independently-written public copy
+```
+<!-- verbatim-body-below: do not edit past this line -->
+
+I have everything I need. Writing the verdict.
+
+---
+
+# VERDICT: REJECT — 3 Major, 2 Minor
+
+**Base verified.** `git log -1 --format='%H'` → `2861bfd8a99d8213ca0058a999ab91706f4ccc9b`, detached HEAD, `git status --porcelain` empty. Matches the brief.
+
+## Suites — re-derived by me at 2861bfd, never read from the car's report
+
+| Suite | Command | Observed at `2861bfd` | Car claimed | Verdict |
+|---|---|---|---|---|
+| Node `board/web` | `node --test --test-reporter=tap` | **208 tests / 208 pass / 0 fail / 0 skip** | 208/208 | matches |
+| Go `board/...` | `go test -count=1 -v ./...` | **94 top-level `--- PASS`**, 0 FAIL, 0 SKIP (+20 subtests) | 94 PASS | matches |
+| `go vet ./...` | full-path go | exit 0, no output | clean | matches |
+| Pester `scripts/tests` | `Invoke-Pester -PassThru` | **227 total / 222 passed / 0 failed / 5 skipped** | 223/0/4 | matches modulo the detached-HEAD skip |
+| Pester `scripts/probes` | `Invoke-Pester -PassThru` | **24 total / 24 passed / 0 failed** | 24/24 | matches |
+| `probe-yard-snapshot.mjs` | `node` | `PROBE RESULT: PASS`, exit 0 | PASS | matches |
+
+The 5th skip, named exactly as round 1 named it: `run-session-start-guards.sh: agent-pull runner (#50).running the REAL guards prints [ci-baseline]'s marker ONLY when attached to a branch - conditional, never asserted as always-emitting`. Same detached-HEAD artefact, no new skip.
+
+Go went 93 → 94 (+1: `TestAssembleDispatchRenderFailedIsReachable`). Node went 200 → 208 (+8: 2 browser persistence, 4 structural/malformed dom-writer, 2 throwing-storage).
+
+---
+
+# MAJOR FINDINGS
+
+## MAJOR-R2-1 — The MAJOR-R1-1 fix's `flex-wrap: wrap` wraps EVERY dispatch row from one line to two, re-introducing the exact `#62` "crop rows mid-line" hazard the same CSS rule's own comment documents — and the new comment asserting the opposite is a confident falsehood
+
+`board/web/css/board.css:623` adds `flex-wrap: wrap` to `.solari-row` (absent at `256d8d5` and at `b865cba` — confirmed by `git show 256d8d5:board/web/css/board.css` and `git show b865cba:...`, both showing `.solari-row { display: flex; gap: 0.6rem; ... }` with no `flex-wrap`). The commit's own comment at `board.css:616-622` claims:
+
+&gt; *"flex-wrap:wrap lets ONLY the nested .solari-superseded-disclosure (flex-basis:100% above) drop to a second line WITHIN this row's own box - **the subject/state/elapsed cluster below stays one line per row (mockup convention preserved**; see the comment on white-space:nowrap immediately below), because none of those three carry flex-basis:100% and .solari-subject's own ellipsis truncation still applies before any of them would wrap."*
+
+Repeated at `board.css:383-384` ("adding `flex-wrap:wrap` here only lets the DISCLOSURE (not the subject/state/elapsed cluster) drop to a second line") and at `board.css:380` ("preserving #67's density argument") and `dom-writer.js:124-125` ("This preserves #67's density").
+
+**Measured, real Chromium, real `board/server` Go binary, real scratch store, 1600×1000 viewport. 18 dispatch rows, NONE carrying a superseded entry** — so the disclosure itself cannot be blamed:
+
+```
+===== AS SHIPPED (2861bfd CSS) =====
+  distinctRowHeights: [51]
+  containerClientH: 176   containerScrollH: 210
+  croppedMidRowCount: 3   croppedRows: plain-subject-11/12/13 (top=256, h=51, container bottom=273)
+  fullyVisibleRows: 15 of 18
+===== SAME PAINT, flex-wrap reverted to the base value (nowrap) =====
+  distinctRowHeights: [22]
+  containerClientH: 96    containerScrollH: 96
+  croppedMidRowCount: 0
+  fullyVisibleRows: 18 of 18
+```
+
+The counterfactual is exact: `flex-wrap` is the **only** property this diff adds to `.solari-row`, and I reverted it at runtime with `page.addStyleTag` in the same paint — no file edit.
+
+Per-child geometry, same probe (3 rows with a superseded entry, 3 without):
+
+```
+subject "no-sup-0"  rowH 73  hasDisclosure false  nonDisclosureVisualLines 2
+  .solari-subject  top=99  left=292  ..  .solari-state  top=99  left=377
+  .solari-elapsed  top=138 left=292   &lt;- SECOND flex line
+```
+
+`.solari-elapsed` drops to its own line on rows that have no disclosure at all.
+
+**The falsehood is contradicted by the comment ten lines below it in the same rule.** `board.css:628-635`, pre-existing and untouched by this diff:
+
+&gt; *"One line per row (mockup convention, every variant): a long subject id truncates with an ellipsis rather than wrapping to a second line - **wrapping is what made the #62 grid's fixed max-height crop rows mid-line** (found live during this car's own visual verification, docs/screenshots/2026-07-26-register-check-candidates/)."*
+
+The new comment cites that very comment ("see the comment on white-space:nowrap immediately below") as its evidence of safety. `white-space: nowrap` (`board.css:636`) stops **text** wrapping inside a flex item; it does not stop **flex items** wrapping onto new flex lines. Measured above: `.solari-rows`' `max-height: 11rem` (`board.css:610`) with `overflow-y: auto` now crops 3 rows mid-row where the base cropped none.
+
+**On the REAL committed `artifacts/` store in this worktree** (server default store resolution, read-only): 4 dispatch rows, **`distinctRowHeights: [73]` as shipped vs `[22]` with `flex-wrap` reverted** — a 3.3× row-height regression on the live board, on rows that are the densest surface `#62`/`#67` exist to protect.
+
+**Scope is wider than the defect it fixes.** MAJOR-R1-1 affected only rows *with* a superseded entry. This regression affects **every** dispatch row, including the majority with none.
+
+**The car's own committed evidence shows it.** `docs/screenshots/2026-07-26-view-69-71-candidates/superseded-collapsed-r2.png` (captured at this commit) renders the dispatch row as three stacked lines — `view-69-71-superseded-de…` / `returned` / `▸ 1 superseded`. Round 1's `collapsed-before-click.png` (captured at `256d8d5`, same fixture) renders `view-69-71-su…  returned` **on one line**. The regression is visible in the two images side by side, and the README caption reads the round-2 image as a pass.
+
+**Why 208/208 could not see it:** nothing in `board/web/test/` asserts rendered geometry. The new structural tests (`dom-writer.test.js:711-806`) run against `createMiniDocument()`, a DOM shim with no layout engine, and assert child counts and class names only. `browser-conditions-persistence.test.js` never touches the dispatches lane. This is `#40`'s territory: the guard for the property the owner ruled on (density) does not exist.
+
+`.car-chip`'s `flex-wrap: wrap` (`board.css:403`) is **clean** — measured 23px, 1 visual line, identical with and without the override, because chips are content-sized rather than grid-cell-constrained.
+
+## MAJOR-R2-2 — This commit created a NEW stale line-number citation, in the same file, in the same hunk, in the commit whose sibling change was a lecture about exactly this class
+
+`board/web/js/dom-writer.js:137`:
+
+```js
+// Ephemeral also matches this file's own render cycle unforced: `renderBoard` clears
+// `root.textContent` on every repaint (line 141), so even a native `open`
+```
+
+| | `b865cba` | `256d8d5` (round 1) | `2861bfd` (HEAD) |
+|---|---|---|---|
+| `root.textContent = ''` at | line 100 | line **141** | line **192** |
+| what is at line 141 | — | the clear | `// every \`&lt;details&gt;\` on the web with no persistence wired at all.` (this comment's own text) |
+
+The car read `141` at `256d8d5`, wrote it into a comment, and its own +51-line insertion **in the same hunk of the same commit** (`3fa9b21`) pushed the target to 192. The citation was false the instant it was committed. `renderBoard` is at `dom-writer.js:191`; the clear at `:192`.
+
+This is MAJOR-R1-4's class verbatim — *"this commit's own insertion broke a live citation and left it stale"* — reproduced one round later. Aggravating: the same commit series wrote `board/web/js/lanes.js:16-23` specifically to explain the hazard:
+
+&gt; *"cited by SYMBOL, not line, per #69/#71 fix cycle round 2 MAJOR-R1-4 and docs/contracts/gating-matrix.md:49's own already-landed lesson: **a line-number citation into a file this SAME train's commit still edits drifts on every later insertion**, and the #65 gate does not check in-range shifts."*
+
+The words about the lesson are present; the substance moved. **DRIFTED.**
+
+Invisible to the gate by construction: `scripts/tests/CitationResolverPolicy.Tests.ps1:1-15` parses `file:line` coordinates and its own header declares *"NOT CAUGHT: an in-range shifted citation"* — a bare `(line 141)` with no filename is not a coordinate it looks for at all. Suite stayed 222 passed.
+
+The same claim on the doc surface is **correct**: `docs/contracts/state-ledger.md:161-162` says *"`renderBoard` clears `root.textContent` on every repaint (`dom-writer.js`)"* — by symbol, no line. Only the code comment is false.
+
+## MAJOR-R2-3 — The MINOR-R1-2 wire-tightening claim names `ingest.js`'s validator as the enforcement hop; measured, that hop enforces nothing, and the schema's own `$comment` says why
+
+`board/web/js/dom-writer.js:142-148`:
+
+```js
+// #69/#71 fix-cycle round 2 (MINOR-R1-2): the wire schema now constrains
+// superseded[] items to {kind: string, at: string} both required
+// (schema/yard-snapshot.schema.json's $defs.dispatchSupersededItem), but
+// this function stays defense-in-depth rather than trusting that
+// constraint alone - ingest.js's validator only runs against a real
+// browser fetch of /schema/yard-snapshot.schema.json (network-reachable at
+// runtime); any other caller of renderBoard ... is NOT gated by that fetch.
+```
+
+The contrast asserts that callers going *through* that fetch **are** gated. They are not. `$defs.dispatchesPayload` and `$defs.trainsPayload` — the only two places the new `$ref` lands (`schema/yard-snapshot.schema.json:127`, `:194`) — are **never `$ref`'d from `$defs.lane.data`**. The schema's own `$comment` at `schema/yard-snapshot.schema.json:99` states it outright:
+
+&gt; *"…**these three $defs are not $ref'd here** because a lane's data shape is chosen by which lane it is, not by one closed schema union."*
+
+**Measured with the real vendored validator** (`board/web/vendor/cfworker-json-schema/index.js`, draft 2020-12, the exact object `validate.js:19` constructs), against the real schema file at `2861bfd`, on a full snapshot document:
+
+```
+GOOD item                -&gt; valid=true   errors=0
+kind:7 (wrong type)      -&gt; valid=true   errors=0     &lt;-- NOT rejected
+missing at               -&gt; valid=true   errors=0     &lt;-- NOT rejected
+empty array              -&gt; valid=true   errors=0
+superseded omitted       -&gt; valid=true   errors=0
+```
+
+`ingest.js:29`'s `validator.validate(payload)` applies **no** constraint to `superseded[]` items, before or after this diff. Only `scripts/tests/WirePayload.Tests.ps1`'s fragment extraction ever exercises the new `$def`.
+
+This is the class the repo already corrected one file over, in this same train's `#67` cycle — `board/web/js/render.js:391-396`: *"CORRECTED (#67 fix cycle round 2 MINOR-R1-1): the WIRE schema itself does NOT enumerate this set … so the closed-set claim belongs to board/fold alone, never to the schema."* Same overclaim, same schema, same file family, one ticket later.
+
+The renderer guard itself is **correct and non-vacuous** (see the ID table); the defect is the permanent comment asserting a wire-level protection that does not exist, on the exact hop the sentence check traverses.
+
+---
+
+# MINOR FINDINGS
+
+**MINOR-R2-1 — the owner-ruled "COLLAPSED by default" has zero regression pin.** `grep` across `board/web/test/` finds no assertion on the superseded disclosure's `open` attribute in any form (`hasAttribute('open')` / `getAttribute('open')` appear nowhere near the superseded tests; the only hit on `.solari-superseded-disclosure` is `dom-writer.test.js:895`, a `length === 0` check for the all-malformed case). `renderSupersededDisclosure` never sets `open`, and I observed `anyDisclosureOpenByDefault: false` live on the real store — so it is correct today. But a future edit adding `details.setAttribute('open','')` leaves 208/208 green. `board.css:376-377` asserts *"COLLAPSED by default (no `open` attribute is ever set…)"* by reading only. `#40`: unwatched.
+
+**MINOR-R2-2 — the structural-containment witness recorded in the screenshots README is a tautology.** `docs/screenshots/2026-07-26-view-69-71-candidates/README.md:45-46`: *"Structural containment (`disclosure.closest('.solari-row').contains(disclosure)`) was observed `true` live in the browser at capture time."* `Element.closest()` returns an ancestor-or-self, and `contains()` is true for any ancestor — the expression can only evaluate `true` or throw on `null`. It cannot distinguish the fixed code from round 1's sibling layout in any way that matters (under round 1's code `closest` would have returned `null` and thrown, so it is not *entirely* vacuous — but "it threw vs it didn't" is not the containment claim being made). The underlying claim is true; I verified it independently (`disclosureClosestRowIsThisRow: true` and `disclosureIsDescendant: true` for all 13 disclosures). The landed guards in `dom-writer.test.js:747-753` and `:790-796` are properly falsifiable; only the README's recorded witness is not.
+
+---
+
+# FINDING-ID TABLE
+
+| ID | Ruling | Evidence |
+|---|---|---|
+| **MAJOR-R1-1** (superseded orphans; #67 density) | **Present** — both halves fixed, verified live — **but the fix created MAJOR-R2-1** | Structural: real Chromium, 7 `.solari-row` + 6 `.car-chip` each with a superseded entry (round 1's exact falsifying recipe) — `.solari-rows` direct children = 7, **all** `solari-row`; `.track-cars` direct children = 6, **all** `car-chip`; all 13 disclosures `disclosureIsDescendant: true`, `closest(...) === owner: true`, and `sameVisualBand: true` (each disclosure rect fully inside its owner rect). Real `artifacts/` store: `allDirectChildrenAreRows: true`, `allCarsDirectChildrenAreChips: true`, 10 chips / 10 disclosures. Presentational: `openAttr: false` on **all 13**; summary text `"1 superseded"`, computed `color rgba(217,213,201,0.55)` **equal** to a live `var(--text-dim)` probe and **dimmer** than `.register-nominal`'s `rgb(217,213,201)`; `font-size 11.2px`, `cursor pointer`. Collapsed the entry occupies no flow space (row `h=73` → `87` on expand, exactly the entry's `14px`). Fidelity to the owner ruling read verbatim from issue #69 (`gh issue view 69 --comments`): child-not-sibling ✓, `&lt;details&gt;` idiom ✓, collapsed by default ✓. |
+| **MAJOR-R1-2** (no regression pin for `app.js:148`) | **Present** — fault-injected, guard fires | Removed `root.addEventListener('toggle', handleConditionToggle, true)` (sha before/after restore both `9BBCB03A2FC5008EE259E00A057841555FF44C3815091F8AC9D48735A32AB843`, matching round 1's recorded value). `node --test test/browser-conditions-persistence.test.js` → `# tests 2 / # pass 0 / # fail 2`, with the intended messages: *"REGRESSION (#69 MAJOR-R1-2): the strip closed across a real DOM rebuild…"* and *"REGRESSION (#69, the owner's own live-board finding): the strip closed on page reload…"*. Real Chromium + real Go binary + real scratch store, real `page.click`, real `page.reload()`. |
+| **MAJOR-R1-3** (false unreachability claim) | **Present** — comment corrected, branch pinned, non-vacuous | `assemble.go:186-202` now states the correction and names the test. `TestAssembleDispatchRenderFailedIsReachable` (`assemble_test.go:720-793`) runs the real `fold.Fold`, mutates the exported `Spend` to `chan int`, and asserts through the real `Assemble()`. Fault-injected `RecordDir: recordDirs[d.Subject]` → `RecordDir: ""` (sha `852870A2…`, restored identical): `--- FAIL: TestAssembleDispatchRenderFailedIsReachable … assemble_test.go:778: RecordDir = "", want "probe-subj"`. |
+| **MAJOR-R1-4** (stale `snapshot.go:41-45` citation) | **Present** for the named citation — **class REPEATED as MAJOR-R2-2** | `lanes.js:16-21` now cites the `Lane` struct's doc comment by symbol. Verified at `board/server/snapshot.go:44-49`: the `Lane` doc comment contains verbatim *"so absence of the key itself is what signals \"no payload\" on the wire."* The quoted text in `lanes.js` matches. |
+| **MINOR-R1-1** (Law 6 duplicate) | **Present** | `store.RecordDirFromRelPath` exported (`store.go:343`); `assemble.go:347` calls it; the `path/filepath` import removed from `assemble.go` (only a prose mention of `filepath.Dir` survives at `:330`). `grep` finds exactly one implementation and four call sites. |
+| **MINOR-R1-2** (unconstrained wire, unguarded read) | **Present in the renderer** (guard real and tested) — **DRIFTED in its justification → MAJOR-R2-3** | `renderSupersededDisclosure` filters on `typeof item?.kind === 'string' &amp;&amp; typeof item?.at === 'string'`; `dom-writer.test.js:849-895` pins both the skip-one and skip-all cases including an explicit `!includes('undefined')`. Schema `$def` added and **enforced in the one place it is applied**: I re-derived the WirePayload helper both ways — OLD helper `trainsPayload`/`dispatchesPayload` good samples → `False` (the two reds the car reports, and they red for the stated `$ref`-resolution reason, while `gatesPayload` (no inner `$ref`) → `True`); NEW helper → `True`; and **non-vacuously** `superseded: [{kind: 7}]` → `False`, `[{kind only}]` → `False`. Helper change is sound; it also removes a latent mutation of the shared `$defs` hashtable. Producer hop verified: `fold.go:85-88` `DispatchSupersededItem{Kind string \`json:"kind"\`; At string \`json:"at"\`}`, non-pointer, populated at `algorithm.go:196-200`, always both keys via `output.go:9-18` — the `$def` cannot reject a real emission. |
+| **MINOR-R1-3** (untested degrade paths) | **Present** — fault-injected, both fire | Removed `loadOpenState`'s `try/catch` and neutered `saveOpenState`'s (sha `0C0BE511…`, restored identical): `not ok 10 - loadOpenState: a THROWING getItem …` and `not ok 11 - saveOpenState: a THROWING setItem …`, `# tests 12 / # pass 10 / # fail 2`. |
+
+---
+
+# THE WIRE SENTENCE — `$defs.dispatchSupersededItem`, every hop, file:line
+
+1. **Producer type** — `board/fold/fold.go:85-88`: `DispatchSupersededItem{ Kind string \`json:"kind"\`; At string \`json:"at"\` }`. Non-pointer strings, no `omitempty` → both keys always marshal.
+2. **Producer population** — `board/fold/algorithm.go:196-201`: `superseded := []DispatchSupersededItem{}`; for each loser, `append(superseded, DispatchSupersededItem{Kind: k, At: at})`. `k`/`at` come from `rec.str(...)`, which yields `""` rather than absence — so a degenerate emission is an empty *string*, never a missing or non-string key. The `$def`'s `required` can therefore never reject a real emission; the schema's own description at `:70` says exactly this and is **accurate**.
+3. **Marshal** — `board/fold/output.go:9-18`: `"superseded"` is one of the four unconditional keys; `nil` normalised to `[]`.
+4. **Assemble → wire** — `board/assemble/assemble.go:187` `dispatchWireMap(d, …)`, `map[string]any` from `json.Marshal(d)`; carried on `assemble.DispatchesPayload` / `TrainsPayload`.
+5. **Schema constraint** — `schema/yard-snapshot.schema.json:69-76` `$defs.dispatchSupersededItem`, `$ref`'d at `:127` (trains cars) and `:194` (dispatches). Correctly **not** applied to `IntentSupersededItem` (which has no `Kind`) — no intent `superseded` exists in this schema.
+6. **Client validation — THE BREAK.** `board/web/js/ingest.js:29` → `validate.js:19` `new Validator(schema, '2020-12')`. `$defs.lane.data` (`schema:96-101`) is an unconstrained free object and the payload `$defs` are **not `$ref`'d** from it (`schema:99`, declared). **Measured: `superseded: [{kind: 7}]` validates `valid=true, errors=0`.** The comment at `dom-writer.js:142-148` names this hop as the enforcement locus → **MAJOR-R2-3**.
+7. **View model** — `board/web/js/render.js:312` (`superseded: c.superseded || []`) and `:370` (`superseded: d.superseded || []`). Pass-through, no filtering.
+8. **Guarded read** — `board/web/js/dom-writer.js:150-152`: `superseded.filter((item) =&gt; typeof item?.kind === 'string' &amp;&amp; typeof item?.at === 'string')`; empty → `return null` (no empty `&lt;details&gt;`). This is where the constraint actually bites at runtime.
+9. **DOM** — `dom-writer.js:153-161`: `&lt;details class="…-disclosure"&gt;&lt;summary class="…-summary"&gt;N superseded&lt;/summary&gt;&lt;div class="…"&gt;&lt;span|a class="…-entry"&gt;kind at&lt;/span&gt;&lt;/div&gt;&lt;/details&gt;`, appended to the **row** (`:534`) / **chip** (`:451`).
+10. **Hand-maintained mirrors** — `scripts/tests/WirePayload.Tests.ps1:48-51` (the extraction helper, modified this round; verified sound and non-vacuous above). No wire sample or snapshot fixture carries a `superseded` item that the `$def` would newly reject — the WirePayload samples at `:66`, `:141` are the only ones and both pass.
+11. **Computed style, expanded, real browser** — entry `tagName "SPAN"`, `href null` (no GitHub env in this probe — the degrade-honest branch), `color rgba(217,213,201,0.55)` = `var(--text-dim)`, `text-decoration-line none`, `border-bottom 0px none`, `entryStillInsideOwnRow: true`, `entryWithinRowBox: true`, text `dispatched 2026-07-20T08:00:00Z` rendered VERBATIM.
+12. **Cross-surface isolation, measured** — clicking a superseded `&lt;summary&gt;` writes **nothing** to `#69`'s storage: `sessionStorage` before `null`, after `{key: null, len: 0, allKeys: []}`. `app.js:47-59`'s `handleConditionToggle` returns early on any `&lt;details&gt;` carrying neither `data-conditions-strip` nor `data-condition-code`. No leak.
+
+---
+
+# THE M1-EPHEMERALITY ADJUDICATION: **PERMITTED**
+
+Ruled explicitly, against each binding source, read first-hand rather than from the brief.
+
+**Issue #69's own text** (`gh issue view 69 --json body`) scopes persistence to one surface: *"the strip is a native details element whose open state lives only in the DOM… Fix: preserve the open attribute across DOM rebuilds…, and **persist across page refreshes (sessionStorage keyed to the strip)**. An operator who opened the flags wants them to STAY open until dismissed - **the alarm detail** is the thing they were reading."* The owner-reported defect is the conditions strip; the rationale is alarm-reading. The superseded disclosure is a different surface that did not exist at filing, and it carries no alarm. **No contradiction.**
+
+**The owner's M1 ruling**, verbatim from issue #69's comment (2026-07-27): *"superseded-record history re-attaches INSIDE its owner row/chip … and renders behind a quiet per-row disclosure, **COLLAPSED by default** - the same details idiom the conditions strip uses. Rationale: matches the #68 principle (not hidden, just not surfaced) and preserves the #67 density the reviewer measured as regressed. Options considered and declined: always-visible nesting (reintroduces the density regression), per-row cap a la #67."* Both stated rationales and both declined options are about **density and surfacing** — never persistence. The ruling names no persistence requirement. **No contradiction.**
+
+I note one ambiguity for the record: *"the same details idiom the conditions strip uses"* is readable as chrome-only or chrome-plus-`sessionStorage`. Under this shop's own rule that a requirement readable two ways will be read both ways, that phrase is a latent hazard — but the brief authorised the car to take the minimal option and flag it, and it flagged it in three places (`dom-writer.js:126-141`, `design.md:783-792`, `state-ledger.md:155-166`). Choosing-and-disclosing is what it was told to do; this is not a finding.
+
+**The state ledger's contracts.** `docs/contracts/state-ledger.md:155-166` declares the disclosure explicitly NOT a ledger field, with reasoning. I verified every claim in that paragraph: no `sessionStorage` key (`grep` + measured: `sessionStorage.length === 0` after a real click), no JS variable, and `renderBoard` does clear `root.textContent` (`dom-writer.js:192` — cited by symbol here, correctly). CLAUDE.md's living-contracts rule requires the ledger be updated in the same commit; it was, honestly, as a declared non-row. **No contradiction.**
+
+**Ruling: PERMITTED.** The car's stated reason is also factually correct — the DOM is rebuilt wholesale, so persistence would require new capture-and-reapply plumbing, not reuse of `#69`'s. The one thing missing is not persistence but a **pin on the collapsed default** (MINOR-R2-1).
+
+---
+
+# CONSTITUTION CHECK
+
+- **Law 1 (never a confident falsehood).** Round 1's two violations are **GONE**: `assemble.go:186-202`'s impossibility claim is corrected and the correction is proven by a passing, fault-injectable test; and no provenance fact renders adjacent to a subject that does not own it (13/13 disclosures measured inside their owner's box on synthetic and real stores). **But VIOLATED three times anew**: MAJOR-R2-1 (`board.css:619`, `:383-384`, `:380`, `dom-writer.js:124-125` — density/one-line claims measured false), MAJOR-R2-2 (`dom-writer.js:137` — a line number false at the moment of commit), MAJOR-R2-3 (`dom-writer.js:142-148` — a wire protection that does not exist).
+- **Law 6 (no second copies).** Honored — MINOR-R1-1 closed; one `RecordDirFromRelPath`, four call sites, `filepath` import dropped from `assemble.go`.
+- **Law 7 (the stranger).** Honored — no hardcoded taxonomy added; the malformed-item guard degrades to absence rather than inventing a value; `$defs.lane.data` stays open so an unrecognised lane is still a discovery.
+- **Law 2 / #68 (not hidden, just not surfaced).** Honored — the entries remain in the DOM behind a labelled `"1 superseded"` affordance, never dropped; count is stated in the summary.
+- **TDD / red-first.** Honored for every fix I could inject: MAJOR-R1-2 (2 red), MAJOR-R1-3 (1 red), MINOR-R1-3 (2 red), MINOR-R1-2's helper (2 pre-fix red, re-derived). **Absent for the CSS change** — no test in the repo can observe rendered geometry, which is how MAJOR-R2-1 shipped green.
+- **#40 (a guard is unproven until someone watched it fire).** Partly honored, partly VIOLATED. The MAJOR-R1-2 browser guard is real and I watched it fire. But the visual evidence for MAJOR-R1-1's fix was again produced without a falsifying measurement: the round-2 screenshots *contain* the new regression and were captioned as a pass, and the README's containment witness is a tautology (MINOR-R2-2).
+- **NORTH STAR (documents rank equal to code; same-commit truing).** VIOLATED — MAJOR-R2-2 creates a stale citation in the commit that creates it; MAJOR-R2-1's false density claim lives on three surfaces (`board.css`, `dom-writer.js`, and by implication the screenshots README caption). Honored elsewhere: `state-ledger.md`, `design.md` §12b, and the screenshots README's staleness disclosure for the four round-1 PNGs are all accurate and same-commit.
+- **Code-citation standard (#42, bare `#N`).** Honored — `browser-conditions-persistence.test.js` carries 8 `#69`/`#71` markers; the two PNGs cannot carry comments and are cited from the sibling `README.md` (which carries `#69`×3, `#71`×2 and a `Status:` line, satisfying `DocPolicy`), exactly as the standard's fixture clause prescribes.
+- **Verification honesty.** Honored by the car — every count I re-derived reconciles, and the one disclosed decision was genuinely disclosed. Disclosed-but-wrong does not clear review, and MAJOR-R2-3 is the disclosed-but-wrong case.
+
+---
+
+# BASE-DELTA (#13)
+
+- **Round 1 reviewed base:** `256d8d5` (train base `b865cba91cf4ee192a3ab7c742c48424c508268e`).
+- **This round reviewed:** `2861bfd8a99d8213ca0058a999ab91706f4ccc9b`, detached, clean.
+- **`git diff 256d8d5..2861bfd --stat`:** 17 files changed, **+698 / −44**.
+
+```
+ board/assemble/assemble.go                                    |  37 ++--
+ board/assemble/assemble_test.go                               |  76 ++++++++
+ board/store/store.go                                          |  29 ++--
+ board/store/store_test.go                                     |   4 +-
+ board/web/css/board.css                                       |  37 ++++
+ board/web/js/dom-writer.js                                    |  71 +++++++-
+ board/web/js/lanes.js                                         |  13 +-
+ board/web/test/browser-conditions-persistence.test.js         | 136 +++++++++++++++
+ board/web/test/condition-open-state.test.js                   |  29 ++++
+ board/web/test/dom-writer.test.js                             | 191 +++++++++++++++++++++
+ docs/contracts/state-ledger.md                                |  13 ++
+ docs/design/2026-07-21-v0-yard-skeleton-design.md             |  26 ++-
+ docs/screenshots/2026-07-26-view-69-71-candidates/README.md    |  49 ++++++
+ docs/screenshots/.../superseded-collapsed-r2.png              | Bin 0 -&gt; 49056
+ docs/screenshots/.../superseded-expanded-r2.png               | Bin 0 -&gt; 51108
+ schema/yard-snapshot.schema.json                              |  13 +-
+ scripts/tests/WirePayload.Tests.ps1                           |  18 +-
+```
+
+**Visible delta for a reader of the live board, measured not inferred:** (1) superseded history no longer renders as loose text blocks — each row/chip now carries a collapsed `"N superseded"` affordance inside its own box, which cannot orphan; (2) **every dispatch row is now two visual lines tall instead of one — 22px → 51-73px depending on column width, 4/4 rows on the real store — and `.solari-rows` crops rows mid-row once more than ~10 dispatches exist** (MAJOR-R2-1); (3) no change to the conditions strip, the links, or any wire value a client observes.
+
+**Five fix commits reviewed:** `3fa9b21` (MAJOR-R1-1 nesting + MINOR-R1-2 guard — **the commit that introduces MAJOR-R2-1 and MAJOR-R2-2**), `97c3dc6` (MAJOR-R1-2 browser pin), `ca20830` (MAJOR-R1-3 + MINOR-R1-1), `d9ffcfe` (MAJOR-R1-4), `2861bfd` (MINOR-R1-3).
+
+---
+
+# CONVERGENCE RULING — **the swirl trigger FIRES (two of three conditions), cap set at ONE more round**
+
+| Condition | Met? | Evidence |
+|---|---|---|
+| Major counts stop declining | **No** | 4 → 3 Major; 3 → 2 Minor. Genuinely declining. |
+| Findings cluster in the same section across rounds | **Yes** | Round 1: 1 of 4 Majors in the superseded-rendering surface. Round 2: **3 of 3** — `board.css`'s `.solari-row`/`.car-superseded-disclosure` rules and `dom-writer.js`'s `renderSupersededDisclosure` comment block. |
+| A round's findings include defects the previous round's fixes CREATED | **Yes — 2 of 3 Majors** | MAJOR-R2-1 and MAJOR-R2-2 are both created by `3fa9b21`, the MAJOR-R1-1 fix. Neither existed at `256d8d5`. |
+
+Per CLAUDE.md's calibration, two of three fires the escalation. **I set the cap at ONE further fix round.** If a round-3 delta review finds any Major in the superseded-rendering surface again, escalate to the owner rather than dispatching round 4. The conductor honours the cap.
+
+**But I do not think this is a genuine swirl, and the more useful ruling is about the instrument, not the count.** Both rounds inherited the same unquestioned premise: *that a CSS change's rendered effect can be verified by reading the CSS plus looking at one screenshot.* Round 1's MAJOR-R1-1 existed because a one-subject fixture could not falsify the layout claim. Round 2's MAJOR-R2-1 exists because the screenshot that **shows** the regression was read as a pass. Same premise, opposite manifestation, twice — and no gate in the repo can catch either, because nothing under `board/web/test/` observes layout (`createMiniDocument()` has no layout engine; the two real-browser tests never touch the dispatches lane).
+
+Recommended remedy, and it is a probe-doctrine landing rather than more review: **a real-browser test that asserts rendered geometry** — for a dispatch row with no superseded entry, the count of distinct child `top` values must be 1, and `.solari-rows` must have zero rows crossing its own `clientHeight` boundary. That reds by name the instant the "one line per row" mockup convention breaks, which is the property `#62`, `#67` and this ruling all depend on and which three consecutive commits have now been unable to protect by reading. My probe scripts (paths below) are the working recipe.
+
+The fix cycle should go to the **same car** with a delta brief carrying these IDs — MAJOR-R2-1/2/3 are mechanical (a CSS approach that does not set `flex-wrap` on `.solari-row`; two comment corrections), and the car holds the unwritten context.
+
+---
+
+# UNREPRODUCIBLE-EVIDENCE CALLOUT (#13)
+
+**None.** Every finding rests on re-runnable evidence: three fault injections with before/after `sha256`, four real-browser probes against a real `board/server` binary (three scratch stores plus the repo's own committed `artifacts/` store), a runtime-only `addStyleTag` counterfactual that isolates the single changed CSS property in the same paint, a Node probe against the real vendored validator, a PowerShell probe reproducing both the old and new `WirePayload` helper bodies, `git show` at two base commits, and `gh issue view 69 --comments` for the owner ruling. The two committed PNGs are in the repo and can be opened by anyone.
+
+**Byte-clean exit.** `git status --porcelain` empty; HEAD `2861bfd8a99d8213ca0058a999ab91706f4ccc9b`. Files injected and restored with **matching** `sha256`: `board/web/js/app.js` `9BBCB03A2FC5008EE259E00A057841555FF44C3815091F8AC9D48735A32AB843` (identical to round 1's recorded value), `board/assemble/assemble.go` `852870A2D219AB67C0B2705E847656E650DBFF93C78EA0069AAA746DE60CAAEB`, `board/web/js/condition-open-state.js` `0C0BE5115BE95C2100EBF10FA30F8C501483F11BCDBE6D14167308F42BAB03C5`. Three `.scratch-store-69-71-*` directories created under the worktree root (gitignored) and removed; zero remain. Nothing committed, nothing pushed. The shared checkout at `<repo>` was touched only by read-only reads of `artifacts/reviews/2026-07-27-view-69-71-review-r1-REJECT.md` and two `gh` API reads.
+
+**Reviewer probe scripts** (scratchpad, re-runnable):
+- `~\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\8a347c36-20b4-427a-ae0b-46855aa7bb72\scratchpad\browser-probe.mjs` — multi-subject nesting/geometry/computed-style, collapsed and expanded
+- `...\scratchpad\browser-probe2.mjs` — per-child geometry, with/without superseded, flex-wrap counterfactual
+- `...\scratchpad\browser-probe3.mjs` — 18 rows, crop-mid-row measurement (MAJOR-R2-1's decisive evidence)
+- `...\scratchpad\browser-probe4.mjs` — real `artifacts/` store + `sessionStorage` isolation
+- `...\scratchpad\client-ref-probe.mjs` — client validator `$ref` enforcement (MAJOR-R2-3)
+- `...\scratchpad\wirehelper-probe.ps1` — old vs new `WirePayload` helper, both directions
+
+---
+
+```starcar-artifact
+outcome: REJECT
+findings: 3 Major, 2 Minor
+abstract: |
+  Delta re-review of 2861bfd (view train #69+#71 fix cycle round 2, five commits
+  3fa9b21/97c3dc6/ca20830/d9ffcfe/2861bfd over round 1's base 256d8d5). REJECT.
+
+  Suites re-derived independently at HEAD: Node board/web 208 tests / 208 pass / 0 fail,
+  Go board 94 top-level PASS with -count=1 -v and 0 FAIL, go vet exit 0 no output, Pester
+  scripts/tests 227 total / 222 passed / 0 failed / 5 skipped (the 5th skip named as the
+  detached-HEAD run-session-start-guards.sh ci-baseline branch guard, identical to round
+  1's identification), Pester scripts/probes 24/24, probe-yard-snapshot.mjs PROBE RESULT
+  PASS. Every count the car claimed reconciles.
+
+  ALL SEVEN ROUND-1 FINDINGS RULED PRESENT. MAJOR-R1-1 fixed in both halves and verified
+  in a real browser against round 1's own falsifying recipe: with 7 dispatch rows and 6
+  car chips each carrying a superseded entry, .solari-rows direct children = 7 all
+  solari-row and .track-cars direct children = 6 all car-chip, all 13 disclosures
+  descendants of their own owner with sameVisualBand true, and all 13 collapsed by default
+  with summary text "1 superseded" in computed color rgba(217,213,201,0.55) equal to a
+  live var(--text-dim) probe. Same structural result on the repo's real artifacts store.
+  MAJOR-R1-2 fault-injected: removing app.js's addEventListener toggle line turns the new
+  browser test file RED 2 of 2 with its intended regression messages, restored sha256
+  9BBCB03A identical. MAJOR-R1-3 fault-injected: blanking RecordDir reds
+  TestAssembleDispatchRenderFailedIsReachable at assemble_test.go 778. MINOR-R1-3
+  fault-injected: neutering both catch branches reds tests 10 and 11. MINOR-R1-1 single
+  sourced, filepath import dropped. MINOR-R1-2's renderer guard real and pinned; the
+  WirePayload helper change re-derived both ways, old form returns False for the two good
+  samples for the stated ref-resolution reason and new form returns False for a malformed
+  superseded item, so it is non-vacuous.
+
+  BUT THE FIX CREATED TWO NEW MAJORS AND ONE OVERCLAIM.
+
+  MAJOR-R2-1: commit 3fa9b21 adds flex-wrap wrap to .solari-row (board.css 623, absent at
+  both 256d8d5 and b865cba), which wraps EVERY dispatch row onto two visual lines,
+  including rows with no superseded entry at all. Measured in real Chromium against the
+  real Go server, 18 rows none carrying superseded: as shipped every row is 51px,
+  .solari-rows scrollHeight 210 against clientHeight 176, and THREE rows are cropped
+  mid-row; with flex-wrap reverted to the base value in the same paint via addStyleTag
+  every row is 22px, scrollHeight 96 equals clientHeight 96, zero cropped, 18 of 18 fully
+  visible. On the repo's real artifacts store the same counterfactual reads 73px as
+  shipped versus 22px at base, a 3.3x row-height regression on 4 of 4 rows. This
+  re-introduces exactly the hazard board.css 628-635's own pre-existing comment records as
+  already found and fixed, "wrapping is what made the #62 grid's fixed max-height crop
+  rows mid-line" - and the new comment at board.css 616-622 cites that very comment as its
+  evidence of safety while asserting "the subject/state/elapsed cluster below stays one
+  line per row (mockup convention preserved)", which is measured false. white-space nowrap
+  stops text wrapping inside a flex item, never flex items wrapping onto new flex lines.
+  The car's own committed screenshot superseded-collapsed-r2.png shows the row as three
+  stacked lines where round 1's collapsed-before-click.png at 256d8d5 shows subject and
+  state on one line; the regression is visible in the two images and the README captions
+  the round-2 image as a pass. 208/208 stayed green because nothing under board/web/test
+  observes layout: the new structural tests run on createMiniDocument, a shim with no
+  layout engine. .car-chip's flex-wrap is clean, measured 23px one line either way.
+
+  MAJOR-R2-2: dom-writer.js line 137 cites "(line 141)" for renderBoard's
+  root.textContent clear. That line was 141 at 256d8d5 and the same commit's own +51-line
+  comment insertion pushed it to 192, so the citation was false at the instant it was
+  committed; line 141 at HEAD is the comment's own text. This is MAJOR-R1-4's class
+  reproduced one round later, in the same file, in the same hunk as the fix - while the
+  same commit series wrote lanes.js 16-23 specifically to explain that a line-number
+  citation into a file this same train's commit still edits drifts on every insertion.
+  DRIFTED. Invisible to the #65 gate, whose own header declares in-range shifts are not
+  caught and which only parses file:line coordinates, not a bare "(line N)".
+
+  MAJOR-R2-3: dom-writer.js 142-148 states the wire schema now constrains superseded items
+  and names ingest.js's validator as the hop it is being defended against relying on
+  alone, which asserts that callers going through that fetch ARE gated. Measured with the
+  real vendored cfworker validator against the real schema on a full snapshot document:
+  superseded [{kind: 7}] validates valid=true errors=0, and so does a missing "at". The
+  payload $defs are never $ref'd from $defs.lane.data and the schema's own $comment at
+  line 99 says so explicitly. The only consumer of the new $def is WirePayload.Tests.ps1's
+  fragment extraction. Same class the repo already corrected one file over in render.js
+  391-396 during the #67 fix cycle.
+
+  MINOR-R2-1: the owner-ruled "COLLAPSED by default" has zero regression pin - no test
+  anywhere asserts the disclosure's open attribute, so adding one would leave 208/208
+  green. MINOR-R2-2: the screenshots README's containment witness,
+  disclosure.closest('.solari-row').contains(disclosure), is a tautology since closest
+  returns an ancestor-or-self; the landed dom-writer tests are properly falsifiable, only
+  the recorded witness is not.
+
+  M1 EPHEMERALITY ADJUDICATED: PERMITTED. Issue #69's body, read first-hand, scopes
+  persistence to the conditions strip ("persist across page refreshes, sessionStorage
+  keyed to the strip", rationale "the alarm detail is the thing they were reading"). The
+  owner's M1 ruling, read verbatim from the issue comment, says COLLAPSED by default and
+  names no persistence; both its rationales (#68 not-hidden-just-not-surfaced, #67
+  density) and both its declined options (always-visible nesting, per-row cap) are about
+  surfacing and density. The state ledger's new paragraph declares it a non-row with
+  reasoning and every claim in it verified, including measured sessionStorage length 0
+  after a real click on a superseded summary and app.js 47-59's explicit early return for
+  any details carrying neither data-conditions-strip nor data-condition-code. The phrase
+  "the same details idiom the conditions strip uses" is readable two ways, noted for the
+  record, but choosing-and-disclosing is what the brief authorised and the car disclosed
+  it in three places.
+
+  WIRE SENTENCE traced hop by hop with file:line, 12 hops, producer to DOM, with the break
+  named at hop 6.
+
+  CONSTITUTION: Law 1's two round-1 violations are gone and three new ones replace them
+  (MAJOR-R2-1/2/3). Law 6 honored (MINOR-R1-1 closed). Law 7 honored. Law 2 / #68 honored.
+  TDD honored for every injectable fix and absent for the CSS change. #40 partly violated -
+  the browser guard is real and watched firing, but the visual evidence for the layout fix
+  again came from a fixture and a caption that could not falsify it. NORTH STAR violated by
+  MAJOR-R2-2 and MAJOR-R2-1's three-surface false claim; honored by state-ledger.md,
+  design.md 12b and the README's staleness disclosure for the four round-1 PNGs. Code
+  citation standard #42 honored, including the fixture clause for the two PNGs.
+
+  CONVERGENCE: the swirl trigger FIRES on two of three conditions. Counts ARE declining
+  (4 Major to 3, 3 Minor to 2), so that condition is not met, but findings cluster in the
+  same section across rounds (1 of 4 round-1 Majors in the superseded-rendering surface
+  versus 3 of 3 this round) AND two of this round's three Majors are defects the round-1
+  fix commit 3fa9b21 CREATED. Cap set at ONE further round; a Major in that same surface
+  in round 3 escalates to the owner. The more useful ruling is about the instrument: both
+  rounds inherited the unquestioned premise that a CSS change's rendered effect can be
+  verified by reading plus one screenshot, and no gate in the repo can catch either
+  manifestation. Recommended landing is a real-browser geometry assertion (distinct child
+  top values per row equals 1; zero rows crossing .solari-rows' clientHeight), which reds
+  by name when the one-line-per-row convention breaks. Fix cycle to the same car.
+
+  BASE-DELTA 256d8d5 to 2861bfd, 17 files +698/-44. Visible delta measured: superseded
+  history no longer orphans and now sits behind a collapsed per-row affordance; every
+  dispatch row is now two lines instead of one and .solari-rows crops rows mid-row past
+  about ten dispatches; no wire value a client observes changed.
+
+  UNREPRODUCIBLE-EVIDENCE: none. Byte-clean exit, git status --porcelain empty at HEAD
+  2861bfd8a99d8213ca0058a999ab91706f4ccc9b. Three files injected and restored with
+  matching sha256 (app.js 9BBCB03A, assemble.go 852870A2, condition-open-state.js
+  0C0BE511); three gitignored scratch store directories created and removed, zero remain.
+  Nothing committed, nothing pushed, shared checkout read only.
+task-id: view-69-71-review-r2
+```
