@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-87",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 87,
+    "title": "DESIGN: manifest member identity - how a planned-but-undispatched member is named, joined, and amended",
+    "status": "Todo",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/87"
+  },
+  "normalisation": [],
+  "integrity": "sha256:b317b0d91755e46988400be6282afdf68da2d30d18f13fb2d99287be633af3b1"
+}

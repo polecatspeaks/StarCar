@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-73",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 73,
+    "title": "Verdict/brief template: round-prefixed finding IDs at birth + git-show verdict citations in delta briefs (r4 rotation drill output)",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/73"
+  },
+  "normalisation": [],
+  "integrity": "sha256:b0bc8899bbd7dd2f878f25055c480b22c48ef384e11e161ee14002adb8586f91"
+}

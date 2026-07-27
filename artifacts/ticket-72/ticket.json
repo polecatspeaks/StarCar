@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-72",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 72,
+    "title": "Land-Verdict.ps1: validate conductor-typed coordinates (-Base via git rev-parse --verify) before landing",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/72"
+  },
+  "normalisation": [],
+  "integrity": "sha256:5c5749784574fcee05818a98a650e6ef6d2a5c445f7d3b7d9ec3210260883179"
+}

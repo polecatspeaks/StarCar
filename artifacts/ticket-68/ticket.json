@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-68",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 68,
+    "title": "Archived train retrieval: browse past dispatches/trains on demand - not hidden, just not surfaced by default",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/68"
+  },
+  "normalisation": [],
+  "integrity": "sha256:db36ac01641fffb02589523ce748e6eeac9e275643ef04876f307bf77dc80294"
+}

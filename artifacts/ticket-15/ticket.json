@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-15",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 15,
+    "title": "Producer latency: ~11-12s structural overhead per dispatch (measured live, warm == cold)",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/15"
+  },
+  "normalisation": [],
+  "integrity": "sha256:5011825c0bddebdd6b8f9a5066b3fac7466d3293a2f49ef021ad37b1f49b1bb8"
+}

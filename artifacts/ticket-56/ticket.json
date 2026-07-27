@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-56",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 56,
+    "title": "Live design section 5 line ~147 claims TranscriptRead.ps1 has an events.jsonl branch that does not exist (lying canary)",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/56"
+  },
+  "normalisation": [],
+  "integrity": "sha256:4b17095377a0a7f1fffe83b476721cc443c502c3711321597c1af11dc8331e5b"
+}

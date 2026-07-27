@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-55",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 55,
+    "title": "#50 follow-up: Copilot-leg live verification of agent-pull guard delivery",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/55"
+  },
+  "normalisation": [],
+  "integrity": "sha256:55dac68381277c441586b7ab005a1976981cdff299b916194559e3b4cd364b41"
+}

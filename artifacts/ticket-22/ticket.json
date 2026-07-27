@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-22",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 22,
+    "title": "Producer stamps est. budget at dispatch; fold resolves actual with budget_source provenance",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/22"
+  },
+  "normalisation": [],
+  "integrity": "sha256:9c154aaa70f4ca822042a2eaf618deab59f72045a7e70cce79f3a9a5a0450cf8"
+}

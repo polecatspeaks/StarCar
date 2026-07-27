@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-70",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 70,
+    "title": "Token-cost prediction from our own usage history (mine the transcripts, feed the cost line and the FUEL lane)",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/70"
+  },
+  "normalisation": [],
+  "integrity": "sha256:911462be83c0ffdf3a1d7117f7c9f70fcc648df18bd30d0a58473a0b72288b52"
+}

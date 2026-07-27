@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-85",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 85,
+    "title": "board: a manifest member with task_id but no subject is invisible, not declaredNotObserved",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/85"
+  },
+  "normalisation": [],
+  "integrity": "sha256:8f0d5f3e18e588c21e12eab92d53b6aa0603d296b9430b2f0daf6e422fdfdaab"
+}

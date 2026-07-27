@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-59",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 59,
+    "title": "view-30 review r2 follow-up: cite describeVocab by symbol, mark section-6 row 339 superseded",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/59"
+  },
+  "normalisation": [],
+  "integrity": "sha256:48b644ef6592ba3ff01277a66931ed83469673ae0a600ffd31d04b4946c9f4b6"
+}

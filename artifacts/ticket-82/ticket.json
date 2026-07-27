@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-82",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 82,
+    "title": "Citation gate: reject NEW line-number citations into files the same commit edits (graduate the in-range-shift class from attention to mechanism)",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/82"
+  },
+  "normalisation": [],
+  "integrity": "sha256:6ba1c5befeb71b21504b9ba7f2d0426ab7b5911318ce10473da6d0f40432999d"
+}

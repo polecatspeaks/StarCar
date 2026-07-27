@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-66",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 66,
+    "title": "Reviewer-addendum citation audit is blind to moved targets: audit citations INTO touched files, not just added lines",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/66"
+  },
+  "normalisation": [],
+  "integrity": "sha256:36852155ab8f2aa5cefef564aa101e7a4059606e45b1bddd591736ae1340054e"
+}

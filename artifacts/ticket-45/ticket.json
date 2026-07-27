@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-45",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 45,
+    "title": "No document tells a stranger to run npm ci in board/web before node --test (Law 7 incompleteness, not a false claim)",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/45"
+  },
+  "normalisation": [],
+  "integrity": "sha256:21f2cbd87ae6ce5b9960921c5061820d01a3e982b5e089f9f8d11ec13e54f497"
+}

@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-2",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 2,
+    "title": "board.ps1 header comment describes the ancestor project, not StarCar",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/2"
+  },
+  "normalisation": [],
+  "integrity": "sha256:b14cbeabaec5505d565d91a7774085f805fbe4a6e17c09163a0a1a1cbce338f7"
+}

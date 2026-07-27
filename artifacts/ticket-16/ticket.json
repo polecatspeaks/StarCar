@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-16",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 16,
+    "title": "Land-Verdict rider: in-file marker when the checkpoint row is omitted (entire-less landing)",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/16"
+  },
+  "normalisation": [],
+  "integrity": "sha256:5e575b429c13f0df4097bce0a0e1ba086d09a6758cfcdab112e2c16abddf6658"
+}

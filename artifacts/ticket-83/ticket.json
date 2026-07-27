@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-83",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 83,
+    "title": "Trains lane: a derived train-lifecycle state (owner coinage: BOARDING) for a train whose cars are declared but not yet departed",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/83"
+  },
+  "normalisation": [],
+  "integrity": "sha256:1572f7b5ec9073da90081f2ae2ffbcf6bbce8462582f712c7922d42d70904030"
+}

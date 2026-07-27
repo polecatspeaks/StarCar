@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-81",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 81,
+    "title": "Browser-test helper binds a fixed PID-derived port: concurrent node --test runs collide (WSAEADDRINUSE), port 0 already proven in-house",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/81"
+  },
+  "normalisation": [],
+  "integrity": "sha256:f97ad3a0d14c384852e85f491d5772f9dfc05444d0268df5b9be631af2025974"
+}

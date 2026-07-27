@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-25",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 25,
+    "title": "Multi-yard provenance: one board, many repos - yard identity attaches at the adapter, flows the full sentence, renders on every plate",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/25"
+  },
+  "normalisation": [],
+  "integrity": "sha256:d938cde808010ccf2f87c889bc6a3e2c692b933ddedc056f117d10aae85f7350"
+}

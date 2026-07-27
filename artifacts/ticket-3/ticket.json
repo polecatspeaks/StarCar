@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-3",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 3,
+    "title": "No area-label taxonomy existed; issue #1 was unlabeled",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/3"
+  },
+  "normalisation": [],
+  "integrity": "sha256:0ef8122503badd97969a0287ac08f965f9a846f84fb7bd0de11fd37f5854e660"
+}

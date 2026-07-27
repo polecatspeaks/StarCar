@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-6",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 6,
+    "title": "CI must run the quickstart: make user-facing doc claims testable",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/6"
+  },
+  "normalisation": [],
+  "integrity": "sha256:fd2c6003c12cfff9714e48c4326f6edea48bd4831284582e9927773650d49309"
+}

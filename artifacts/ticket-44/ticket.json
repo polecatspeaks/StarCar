@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "ticket",
+  "subject": "ticket-44",
+  "session_id": "freight-adapter",
+  "at": "2026-07-27T18:47:07Z",
+  "ticket": {
+    "number": 44,
+    "title": "node --test counts helper files under test/ as passing tests, raising the zero-test refusal floor from 1 to 2",
+    "status": "Backlog",
+    "url": "https://github.com/polecatspeaks/StarCar/issues/44"
+  },
+  "normalisation": [],
+  "integrity": "sha256:9dd278d068cf7bf2d51b5bb82ccd876beb24771191e6a79b80607841ae640e45"
+}
