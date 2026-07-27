@@ -535,6 +535,29 @@ locator phrase so a second party can re-derive it from that file.
   out-of-repo clone over hand-rolled backup files, because git already knows the correct
   content and a `/tmp` copy does not.
 
+- 2026-07-27 ~15:35 (car-caused, reviewer-caught, conductor complicit): READING AN ISSUE
+  BODY WITHOUT ITS COMMENTS MISSES THE OWNER RULINGS - and in this shop the rulings ARE
+  the comments. The #91 car ran `gh issue view 90 --json body -q '.body'` and concluded
+  from the body alone that #90 covered only CSS work with "no area concept at all". #90
+  in fact carries an OWNER RULING in its comments - "Four columns ... PHASE is ruled to
+  mean the issue's `area:*` label ... this is no longer a CSS-only ticket" - which is
+  precisely what the brief had said. The car then published an accusation against the
+  brief into a commit message about an OPEN ticket, where a future car scoping #90 off
+  that message would have dropped the column the owner explicitly ruled in.
+  **The conductor made it worse by CONCEDING.** Told the car had found an error in a
+  ticket the conductor itself wrote, the conductor accepted it without checking and
+  relayed it to the owner as fact. `CLAUDE.md` lists "conceding a finding you could have
+  disproved" among the only REAL failures, right beside defending one you cannot -
+  agreeableness pointed inward is still agreeableness, and accepting blame is as much a
+  failure to verify as deflecting it. Caught by the adversarial reviewer, which opened
+  #90 WITH its comments.
+  Class: **in this repo an issue's BODY is the request and its COMMENTS are the rulings.**
+  The tracking doctrine's own carve-out puts owner rulings in comments by design ("the
+  provenance is that it came from the HUMAN"), so `--json body` is a structurally
+  incomplete read of any ticket that has been discussed. Standing habit, now written into
+  briefs: **`gh issue view N --comments`, always** - and a finding derived from a body-only
+  read is not yet a finding.
+
 - 2026-07-27, structural fact FOUND BY THE MINE (not friction, recorded so nobody
   re-digs): the per-dispatch "Entire-Checkpoint" blobs on the checkpoint branch are
   periodic snapshots of the SINGLE conductor session, not separate car/reviewer
