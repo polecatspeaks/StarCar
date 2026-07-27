@@ -391,6 +391,21 @@ locator phrase so a second party can re-derive it from that file.
   improvising - the gradient-shaping doctrine paying for itself a second time (cf. the
   07-26 owner-observed calibration row).
 
+- 2026-07-27 ~09:29 (conductor, self-caught by verifying instead of believing): A FAILED
+  TASK REPORTED A HEALTHY SERVICE, AND LEFT AN UNTRACKED ORPHAN. The background task
+  running the board server (`go run ./server`) reported exit 255 / "failed", yet port 4600
+  was still listening and `/api/snapshot` returned seq 470 against the real store -
+  `go run` compiles to a temp binary and execs a CHILD, so killing or losing the parent
+  leaves the child serving with no task tracking it. Two misleading halves: a red that is
+  not a red (the service is up), and a live process the session cannot cleanly stop or
+  observe through its own task system. Cost: nil this time - the notification was checked
+  rather than believed, which is the only reason it did not read as "the board is down".
+  Class: `go run` is a WRAPPER, not the process; any long-running service started through
+  it needs its liveness judged by PROBING THE SERVICE, never by the launcher's exit code -
+  and orphan cleanup belongs in the session-end sweep (a port check, not a task list).
+  Same family as the CI-watch scar one layer down: sampling a launcher is not observing a
+  service.
+
 - 2026-07-27, structural fact FOUND BY THE MINE (not friction, recorded so nobody
   re-digs): the per-dispatch "Entire-Checkpoint" blobs on the checkpoint branch are
   periodic snapshots of the SINGLE conductor session, not separate car/reviewer
