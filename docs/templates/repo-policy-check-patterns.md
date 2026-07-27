@@ -47,10 +47,11 @@ Landed after the citation-truth defect class hit nine-plus instances across two 
 in two days (view train #28+#12, review rounds 1-3), caught only by expensive
 adversarial review attention. The cheap tier below is BINDING (file exists + line in
 range); the expensive tier (content-anchoring) is landed as a REPORT-ONLY diagnostic,
-not yet binding - measured at landing, only ~9 of the resolvable literal-path citations
-in this repo carry a backtick-quoted symbol token on the citing line at all, too sparse
-a sample to bind without real false-flag risk, exactly the caveat this section already
-named before anyone measured it. The gate also unwraps comment/prose line wraps before matching (a citation split across
+not yet binding - only a small fraction of the resolvable literal-path citations in
+this repo carry a backtick-quoted symbol token on the citing line at all (the gate's
+own report-only check states the live count on every run), too sparse a population to
+bind without real false-flag risk, exactly the caveat this section already named
+before anyone measured it. The gate also unwraps comment/prose line wraps before matching (a citation split across
 a line break so the trailing fragment reads as its own bare filename - the real scar was
 a kebab-case client filename broken exactly at its own hyphen, with the line number
 stranded on the next line - defeats a naive single-line or basename search) - the scar

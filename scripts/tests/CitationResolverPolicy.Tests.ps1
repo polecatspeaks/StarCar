@@ -3,18 +3,19 @@
 #
 # BINDING: every citation this gate finds - single-line, or line-wrapped across a
 # mid-compound hyphen or a directory slash - must (a) resolve to a file that exists
-# at HEAD and (b) cite a line within that file's line count. This applies inside the
-# elided (".../file.ext:N") and ambiguous (bare-basename, 2+ candidates) buckets too:
-# an elided reference resolves by suffix match; an ambiguous one binds as a defect
+# at HEAD and (b) cite a line within that file's line count, EXCEPT those carrying
+# the historical-coordinate marker (below). This applies inside the elided
+# (".../file.ext:N") and ambiguous (bare-basename, 2+ candidates) buckets too: an
+# elided reference resolves by suffix match; an ambiguous one binds as a defect
 # when EVERY candidate is out of range.
 #
 # NOT CAUGHT: an in-range shifted citation (a line number that was true when written
 # and now points at different, still-existing content) is not detected by any
 # BINDING check here - that class stays review-attention-tier. The content-anchor
 # diagnostic (a backtick-quoted token from the citing line found near the cited
-# target line) is REPORT-ONLY, never binding; its bind trigger is stated where it
-# runs: the tokened-citation population growing past 20, or the first report-only
-# miss confirmed NOT to be a defect.
+# target line) is REPORT-ONLY, never binding; its bind trigger: the tokened-citation
+# population growing past 20, or the first report-only miss confirmed NOT to be a
+# defect.
 #
 # SCOPE: scans tracked files via `git ls-files`, excluding artifacts/** (machine-
 # generated records) and this file's own path (self-exclusion - its worked-example
@@ -25,6 +26,12 @@
 # test reds by name - that is how to add an exemption. Target files (the cited
 # side) resolve against the full tracked-file set, including artifacts/**, since a
 # doc may legitimately cite a landed review verdict there.
+#
+# HISTORICAL-COORDINATE MARKER: the literal, case-insensitive phrase "historical
+# coordinate" on the citing line (or any line spanned by a wrapped match) exempts
+# that one citation from BOTH the existence and range checks above - an
+# author-invoked opt-out for a deliberate reference to a file that no longer
+# exists. Exempted citations are still reported by name every run, never silent.
 #
 # History, calibration measurements, and the round-by-round record live in the
 # landed verdicts: artifacts/reviews/2026-07-26-tooling-65-review-r1-REJECT.md,
