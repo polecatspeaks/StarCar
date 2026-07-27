@@ -350,6 +350,15 @@ locator phrase so a second party can re-derive it from that file.
   Class: a notice that repeats unchanged after acceptance should self-suppress or fire
   only when newly consequential; watch for recurrence before building anything.
 
+- 2026-07-27 ~08:00 (conductor, live): LAND-VERDICT'S -TaskId IS THE DISPATCH ID, NOT THE
+  ENVELOPE'S task-id - two id namespaces share one name. Fed the envelope form
+  (view-69-71-review-r2), got #32's documented lying error ("A dispatch that never
+  completed has no verdict to land") for a dispatch that had completed minutes earlier;
+  the r1 verdict header held the answer (its "task id" is the dispatch hash). Cost: one
+  failed landing + one diagnostic grep. Class: a parameter that shares a name with a
+  different field on the same artifact's envelope will be fed that field eventually -
+  rename one, or accept both and resolve; belongs with #32's error-message fix.
+
 - 2026-07-27, structural fact FOUND BY THE MINE (not friction, recorded so nobody
   re-digs): the per-dispatch "Entire-Checkpoint" blobs on the checkpoint branch are
   periodic snapshots of the SINGLE conductor session, not separate car/reviewer
