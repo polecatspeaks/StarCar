@@ -29,6 +29,7 @@
 // board/web/js/links.js and board/web/js/findings.js's pure helpers; this
 // file's only job is turning their output into DOM.
 import { buildRecordLink, buildIssueLink } from './links.js';
+import { formatClockDuration } from './format.js';
 
 function el(doc, tag, className, text) {
   const node = doc.createElement(tag);
@@ -272,10 +273,22 @@ function renderLaneBody(doc, body, linkCfg) {
   }
 }
 
+// #67 (HONESTY CONSTRAINT, Law 4 + absence-blindness): the one summary line
+// shared by both filtered lanes - QUIET CHROME (#62 visual idiom: nominal
+// register, small text, never a headline), rendered only when render.js's
+// historySummary is non-null (hiddenCount > 0) so an unfiltered lane never
+// carries a "showing 0 of 0" noise line.
+function renderHistorySummary(doc, historySummary) {
+  if (!historySummary) return null;
+  return el(doc, 'div', `history-summary ${registerClass('nominal')}`, historySummary);
+}
+
 // TRAINS: track-schematic direction (mockup merge 2b) - each train is a
 // labeled track holding its cars in sequence.
 function renderTrains(doc, body, linkCfg) {
   const wrap = el(doc, 'div', 'lane-body lane-body-trains');
+  const summary = renderHistorySummary(doc, body.historySummary);
+  if (summary) wrap.appendChild(summary);
   for (const train of body.trains) {
     const track = el(doc, 'div', 'track');
     track.appendChild(el(doc, 'div', 'track-title', `${train.title} (${train.id})`));
@@ -361,6 +374,8 @@ function renderDispatches(doc, body, linkCfg) {
   wrap.appendChild(
     el(doc, 'div', 'yard-inventory-count', `${body.yardInventoryCount} in yard inventory (unassigned)`)
   );
+  const summary = renderHistorySummary(doc, body.historySummary);
+  if (summary) wrap.appendChild(summary);
   const rows = el(doc, 'div', 'solari-rows');
   for (const d of body.dispatches) {
     const row = el(doc, 'div', `solari-row ${registerClass(d.stateRegister)}${d.assigned ? '' : ' unassigned'}`);
@@ -373,7 +388,9 @@ function renderDispatches(doc, body, linkCfg) {
     row.appendChild(subject);
     row.appendChild(el(doc, 'span', 'solari-state', d.state)); // VERBATIM
     if (d.elapsedSeconds !== null) {
-      row.appendChild(el(doc, 'span', 'solari-elapsed', `${d.elapsedSeconds}s`));
+      // #67 (FORMAT NIT): compact clock time, never "272s" - the ONE
+      // formatter every duration on this board shares (format.js, Law 6).
+      row.appendChild(el(doc, 'span', 'solari-elapsed', formatClockDuration(d.elapsedSeconds)));
     }
     rows.appendChild(row);
   }

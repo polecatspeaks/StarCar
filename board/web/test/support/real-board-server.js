@@ -173,6 +173,117 @@ export function buildScratchStoreWithHealthTrendFamilies() {
   return storeDir;
 }
 
+// buildScratchStoreWithLaneFilterFixtures (#67: dispatches + trains lane
+// filters, compact-clock time) - a MINIMAL, self-contained scratch store
+// (same posture as buildScratchStoreWithHealthTrendFamilies above: never the
+// ambient repo store, which has no controlled recency spread to cap
+// against) proving all three #67 rendering-check claims against the REAL
+// Go server in one fixture:
+//   (a) 5 solo (non-train) subjects returned on 5 distinct days - the
+//       dispatches lane must cap to the 4 most recent and hide exactly 1;
+//   (b) 1 solo subject still DISPATCHED (never returned), dated far in the
+//       past - proves a needs-attention row survives capping regardless of
+//       recency (and its live elapsed_seconds exercises the real compact-
+//       clock formatter against a server-computed value, never a literal
+//       this fixture invents);
+//   (c) 5 one-car trains, each fully returned on 5 distinct days - same cap/
+//       hide-1 proof at the trains lane;
+//   (d) 1 train whose sole car is still DISPATCHED - proves a train with an
+//       in-flight car survives capping regardless of recency;
+//   (e) 1 train whose sole car is RETURNED (stateRegister nominal) but
+//       whose OUTCOME is 'error' (needs-attention per board-defs.json),
+//       dated far in the past - the #67 fix cycle round 2 MAJOR-R1-1
+//       regression proof: a train can be fully returned by STATE and still
+//       be hot by OUTCOME, and must never be capped either way.
+export function buildScratchStoreWithLaneFilterFixtures() {
+  const storeDir = mkdtempSync(join(tmpdir(), 'starcar-board-lane-filter-store-'));
+
+  function dirName(subject) {
+    return subject.replace(/:/g, '-');
+  }
+
+  function write(subject, kind, at, extra = {}) {
+    const dir = join(storeDir, dirName(subject));
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, `${kind}-${at.replace(/[:.]/g, '')}.json`),
+      JSON.stringify(
+        {
+          schema: 'starcar-artifact/1',
+          kind,
+          subject,
+          session_id: 'lane-filter-probe-session',
+          at,
+          normalisation: [],
+          integrity: 'sha256:0000000000000000000000000000000000000000000000000000000000000000',
+          ...extra
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+  }
+
+  // (a) 5 solo returned dispatches, one per day 2026-07-01..05.
+  for (let day = 1; day <= 5; day += 1) {
+    const subject = `lane-filter-solo-r${day}`;
+    const dispatchedAt = `2026-07-0${day}T09:00:00Z`;
+    const returnedAt = `2026-07-0${day}T10:00:00Z`;
+    write(subject, 'dispatched', dispatchedAt);
+    write(subject, 'returned', returnedAt, {
+      outcome: 'done',
+      findings: 'none',
+      abstract: `solo dispatch ${day}, returned`
+    });
+  }
+
+  // (b) 1 solo dispatch still in flight, dated far in the past - never
+  // returned, so the fold's own liveness derivation calls it dispatched (or
+  // overdue/presumed-lost, depending on board/fold's own budget/timeout
+  // arithmetic - any of those three renders needs-attention-or-hotter and is
+  // equally valid proof for this fixture's purpose).
+  write('lane-filter-solo-hot-ancient', 'dispatched', '2020-01-01T00:00:00Z');
+
+  // (c) 5 one-car trains, each fully returned one per day.
+  for (let day = 1; day <= 5; day += 1) {
+    const trainSubject = `train:lane-filter-t${day}`;
+    const carSubject = `lane-filter-car-t${day}`;
+    write(trainSubject, 'intent', `2026-07-0${day}T08:00:00Z`, {
+      manifest: { title: `Lane filter train ${day}`, members: [{ subject: carSubject, role: 'car' }] }
+    });
+    write(carSubject, 'dispatched', `2026-07-0${day}T09:00:00Z`);
+    write(carSubject, 'returned', `2026-07-0${day}T10:00:00Z`, {
+      outcome: 'done',
+      findings: 'none',
+      abstract: `train ${day} car, returned`
+    });
+  }
+
+  // (d) 1 train with an in-flight (never-returned) car, dated far in the
+  // past - proves NEVER FILTER A HOT ROW at the trains lane.
+  write('train:lane-filter-rolling', 'intent', '2020-01-01T00:00:00Z', {
+    manifest: { title: 'Lane filter rolling train', members: [{ subject: 'lane-filter-rolling-car', role: 'car' }] }
+  });
+  write('lane-filter-rolling-car', 'dispatched', '2020-01-01T00:00:00Z');
+
+  // (e) #67 fix cycle round 2 MAJOR-R1-1: 1 train whose sole car RETURNED
+  // (stateRegister nominal) but with a hot OUTCOME ('error', needs-
+  // attention) - dated far in the past, same as (d), so a recency-only cap
+  // would have wrongly buried it.
+  write('train:lane-filter-hot-outcome', 'intent', '2020-01-01T00:00:00Z', {
+    manifest: { title: 'Lane filter hot-outcome train', members: [{ subject: 'lane-filter-hot-outcome-car', role: 'car' }] }
+  });
+  write('lane-filter-hot-outcome-car', 'dispatched', '2020-01-01T00:00:00Z');
+  write('lane-filter-hot-outcome-car', 'returned', '2020-01-01T01:00:00Z', {
+    outcome: 'error',
+    findings: 'none',
+    abstract: 'returned, but outcome is hot - must never be capped (MAJOR-R1-1)'
+  });
+
+  return storeDir;
+}
+
 function goBinary() {
   // CI (docs/setup.md's Go toolchain row): actions/setup-go puts `go` on
   // PATH for the whole job, same as the existing "Run board Go vet +

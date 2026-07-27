@@ -449,6 +449,23 @@ body {
   margin-bottom: 0.3rem;
 }
 
+/* #67 (HONESTY CONSTRAINT): the "showing last N of M returned" line, shared
+   by the dispatches and trains lane bodies (dom-writer.js's
+   renderHistorySummary) - quiet chrome per the #62 visual idiom (nominal
+   register, small text, never a headline). No `color` here, deliberately
+   (same pattern as .health-trend above): the element always carries
+   `register-nominal` (dom-writer.js always renders this line at the calm
+   register - it only ever asserts capped HISTORY, never a hot condition),
+   so `.register-nominal`'s own color rule (line ~302, "the three registers,
+   and NOTHING else colors an element") is left to apply unshadowed - a
+   second `color` declaration here would just be this rule fighting that one
+   on specificity, the #31 class of bug this file's own comment already
+   warns against. */
+.history-summary {
+  font-size: 0.8rem;
+  margin-bottom: 0.3rem;
+}
+
 /* #62 FIX, found live during this car's own visual verification (not in
    the original ticket text): this repo's real artifacts/ store now holds
    dozens of dispatch rows and growing (this car's screenshot evidence,
@@ -513,7 +530,32 @@ body {
    store's current alphabetical ordering, not a property this rule can
    rely on - a taller number would only look more fixed while remaining
    exactly as unproven. Kept at the originally-measured height, disclosed
-   honestly, with the real fix tracked at #1. */
+   honestly, with the real fix tracked at #1.
+
+   RECONCILED (#67, owner fast-follow after this same #62 feedback):
+   render.js's dispatches lane now runs every row through capTerminalHistory
+   BEFORE this grid ever sees it - a needs-attention/in-progress/unrecognised
+   row (render.js's `isTerminal: (d) => d.stateRegister === 'nominal'`) is
+   NEVER a capping candidate, so the demonstrated failure mode above (a
+   single presumed-lost row buried under dozens of alphabetically-earlier
+   calm ones) cannot recur BY CONSTRUCTION: returned history is capped to
+   TERMINAL_HISTORY_CAP (history-filter.js, currently 4), so the calm-row
+   count feeding this grid is bounded regardless of how large the real store
+   grows. This closes the SPECIFIC mechanism this comment measured (return-
+   history bloat pushing a hot row past the clip), but NOT the underlying
+   register-composition gap it also named: this grid can still legitimately
+   overflow 11rem when the NUMBER OF CONCURRENTLY NON-TERMINAL rows itself
+   is large (a genuinely busy yard, never clipped, only ever scrolled) - and
+   #67's own car brief is explicit that composeRegister's three-axis
+   composition (position x freshness x capability) is a CONTRACT this ticket
+   must not touch, so the lane's own register still will not reflect a
+   row's severity if that scenario recurs. The DISCLOSURE for that remainder
+   now lives in ONE place, not two: the honesty summary line
+   (.history-summary above, "showing last N of M returned") is the assertion
+   surface for hidden history, and this comment defers to it rather than
+   re-stating counts here - avoiding the double-report #67's own brief warned
+   against. The #1 routing above stands unchanged for the register-
+   composition gap itself. */
 .solari-rows {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));

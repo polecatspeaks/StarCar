@@ -16,11 +16,16 @@ const positionDefs = [
   { id: 'dark', label: 'Dark', register: 'nominal' },
   { id: 'bagged', label: 'Bagged', register: 'nominal' }
 ];
-const outcomeDefs = [{ id: 'REJECT', label: 'Reject', register: 'nominal' }];
+const outcomeDefs = [
+  { id: 'REJECT', label: 'Reject', register: 'nominal' },
+  { id: 'done', label: 'Done', register: 'nominal' }
+];
 const roleDefs = [{ id: 'car', label: 'Car', register: 'nominal' }];
 const livenessDefs = [
   { id: 'returned', label: 'Returned', register: 'nominal' },
-  { id: 'overdue', label: 'Overdue', register: 'needs-attention' }
+  { id: 'dispatched', label: 'Dispatched', register: 'in-progress' },
+  { id: 'overdue', label: 'Overdue', register: 'needs-attention' },
+  { id: 'presumed-lost', label: 'Presumed lost', register: 'needs-attention' }
 ];
 
 function makeSnapshot(lanes, extra = {}) {
@@ -548,4 +553,170 @@ test('renderBoard distinguishes bagged (fuel) and dark (freight) with different 
   assert.equal(dark.length, 1);
   assert.equal(bagged.length, 1);
   assert.notEqual(dark[0].textContent, bagged[0].textContent);
+});
+
+// --- #67: compact clock time (owner FORMAT NIT, 2026-07-26 17:16) ---
+
+test('#67: a dispatch elapsed time renders compact clock time (4m32s -> "4:32"), never a unit-suffixed number', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([
+    {
+      id: 'dispatches',
+      title: 'Dispatches',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+      data: { dispatches: [{ subject: 'abc123', state: 'dispatched', at: '2026-07-23T18:00:00Z', assigned: true, elapsed_seconds: 272 }] }
+    }
+  ]);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const elapsed = root.querySelectorAll('.solari-elapsed');
+  assert.equal(elapsed.length, 1);
+  assert.equal(elapsed[0].textContent, '4:32', `expected compact clock time, got: ${elapsed[0].textContent}`);
+  assert.ok(!root.textContent.includes('272s'), 'the old unit-suffixed form must never appear');
+});
+
+// --- #67: dispatches/trains lane filters - DOM-level proof ---
+
+function dispatchFixture(subject, state, at, assigned = true) {
+  return { subject, state, at, assigned };
+}
+
+test('#67 NEVER FILTER A HOT ROW (DOM level): a needs-attention dispatch older than every capped-out returned dispatch still produces a rendered row', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([
+    {
+      id: 'dispatches',
+      title: 'Dispatches',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+      data: {
+        dispatches: [
+          dispatchFixture('ancient-hot', 'presumed-lost', '2020-01-01T00:00:00Z'),
+          dispatchFixture('r1', 'returned', '2026-07-01T00:00:00Z'),
+          dispatchFixture('r2', 'returned', '2026-07-02T00:00:00Z'),
+          dispatchFixture('r3', 'returned', '2026-07-03T00:00:00Z'),
+          dispatchFixture('r4', 'returned', '2026-07-04T00:00:00Z'),
+          dispatchFixture('r5', 'returned', '2026-07-05T00:00:00Z')
+        ]
+      }
+    }
+  ]);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const rows = root.querySelectorAll('.solari-row');
+  assert.equal(rows.length, 5, '4 capped returned rows + the 1 always-visible hot row');
+  assert.ok(root.textContent.includes('ancient-hot'), 'the oldest needs-attention row must still be in the rendered DOM');
+});
+
+test('#67: the dispatches history summary renders true derived counts, quiet chrome (nominal register)', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([
+    {
+      id: 'dispatches',
+      title: 'Dispatches',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+      data: {
+        dispatches: [
+          dispatchFixture('r1', 'returned', '2026-07-01T00:00:00Z'),
+          dispatchFixture('r2', 'returned', '2026-07-02T00:00:00Z'),
+          dispatchFixture('r3', 'returned', '2026-07-03T00:00:00Z'),
+          dispatchFixture('r4', 'returned', '2026-07-04T00:00:00Z'),
+          dispatchFixture('r5', 'returned', '2026-07-05T00:00:00Z')
+        ]
+      }
+    }
+  ]);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const summary = root.querySelectorAll('.history-summary');
+  assert.equal(summary.length, 1);
+  assert.equal(summary[0].textContent, 'showing last 4 of 5 returned - full record in the store');
+  assert.ok(summary[0].className.includes('register-nominal'), 'the summary line is quiet chrome, never a headline (#62 idiom)');
+});
+
+test('#67: no hidden history means no summary line rendered at all (never a "showing 0 of 0" noise line)', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([
+    {
+      id: 'dispatches',
+      title: 'Dispatches',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+      data: { dispatches: [dispatchFixture('r1', 'returned', '2026-07-01T00:00:00Z')] }
+    }
+  ]);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  assert.equal(root.querySelectorAll('.history-summary').length, 0);
+});
+
+function trainFixture(id, cars, declaredNotObserved = []) {
+  return { id, title: id, cars, declaredNotObserved };
+}
+
+function carFixture(subject, state, at, outcome) {
+  return outcome ? { subject, role: 'car', state, at, outcome } : { subject, role: 'car', state, at };
+}
+
+test('#67 NEVER FILTER A HOT ROW (DOM level): a train with an in-flight car renders its track regardless of recency', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([
+    {
+      id: 'trains',
+      title: 'Trains',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+      data: {
+        trains: [
+          trainFixture('train:rolling-ancient', [carFixture('rolling-car', 'dispatched', '2020-01-01T00:00:00Z')]),
+          trainFixture('train:t1', [carFixture('c1', 'returned', '2026-07-01T00:00:00Z', 'done')]),
+          trainFixture('train:t2', [carFixture('c2', 'returned', '2026-07-02T00:00:00Z', 'done')]),
+          trainFixture('train:t3', [carFixture('c3', 'returned', '2026-07-03T00:00:00Z', 'done')]),
+          trainFixture('train:t4', [carFixture('c4', 'returned', '2026-07-04T00:00:00Z', 'done')]),
+          trainFixture('train:t5', [carFixture('c5', 'returned', '2026-07-05T00:00:00Z', 'done')])
+        ]
+      }
+    }
+  ]);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const tracks = root.querySelectorAll('.track');
+  assert.equal(tracks.length, 5, '4 capped returned trains + the 1 always-visible rolling train');
+  assert.ok(root.textContent.includes('train:rolling-ancient'), 'the rolling train must still be in the rendered DOM');
+});
+
+test('#67: the trains history summary renders true derived counts', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([
+    {
+      id: 'trains',
+      title: 'Trains',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+      data: {
+        trains: [
+          trainFixture('train:t1', [carFixture('c1', 'returned', '2026-07-01T00:00:00Z', 'done')]),
+          trainFixture('train:t2', [carFixture('c2', 'returned', '2026-07-02T00:00:00Z', 'done')]),
+          trainFixture('train:t3', [carFixture('c3', 'returned', '2026-07-03T00:00:00Z', 'done')]),
+          trainFixture('train:t4', [carFixture('c4', 'returned', '2026-07-04T00:00:00Z', 'done')]),
+          trainFixture('train:t5', [carFixture('c5', 'returned', '2026-07-05T00:00:00Z', 'done')])
+        ]
+      }
+    }
+  ]);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const summary = root.querySelectorAll('.history-summary');
+  assert.equal(summary.length, 1);
+  // #67 R2 NOTE-1: trains use the owner's exact ticket wording, no noun -
+  // a train is never literally "returned" on the wire.
+  assert.equal(summary[0].textContent, 'showing last 4 of 5 - full record in the store');
 });
