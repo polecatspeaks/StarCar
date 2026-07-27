@@ -262,3 +262,4 @@ dispatch batch between regenerations.
 | a7b9079a789c94890 | returned | 2026-07-27T13:37:04Z | done | a7b9079a789c94890/returned-20260727T133704Z.json |
 | af1b76cf7eab52dc7 | dispatched | 2026-07-27T13:38:19Z |  | af1b76cf7eab52dc7/dispatched-20260727T133819Z.json |
 | a353ad2db7e6ad627 | returned | 2026-07-27T13:55:38Z | REJECT | a353ad2db7e6ad627/returned-20260727T135538Z.json |
+| af1b76cf7eab52dc7 | returned | 2026-07-27T14:04:28Z | REJECT | af1b76cf7eab52dc7/returned-20260727T140428Z.json |
