@@ -417,6 +417,101 @@ export function buildScratchStoreForDispatchRowGeometry() {
   return storeDir;
 }
 
+// buildScratchStoreForTaskIdTitles (#75) - a MINIMAL, self-contained scratch
+// store (never the ambient repo store, whose real records predate #47's
+// task_id field entirely and would exercise only the absent-handle branch)
+// proving BOTH #75 rendering branches against the REAL Go server in one
+// fixture:
+//   (a) a solo returned dispatch carrying task_id - the dispatches lane row
+//       must show the task-id as its visible text, with the record-dir hash
+//       subject reachable via the native title tooltip;
+//   (b) a solo returned dispatch with NO task_id (the honest steady state
+//       for every real record predating #47, and for every still-in-flight
+//       dispatched record until #76 lands) - the row must fall back to the
+//       hash subject exactly as before this ticket;
+//   (c) a one-car train whose sole car carries task_id - the SAME treatment
+//       must reach the trains lane's car-chip (brief step 5's own
+//       enumeration), proven against the real fold/assemble pipeline rather
+//       than a hand-built view model.
+export function buildScratchStoreForTaskIdTitles() {
+  const storeDir = mkdtempSync(join(tmpdir(), 'starcar-board-scratch-store-'));
+
+  // dirName sanitises a subject into a filesystem-safe directory name
+  // (":" is illegal in a Windows path) - same convention every other
+  // colon-bearing-subject builder above uses. The fold reads `subject` from
+  // record CONTENT, never from the directory name, so this is cosmetic to
+  // the store's own layout, not load-bearing for this fixture to work.
+  function dirName(subject) {
+    return subject.replace(/:/g, '-');
+  }
+
+  function write(subject, kind, at, extra = {}) {
+    const dir = join(storeDir, dirName(subject));
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, `${kind}-${at.replace(/[:.]/g, '')}.json`),
+      JSON.stringify(
+        {
+          schema: 'starcar-artifact/1',
+          kind,
+          subject,
+          session_id: 'view-75-probe-session',
+          at,
+          normalisation: [],
+          integrity: 'sha256:0000000000000000000000000000000000000000000000000000000000000000',
+          ...extra
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+  }
+
+  // (a) with task_id - 79 characters, fix cycle r2 (R1-m2), CORRECTED fix
+  // cycle r3 (R2-m2, an unmeasured size claim): this comment used to compare
+  // the 79-char task_id against "the 33-char subject hash it replaces" -
+  // this fixture's own subject, `view-75-with-task-id`, measures 20 chars,
+  // and 33 matched nothing here or in any real record-dir hash (measured:
+  // 17 chars, e.g. store subject `a076bf6c0a94e302f`). Dropped the
+  // comparison rather than re-estimate it. What actually matters, measured
+  // (fix cycle r3, R2-m1): `.solari-subject`'s own box is only ~123px wide
+  // in this fixture's viewport - a 13rem `auto-fill` grid column - so
+  // virtually ANY plausible task-id overflows it, not only an exceptionally
+  // long one; this 79-char value is simply a comfortable, unambiguous
+  // example of that, never proof that LENGTH itself is what causes
+  // overflow.
+  write('view-75-with-task-id', 'dispatched', '2026-07-27T09:00:00Z');
+  write('view-75-with-task-id', 'returned', '2026-07-27T09:05:00Z', {
+    outcome: 'done',
+    findings: 'none',
+    abstract: 'the human handle should render, not this record-dir hash',
+    task_id: 'view-75-extremely-long-human-task-id-handle-for-the-fix-cycle-r2-ellipsis-check'
+  });
+
+  // (b) no task_id - the honest fallback floor.
+  write('view-75-without-task-id', 'dispatched', '2026-07-27T09:10:00Z');
+  write('view-75-without-task-id', 'returned', '2026-07-27T09:15:00Z', {
+    outcome: 'done',
+    findings: 'none',
+    abstract: 'no task_id on this record - the row must fall back to its subject hash'
+  });
+
+  // (c) the trains lane / car-chip surface.
+  write('train:view-75-chip-demo', 'intent', '2026-07-27T08:55:00Z', {
+    manifest: { title: 'Task-id chip demo', members: [{ subject: 'view-75-chip-car', role: 'car' }] }
+  });
+  write('view-75-chip-car', 'dispatched', '2026-07-27T09:20:00Z');
+  write('view-75-chip-car', 'returned', '2026-07-27T09:25:00Z', {
+    outcome: 'done',
+    findings: 'none',
+    abstract: 'the chip should show the task-id too',
+    task_id: 'view-75-chip-r1'
+  });
+
+  return storeDir;
+}
+
 // addRecordToStore (#69/#71) writes ONE additional real record into an
 // already-running scratch store, mid-test - used to force a genuine SECOND
 // poll-detected CHANGE (a new board condition appears) so a real DOM

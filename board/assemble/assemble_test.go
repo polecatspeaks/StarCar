@@ -792,3 +792,140 @@ func TestAssembleDispatchRenderFailedIsReachable(t *testing.T) {
 		}
 	}
 }
+
+// --- #75: the human task-id handle on dispatch rows ------------------------
+
+// TestAssembleDispatchTaskIdFromReturnedWinnerNotFirstScanOrder is #75's
+// analogue of TestAssembleGateFindingsMatchesFoldWinnerNotFirstScanOrder
+// above: task_id (the #47 envelope echo) must come from the fold's own
+// WINNER record (subject+kind=="returned"+at==the fold's own winning At),
+// never a first-scanned-wins pick. This test constructs an OLDER (superseded,
+// carries a DIFFERENT task_id) record BEFORE a NEWER (winning) one in
+// in.Records, the same shape the #28/#12 fix cycle's MAJOR-4 proved was live
+// for findings - proving the same defect class cannot recur here.
+func TestAssembleDispatchTaskIdFromReturnedWinnerNotFirstScanOrder(t *testing.T) {
+	records := []store.Record{
+		recAt("solo-1/returned-1-earlier.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "returned", "subject": "solo-1",
+			"session_id": "s1", "at": "2026-07-27T10:00:00Z", "outcome": "REJECT",
+			"findings": "f", "abstract": "a", "task_id": "solo-1-earlier-task-id",
+			"normalisation": []any{}, "integrity": "sha256:0",
+		}),
+		recAt("solo-1/returned-2-later.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "returned", "subject": "solo-1",
+			"session_id": "s1", "at": "2026-07-27T11:00:00Z", "outcome": "APPROVE",
+			"findings": "f", "abstract": "a", "task_id": "solo-1-winning-task-id",
+			"normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+
+	var found bool
+	for _, d := range result.Dispatches.Dispatches {
+		if d["subject"] == "solo-1" {
+			found = true
+			if d["taskId"] != "solo-1-winning-task-id" {
+				t.Errorf(`d["taskId"] = %v, want the WINNING (newer, 11:00) record's task_id %q - not the superseded 10:00 record's %q`,
+					d["taskId"], "solo-1-winning-task-id", "solo-1-earlier-task-id")
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected solo-1 in the dispatches lane, got %v", result.Dispatches.Dispatches)
+	}
+}
+
+// TestAssembleDispatchTaskIdAbsentForDispatchedWinner (Law 1, #75/#76 scope
+// split): a subject with only a "dispatched" record - never returned - has
+// no task_id ANYWHERE in the store (per the issue's own probe: dispatched
+// records carry no task_id until #76's producer work lands), so the
+// dispatches entry must carry NO "taskId" key at all - never an invented or
+// empty-string placeholder, matching every other optional wire field's
+// omitempty convention (recordDir's own posture, assemble.go).
+func TestAssembleDispatchTaskIdAbsentForDispatchedWinner(t *testing.T) {
+	records := []store.Record{
+		recAt("inflight-1/dispatched-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "dispatched", "subject": "inflight-1",
+			"session_id": "s1", "at": "2026-07-27T09:00:00Z", "normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+
+	var found bool
+	for _, d := range result.Dispatches.Dispatches {
+		if d["subject"] == "inflight-1" {
+			found = true
+			if _, present := d["taskId"]; present {
+				t.Errorf(`d["taskId"] = %v, want the key entirely ABSENT for a dispatched (never returned) winner`, d["taskId"])
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected inflight-1 in the dispatches lane, got %v", result.Dispatches.Dispatches)
+	}
+}
+
+// TestAssembleDispatchTaskIdAbsentWhenReturnedRecordCarriesNone (Law 1): a
+// returned winner whose own record simply has no task_id field (a legacy
+// returned record predating #47's envelope echo, or a non-Claude producer
+// adapter that never populated it) renders the key absent, never a guessed
+// or blank-string value.
+func TestAssembleDispatchTaskIdAbsentWhenReturnedRecordCarriesNone(t *testing.T) {
+	records := []store.Record{
+		recAt("solo-2/returned-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "returned", "subject": "solo-2",
+			"session_id": "s1", "at": "2026-07-27T10:00:00Z", "outcome": "done",
+			"findings": "f", "abstract": "a", // no task_id key
+			"normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+
+	var found bool
+	for _, d := range result.Dispatches.Dispatches {
+		if d["subject"] == "solo-2" {
+			found = true
+			if _, present := d["taskId"]; present {
+				t.Errorf(`d["taskId"] = %v, want the key entirely ABSENT when the winning returned record itself carries no task_id`, d["taskId"])
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected solo-2 in the dispatches lane, got %v", result.Dispatches.Dispatches)
+	}
+}
+
+// TestAssembleTrainCarTaskId proves the SAME task-id resolution reaches the
+// trains lane's car entries (#75 brief step 5: "check the car-chip side and
+// the trains lane too") - populated by the identical taskIDsBySubject lookup
+// dispatchWireMap uses, never a second derivation.
+func TestAssembleTrainCarTaskId(t *testing.T) {
+	records := []store.Record{
+		manifestIntent("train:board-v0", "2026-07-27T09:00:00Z", "T", []map[string]any{
+			{"subject": "carA", "role": "car"},
+		}),
+		recAt("carA/dispatched-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "dispatched", "subject": "carA",
+			"session_id": "s1", "at": "2026-07-27T09:05:00Z", "normalisation": []any{}, "integrity": "sha256:0",
+		}),
+		recAt("carA/returned-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "returned", "subject": "carA",
+			"session_id": "s1", "at": "2026-07-27T09:10:00Z", "outcome": "done",
+			"findings": "f", "abstract": "a", "task_id": "carA-task-id",
+			"normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+
+	if len(result.Trains.Trains) != 1 || len(result.Trains.Trains[0].Cars) != 1 {
+		t.Fatalf("expected 1 train with 1 car, got %+v", result.Trains.Trains)
+	}
+	car := result.Trains.Trains[0].Cars[0]
+	if car.TaskID != "carA-task-id" {
+		t.Errorf("car.TaskID = %q, want %q", car.TaskID, "carA-task-id")
+	}
+}

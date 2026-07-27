@@ -25,6 +25,15 @@ type TrainCar struct {
 	// observed in practice, but Law 1 - no link is rendered rather than a
 	// guessed one).
 	RecordDir string `json:"recordDir,omitempty"`
+	// TaskID (#75: the human task-id handle, replacing the record-dir hash
+	// as a row's visible identity) is this subject's shop-minted task-id
+	// (the #47 envelope echo) - single-sourced from the winning RETURNED
+	// record's own task_id field (assemble.go's taskIDsBySubject), never
+	// re-derived from Subject client-side. Empty when no returned record
+	// for this subject carries one - a dispatched-only car (the #76
+	// producer-side half, not yet landed) or a returned record predating
+	// #47 (Law 1: absent renders absent, never a guessed handle).
+	TaskID string `json:"taskId,omitempty"`
 }
 
 // Train is one train: subject's consist. id is the WHOLE train: subject,
@@ -77,7 +86,9 @@ type GatesPayload struct {
 // DispatchesPayload is the dispatches lane's wire data shape: fold.Output's
 // own dispatch entries (their conditional JSON shape stays owned by
 // fold.DispatchEntry.MarshalJSON, never re-implemented here - Law 6), each
-// augmented with "assigned" (yard inventory = unassigned, rendered loudly).
+// augmented with "assigned" (yard inventory = unassigned, rendered loudly),
+// "recordDir" (#28), and "taskId" (#75, present only for a returned winner
+// whose own record carries one).
 type DispatchesPayload struct {
 	Dispatches []map[string]any `json:"dispatches"`
 }

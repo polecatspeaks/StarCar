@@ -55,6 +55,11 @@ func Assemble(in Input) Result {
 	// so recordDirs must already exist before the first condition is built.
 	recordDirs := recordDirBySubject(in.Records)
 
+	// #75: the human task-id handle (the #47 envelope echo), resolved from
+	// the fold's own dispatch winners - see taskIDsBySubject's doc comment
+	// for why this is NOT recordDirBySubject's first-write-wins shape.
+	taskIDs := taskIDsBySubject(in.Records, in.Fold.Dispatches)
+
 	for _, s := range collidedSubjects {
 		result.Conditions = append(result.Conditions, store.BoardCondition{
 			Code:      "subject-namespace-collision",
@@ -115,6 +120,7 @@ func Assemble(in Input) Result {
 				At:         d.At,
 				Superseded: d.Superseded,
 				RecordDir:  recordDirs[m.Subject],
+				TaskID:     taskIDs[m.Subject],
 			}
 			if d.State == "returned" {
 				car.Outcome = d.Outcome
@@ -184,7 +190,7 @@ func Assemble(in Input) Result {
 	// at least one winning manifest's members (yard inventory = false,
 	// rendered loudly per YB-5).
 	for _, d := range in.Fold.Dispatches {
-		m, err := dispatchWireMap(d, assignedSubjects[d.Subject], recordDirs[d.Subject])
+		m, err := dispatchWireMap(d, assignedSubjects[d.Subject], recordDirs[d.Subject], taskIDs[d.Subject])
 		if err != nil {
 			// #69/#71 fix cycle round 2 (MAJOR-R1-3): CORRECTED - the prior
 			// version of this comment claimed "no test outside board/fold can
@@ -225,10 +231,10 @@ func Assemble(in Input) Result {
 
 // dispatchWireMap reuses fold.DispatchEntry's OWN MarshalJSON (the single
 // owner of its conditional key set - Law 6) and augments the result with
-// "assigned" and (#28) "recordDir" - the key is omitted entirely (never an
-// empty string) when recordDir is "", matching every other optional wire
-// field's omitempty convention.
-func dispatchWireMap(d fold.DispatchEntry, assigned bool, recordDir string) (map[string]any, error) {
+// "assigned", (#28) "recordDir", and (#75) "taskId" - each key is omitted
+// entirely (never an empty string) when its value is "", matching every
+// other optional wire field's omitempty convention.
+func dispatchWireMap(d fold.DispatchEntry, assigned bool, recordDir string, taskID string) (map[string]any, error) {
 	data, err := json.Marshal(d)
 	if err != nil {
 		return nil, err
@@ -240,6 +246,9 @@ func dispatchWireMap(d fold.DispatchEntry, assigned bool, recordDir string) (map
 	m["assigned"] = assigned
 	if recordDir != "" {
 		m["recordDir"] = recordDir
+	}
+	if taskID != "" {
+		m["taskId"] = taskID
 	}
 	return m, nil
 }
@@ -392,4 +401,65 @@ func findingsForReturnedSubject(records []store.Record, subject, at string) (str
 		return findings, true
 	}
 	return "", false
+}
+
+// taskIDsBySubject (#75) resolves each dispatch subject's task-id - the
+// shop-minted human handle (#47's envelope echo) - from the SPECIFIC raw
+// record the fold itself named as that subject's winner, never a
+// first-write-wins scan. recordDirBySubject's first-write-wins convention
+// (comment above) does NOT apply here: a directory is genuinely the SAME
+// for every record under one subject (an observed producer-writing-pattern
+// fact), but task_id is NOT the same across a subject's records - as of
+// #75's landing, only a RETURNED record carries one (probed on issue #75:
+// dispatched records carry no task_id yet, pending #76's producer work).
+// store.go's Scan sorts by PATH (sort.Strings), which for a subject with
+// both a "dispatched-*.json" and a later "returned-*.json" would put the
+// task_id-less dispatched record first alphabetically - first-write-wins
+// would therefore silently render NO task-id for a subject that has, in
+// fact, returned with one. This mirrors findingsForReturnedSubject's exact
+// subject+kind==returned+at==the fold's own winning At match instead (never
+// a second "pick the latest" selection - that authority stays fold.Output's
+// alone), scoped to only the subjects the fold itself resolved to a
+// "returned" State; every other liveness state (dispatched/overdue/
+// presumed-lost) is skipped outright rather than probed for a field it is
+// known never to carry yet.
+func taskIDsBySubject(records []store.Record, dispatches []fold.DispatchEntry) map[string]string {
+	out := make(map[string]string, len(dispatches))
+	for _, d := range dispatches {
+		if d.State != "returned" {
+			continue
+		}
+		if id := taskIDForReturnedSubject(records, d.Subject, d.At); id != "" {
+			out[d.Subject] = id
+		}
+	}
+	return out
+}
+
+// taskIDForReturnedSubject (#75) fetches the RAW "task_id" field off the
+// SPECIFIC record the fold already named as this subject's returned winner
+// - subject + kind=="returned" + at==at, the same exact-match convention
+// findingsForReturnedSubject established just above. Returns "" (Law 1:
+// absent renders absent, never invented) both when no matching raw record
+// exists and when the matching record simply carries no task_id - #51
+// already declared task_id an OPTIONAL producer field (board/store/
+// store.go's typedRecord), so a returned record predating #47's envelope
+// echo is an expected, honest steady state, not disclosed as its own board
+// condition here (unlike findingsForReturnedSubject's missing-RECORD case,
+// which IS a data-integrity contradiction worth disclosing).
+func taskIDForReturnedSubject(records []store.Record, subject, at string) string {
+	for _, r := range records {
+		if s, _ := r.Fields["subject"].(string); s != subject {
+			continue
+		}
+		if k, _ := r.Fields["kind"].(string); k != "returned" {
+			continue
+		}
+		if a, _ := r.Fields["at"].(string); a != at {
+			continue
+		}
+		taskID, _ := r.Fields["task_id"].(string)
+		return taskID
+	}
+	return ""
 }

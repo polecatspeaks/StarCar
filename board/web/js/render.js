@@ -313,7 +313,16 @@ function buildLaneBody(lane, vocab, hasRenderer) {
           // #28: single-sourced from store.Record.Path server-side
           // (assemble.recordDirBySubject) - never re-derived from
           // `subject` here (Law 6).
-          recordDir: c.recordDir ?? null
+          recordDir: c.recordDir ?? null,
+          // #75: the human task-id handle, null when this car has not yet
+          // returned with one - dom-writer.js falls back to `subject`
+          // honestly rather than inventing a label (Law 1). `||`, not `??`
+          // (fix cycle r2, R1-m1): the wire schema has no minLength, so a
+          // schema-valid "" is possible even though the shipped producer
+          // never stamps one (Produce-Artifact.ps1's `-and $taskId` guard) -
+          // treated as absent, same as links.js:17's truthiness guard for
+          // the sibling recordDir field, never a blank identity label.
+          taskId: c.taskId || null
         }))
       }));
       // #67 (SCOPE EXTENSION, owner 2026-07-26 17:09): non-terminal trains
@@ -367,6 +376,12 @@ function buildLaneBody(lane, vocab, hasRenderer) {
         budgetSource: d.budget_source ?? null,
         assigned: Boolean(d.assigned),
         recordDir: d.recordDir ?? null, // #28
+        // #75: human handle, null falls back to `subject` (dom-writer.js).
+        // `||`, not `??` (fix cycle r2, R1-m1): a schema-valid "" (no
+        // minLength on the wire) is treated as absent, matching links.js:17's
+        // truthiness guard for the sibling recordDir field - never a blank
+        // identity label.
+        taskId: d.taskId || null,
         superseded: d.superseded || [] // #71: same subject, same directory as recordDir above
       }));
       // #67 (owner finding after #62 live-board feedback): every non-

@@ -128,6 +128,10 @@
                     "recordDir": {
                       "type": "string",
                       "description": "#28 (clickable provenance): this subject's record directory, RELATIVE TO THE STORE ROOT (e.g. \"51-fix-car-r1\") - single-sourced from store.Record.Path (board/assemble's recordDirBySubject), never re-derived from subject client-side. Combine with config.githubRepoUrl/githubRef/githubArtifactsPrefix to build a full tree link. Absent when no surviving record names this subject."
+                    },
+                    "taskId": {
+                      "type": "string",
+                      "description": "#75 (the human task-id handle, replacing the record-dir hash as the visible identity): this subject's shop-minted task-id, single-sourced from the winning RETURNED record's own task_id field (board/assemble's taskIDsBySubject), never re-derived client-side. Absent when this car has not yet returned with one (a dispatched-only car - #76's producer-side half is not yet landed - or a returned record predating #47's envelope echo); the view falls back honestly to rendering subject in that case (Law 1: never an invented handle)."
                     }
                   },
                   "required": ["subject", "role", "state", "at"]
@@ -200,6 +204,10 @@
               "recordDir": {
                 "type": "string",
                 "description": "#28 (clickable provenance): same convention as trainsPayload's car.recordDir - this dispatch subject's record directory, relative to the store root."
+              },
+              "taskId": {
+                "type": "string",
+                "description": "#75 (the human task-id handle, replacing the record-dir hash as the row's visible title): same convention as trainsPayload's car.taskId - this dispatch subject's shop-minted task-id, single-sourced from its winning RETURNED record's own task_id field. Absent when this dispatch has not yet returned with one (#76's producer-side half is not yet landed) or when its returned record predates #47's envelope echo; the view falls back honestly to rendering subject in that case."
               }
             },
             "required": ["subject", "state", "at", "assigned"]

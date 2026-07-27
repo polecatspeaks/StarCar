@@ -337,6 +337,60 @@ test('#28: trains carry the manifest\'s tickets array, and each car carries its 
   assert.equal(train.cars[0].recordDir, 'carA');
 });
 
+test('#75: a car with a wire taskId carries it through to the view model; absent renders null, never undefined', () => {
+  const snapshot = makeSnapshot([
+    {
+      id: 'trains',
+      title: 'Trains',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' },
+      data: {
+        trains: [
+          {
+            id: 'train:view-75',
+            title: 'Task-id handle',
+            tickets: [],
+            cars: [
+              { subject: 'carA', role: 'car', state: 'returned', at: '2026-07-23T00:00:00Z', recordDir: 'carA', taskId: 'view-75-car-r1' },
+              { subject: 'carB', role: 'car', state: 'dispatched', at: '2026-07-23T00:00:00Z', recordDir: 'carB' }
+            ],
+            declaredNotObserved: []
+          }
+        ]
+      }
+    }
+  ]);
+  const vm = buildBoardViewModel(snapshot);
+  const cars = vm.lanes[0].body.trains[0].cars;
+  assert.equal(cars[0].taskId, 'view-75-car-r1');
+  assert.equal(cars[1].taskId, null, 'absent wire taskId must render as null, never undefined');
+});
+
+test('#75 fix cycle r2 (R1-m1, Law 1): a car with a wire taskId of "" (schema-valid, unreachable through the shipped producer) renders null - never a blank identity label - matching links.js:17\'s truthiness guard for the sibling recordDir field', () => {
+  const snapshot = makeSnapshot([
+    {
+      id: 'trains',
+      title: 'Trains',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' },
+      data: {
+        trains: [
+          {
+            id: 'train:view-75',
+            title: 'Task-id handle',
+            tickets: [],
+            cars: [{ subject: 'carC', role: 'car', state: 'returned', at: '2026-07-23T00:00:00Z', recordDir: 'carC', taskId: '' }],
+            declaredNotObserved: []
+          }
+        ]
+      }
+    }
+  ]);
+  const vm = buildBoardViewModel(snapshot);
+  const car = vm.lanes[0].body.trains[0].cars[0];
+  assert.equal(car.taskId, null, 'REGRESSION (R1-m1): an empty-string wire taskId must render as null, same as an absent one');
+});
+
 test('#28: a train with no declared tickets carries an empty array, never undefined', () => {
   const snapshot = makeSnapshot([
     {
@@ -414,6 +468,43 @@ test('dispatches: dispatches carry recordDir', () => {
   ]);
   const vm = buildBoardViewModel(snapshot);
   assert.equal(vm.lanes[0].body.dispatches[0].recordDir, 'orphan-1');
+});
+
+test('#75: a dispatch with a wire taskId carries it through to the view model; absent renders null, never undefined', () => {
+  const snapshot = makeSnapshot([
+    {
+      id: 'dispatches',
+      title: 'Dispatches',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' },
+      data: {
+        dispatches: [
+          { subject: 'returned-with-task-id', state: 'returned', at: '2026-07-23T00:00:00Z', assigned: false, recordDir: 'returned-with-task-id', taskId: 'view-75-car-r1' },
+          { subject: 'orphan-1', state: 'dispatched', at: '2026-07-23T00:00:00Z', assigned: false, recordDir: 'orphan-1' }
+        ]
+      }
+    }
+  ]);
+  const vm = buildBoardViewModel(snapshot);
+  const [withTaskId, without] = vm.lanes[0].body.dispatches;
+  assert.equal(withTaskId.taskId, 'view-75-car-r1');
+  assert.equal(without.taskId, null, 'absent wire taskId must render as null, never undefined');
+});
+
+test('#75 fix cycle r2 (R1-m1, Law 1): a dispatch with a wire taskId of "" (schema-valid, unreachable through the shipped producer) renders null - never a blank identity label', () => {
+  const snapshot = makeSnapshot([
+    {
+      id: 'dispatches',
+      title: 'Dispatches',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T00:00:00Z' },
+      data: {
+        dispatches: [{ subject: 'blank-task-id', state: 'returned', at: '2026-07-23T00:00:00Z', assigned: false, recordDir: 'blank-task-id', taskId: '' }]
+      }
+    }
+  ]);
+  const vm = buildBoardViewModel(snapshot);
+  assert.equal(vm.lanes[0].body.dispatches[0].taskId, null, 'REGRESSION (R1-m1): an empty-string wire taskId must render as null, same as an absent one');
 });
 
 // #71: superseded is on the wire (schema/yard-snapshot.schema.json's

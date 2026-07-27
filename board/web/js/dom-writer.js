@@ -448,7 +448,17 @@ function renderTrains(doc, body, linkCfg) {
     const cars = el(doc, 'div', 'track-cars');
     for (const car of train.cars) {
       const chip = el(doc, 'div', `car-chip ${registerClass(car.stateRegister)}`);
-      chip.appendChild(factOrLink(doc, 'car-subject', car.subject, buildRecordLink(linkCfg, car.recordDir)));
+      // #75: the VISIBLE identity is the human task-id when the wire
+      // supplies one (returned records only, as of this landing - #76 is
+      // the dispatched-record half), falling back honestly to the
+      // record-dir hash subject when absent (Law 1: never invent a
+      // label). The full subject hash stays reachable EITHER WAY through
+      // the native title tooltip (the #62 pattern, extended here to the
+      // chip for the first time) - the provenance link keeps resolving by
+      // recordDir exactly as before, unaffected by which text is visible.
+      const carSubject = factOrLink(doc, 'car-subject', car.taskId ?? car.subject, buildRecordLink(linkCfg, car.recordDir));
+      carSubject.setAttribute('title', car.subject);
+      chip.appendChild(carSubject);
       chip.appendChild(el(doc, 'span', 'car-role', car.role.label));
       // VERBATIM state word - never translated (mockup brief).
       chip.appendChild(el(doc, 'span', 'car-state', car.state));
@@ -516,7 +526,10 @@ function renderGates(doc, body, linkCfg) {
 }
 
 // DISPATCHES: Solari split-flap direction (mockup merge 1b) - dense
-// monospace rows: subject, state word, elapsed.
+// monospace rows: identity (task-id when the wire has one, else the
+// record-dir hash subject - #75 fix cycle r2, R1-m3: this comment used to
+// say plain "subject", stale as of this function's own identity-cluster
+// build below), state word, elapsed.
 function renderDispatches(doc, body, linkCfg) {
   const wrap = el(doc, 'div', 'lane-body lane-body-dispatches');
   wrap.appendChild(
@@ -533,11 +546,19 @@ function renderDispatches(doc, body, linkCfg) {
     // main` comment for why (round 2's `flex-wrap: wrap` on `.solari-row`
     // wrapped this cluster onto a second line too, not just the disclosure).
     const main = el(doc, 'div', 'solari-row-main');
-    const subject = factOrLink(doc, 'solari-subject', d.subject, buildRecordLink(linkCfg, d.recordDir));
-    // #62: board.css truncates a long subject id with an ellipsis (the
-    // fixed-height dispatches grid) - the native title tooltip keeps the
-    // full id reachable, never silently lost. Survives becoming a link
-    // (#28) - the title attribute goes on the anchor/span either way.
+    // #75: the row's VISIBLE identity is the human task-id when the wire
+    // supplies one (RETURNED records only, as of this landing - #76 is the
+    // dispatched-record half), falling back honestly to the record-dir
+    // hash subject id when absent (Law 1: never invent a label). Neither
+    // the provenance link (still keyed off d.recordDir) nor the title
+    // tooltip below is affected by which text is visible.
+    const subject = factOrLink(doc, 'solari-subject', d.taskId ?? d.subject, buildRecordLink(linkCfg, d.recordDir));
+    // #62: board.css truncates a long subject id (or task-id) with an
+    // ellipsis (the fixed-height dispatches grid) - the native title
+    // tooltip keeps the full SUBJECT HASH reachable, verbatim, regardless
+    // of which text is visible (#75: never silently lost behind a
+    // friendlier label either). Survives becoming a link (#28) - the title
+    // attribute goes on the anchor/span either way.
     subject.setAttribute('title', d.subject);
     main.appendChild(subject);
     main.appendChild(el(doc, 'span', 'solari-state', d.state)); // VERBATIM
