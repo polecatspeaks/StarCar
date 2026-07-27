@@ -1195,3 +1195,49 @@ task-id: view-75-car-r1
 <status>failed</status>
 <summary>Background command "Start board server from merged dev tip (background)" failed with exit code 255</summary>
 </task-notification>
+
+---
+
+<task-notification>
+<task-id>a7b9079a789c94890</task-id>
+<tool-use-id>toolu_01BTCRJ7Z4YuB4nd3Ftip77a</tool-use-id>
+<output-file>C:\Users\Chris\AppData\Local\Temp\claude\C--Users-Chris-git-starcar\8a347c36-20b4-427a-ae0b-46855aa7bb72\tasks\a7b9079a789c94890.output</output-file>
+<status>completed</status>
+<summary>Agent "Car #79 pin manifest-board join probe" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>Committed cleanly at `c1c4d2d` on `car/probe-79`, working tree clean. Final report follows.
+
+## Summary
+
+**Base verified:** worktree `C:\Users\Chris\git\starcar-wt\car-probe-79`, branch `car/probe-79`, HEAD `82bfb6e0938fb552b51f759c1e6ee2af622dadc8`, `git status --porcelain` empty — matched the brief exactly.
+
+**File landed:** `C:\Users\Chris\git\starcar-wt\car-probe-79\scripts\probes\ManifestBoardJoin.Probes.Tests.ps1` (new), plus two friction-log entries in `C:\Users\Chris\git\starcar-wt\car-probe-79\docs\friction-log.md`. Committed at `c1c4d2dcee4023f721f2d5d433fe3bc2f3583dc1` on `car/probe-79`. No files touched under `board/`, `schema/`, or `scripts/tests/` (confirmed by `git status --porcelain` showing only the two intended files).
+
+**Baselines (base 82bfb6e, my own runs):** `scripts/probes` 24/24 passed; `scripts/tests` 223 passed / 0 failed / 4 skipped.
+
+**Post-change:** `scripts/probes` 24 + 5 new = **29/29 passed**. `scripts/tests` **unchanged** (no files under `scripts/tests/` touched by this commit).
+
+**The five assertions and their fault-injection reds** (each performed by editing the `New-ScratchStore -Root $script:StorePath` call in the committed file, running `Invoke-Pester -Path ./scripts/probes/ManifestBoardJoin.Probes.Tests.ps1 -CI`, then reverting and sha256-checking):
+
+Base file sha256 (before and after every injection, all five matched): `b21e0c5eb4b6c7c341d9735289bb1b2573132f4996173e6ffca18559263b3599`
+
+- (a) `-GateARole 'car'`: `Expected 1, because exactly one member (gateA) is role=gate with a returned record; a wrong count means role or state gating broke, but got 0.`
+- (b) `-EmptyMembers $true`: `Expected a value, because carA is a declared member with a dispatched+returned record, but got $null or empty.`
+- (c) `-IncludeGateBMember $false`: `Expected 'gateB' to be found in collection $null, because gateB is declared in the manifest but has zero dispatched/returned records anywhere in the store, but it was not found.`
+- (d) `-IncludeCarBMember $false`: `Expected $true, because carB is claimed by train:probe-79's manifest membership, but got $false.`
+- (guard) `-SecondManifestClaimsCarA $true`: `Expected 0, because observed board conditions: manifest-membership-collision, but got 1.`
+
+**Two real problems found and fixed while building this** (both landed in the friction log, class-level):
+1. A raw `.add_OutputDataReceived({...})` .NET event delegate on the spawned `board/server` process crashed the whole pwsh host (no runspace on the threadpool thread) — fixed with `Register-ObjectEvent`.
+2. A just-killed process can transiently delete-lock its own `.exe` past `WaitForExit()` — a single `Remove-Item -ErrorAction SilentlyContinue` silently left debris in `%TEMP%`; fixed with a bounded 10×300ms retry, verified debris-free by explicit `Get-ChildItem` audit after the fix.
+
+**Deviations/disclosures:** none against the brief's scope. `docs/setup.md`'s existing "Probe suite in CI" row (line 48) makes no specific-count claim invalidated by this landing, so it needed no edit — verified by grep before concluding this. No `board/`, `schema/`, or `scripts/tests/` file was read-write touched, only read (consistent with the scope boundary given #75 is live in `board/`).
+
+```starcar-artifact
+outcome: done
+findings: Landed scripts/probes/ManifestBoardJoin.Probes.Tests.ps1 pinning #76's manifest-to-board join as a substrate probe: 5 new Its (gates lane, trains lane, declaredNotObserved, assigned, zero-conditions guard), all passing against the real board/server binary over a sealed scratch store. Non-vacuity proven for all five assertions via direct fault injection to this file, five quoted reds observed, all five reverted to byte-identical sha256 b21e0c5eb4b6c7c341d9735289bb1b2573132f4996173e6ffca18559263b3599. Two genuine PowerShell/Windows process-handling defects found and fixed during build (event-delegate runspace crash; delete-lock retry for no-debris compliance), both logged to docs/friction-log.md at the class level per standing doctrine. scripts/probes 24/24 to 29/29; scripts/tests unchanged (223/0/4, no files touched). No board/, schema/, or scripts/tests/ edits - scope boundary honored while #75 works live in board/. Committed c1c4d2dcee4023f721f2d5d433fe3bc2f3583dc1 on car/probe-79, not pushed.
+abstract: Car probe-79 landed a pinned Pester substrate probe in scripts/probes/ that runs the real board/server binary against a sealed scratch store and asserts, by name, the four manifest-to-board join properties issue #76's owner-ruled PROBE RESULT comment measured (gates lane fill, trains consist rendering, declaredNotObserved completeness, dispatch-assigned flow), plus a zero-board-conditions non-vacuity guard. All five assertions were proven non-vacuous via direct, reverted fault injection to the fixture with quoted red messages and sha256 before/after checks. Two Windows/PowerShell process-handling defects (event-handler runspace crash, exe delete-lock on cleanup) were found and fixed in the process, with class-level friction-log entries. scripts/probes moved 24/24 to 29/29; scripts/tests untouched at 223/0/4. Committed locally on car/probe-79, never pushed.
+task-id: probe-79-car-r1
+```</result>
+<usage><subagent_tokens>203651</subagent_tokens><tool_uses>112</tool_uses><duration_ms>1422735</duration_ms></usage>
+</task-notification>
