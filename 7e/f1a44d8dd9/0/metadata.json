@@ -1,0 +1,51 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "7ef1a44d8dd9",
+  "session_id": "8a347c36-20b4-427a-ae0b-46855aa7bb72",
+  "strategy": "manual-commit",
+  "created_at": "2026-07-27T16:24:15.1480318Z",
+  "branch": "dev",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "docs/friction-log.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-fable-5",
+  "turn_id": "aeefe1a4732c",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 511,
+    "cache_creation_tokens": 1521705,
+    "cache_read_tokens": 94041391,
+    "output_tokens": 296715,
+    "api_call_count": 271
+  },
+  "session_metrics": {
+    "turn_count": 51
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-07-27T16:24:14.6502692Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 27,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 27,
+    "total_lines_changed": 27,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 28,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".claude/settings.local.json": 28
+      }
+    }
+  ]
+}
