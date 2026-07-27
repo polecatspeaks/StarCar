@@ -494,6 +494,29 @@ locator phrase so a second party can re-derive it from that file.
   under review is exactly as mutable as code. The pattern to hold: every review of any
   artifact gets its own detached worktree at the frozen SHA, with no exception for prose.
 
+- 2026-07-27 ~13:15 (design-87 REVIEWER, self-corrected after the AUTHOR disputed it;
+  reviewer-recommended landing, and it does NOT count against the document):
+  `ConvertFrom-Json` SILENTLY COERCES AN ISO-8601 STRING TO A LOCAL `System.DateTime`, AND
+  A LANDED VERDICT PUBLISHED THE RESULT AS AN OBSERVED COORDINATE. The round-1 design
+  verdict quoted a probe-log span as `07:18:40`-`19:08:35`. The raw bytes read
+  `2026-07-24T11:18:40.178633+00:00` and `2026-07-25T23:08:35.962940+00:00`. Same 20
+  records - the reviewer had rendered UTC into machine-local Eastern time and stated it as
+  the field's value. Measured by the reviewer on re-check: `ConvertFrom-Json` returns
+  `System.DateTime`, NOT `String`, and renders local. The AUTHOR caught it and disclosed a
+  divergence from its own reviewer's verdict rather than quietly adopting the reviewer's
+  numbers - which is the loudly-not-quietly rule paying out in the direction it is hardest
+  to apply, upward at a gate. Class: **a tool's implicit type conversion is invisible until
+  you read raw bytes**; any timestamp, id, or coordinate quoted into a durable record must
+  come from the raw text, never from a parsed object's default rendering. Fourth member of
+  today's family (pwsh two current directories; a shell block that is not a transaction;
+  gates blind to untracked files) - every one is "a layer did something I did not ask for
+  and did not announce".
+  **THE RECORD IS NOT EDITED.** The round-1 verdict is landed, integrity-hashed and public
+  with the wrong coordinate in it; the correction lives in the round-2 verdict that found
+  it. That is the showcase-never-edits-the-record rule working as designed - a reader
+  following the series sees the error and its correction, which is worth more than a
+  silently-clean artifact.
+
 - 2026-07-27, structural fact FOUND BY THE MINE (not friction, recorded so nobody
   re-digs): the per-dispatch "Entire-Checkpoint" blobs on the checkpoint branch are
   periodic snapshots of the SINGLE conductor session, not separate car/reviewer
