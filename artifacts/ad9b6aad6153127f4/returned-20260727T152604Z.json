@@ -1,0 +1,15 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "returned",
+  "subject": "ad9b6aad6153127f4",
+  "session_id": "8a347c36-20b4-427a-ae0b-46855aa7bb72",
+  "at": "2026-07-27T15:26:04Z",
+  "outcome": "done",
+  "findings": "Built scripts/New-TrainManifest.ps1 (mint/amend, both-schema validation, Get-Sha256Hex sealing) and the schema/1 member-identity contract change (subject optional, task_id added, anyOf requiring one) per the coordinator's binding mid-flight amendment. Verified the amendment's premise empirically rather than assuming it: built and ran the real board/server against scratch stores twice, found a genuine contradiction (a task_id-only member is silently dropped by assemble.go's manifestPayload function, not rendered declaredNotObserved as expected) - disclosed, pinned as a red test, and filed as issue #85 (board/ untouched, out of scope). Also verified the anyOf schema shape does not retroactively break the six already-landed train:board-v0 manifests (NO-BACKFILL doctrine honored, store-checks 267/267 unaffected). Two real implementation bugs found and fixed via a genuine red-then-green cycle after test authoring: a Join-Path-on-absolute-path defect and a validate-before-integrity-exists ordering defect. Suites at final commit 8f9916c3e8911e2421565405bb3d6d8fa16907d3: scripts/tests 244/0/4skip (223 baseline + 21 new), scripts/store-checks 267/267, scripts/probes 29/29, Go board 98/0. Disclosed discrepancy: board/web node tests ran 209/214 pass (5 Playwright-dependent browser tests fail due to missing node_modules in this worktree, pre-existing and unrelated to this diff) rather than the brief's cross-check figure of 225/225.",
+  "abstract": "Delivered the producer-side train-manifest minting tooling for #76 - New-TrainManifest.ps1 (mint and amend modes) plus the schema/1 contract change the coordinator's mid-flight amendment required, with the amendment's own premise (subject-less members render declaredNotObserved) empirically disproven via a live board/server run and disclosed as new issue #85 rather than silently assumed or fixed out-of-scope. All work confined to schema/, scripts/New-TrainManifest.ps1, and scripts/tests/ - board/ never touched. 244/0/4skip scripts/tests, 267/267 store-checks, 29/29 probes, 98/0 Go board, all green at commit 8f9916c.",
+  "subject_basis": "runtime-id",
+  "task_id": "tooling-76-car-r1",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:472af09f31b978392042eda90df996289eab42e9b05494c7688d08e6f1e0726c"
+}
