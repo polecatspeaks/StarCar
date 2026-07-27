@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "c2b1e8f30b87",
+  "strategy": "manual-commit",
+  "branch": "dev",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "artifacts/ps-review-92/dispatched-20260727T201119Z.json"
+  ],
+  "sessions": [
+    {
+      "metadata": "/c2/b1e8f30b87/0/metadata.json",
+      "transcript": "/c2/b1e8f30b87/0/full.jsonl",
+      "compact_transcript": "/c2/b1e8f30b87/0/transcript.jsonl",
+      "content_hash": "/c2/b1e8f30b87/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  }
+}
