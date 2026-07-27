@@ -1,0 +1,13 @@
+{
+  "schema": "starcar-artifact/1",
+  "kind": "dispatched",
+  "subject": "ae3d64acd969fcdf2",
+  "session_id": "8a347c36-20b4-427a-ae0b-46855aa7bb72",
+  "at": "2026-07-27T10:57:00Z",
+  "budget": 1800.0,
+  "model": "claude-sonnet-5",
+  "subject_basis": "runtime-id",
+  "producer": "starcar-hook/1",
+  "normalisation": [],
+  "integrity": "sha256:b4568ead4cd4eb0fe10495ff8664fef1918e044d17122e73fb55bb1baa5c0d9c"
+}
