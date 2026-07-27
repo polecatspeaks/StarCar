@@ -4,29 +4,49 @@
 # WHY THIS EXISTS. The citation-truth defect class hit NINE-PLUS instances across two
 # trains in two days (view train #28+#12, rounds 1-3: artifacts/reviews/2026-07-26-
 # view-28-12-review-r1-REJECT.md, -r2-REJECT.md, -r3-APPROVE.md), all caught only by
-# expensive adversarial review attention, never mechanically. Round 2's own verdict
-# named the fix: "A test that greps `\S+\.(go|js|css|md|json):\d+` outside `artifacts/`
-# and asserts each coordinate resolves would have caught MAJOR-1, MAJOR-2 and
-# MAJOR-R2-2 mechanically - including the line-wrapped one that defeated both the
-# car's sweep and my first pass." Round 3 independently proved the unwrapping
-# technique this file ports: "an unwrapping scanner: it strips comment leaders and
-# joins all lines with no separator before matching the coordinate shape, so a
-# citation split across a line wrap cannot hide." This gate is that mechanism,
-# ratified by the owner (issue #65 comments) to land immediately after that train,
-# ahead of #67/#69/#68.
+# expensive adversarial review attention, never mechanically. Round 3 independently
+# proved the unwrapping technique this file ports: "an unwrapping scanner: it strips
+# comment leaders and joins all lines with no separator before matching the coordinate
+# shape, so a citation split across a line wrap cannot hide." This gate is that
+# mechanism, ratified by the owner (issue #65 comments) to land immediately after that
+# train, ahead of #67/#69/#68.
 #
-# THE THREE PAID-FOR CLASSES this gate targets:
-#   CLASS A, dead path - prose cites a file that does not exist (e.g. a "docs/CLAUDE.md"
-#     that was never there; a stale "docs/reviews/..." path after harness #7's
-#     migration commit moved review docs to artifacts/reviews/, git mv, history
-#     preserved - two live instances of exactly this were found and fixed at this
-#     gate's own landing, see CALIBRATION below).
-#   CLASS B, shifted line - a citation was true when written; a later commit inserted
-#     lines above it and the coordinate now points at unrelated code.
-#   CLASS C, line-wrapped escape - a citation split across a markdown/comment line wrap
-#     (e.g. "board/web/js/dom-" newline "writer.js:201") that defeats a naive
-#     single-line or basename-anchored search. This file's scanner unwraps before
-#     matching, per the round-3 reviewer's own proven technique.
+# WHAT THIS GATE ACTUALLY CATCHES, stated plainly and corrected against #65's own
+# round-1/round-2 review history (round 1 inherited an unverified claim as ground truth
+# and repeated it; round 2 tested it and found it false - see the note below):
+#   BINDING, mechanically proven by fault injection against the real repo:
+#     - CLASS A, dead path - a citation (single-line, or line-wrapped per the CLASS C
+#       note below) to a file that does not exist at HEAD. Two live instances (a stale
+#       "docs/reviews/..." path after harness #7's migration to artifacts/reviews/,
+#       git mv, history preserved) were found and fixed at this gate's own landing.
+#     - CLASS B FLOOR, out-of-range line - a citation whose line number (or the larger
+#       end of a range) exceeds the target file's current line count. This is the
+#       ONLY shape of "shifted line" this gate catches: a shift that pushes the
+#       coordinate PAST END OF FILE.
+#   NOT CAUGHT, disclosed rather than silently over-claimed: an IN-RANGE shifted
+#     citation - a line number that was true when written, drifted when an unrelated
+#     edit inserted lines above it, and now points at a DIFFERENT but still-existing
+#     line inside the same file. This gate has no symbol/content check strong enough to
+#     catch this class (see CHECK (c) below - report-only, not binding, precisely
+#     because it cannot carry this weight yet). Content anchoring DOES catch a subset
+#     of in-range shifts (where the citing text quotes a token that migrated with its
+#     original context) - it scored 2-for-2 on real defects the round-2 reviewer found
+#     (see CHECK (c) and the ROUND-1/ROUND-2 CORRECTION below) - but the population is
+#     still too small (n=6 at round-2 landing) to bind without an unmeasured
+#     false-positive risk; see CHECK (c) for the full, honest argument.
+#
+# THE ROUND-1/ROUND-2 CORRECTION, stated because repeating an unverified claim is
+# exactly the defect class this gate exists to stop, and this file nearly did it to
+# itself: round 1's header quoted the #28+#12 train's round-2 verdict verbatim - "A
+# test that greps `\S+\.(go|js|css|md|json):\d+` outside `artifacts/` and asserts each
+# coordinate resolves would have caught MAJOR-1, MAJOR-2 and MAJOR-R2-2 mechanically" -
+# and inherited it as settled fact without testing it. #65's own round-2 reviewer
+# TESTED it: all three cited coordinates (schema:191 at 3076a40, config.go:42 at
+# 3076a40, dom-writer.js:201 at 6346d7d) were IN-RANGE at the commits in question - a
+# negative-control in-range shift left this gate 11 passed / 0 failed, and the content
+# anchor never even evaluates on any of the three (zero backtick tokens on their citing
+# lines). The #28+#12 train's own round-2 verdict was WRONG about what a resolver like
+# this one would catch; this file no longer repeats that claim as ground truth.
 #
 # PRECEDENT SHAPE PORTED: scripts/tests/CodeCitationPolicy.Tests.ps1 (corpus-scan,
 # closed-set, self-calibrating, reds BY NAME) and board/store/condition_severity_test.go
@@ -51,12 +71,21 @@
 #     scratch-repo test fixtures in this very file necessarily contain coordinate-
 #     shaped strings that are not real citations). Extensions checked: .go .js .mjs
 #     .css .md .json .ps1 .psm1 .sh .yml .yaml - the brief's floor set exactly.
-#     .html was probed at landing
-#     (`git grep -nE '[A-Za-z0-9_./-]+\.(go|js|md|json|ps1|sh):[0-9]+' -- '*.html'`)
-#     and returned zero matches across both tracked .html files, so it is left out of
-#     the checked set rather than added prospectively with no corpus evidence (YAGNI -
-#     add it the day a .html file actually carries one, the same posture
-#     CodeCitationPolicy.Tests.ps1 takes with .psm1 before its first instance).
+#     THE CLOSED SET, self-calibrating (#65 round 2, MAJOR-5 - ported from
+#     CodeCitationPolicy.Tests.ps1's own closed-set completeness pattern,
+#     `scripts/tests/CodeCitationPolicy.Tests.ps1:288-308`): "checked" and "declared
+#     exempt" (`$script:DeclaredExemptExtensions`, in the BeforeAll below, one reason
+#     per entry) together form the closed set. A dedicated It asserts every extension
+#     actually observed in the non-artifacts tracked corpus - INCLUDING THE EMPTY,
+#     EXTENSIONLESS CASE - is in checked-union-exempt, red BY NAME (asserting on
+#     `.Count`, never a `-join`ed string, per #42 round 3's own lesson) naming any
+#     unaccounted extension. `.html` is DECLARED EXEMPT (not silently deferred): probed
+#     at landing (`git grep -nE '[A-Za-z0-9_./-]+\.(go|js|md|json|ps1|sh):[0-9]+' --
+#     '*.html'`), zero matches across both tracked .html files - exempt now, with a
+#     stated revisit trigger (move to $CheckedExtensions the day a real .html citation
+#     appears) rather than left as a silent, undeclared gap. `.py` is also DECLARED
+#     EXEMPT: the sole tracked .py file (`scripts/canonicalise-demo.py`) is explicitly
+#     disclosed PRESERVED WRECKAGE whose own header forbids editing it.
 #   - TARGET files (the cited side) are resolved against the FULL tracked-file set,
 #     INCLUDING artifacts/**: a doc legitimately cites a landed review verdict under
 #     `artifacts/reviews/**` (e.g. this file's own header cites three such verdicts),
@@ -72,21 +101,37 @@
 #
 # UNWRAPPING (Class C), the exact technique measured against this corpus:
 #   Comment leaders (`//` or `#` at line start) are stripped per line. A line is joined
-#   to the NEXT line - forming a 2-or-3-line sliding window, no separator - ONLY WHEN
-#   the current (stripped, right-trimmed) line ends in a bare hyphen `-`. This
-#   precondition is not a guess: EVERY genuine Class-C instance found in this corpus at
-#   landing ends its wrapped line in a hyphen (`board/web/js/dom-` / `docs/design/2026-
-#   07-21-v0-` / `docs/retros/2026-07-23-`, all kebab-case filenames wrapped exactly at
-#   an existing hyphen), and naive no-precondition joining measured 8 FALSE dead-path
-#   flags on this corpus ("disclosed at" + "poll.go" -> "atpoll.go"; "and" +
+#   to the NEXT line - forming a 2-or-3-line sliding window, no separator - ONLY at a
+#   genuine WRAP BOUNDARY (`Test-CitationWrapBoundary`): the current (stripped,
+#   right-trimmed) line ends in a hyphen immediately preceded by a word character (no
+#   space), OR ends in a bare `/`. This precondition is not a guess and was tightened
+#   twice against measurement (#65 round 2, MINOR-1 and MINOR-5):
+#     - Word-char-before-hyphen (MINOR-5): a bare `.EndsWith('-')` also matches this
+#       repo's own prose-dash convention ("word - word", a SPACED separator) - 209
+#       corpus lines end that way and are not wraps at all. Requiring the character
+#       immediately before the trailing hyphen to be a word character (no space)
+#       distinguishes a genuine mid-compound wrap (`dom-` -> `writer.js`) from a prose
+#       dash that merely happens to fall at end-of-line.
+#     - Slash boundary (MINOR-1): widened to ALSO join across a line ending in a bare
+#       `/` (a path broken immediately after a directory separator) - measured FREE
+#       against the real corpus: 192 coordinates pre-widening, 188 post- (the drop is
+#       from the MAJOR-2/3 citation fixes below removing 4 coordinates entirely, not
+#       from this widening), same set, zero new flags in either direction.
+#   EVERY genuine Class-C instance found in this corpus at landing satisfies the
+#   tightened rule: `board/web/js/dom-` / `docs/design/2026-07-21-v0-` / `docs/retros/
+#   2026-07-23-`, all kebab-case filenames wrapped exactly at an existing hyphen
+#   preceded by a letter or digit. Naive no-precondition joining measured 8 FALSE
+#   dead-path flags on this corpus ("disclosed at" + "poll.go" -> "atpoll.go"; "and" +
 #   "schema/index-format.md" -> "andschema/index-format.md"; "mirrors" +
 #   "scripts/Produce-Artifact.ps1" -> "mirrorsscripts/Produce-Artifact.ps1") - all
-#   eliminated by the hyphen-boundary precondition, 0 false flags remaining. A line
-#   whose PREDECESSOR ends in a hyphen is also suppressed as a fresh single-line start
-#   (a "continuation" line), because scanning it alone re-finds the tail fragment as if
-#   it were its own complete citation (e.g. "yard-skeleton-design.md:133" out of
-#   "docs/design/2026-07-21-v0-yard-skeleton-design.md:133") - measured 2 further false
-#   dead-path flags eliminated by this second guard.
+#   eliminated by the hyphen-boundary precondition (the word-char refinement was not
+#   yet needed to clear these three, but IS needed to clear the 209 spaced-dash lines,
+#   none of which happened to also contain a coordinate-shaped tail). A line whose
+#   PREDECESSOR satisfies the wrap-boundary test is also suppressed as a fresh
+#   single-line start (a "continuation" line), because scanning it alone re-finds the
+#   tail fragment as if it were its own complete citation (e.g. "yard-skeleton-
+#   design.md:133" out of "docs/design/2026-07-21-v0-yard-skeleton-design.md:133") -
+#   measured 2 further false dead-path flags eliminated by this second guard.
 #
 # RESOLUTION POLICY (the reason a bare basename is not automatically resolved the same
 # way as a full path - probed and decided with evidence, not assumed):
@@ -96,15 +141,27 @@
 #     wrong-directory citation whose BASENAME would still resolve uniquely elsewhere;
 #     silently accepting that via basename fallback would make this gate blind to the
 #     named defect class it exists to catch. Probed live instance of the same shape at
-#     landing: `docs/design/2026-07-22-dispatch-harness-design.md:97` and
+#     ROUND-1 landing: `docs/design/2026-07-22-dispatch-harness-design.md:97` and
 #     `docs/specs/2026-07-22-dispatch-harness-spec.md:109` both cited
 #     `docs/reviews/2026-07-22-harness-design-round1-REJECT.md:66` - a path that
 #     predates harness #7's migration commit (`git mv docs/reviews -> artifacts/reviews`,
-#     history preserved). The literal path no longer exists; the content at line 66 of
-#     `artifacts/reviews/2026-07-22-harness-design-round1-REJECT.md` (git-mv history
-#     confirms it is the same file) matches the citing text exactly. FIXED in this same
-#     commit (both sites retargeted to the `artifacts/reviews/` path) rather than
-#     silently basename-resolved.
+#     history preserved). WHAT WAS ACTUALLY VERIFIED then, stated precisely (#65 round 2,
+#     MAJOR-4 - the prior wording overclaimed): the PATH and the git-mv history were true
+#     (the file is the same one, content preserved). The LINE was never independently
+#     checked and was WRONG - line 66 is blank; the real `### MAJOR-1` heading the
+#     citation means is one line below, at `:67`, shifted there by an unrelated, later
+#     insertion (`docs/setup.md:42`'s own citation into `docs/templates/repo-policy-
+#     check-patterns.md` and `docs/contracts/gating-matrix.md:49`'s citation into
+#     `board/server/sse.go` carried the identical unverified-line defect - all THREE
+#     found by #65's round-2 reviewer, none by this gate, because an in-range shift is
+#     exactly the class this gate does not catch, per WHAT THIS GATE ACTUALLY CATCHES
+#     above). FIXED in round 2 by converting all three sites to cite the SYMBOL or
+#     HEADING NAME instead of a line number - `writeSSEHeartbeat in board/server/sse.go`,
+#     the design/spec rows' "MAJOR-1 finding" by heading, `docs/templates/repo-policy-
+#     check-patterns.md`'s "Running them" section by name - which is durable against
+#     future line drift and removes the coordinate from this gate's population entirely
+#     (a symbol citation is not a `file:line` shape, so there is nothing left for a
+#     line-count check to get wrong).
 #   - Target has NO `/` (a bare filename): fall back to a basename search across every
 #     tracked file (including artifacts/). Exactly one candidate resolves silently
 #     (this corpus's dominant style - `constitution.md`, `ci.yml`, `Board.psm1` etc. are
@@ -113,16 +170,33 @@
 #     way (measured at landing: `README.md` x4, `state-ledger.md` x2, `gating-matrix.md`
 #     x2 tracked files share a basename) - reported by name, never silently dropped and
 #     never a hard fail, per the severity philosophy (a wrong guess in either direction
-#     is worse than an honest "cannot decide mechanically here").
+#     is worse than an honest "cannot decide mechanically here"). EXCEPTION, BINDING
+#     (#65 round 2, MINOR-4): if the cited line exceeds EVERY candidate's length, that
+#     is a real Class-B defect regardless of which candidate was meant, and is reported
+#     as out-of-range rather than waved through under cover of ambiguity - measured zero
+#     live instances of this at landing (all 13 ambiguous citations are in range for at
+#     least one candidate), pinned as a fault-injected scratch-repo case instead.
 #
-# EXEMPTIONS, both visible and greppable, neither silent:
+# EXEMPTIONS, both visible and greppable, neither silent, and BOTH still run existence
+# and range checks (#65 round 2, MINOR-3 - "exempt" here means exempt from PATH
+# PRECISION only, never a free pass on whether the target even exists):
 #   - ELLIPSIS ELISION (`.../file.ext:N`): this repo's own established convention for an
 #     abbreviated repeat-citation (`board/server/storepath.go:28` IMPLEMENTS this exact
 #     truncation in production code: `return ".../" + filepath.Base(absPath)`; docs use
 #     it identically, e.g. `.../drill.md:105`). A match whose four preceding characters
 #     are literally `.../` is not a dead citation to a file named "drill.md" - it is a
-#     deliberately truncated reference to a fuller citation stated nearby. Exempted,
-#     counted, reported by name - never silently invisible.
+#     deliberately truncated reference to a fuller citation stated nearby. ROUND-1 BUG,
+#     FOUND AND FIXED IN ROUND 2 (MINOR-3): round 1 skipped Elided coordinates entirely -
+#     "a fabricated `.../never-existed.md:3` passes" was demonstrably true, and even the
+#     THREE REAL, TRUE elided citations in this corpus were never actually verified.
+#     `Resolve-CitationTarget`'s exact-basename-equality lookup cannot fix this either:
+#     the live token, "drill.md", is a SUFFIX of the real basename ("2026-07-22-car2-
+#     plan-review-round2-drill.md"), never a basename in its own right, so routing it
+#     through the ordinary resolver still misses (measured: 3/3 false dead-path flags
+#     the first time this was tried). `Resolve-ElidedCitationTarget` instead matches by
+#     SUFFIX across every tracked file's basename or full path, unique-match, then runs
+#     the same existence+range checks as everything else. Exempted, counted, reported by
+#     name - never silently invisible, and no longer silently unchecked either.
 #   - HISTORICAL COORDINATE marker: a citing line (or any line spanned by a wrapped
 #     match) containing the literal, case-insensitive substring "historical
 #     coordinate" is exempt from the existence/range checks. Real instance fixed at
@@ -149,50 +223,107 @@
 #       reading its name.
 #   (c) REPORT-ONLY, NOT BINDING - content anchor: does a backtick-quoted identifier
 #       token from the citing line appear within +/-15 lines of the cited target line?
-#       Measured at this gate's final landing HEAD, literal-path citations only: of the
-#       resolvable literal-path citations, only 9 carry a backtick-quoted token on the
-#       citing line at all (the rest have none - pure prose/row citations with nothing
-#       to anchor on). Of those 9: 7 hit, 2 miss (`board/server/sse.go:77` cited from
-#       `docs/contracts/gating-matrix.md:49`; `artifacts/reviews/2026-07-22-harness-
-#       design-round1-REJECT.md:66` cited from this gate's own path-migration fix at
-#       `docs/design/2026-07-22-dispatch-harness-design.md:97` - neither confirmed a
-#       real defect, both are plain path citations with no repeated symbol token nearby
-#       to anchor on). n=9 is too small and the token-presence rate too low to bind
-#       without real false-flag risk - matching this repo's own prior-art guidance
-#       verbatim (`docs/templates/repo-policy-check-patterns.md` SS3: "line numbers
-#       drift on every edit above them - the cheap tier (file exists + symbol named
-#       exists in file) avoids crying wolf; the expensive tier needs content-
-#       anchoring... before it can be strict without being noisy"). Landed as a
-#       measured, clearly-labeled diagnostic (Skipped-with-Because, never a hard fail),
-#       decision recorded here rather than silently dropped.
+#       CASE-SENSITIVE match (`-cmatch`, #65 round 2, MINOR-2 - the prior `-match` is
+#       case-INSENSITIVE by default and would false-HIT a PascalCase token like
+#       `StalenessMs` against unrelated lowercase prose that merely contains the same
+#       letters differently cased; identifier tokens are case-sensitive by nature, and
+#       this repo's own corpus carries the near-collision live - `board/server/
+#       config.go:56`'s doc comment says "stalenessMs 15000" in lowercase prose, one
+#       line above the field `StalenessMs` a DIFFERENT citation quotes by symbol).
+#
+#       THE MEASURED TRUTH, stated plainly because round 1 got this backwards (round
+#       1's text called both round-1 misses "neither confirmed a real defect" - FALSE,
+#       and the exact error this whole gate exists to stop repeating): at round-1
+#       landing, this diagnostic scored 2 FOR 2 - its only two misses,
+#       `board/server/sse.go:77` (cited from `docs/contracts/gating-matrix.md:49`) and
+#       `artifacts/reviews/2026-07-22-harness-design-round1-REJECT.md:66` (cited from
+#       `docs/design/2026-07-22-dispatch-harness-design.md:97`), were BOTH real,
+#       confirmed Class-B in-range shifts - the exact class every BINDING check in this
+#       file (a) and (b) is disclosed as unable to catch. This diagnostic, unbound and
+#       unread in round 1's own CI run, silently carried the answer to two of this
+#       round's five Majors the whole time.
+#
+#       THE ARGUMENT FOR STAYING REPORT-ONLY, made WITH that record rather than around
+#       it: a 2-for-2 true-positive rate is real signal, not proof of a safe FALSE-
+#       positive rate. Re-measured post-fix (both misses retargeted to symbol/heading
+#       citations, which removes them from this check's population rather than fixing
+#       them to a hit - see RESOLUTION POLICY above): of the resolvable literal-path
+#       citations, 6 carry a backtick-quoted token on the citing line at all; all 6 hit,
+#       0 miss. That leaves ZERO live miss examples anywhere in this corpus to check
+#       against the other failure mode - a citation that is GENUINELY CORRECT but whose
+#       citing prose simply does not repeat an identical token near the target (a
+#       paraphrase, a synonym, a renamed-but-still-correct reference). This gate has
+#       never observed that case even once, so binding now would mean the FIRST miss
+#       this check EVER produces post-binding is an untested, potentially wolf-crying
+#       CI failure - the exact instrument-quality risk the severity philosophy warns
+#       against, from the opposite direction of round 1's dismissiveness. Kept
+#       REPORT-ONLY, with an explicit, numeric revisit trigger rather than an open-ended
+#       "someday": bind it the next time EITHER (i) the tokened-citation population
+#       (n) grows past 20, giving enough data to also estimate a false-positive rate, OR
+#       (ii) a report-only miss is manually confirmed NOT to be a defect (establishing,
+#       for the first time, what this check's false-positive actually looks like).
+#       Matches this repo's own prior-art guidance verbatim (`docs/templates/repo-
+#       policy-check-patterns.md` SS3: "line numbers drift on every edit above them -
+#       the cheap tier ... avoids crying wolf; the expensive tier needs content-
+#       anchoring ... before it can be strict without being noisy"). Landed as a
+#       measured, clearly-labeled, PROMOTED diagnostic (Skipped-with-Because, never a
+#       hard fail YET) - proven valuable, not yet safe to bind, both true at once.
 #
 # RED BY NAME: every failing check lists the citing file, the citing line (or line
 # range for a wrapped citation), the dead/out-of-range coordinate, and which check
 # failed - never an aggregate boolean.
 #
 # CALIBRATION AT LANDING (measured at this gate's own HEAD, numbers are fact, not a
-# claim of future exhaustiveness):
-#   Source files scanned (checked extensions, excluding artifacts/): 258
-#   Coordinate matches found (deduped, post-unwrap, post-continuation-suppression): 192
-#   Wrapped (required a >1-line window to resolve): 2 - both genuine Class-C instances
-#     already present in this repo's real history, both TRUE once unwrapped:
-#     `board/web/test/sse-protocol.test.js:8-9` -> `docs/design/2026-07-21-v0-yard-
-#     skeleton-design.md:133`; `docs/design/2026-07-21-v0-yard-skeleton-design.md:585-
-#     586` -> `docs/retros/2026-07-23-board-train-retro.md:120-121`.
+# claim of future exhaustiveness). ROUND 1 then ROUND 2, both stated - the delta is
+# itself evidence, not noise to collapse away:
+#   Source files scanned (checked extensions, excluding artifacts/, excluding this
+#     file): 258 (unchanged - this file's own extension is already counted in the
+#     corpus at the EXTENSION level; only this one FILE is self-excluded).
+#   Coordinate matches found (deduped, post-unwrap, post-continuation-suppression):
+#     round 1: 192. Round 2: 188. The drop of 4 is NOT the unwrap-boundary widening
+#     (measured free, see UNWRAPPING above) - it is the three round-2 citation fixes
+#     that converted a `file:line` coordinate into a symbol/heading citation with no
+#     line number at all (MAJOR-2's `docs/setup.md:42`, MAJOR-3a's `docs/contracts/
+#     gating-matrix.md:49`, and MAJOR-3b/MAJOR-4's shared target cited from BOTH
+#     `docs/design/2026-07-22-dispatch-harness-design.md:97` and `docs/specs/2026-07-
+#     22-dispatch-harness-spec.md:109` - 1+1+2 = 4 coordinates removed from the
+#     population, never fixed to a passing coordinate).
+#   Wrapped (required a >1-line window to resolve): 2, unchanged both rounds - both
+#     genuine Class-C instances already present in this repo's real history, both TRUE
+#     once unwrapped: `board/web/test/sse-protocol.test.js:8-9` -> `docs/design/2026-
+#     07-21-v0-yard-skeleton-design.md:133`; `docs/design/2026-07-21-v0-yard-skeleton-
+#     design.md:585-586` -> `docs/retros/2026-07-23-board-train-retro.md:120-121`.
 #   Elided (ellipsis convention): 3, all `.../drill.md:1xx` in
 #     docs/templates/design-briefs.md and docs/templates/worked-adversary-and-gate-
-#     briefs.md, all resolving to `artifacts/reviews/2026-07-22-car2-plan-review-
-#     round2-drill.md` (136 lines - both cited lines in range).
-#   Historical-marker exempt: 1 (the session-start-record.sh:76 fix landed in this
-#     same commit).
-#   Ambiguous bare-basename (ratio, never silently resolved): 13.
-#   TRUE DEFECTS FOUND AND FIXED in this same commit (both CLASS A, both the
-#     docs/reviews/ -> artifacts/reviews/ migration-shadow described above):
-#     `docs/design/2026-07-22-dispatch-harness-design.md:97`,
-#     `docs/specs/2026-07-22-dispatch-harness-spec.md:109`.
-#   Zero-false-flag bar: after the two fixes above and the one historical-marker
-#     addition, this gate is GREEN against the real corpus (0 Class A, 0 Class B
-#     remaining, both ambiguous and elided buckets reported non-failing).
+#     briefs.md, all resolving BY SUFFIX (#65 round 2, MINOR-3 - `Resolve-
+#     ElidedCitationTarget`, never the exact-basename lookup) to `artifacts/reviews/
+#     2026-07-22-car2-plan-review-round2-drill.md` (136 lines - both cited lines in
+#     range, now ACTUALLY CHECKED rather than silently waved through as round 1 did).
+#   Historical-marker exempt: 1 (the session-start-record.sh:76 fix landed at round-1
+#     landing).
+#   Ambiguous bare-basename (ratio, never silently resolved): 13, unchanged - none of
+#     the 13 hit the round-2 all-candidates-out-of-range bind (MINOR-4); that case is
+#     pinned only as a fault-injected scratch-repo fixture, with zero live instances.
+#   TRUE DEFECTS FOUND AND FIXED, round 1 (2, both CLASS A, both the docs/reviews/ ->
+#     artifacts/reviews/ migration-shadow): `docs/design/2026-07-22-dispatch-harness-
+#     design.md:97`, `docs/specs/2026-07-22-dispatch-harness-spec.md:109` (line 66,
+#     retargeted to the new path - ROUND 1 VERIFIED ONLY THE PATH, NOT THE LINE, WHICH
+#     WAS ALSO WRONG; see round 2's fix below).
+#   TRUE DEFECTS FOUND AND FIXED, round 2 (3, all CLASS B in-range shifts - the class
+#     this gate's BINDING checks cannot see, found only by #65's round-2 reviewer
+#     opening the files): `docs/setup.md:42` (`repo-policy-check-patterns.md:57` -> the
+#     heading is now at line 76, retargeted to cite the section BY NAME instead);
+#     `docs/contracts/gating-matrix.md:49` (`board/server/sse.go:75-77` -> the real
+#     `writeSSEHeartbeat` function is at `:96-101`, retargeted to cite the symbol
+#     instead); `docs/design/2026-07-22-dispatch-harness-design.md:97` AND
+#     `docs/specs/2026-07-22-dispatch-harness-spec.md:109` (both cited `artifacts/
+#     reviews/2026-07-22-harness-design-round1-REJECT.md:66` - blank; the real
+#     `### MAJOR-1` heading is at `:67` - retargeted BOTH sites to cite the finding by
+#     heading, one fix covering two citing sites since they share a target).
+#   Zero-false-flag bar: after all round-1 AND round-2 fixes, this gate is GREEN
+#     against the real corpus (0 Class A, 0 Class B remaining; ambiguous, elided, and
+#     content-anchor buckets all reported non-failing per their stated, argued reasons
+#     above, never silently).
 #
 # The three-item CALIBRATION INPUT from issue #65's own comment thread
 # (docs/design/2026-07-22-dispatch-harness-design.md:53, docs/templates/design-doc.md:204,
@@ -213,9 +344,46 @@
 
 BeforeAll {
     $script:CheckedExtensions = @('.go', '.js', '.mjs', '.css', '.md', '.json', '.ps1', '.psm1', '.sh', '.yml', '.yaml')
+    # The closed set's other half (#65 round 2, MAJOR-5 - ported from CodeCitationPolicy.
+    # Tests.ps1's own closed-set discipline): every extension seen in the non-artifacts
+    # tracked corpus that is NOT in $CheckedExtensions must be declared here, with a
+    # reason, or the completeness It below reds BY NAME. Probed at round-2 landing
+    # (`git ls-files | grep -v '^artifacts/' | sed -n 's/.*\.\([A-Za-z0-9]*\)$/\1/p' |
+    # sort | uniq -c`): .expect(12) .png(6) .gitignore(3) .html(2) .sum(1) .py(1) .mod(1)
+    # .jsonl(1) .gitattributes(1), plus one extensionless file (LICENSE).
+    $script:DeclaredExemptExtensions = [ordered]@{
+        '.expect'        = 'schema/vectors/**/*.expect fixture files - comment-incapable without mutating the artifact under test (CLAUDE.md''s own citation-standard exemption for these exact files, ported here)'
+        '.png'           = 'binary image (screenshots/diagrams), no comment syntax - same reasoning family CodeCitationPolicy.Tests.ps1 already applies to .png'
+        '.jsonl'         = 'scripts/tests/fixtures/payloads/*.jsonl - test-fixture transcript data, same mutation-risk reasoning as .expect'
+        '.gitignore'     = 'git configuration data; probed - zero coordinate-shaped matches across all 3 tracked .gitignore files'
+        '.gitattributes' = 'git configuration data; probed - zero coordinate-shaped matches despite rich prose comments explaining line-ending policy'
+        '.sum'           = 'go.sum - auto-generated Go module checksum lockfile, machine-written, no citations possible'
+        '.mod'           = 'go.mod - Go module manifest; probed, no citation-shaped content'
+        '.py'            = 'the sole tracked .py file (scripts/canonicalise-demo.py) is explicitly-disclosed PRESERVED WRECKAGE whose own header forbids editing it ("do not... fix the forgery - repairing it would destroy the fossil"); probed, no citation-shaped content regardless (#65 round 2, MAJOR-5)'
+        '.html'          = 'probed at landing - zero coordinate-shaped citations in either tracked .html file; declared exempt rather than checked to avoid gating on a currently-empty case; revisit (move to $CheckedExtensions) the day a real .html file:line citation appears (#65 round 2, MAJOR-5)'
+        ''               = 'the sole extensionless tracked file at landing is LICENSE; probed, no citation-shaped content (license text, not code or docs that cite line numbers)'
+    }
     $script:ExtRe   = ($script:CheckedExtensions -replace '^\.', '') -join '|'
     $script:CoordRe = "(\.?[A-Za-z0-9_][A-Za-z0-9_./-]*\.(?:$($script:ExtRe))):(\d+)(?:-(\d+))?"
     $script:CommentLeaderRe = '^\s*(//|#)\s?'
+
+    function Get-AllNonArtifactFiles {
+        param([Parameter(Mandatory)][string] $RepoRoot)
+        $all = git -C $RepoRoot ls-files
+        if (-not $all) { return @() }
+        return @($all | Where-Object { $_ -notmatch '^artifacts/' })
+    }
+
+    function Get-UnaccountedExtensions {
+        # #65 round 2 MAJOR-5, porting CodeCitationPolicy.Tests.ps1's own #42-round-3
+        # lesson: the caller MUST assert on `.Count`, never on a `-join`ed string - an
+        # unaccounted EXTENSIONLESS entry is the empty string '', and joining a single
+        # empty string with anything still produces '', which `-BeNullOrEmpty` would
+        # then wrongly pass. This function only computes the set; the It below asserts
+        # on Count.
+        param([string[]] $ObservedExtensions, [string[]] $CoveredExtensions)
+        return @($ObservedExtensions | Where-Object { $CoveredExtensions -notcontains $_ })
+    }
 
     function Get-CheckedSourceFiles {
         # SELF-EXCLUSION, disclosed rather than solved (same class CodeCitationPolicy.
@@ -257,17 +425,80 @@ BeforeAll {
         return $map
     }
 
+    function Resolve-ElidedCitationTarget {
+        # #65 round 2, MINOR-3. The ellipsis convention (".../file.ext:N") truncates to
+        # whatever suffix the AUTHOR chose, not necessarily a real file's exact basename
+        # - the live corpus instance is ".../drill.md", a suffix of the real basename
+        # "2026-07-22-car2-plan-review-round2-drill.md", never a basename in its own
+        # right. Resolve-CitationTarget's EXACT basename-equality lookup therefore always
+        # misses it (measured: routing Elided coordinates through it flagged 3/3 live
+        # elided citations dead, a false positive on every instance in this corpus).
+        # This resolves by SUFFIX instead: any tracked file (basename OR full relative
+        # path) ending in the elided token. Exempts only path precision, same as every
+        # other basename-style resolution - existence and range are still checked on
+        # whatever it uniquely matches.
+        param(
+            [Parameter(Mandatory)][string] $RepoRoot,
+            [Parameter(Mandatory)]         $Coordinate,
+            [Parameter(Mandatory)][string[]] $AllTrackedFiles
+        )
+        $checkLine = if ($Coordinate.TargetLine2) { $Coordinate.TargetLine2 } else { $Coordinate.TargetLine }
+        $suffix = $Coordinate.Target
+        $candidates = @($AllTrackedFiles | Where-Object {
+            [System.IO.Path]::GetFileName($_).EndsWith($suffix) -or $_.EndsWith($suffix)
+        })
+        if ($candidates.Count -eq 0) {
+            return [pscustomobject]@{ Status = 'dead'; ResolvedPath = $null }
+        }
+        if ($candidates.Count -gt 1) {
+            $anyInRange = $false
+            foreach ($cand in $candidates) {
+                $candLines = @(Get-Content -Path (Join-Path $RepoRoot $cand) -Encoding UTF8).Count
+                if ($checkLine -le $candLines) { $anyInRange = $true; break }
+            }
+            if (-not $anyInRange) {
+                return [pscustomobject]@{ Status = 'out-of-range'; ResolvedPath = ($candidates -join ', ') }
+            }
+            return [pscustomobject]@{ Status = 'ambiguous'; ResolvedPath = ($candidates -join ', ') }
+        }
+        $full = Join-Path $RepoRoot $candidates[0]
+        $tlines = @(Get-Content -Path $full -Encoding UTF8).Count
+        if ($checkLine -gt $tlines) {
+            return [pscustomobject]@{ Status = 'out-of-range'; ResolvedPath = $candidates[0] }
+        }
+        return [pscustomobject]@{ Status = 'ok'; ResolvedPath = $candidates[0] }
+    }
+
     function Strip-CitationCommentLeader {
         param([string] $Line)
         return [regex]::Replace($Line, $script:CommentLeaderRe, '')
     }
 
+    function Test-CitationWrapBoundary {
+        # #65 round 2, MINOR-1 + MINOR-5. The join precondition, tightened twice against
+        # measurement:
+        #   MINOR-5: a bare `.EndsWith('-')` also matches this repo's own prose dash
+        #   convention ("word - word", a spaced separator, NOT a wrapped compound name) -
+        #   209 corpus lines end that way. Requiring a WORD CHARACTER immediately before
+        #   the trailing hyphen (no space between) distinguishes a genuine mid-compound
+        #   wrap ("dom-" -> "writer.js") from a prose dash ("...the fix - and this")
+        #   whose trailing "-" only appears at end-of-line by coincidence of where the
+        #   line was cut. Regex `[A-Za-z0-9_]-$` on the trimmed line.
+        #   MINOR-1: widened to ALSO join across a line ending in a bare `/` (a path
+        #   broken immediately after a directory separator) - measured free against the
+        #   real corpus: 192 coordinates, identical set, zero new flags either direction.
+        param([string] $TrimmedLine)
+        return ($TrimmedLine -match '[A-Za-z0-9_]-$') -or $TrimmedLine.EndsWith('/')
+    }
+
     function Find-CitationCoordinates {
         # Scans $SourceFiles for file:line coordinates, unwrapping a line onto the
-        # next ONLY when the current (stripped, right-trimmed) line ends in a bare
-        # hyphen - see header UNWRAPPING note for why this precondition exists and
-        # what it measurably prevents. Returns one object per distinct coordinate:
-        # CitingFile, StartLine, EndLine, Target, TargetLine, TargetLine2, Elided.
+        # next ONLY when the current (stripped, right-trimmed) line ends at a genuine
+        # wrap boundary (Test-CitationWrapBoundary - a mid-compound hyphen or a bare
+        # trailing slash, never a spaced prose dash) - see header UNWRAPPING note for
+        # why this precondition exists and what it measurably prevents. Returns one
+        # object per distinct coordinate: CitingFile, StartLine, EndLine, Target,
+        # TargetLine, TargetLine2, Elided.
         param(
             [Parameter(Mandatory)][string]   $RepoRoot,
             [Parameter(Mandatory)][string[]] $SourceFiles,
@@ -280,12 +511,12 @@ BeforeAll {
             if (-not (Test-Path $full -PathType Leaf)) { continue }
             $lines = @(Get-Content -Path $full -Encoding UTF8)
             for ($i = 0; $i -lt $lines.Count; $i++) {
-                $isContinuation = ($i -gt 0) -and ((Strip-CitationCommentLeader $lines[$i - 1]).TrimEnd().EndsWith('-'))
+                $isContinuation = ($i -gt 0) -and (Test-CitationWrapBoundary ((Strip-CitationCommentLeader $lines[$i - 1]).TrimEnd()))
                 $joined = ''
                 for ($w = 0; $w -lt $MaxWindow -and ($i + $w) -lt $lines.Count; $w++) {
                     if ($w -gt 0) {
                         $prevStripped = (Strip-CitationCommentLeader $lines[$i + $w - 1]).TrimEnd()
-                        if (-not $prevStripped.EndsWith('-')) { break }
+                        if (-not (Test-CitationWrapBoundary $prevStripped)) { break }
                     }
                     $joined  += (Strip-CitationCommentLeader $lines[$i + $w])
                     $endLine  = $i + $w + 1
@@ -355,6 +586,21 @@ BeforeAll {
         }
         $candidates = $BasenameMap[$bn]
         if ($candidates.Count -gt 1) {
+            # #65 round 2, MINOR-4: ambiguity over WHICH file is meant is not the same
+            # question as whether the cited line is even plausible. If the line exceeds
+            # EVERY candidate's length, that is a real defect regardless of which file
+            # was intended - bind that case instead of waving it through under cover of
+            # "cannot be mechanically disambiguated." Only genuinely-plausible ambiguity
+            # (in range for at least one candidate) stays report-only.
+            $anyInRange = $false
+            foreach ($cand in $candidates) {
+                $candFull  = Join-Path $RepoRoot $cand
+                $candLines = @(Get-Content -Path $candFull -Encoding UTF8).Count
+                if ($checkLine -le $candLines) { $anyInRange = $true; break }
+            }
+            if (-not $anyInRange) {
+                return [pscustomobject]@{ Status = 'out-of-range'; ResolvedPath = ($candidates -join ', ') }
+            }
             return [pscustomobject]@{ Status = 'ambiguous'; ResolvedPath = ($candidates -join ', ') }
         }
         $full = Join-Path $RepoRoot $candidates[0]
@@ -369,10 +615,12 @@ BeforeAll {
 Describe 'Citation resolver: every file:line coordinate outside artifacts/ resolves (#65)' {
 
     BeforeAll {
-        $script:RepoRoot     = (git rev-parse --show-toplevel)
-        $script:SourceFiles  = @(Get-CheckedSourceFiles -RepoRoot $script:RepoRoot)
-        $script:BasenameMap  = Get-BasenameMap -RepoRoot $script:RepoRoot
-        $script:Coordinates  = @(Find-CitationCoordinates -RepoRoot $script:RepoRoot -SourceFiles $script:SourceFiles)
+        $script:RepoRoot         = (git rev-parse --show-toplevel)
+        $script:SourceFiles      = @(Get-CheckedSourceFiles -RepoRoot $script:RepoRoot)
+        $script:AllNonArtifact   = @(Get-AllNonArtifactFiles -RepoRoot $script:RepoRoot)
+        $script:AllTrackedFiles  = @(git -C $script:RepoRoot ls-files)
+        $script:BasenameMap      = Get-BasenameMap -RepoRoot $script:RepoRoot
+        $script:Coordinates      = @(Find-CitationCoordinates -RepoRoot $script:RepoRoot -SourceFiles $script:SourceFiles)
 
         $script:DeadPath   = @()
         $script:OutOfRange = @()
@@ -382,11 +630,22 @@ Describe 'Citation resolver: every file:line coordinate outside artifacts/ resol
         $script:Ok         = @()
 
         foreach ($c in $script:Coordinates) {
-            if ($c.Elided) { $script:Elided += $c; continue }
             if (Test-HistoricalCoordinateMarker -RepoRoot $script:RepoRoot -Coordinate $c) {
                 $script:Historical += $c; continue
             }
-            $r = Resolve-CitationTarget -RepoRoot $script:RepoRoot -Coordinate $c -BasenameMap $script:BasenameMap
+            # #65 round 2, MINOR-3: the ellipsis valve exempts only PATH PRECISION, never
+            # existence or range. But the elided token is a SUFFIX the author chose, not
+            # necessarily a real file's exact basename (the live corpus case, ".../
+            # drill.md", is a suffix of "...round2-drill.md", never a basename in its own
+            # right) - Resolve-CitationTarget's exact-basename lookup always misses it, so
+            # Elided coordinates resolve via Resolve-ElidedCitationTarget's suffix match
+            # instead, never silently skipped.
+            if ($c.Elided) {
+                $script:Elided += $c
+                $r = Resolve-ElidedCitationTarget -RepoRoot $script:RepoRoot -Coordinate $c -AllTrackedFiles $script:AllTrackedFiles
+            } else {
+                $r = Resolve-CitationTarget -RepoRoot $script:RepoRoot -Coordinate $c -BasenameMap $script:BasenameMap
+            }
             switch ($r.Status) {
                 'dead'         { $script:DeadPath   += $c }
                 'out-of-range' { $script:OutOfRange += $c }
@@ -398,6 +657,23 @@ Describe 'Citation resolver: every file:line coordinate outside artifacts/ resol
 
     It 'finds coordinates to check (a check that examines nothing is not a pass)' {
         $script:Coordinates.Count | Should -BeGreaterThan 0
+    }
+
+    It 'every extension in the non-artifacts corpus, INCLUDING extensionless, is checked or a declared exemption (#65 round 2, MAJOR-5, the closed-set completeness pattern ported from CodeCitationPolicy.Tests.ps1:288-308)' {
+        $observedExtensions = @($script:AllNonArtifact |
+            ForEach-Object { [System.IO.Path]::GetExtension($_) } |
+            Sort-Object -Unique)
+        $covered = @($script:CheckedExtensions) + @($script:DeclaredExemptExtensions.Keys)
+        $unaccounted = @(Get-UnaccountedExtensions -ObservedExtensions $observedExtensions -CoveredExtensions $covered)
+        # #42 round 3's own lesson, ported verbatim: assert on `.Count`, never on a
+        # `-join`ed string - a single unaccounted extensionless entry is the empty
+        # string '', and joining it with anything is still '', which -BeNullOrEmpty
+        # would wrongly pass.
+        $rendered = @($unaccounted | ForEach-Object { if ($_ -eq '') { '(no extension)' } else { $_ } })
+        $unaccounted.Count | Should -Be 0 -Because (
+            "extension(s) [$($rendered -join ', ')] appeared in the non-artifacts corpus " +
+            "with no citation check and no declared exemption - decide: extend " +
+            "`$CheckedExtensions or `$DeclaredExemptExtensions, do not leave it silent")
     }
 
     It 'every literal-path or uniquely-resolved-basename citation points at a file that exists at HEAD (Class A)' {
@@ -462,12 +738,19 @@ Describe 'Citation resolver: every file:line coordinate outside artifacts/ resol
             $hi = [Math]::Min($targetLines.Count - 1, $checkLine - 1 + 15)
             $windowText = ($targetLines[$lo..$hi] -join "`n")
             $found = $false
-            foreach ($tok in $tokens) { if ($windowText -match [regex]::Escape($tok)) { $found = $true; break } }
+            # #65 round 2, MINOR-2: -match is case-INSENSITIVE by default, so a token
+            # like "StalenessMs" would false-HIT against unrelated prose that merely
+            # contains "stalenessMs" in a different casing (e.g. config.go:56's own
+            # lowercase-field prose) - a case collision, not a real content anchor.
+            # -cmatch is case-sensitive; identifier tokens are case-sensitive by nature.
+            foreach ($tok in $tokens) { if ($windowText -cmatch [regex]::Escape($tok)) { $found = $true; break } }
             if ($found) { $hit++ } else { $miss++; $missNames += "$($c.CitingFile):$($c.StartLine) -> $($c.Target):$checkLine" }
         }
         Set-ItResult -Skipped -Because (
-            "REPORT-ONLY diagnostic, never binding (see header calibration): hit=$hit miss=$miss " +
-            "at this HEAD. Misses: $(if ($missNames.Count -gt 0) { $missNames -join '; ' } else { '(none)' })")
+            "REPORT-ONLY (see header CHECK (c) for the honest report-only-vs-binding " +
+            "argument, made WITH this diagnostic's 2-for-2 true-positive record on its " +
+            "round-1 misses, not around it): hit=$hit miss=$miss at this HEAD. " +
+            "Misses: $(if ($missNames.Count -gt 0) { $missNames -join '; ' } else { '(none)' })")
     }
 }
 
@@ -551,11 +834,42 @@ Describe 'Line-wrap unwrapping and false-join suppression (scratch repo, #65)' {
             'The old gone-file.go:1 reference is a historical coordinate, kept for the scar.'
         ) -Encoding UTF8
 
+        # Fixture 8 (#65 round 2, MINOR-3 red-first proof): a FABRICATED ellipsis
+        # reference to a file that never existed. Round 1's ellipsis valve skipped
+        # existence/range checks entirely - this must now resolve dead.
+        Set-Content -Path (Join-Path $script:Scratch 'elided-dead.md') -Value @(
+            '# elided dead'
+            'A fabricated shorthand (`.../never-existed.md:3`) that must not pass.'
+        ) -Encoding UTF8
+
+        # Fixture 9 (#65 round 2, MINOR-4 red-first proof): TWO files sharing a
+        # basename, BOTH too short for the cited line - must bind as out-of-range,
+        # not wave through as merely ambiguous.
+        New-Item -ItemType Directory -Path (Join-Path $script:Scratch 'subA') -Force | Out-Null
+        New-Item -ItemType Directory -Path (Join-Path $script:Scratch 'subB') -Force | Out-Null
+        1..5 | ForEach-Object { "line $_" } | Set-Content -Path (Join-Path $script:Scratch 'subA/dup.md') -Encoding UTF8
+        1..5 | ForEach-Object { "line $_" } | Set-Content -Path (Join-Path $script:Scratch 'subB/dup.md') -Encoding UTF8
+        Set-Content -Path (Join-Path $script:Scratch 'ambiguous-oor.md') -Value @(
+            '# ambiguous out of range'
+            'See dup.md:999 - both candidates are 5 lines long.'
+        ) -Encoding UTF8
+
+        # Fixture 10 (#65 round 2, MINOR-1 red-first proof): a slash-boundary wrap - the
+        # citing line ends in a bare `/`, and the coordinate is only correct once the
+        # directory prefix joins the next line's bare filename.
+        New-Item -ItemType Directory -Path (Join-Path $script:Scratch 'board/web/js') -Force | Out-Null
+        1..20 | ForEach-Object { "line $_" } | Set-Content -Path (Join-Path $script:Scratch 'board/web/js/dom-writer.js') -Encoding UTF8
+        Set-Content -Path (Join-Path $script:Scratch 'slash-wrap.md') -Value @(
+            '// see board/web/js/'
+            '// dom-writer.js:5 for details.'
+        ) -Encoding UTF8
+
         git -C $script:Scratch add -A | Out-Null
         git -C $script:Scratch commit -q -m 'fixtures' | Out-Null
 
-        $script:AllFiles    = @('target.go', 'clean.md', 'dead-path.md', 'out-of-range.md', 'wrapped.js', 'no-false-join.go', 'elided.md', 'historical.md')
+        $script:AllFiles    = @('target.go', 'clean.md', 'dead-path.md', 'out-of-range.md', 'wrapped.js', 'no-false-join.go', 'elided.md', 'historical.md', 'elided-dead.md', 'ambiguous-oor.md', 'slash-wrap.md')
         $script:BasenameMap = Get-BasenameMap -RepoRoot $script:Scratch
+        $script:AllTracked  = @(git -C $script:Scratch ls-files)
         $script:Coords      = @(Find-CitationCoordinates -RepoRoot $script:Scratch -SourceFiles $script:AllFiles)
     }
 
@@ -616,5 +930,67 @@ Describe 'Line-wrap unwrapping and false-join suppression (scratch repo, #65)' {
         # And confirm it WOULD have been flagged dead without the marker - the marker is
         # doing real work, not decorating an already-passing case.
         (Resolve-CitationTarget -RepoRoot $script:Scratch -Coordinate $c -BasenameMap $script:BasenameMap).Status | Should -Be 'dead'
+    }
+
+    It 'flags a FABRICATED ellipsis reference BY NAME (#65 round 2, MINOR-3 red-first proof - a fabricated ".../never-existed.md:3" must not pass)' {
+        $c = $script:Coords | Where-Object { $_.CitingFile -eq 'elided-dead.md' }
+        $c.Count | Should -Be 1
+        $c.Elided | Should -BeTrue
+        (Resolve-ElidedCitationTarget -RepoRoot $script:Scratch -Coordinate $c -AllTrackedFiles $script:AllTracked).Status | Should -Be 'dead'
+    }
+
+    It 'binds the all-candidates-out-of-range ambiguous case (#65 round 2, MINOR-4 red-first proof)' {
+        $c = $script:Coords | Where-Object { $_.CitingFile -eq 'ambiguous-oor.md' }
+        $c.Count | Should -Be 1
+        $c.Target | Should -Be 'dup.md'
+        $r = Resolve-CitationTarget -RepoRoot $script:Scratch -Coordinate $c -BasenameMap $script:BasenameMap
+        # Both subA/dup.md and subB/dup.md are 5 lines; the cited line is 999 - out of
+        # range for EVERY candidate, so this binds as a real defect, not mere ambiguity.
+        $r.Status | Should -Be 'out-of-range'
+    }
+
+    It 'joins across a bare trailing slash (#65 round 2, MINOR-1 red-first proof - the directory prefix must join the next line''s bare filename)' {
+        $c = $script:Coords | Where-Object { $_.CitingFile -eq 'slash-wrap.md' }
+        $c.Count | Should -Be 1
+        $c.Target | Should -Be 'board/web/js/dom-writer.js'
+        $c.TargetLine | Should -Be 5
+        (Resolve-CitationTarget -RepoRoot $script:Scratch -Coordinate $c -BasenameMap $script:BasenameMap).Status | Should -Be 'ok'
+    }
+}
+
+Describe 'Test-CitationWrapBoundary unit tests (#65 round 2, MINOR-1 + MINOR-5)' {
+    # Unit-tests the join precondition directly, because the production regex's
+    # character class (no space) already prevents a spaced-dash line from producing an
+    # observable end-to-end join difference - MINOR-5's fix is a defensive-design
+    # correctness fix (a "future false-join surface" per the review, not a currently
+    # reproducible end-to-end miss), so it is pinned at the unit level instead.
+    It 'a word character immediately before a trailing hyphen IS a wrap boundary' {
+        Test-CitationWrapBoundary -TrimmedLine 'this comment cites tar-' | Should -BeTrue
+    }
+    It 'a SPACE immediately before a trailing hyphen is NOT a wrap boundary (the prose-dash case, MINOR-5)' {
+        Test-CitationWrapBoundary -TrimmedLine 'this comment cites tar -' | Should -BeFalse
+    }
+    It 'a bare trailing slash IS a wrap boundary (MINOR-1)' {
+        Test-CitationWrapBoundary -TrimmedLine 'see board/web/js/' | Should -BeTrue
+    }
+    It 'ordinary prose with neither ending is NOT a wrap boundary' {
+        Test-CitationWrapBoundary -TrimmedLine 'this is an ordinary sentence.' | Should -BeFalse
+    }
+}
+
+Describe 'Extension-completeness helper unit tests (#65 round 2, MAJOR-5, mirrors CodeCitationPolicy.Tests.ps1''s own synthetic completeness proof)' {
+    It 'detects a genuinely unaccounted extensionless entry (Count 1, element is empty string)' {
+        $unaccounted = @(Get-UnaccountedExtensions -ObservedExtensions @('.go', '') -CoveredExtensions @('.go'))
+        $unaccounted.Count | Should -Be 1
+        $unaccounted -contains '' | Should -BeTrue
+    }
+    It 'reports zero unaccounted once every observed extension is covered' {
+        $unaccounted = @(Get-UnaccountedExtensions -ObservedExtensions @('.go', '.md') -CoveredExtensions @('.go', '.md'))
+        $unaccounted.Count | Should -Be 0
+    }
+    It 'names an unaccounted extension by value, not just by count' {
+        $unaccounted = @(Get-UnaccountedExtensions -ObservedExtensions @('.go', '.py', '.md') -CoveredExtensions @('.go', '.md'))
+        $unaccounted.Count | Should -Be 1
+        $unaccounted | Should -Be @('.py')
     }
 }
