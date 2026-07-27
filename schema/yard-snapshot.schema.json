@@ -71,7 +71,11 @@
       "properties": {
         "code": { "type": "string" },
         "detail": { "type": "string" },
-        "register": { "$ref": "#/$defs/register" }
+        "register": { "$ref": "#/$defs/register" },
+        "recordDir": {
+          "type": "string",
+          "description": "#69/#71 (clickable provenance, extending #28 to the board-conditions surface): the STORE-ROOT-RELATIVE directory of a record that carries this condition's own subject, when one is resolvable - same convention as trainsPayload's car.recordDir (board/assemble's recordDirBySubject, board/store's per-file rel-path fallback for pre-fold conditions), never re-derived client-side. Absent when the condition names no single store subject/record (a config-load fault, an aggregate count, or a vocabulary discovery - the last of which links to its schema/vocab/*.json file instead, client-side, never through this field)."
+        }
       },
       "required": ["code", "detail", "register"]
     },

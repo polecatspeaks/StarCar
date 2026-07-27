@@ -48,11 +48,20 @@ func Assemble(in Input) Result {
 		}
 	}
 	sort.Strings(collidedSubjects)
+
+	// #28: single pass over the raw records, single-sourced from
+	// store.Record.Path (recordDirBySubject's own doc comment). Moved ABOVE
+	// the collision loop (#69/#71): every board condition constructed in
+	// this function now carries RecordDir when its own subject resolves one,
+	// so recordDirs must already exist before the first condition is built.
+	recordDirs := recordDirBySubject(in.Records)
+
 	for _, s := range collidedSubjects {
 		result.Conditions = append(result.Conditions, store.BoardCondition{
-			Code:     "subject-namespace-collision",
-			Detail:   fmt.Sprintf("subject %q appears in both fold.dispatches and fold.intents - the train: partition rule should make this impossible", s),
-			Register: store.RegisterForCode("subject-namespace-collision"),
+			Code:      "subject-namespace-collision",
+			Detail:    fmt.Sprintf("subject %q appears in both fold.dispatches and fold.intents - the train: partition rule should make this impossible", s),
+			Register:  store.RegisterForCode("subject-namespace-collision"),
+			RecordDir: recordDirs[s],
 		})
 	}
 
@@ -62,10 +71,6 @@ func Assemble(in Input) Result {
 	memberClaims := map[string][]string{}
 	assignedSubjects := map[string]bool{}
 
-	// #28: single pass over the raw records, single-sourced from
-	// store.Record.Path (recordDirBySubject's own doc comment).
-	recordDirs := recordDirBySubject(in.Records)
-
 	for _, intent := range in.Fold.Intents {
 		if !strings.HasPrefix(intent.Subject, trainPrefix) {
 			continue // not a manifest (design S5.5); v0's four surfaces render no other intent kind
@@ -74,9 +79,10 @@ func Assemble(in Input) Result {
 		raw, found := findRawIntentRecord(in.Records, intent.Subject, intent.At)
 		if !found {
 			result.Conditions = append(result.Conditions, store.BoardCondition{
-				Code:     "manifest-record-not-found",
-				Detail:   fmt.Sprintf("the fold named %q at %q as the winning manifest, but no matching raw record was found", intent.Subject, intent.At),
-				Register: store.RegisterForCode("manifest-record-not-found"),
+				Code:      "manifest-record-not-found",
+				Detail:    fmt.Sprintf("the fold named %q at %q as the winning manifest, but no matching raw record was found", intent.Subject, intent.At),
+				Register:  store.RegisterForCode("manifest-record-not-found"),
+				RecordDir: recordDirs[intent.Subject],
 			})
 			continue
 		}
@@ -84,9 +90,10 @@ func Assemble(in Input) Result {
 		title, tickets, members, ok := manifestPayload(raw)
 		if !ok {
 			result.Conditions = append(result.Conditions, store.BoardCondition{
-				Code:     "manifest-payload-unreadable",
-				Detail:   fmt.Sprintf("%q's manifest payload could not be read", intent.Subject),
-				Register: store.RegisterForCode("manifest-payload-unreadable"),
+				Code:      "manifest-payload-unreadable",
+				Detail:    fmt.Sprintf("%q's manifest payload could not be read", intent.Subject),
+				Register:  store.RegisterForCode("manifest-payload-unreadable"),
+				RecordDir: recordDirs[intent.Subject],
 			})
 			continue
 		}
@@ -135,9 +142,10 @@ func Assemble(in Input) Result {
 				findings, findingsFound := findingsForReturnedSubject(in.Records, m.Subject, d.At)
 				if !findingsFound {
 					result.Conditions = append(result.Conditions, store.BoardCondition{
-						Code:     "gate-findings-record-not-found",
-						Detail:   fmt.Sprintf("the fold named %q at %q as a returned gate winner, but no matching raw returned record was found for its findings", m.Subject, d.At),
-						Register: store.RegisterForCode("gate-findings-record-not-found"),
+						Code:      "gate-findings-record-not-found",
+						Detail:    fmt.Sprintf("the fold named %q at %q as a returned gate winner, but no matching raw returned record was found for its findings", m.Subject, d.At),
+						Register:  store.RegisterForCode("gate-findings-record-not-found"),
+						RecordDir: recordDirs[m.Subject],
 					})
 				}
 				result.Gates.Gates = append(result.Gates.Gates, Gate{
@@ -166,9 +174,10 @@ func Assemble(in Input) Result {
 		trains := append([]string(nil), memberClaims[subj]...)
 		sort.Strings(trains)
 		result.Conditions = append(result.Conditions, store.BoardCondition{
-			Code:     "manifest-membership-collision",
-			Detail:   fmt.Sprintf("dispatch %q is claimed by more than one manifest: %s", subj, strings.Join(trains, ", ")),
-			Register: store.RegisterForCode("manifest-membership-collision"),
+			Code:      "manifest-membership-collision",
+			Detail:    fmt.Sprintf("dispatch %q is claimed by more than one manifest: %s", subj, strings.Join(trains, ", ")),
+			Register:  store.RegisterForCode("manifest-membership-collision"),
+			RecordDir: recordDirs[subj],
 		})
 	}
 
@@ -178,10 +187,20 @@ func Assemble(in Input) Result {
 	for _, d := range in.Fold.Dispatches {
 		m, err := dispatchWireMap(d, assignedSubjects[d.Subject], recordDirs[d.Subject])
 		if err != nil {
+			// #69/#71 HONEST DISCLOSURE: this RecordDir addition (like the
+			// rest of this branch) has NO test proving it - dispatchWireMap
+			// only fails when json.Marshal(d) fails, and d.winnerKind (the
+			// only field that can make MarshalJSON emit an unencodable
+			// "spend" value) is unexported, so no test outside board/fold
+			// can construct a fold.DispatchEntry that reaches this branch.
+			// Pre-existing gap (this whole condition class had zero test
+			// coverage before this ticket); added for Law 6 consistency
+			// with every other condition site, not verified red-first.
 			result.Conditions = append(result.Conditions, store.BoardCondition{
-				Code:     "dispatch-render-failed",
-				Detail:   fmt.Sprintf("subject %q could not be rendered to the wire shape: %v", d.Subject, err),
-				Register: store.RegisterForCode("dispatch-render-failed"),
+				Code:      "dispatch-render-failed",
+				Detail:    fmt.Sprintf("subject %q could not be rendered to the wire shape: %v", d.Subject, err),
+				Register:  store.RegisterForCode("dispatch-render-failed"),
+				RecordDir: recordDirs[d.Subject],
 			})
 			continue
 		}

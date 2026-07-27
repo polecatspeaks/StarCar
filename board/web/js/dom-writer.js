@@ -28,8 +28,22 @@
 // ticket token) and the car-health-bar badge (#12) - both built from
 // board/web/js/links.js and board/web/js/findings.js's pure helpers; this
 // file's only job is turning their output into DOM.
-import { buildRecordLink, buildIssueLink } from './links.js';
+//
+// #69 (owner fast-follow: "closes back up every page refresh"): the
+// conditions strip's open/collapsed state is PULLED from an already-loaded
+// openState object (condition-open-state.js's pure shape) and REAPPLIED on
+// every render - never captured by scraping the outgoing DOM before
+// clearing it. app.js is the single source of truth: it reads sessionStorage
+// fresh before each repaint (surviving both a DOM rebuild and a page
+// refresh identically, since both start from the SAME persisted read) and
+// keeps it current via a 'toggle' event listener, independent of render
+// timing. This file only ever WRITES the `open` attribute a caller already
+// decided; it never reads sessionStorage itself (dom-writer.js stays
+// impure-storage-free, matching this module's own "the ONLY module that
+// touches the DOM" boundary - sessionStorage is browser state, not DOM).
+import { buildRecordLink, buildIssueLink, buildVocabLink, vocabFilenameForDiscoveryDetail } from './links.js';
 import { formatClockDuration } from './format.js';
+import { defaultOpenState, isGroupOpen } from './condition-open-state.js';
 
 function el(doc, tag, className, text) {
   const node = doc.createElement(tag);
@@ -84,6 +98,28 @@ function healthTrendBadgeText(healthTrend) {
   }
 }
 
+// #71 (clickable provenance, remaining #28 surfaces): a superseded entry is
+// a PRIOR record for the SAME subject that lost to the row's own winner
+// (board/fold/algorithm.go's foldDispatchSubject - precedence, then
+// latest-at) - it lives in the SAME store-root-relative directory as the
+// row's own recordDir (board/assemble's one-directory-per-subject
+// convention, the same one #28's recordDir already relies on), so no new
+// wire field is needed: every superseded entry links through the row's
+// OWN recordDir, never re-derived. Honest-absence (null, not an empty
+// list) when there is nothing to supersede - matches every other
+// honest-absence convention in this file (declared-not-observed,
+// renderHistorySummary).
+function renderSupersededList(doc, wrapperClassName, entryClassName, superseded, recordDir, linkCfg) {
+  if (!superseded || superseded.length === 0) return null;
+  const wrap = el(doc, 'div', wrapperClassName);
+  for (const item of superseded) {
+    // VERBATIM kind + at - never translated, same posture as every other
+    // detector-owned string this file renders.
+    wrap.appendChild(factOrLink(doc, entryClassName, `${item.kind} ${item.at}`, buildRecordLink(linkCfg, recordDir)));
+  }
+  return wrap;
+}
+
 function healthTrendRegisterClass(trend) {
   if (trend === 'converged' || trend === 'declining') return 'register-nominal';
   if (trend === 'stalled') return 'register-needs-attention';
@@ -95,8 +131,13 @@ function healthTrendRegisterClass(trend) {
  * @param {Element} root
  * @param {ReturnType<import('./render.js').buildBoardViewModel>} vm
  * @param {{connected: boolean}} connection
+ * @param {{strip: boolean, groups: Record<string, boolean>}} [openState] -
+ *   #69: the conditions strip's persisted open/collapsed state, already
+ *   loaded by the caller (app.js) - defaults to fully-collapsed so every
+ *   existing call site (tests, any caller that predates this ticket) keeps
+ *   its prior behaviour unchanged.
  */
-export function renderBoard(doc, root, vm, connection) {
+export function renderBoard(doc, root, vm, connection, openState = defaultOpenState()) {
   root.textContent = ''; // clear() without needing a real DOM API for it
 
   root.appendChild(renderChrome(doc, vm, connection));
@@ -117,7 +158,7 @@ export function renderBoard(doc, root, vm, connection) {
   });
   root.appendChild(lanesRoot);
 
-  root.appendChild(renderFooter(doc, vm));
+  root.appendChild(renderFooter(doc, vm, linkCfg, openState));
 }
 
 // #62: shared visual language (owner ruling: no single keeper) - every one
@@ -166,7 +207,7 @@ function renderChrome(doc, vm, connection) {
 // there, a carrier-rule miss): now actually routed - see issue #1, comment
 // https://github.com/polecatspeaks/StarCar/issues/1#issuecomment-5085235534
 // (2026-07-26), item 2.
-function renderFooter(doc, vm) {
+function renderFooter(doc, vm, linkCfg, openState) {
   const footer = el(doc, 'footer', 'board-footer');
 
   const laneCountText = `registry declares ${vm.laneCompleteness.declared} lane(s) - ${vm.laneCompleteness.observed} rendered`;
@@ -177,7 +218,7 @@ function renderFooter(doc, vm) {
   }
 
   if (vm.boardConditionGroups.length > 0) {
-    footer.appendChild(renderBoardConditionsStrip(doc, vm));
+    footer.appendChild(renderBoardConditionsStrip(doc, vm, linkCfg, openState));
   }
 
   return footer;
@@ -186,34 +227,72 @@ function renderFooter(doc, vm) {
 // #30: CHROME, not headline (item 3) - a native <details>/<summary> pair
 // needs zero JS to expand/collapse, so this is the smallest DOM surface
 // that satisfies "a single summary line that expands" without adding a
-// click handler. COLLAPSED BY DEFAULT (no "open" attribute set) always,
-// regardless of severity - even an all-FLAG board never auto-expands the
-// strip, because the yard lanes staying above the fold is the whole point
-// of placing this in chrome rather than as a headline.
-function renderBoardConditionsStrip(doc, vm) {
+// click handler. COLLAPSED BY DEFAULT (openState.strip false, the same
+// default this repo has always shipped) regardless of severity - even an
+// all-FLAG board never auto-expands the strip UNLESS a reader has
+// previously opened it this session (#69) - the yard lanes staying above
+// the fold on FIRST paint is still the whole point of chrome placement.
+//
+// data-conditions-strip identifies this element for app.js's toggle
+// listener (#69) - a stable marker independent of className, which board.css
+// may restyle without breaking the persistence wiring.
+function renderBoardConditionsStrip(doc, vm, linkCfg, openState) {
   const strip = el(doc, 'details', `board-conditions-strip ${registerClass(vm.boardConditionsRegister)}`);
+  strip.setAttribute('data-conditions-strip', '');
+  if (openState && openState.strip) strip.setAttribute('open', '');
   strip.appendChild(el(doc, 'summary', `board-conditions-summary ${registerClass(vm.boardConditionsRegister)}`, vm.boardConditionSummary));
 
   const groups = el(doc, 'ul', 'board-condition-groups');
   for (const group of vm.boardConditionGroups) {
-    groups.appendChild(renderBoardConditionGroup(doc, group));
+    groups.appendChild(renderBoardConditionGroup(doc, group, linkCfg, openState));
   }
   strip.appendChild(groups);
   return strip;
 }
 
+// #69/#71 (clickable provenance, extending #28 to the board-conditions
+// surface): the ONE place a condition instance's honest link target is
+// chosen. A "discovery" (NOTE-tier, undeclared kind/outcome VALUE - never a
+// store subject) links to the schema/vocab/*.json file that would declare
+// it; every other condition class links to its own recordDir when the wire
+// supplied one (a config-load fault, an aggregate count, or a client-raised
+// condition never has one, and factOrLink's own href-is-falsy branch
+// degrades those to identical-layout plain text - "no link, never a broken
+// one", #28's own rule, unchanged).
+function boardConditionInstanceHref(linkCfg, group, instance) {
+  if (group.code === 'discovery') {
+    return buildVocabLink(linkCfg, vocabFilenameForDiscoveryDetail(instance.detail));
+  }
+  return buildRecordLink(linkCfg, instance.recordDir);
+}
+
 // #30 (GROUP BY CLASS): one row per condition CODE, itself a <details> -
-// "expandable to per-instance details" - collapsed by default for the same
-// reason the outer strip is.
-function renderBoardConditionGroup(doc, group) {
+// "expandable to per-instance details" - collapsed by default (#69: unless
+// this code was previously opened THIS SESSION - isGroupOpen defaults to
+// closed for any code with no recorded entry, which is exactly how a
+// newly-appearing condition class still renders per #30's original rule).
+// data-condition-code identifies this element for app.js's toggle listener.
+function renderBoardConditionGroup(doc, group, linkCfg, openState) {
   const item = el(doc, 'li', `board-condition-group ${registerClass(group.register)}`);
-  const details = el(doc, 'details');
+  const details = el(doc, 'details', 'board-condition-group-details');
+  details.setAttribute('data-condition-code', group.code);
+  if (isGroupOpen(openState, group.code)) details.setAttribute('open', '');
   details.appendChild(el(doc, 'summary', 'board-condition-group-summary', `${group.code} (x${group.count})`));
   const instances = el(doc, 'ul', 'board-condition-instances');
   for (const instance of group.instances) {
     // VERBATIM - never translated, the same posture as every other
     // detector-owned string this repo renders (state words, outcome words).
-    instances.appendChild(el(doc, 'li', `board-condition-instance ${registerClass(instance.register)}`, instance.detail));
+    // #69/#71: rendered through factOrLink so a resolvable target becomes a
+    // real link (quiet .provenance-link affordance) with IDENTICAL layout
+    // to the plain form when no target resolves.
+    instances.appendChild(
+      factOrLink(
+        doc,
+        `board-condition-instance ${registerClass(instance.register)}`,
+        instance.detail,
+        boardConditionInstanceHref(linkCfg, group, instance)
+      )
+    );
   }
   details.appendChild(instances);
   item.appendChild(details);
@@ -316,6 +395,8 @@ function renderTrains(doc, body, linkCfg) {
         chip.appendChild(el(doc, 'span', 'car-gate', car.gate));
       }
       cars.appendChild(chip);
+      const supersededList = renderSupersededList(doc, 'car-superseded', 'car-superseded-entry', car.superseded, car.recordDir, linkCfg);
+      if (supersededList) cars.appendChild(supersededList);
     }
     track.appendChild(cars);
     if (train.declaredNotObserved.length > 0) {
@@ -393,6 +474,8 @@ function renderDispatches(doc, body, linkCfg) {
       row.appendChild(el(doc, 'span', 'solari-elapsed', formatClockDuration(d.elapsedSeconds)));
     }
     rows.appendChild(row);
+    const supersededList = renderSupersededList(doc, 'solari-superseded', 'solari-superseded-entry', d.superseded, d.recordDir, linkCfg);
+    if (supersededList) rows.appendChild(supersededList);
   }
   wrap.appendChild(rows);
   return wrap;

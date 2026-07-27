@@ -19,6 +19,10 @@ type WireBoardCondition struct {
 	Code     string `json:"code"`
 	Detail   string `json:"detail"`
 	Register string `json:"register"`
+	// RecordDir (#69/#71: clickable provenance) mirrors store.BoardCondition.
+	// RecordDir - omitted (never an empty string on the wire) when this
+	// condition names no single subject/record.
+	RecordDir string `json:"recordDir,omitempty"`
 }
 
 // FreshnessReason mirrors the wire schema's failed-variant "reason" object.

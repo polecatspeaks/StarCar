@@ -352,6 +352,24 @@ body {
   font-size: 0.85rem;
 }
 
+/* #71 (clickable provenance, remaining #28 surfaces): a superseded record
+   is quiet chrome, never a headline - "a prior record that lost" is a
+   detail a reader expands into, not a fact competing with the row's own
+   current state word. text-dim (never a register color - superseded is
+   presentational history, not a live severity signal) + .provenance-link's
+   own color:inherit (board.css's existing #28 idiom) when it renders as a
+   link. */
+.car-superseded,
+.solari-superseded {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+}
+
 .car-chip {
   display: flex;
   gap: 0.35rem;

@@ -472,7 +472,7 @@ func hasInFlightDispatch(dispatches []fold.DispatchEntry) bool {
 }
 
 func toWireCondition(c store.BoardCondition) WireBoardCondition {
-	return WireBoardCondition{Code: c.Code, Detail: c.Detail, Register: c.Register}
+	return WireBoardCondition{Code: c.Code, Detail: c.Detail, Register: c.Register, RecordDir: c.RecordDir}
 }
 
 func foldRecordsFrom(records []store.Record) []fold.Record {

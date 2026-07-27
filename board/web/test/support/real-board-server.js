@@ -28,7 +28,7 @@
 //     a Windows sandbox, and the ubuntu-latest CI leg is the actual
 //     cross-platform measurement of it.
 import { spawn, spawnSync } from 'node:child_process';
-import { mkdtempSync, existsSync, cpSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, existsSync, cpSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -282,6 +282,112 @@ export function buildScratchStoreWithLaneFilterFixtures() {
   });
 
   return storeDir;
+}
+
+// buildScratchStoreUnderRepoRootWithConditionsAndSuperseded (#69/#71, view
+// train, 2026-07-27) - DELIBERATELY DIFFERENT from every builder above: it
+// creates its scratch directory UNDER REPO_ROOT (a sibling of `artifacts/`,
+// never inside it - the real store is never touched) rather than under
+// `os.tmpdir()`. board/server/reporoot.go's resolveDefaultRepoRoot resolves
+// from `cwd` (always REPO_ROOT, real-board-server.js's own spawn option)
+// alone, so a tmpdir-based scratch store ALWAYS makes config.
+// githubArtifactsPrefix resolve empty (verify-registers.mjs's own disclosed
+// limitation, "health-trend-and-provenance" capture) - which would make
+// EVERY recordDir-based link (#28's own car/gate/dispatch links, and this
+// ticket's board-condition/superseded links) render as plain text, proving
+// nothing about whether the link CHOICE logic actually fires. Living under
+// REPO_ROOT (still never committed - the caller removes it, see cleanup())
+// makes `githubArtifactsPrefix` resolve to this directory's own basename,
+// non-empty, so recordDir links render as REAL anchors for this one
+// verification pass.
+//
+// Seeds exactly two real, minimal fixtures:
+//   (a) a solo dispatch subject with TWO records (an older `dispatched`,
+//       then a newer `returned` winner) - the winner's `superseded` array
+//       names the older record, and both share this subject's own
+//       recordDir (#71's superseded-link claim, proven against the REAL
+//       fold/assemble pipeline, never a hand-built fold.Output).
+//   (b) one record carrying an unrecognised `kind` value - board/fold's
+//       real discovery-detection path mints a "discovery" board condition
+//       with detail `"kind: <value>"`, proving #69's board-condition
+//       click-through chooses the VOCAB-FILE link (never a record link)
+//       for exactly this class.
+//
+// Returns { storeDir, cleanup } - the caller MUST call cleanup() (a
+// try/finally, same posture as startRealBoardServer.stop()) so this never
+// leaves debris in a repo checkout.
+export function buildScratchStoreUnderRepoRootWithConditionsAndSuperseded() {
+  const storeDir = mkdtempSync(join(REPO_ROOT, '.scratch-store-69-71-'));
+
+  function write(subject, kind, at, extra = {}) {
+    const dir = join(storeDir, subject);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, `${kind}-${at.replace(/[:.]/g, '')}.json`),
+      JSON.stringify(
+        {
+          schema: 'starcar-artifact/1',
+          kind,
+          subject,
+          session_id: 'view-69-71-probe-session',
+          at,
+          normalisation: [],
+          integrity: 'sha256:0000000000000000000000000000000000000000000000000000000000000000',
+          ...extra
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+  }
+
+  // (a) superseded pair - dispatched, then returned (the winner).
+  write('view-69-71-superseded-demo', 'dispatched', '2026-07-20T09:00:00Z');
+  write('view-69-71-superseded-demo', 'returned', '2026-07-20T10:00:00Z', {
+    outcome: 'done',
+    findings: 'none',
+    abstract: 'the winner - the dispatched record above becomes its superseded entry'
+  });
+
+  // (b) a discovery: an unrecognised `kind` value.
+  write('view-69-71-discovery-demo', 'view-69-71-unrecognised-kind', '2026-07-20T09:00:00Z');
+
+  return {
+    storeDir,
+    cleanup() {
+      rmSync(storeDir, { recursive: true, force: true });
+    }
+  };
+}
+
+// addRecordToStore (#69/#71) writes ONE additional real record into an
+// already-running scratch store, mid-test - used to force a genuine SECOND
+// poll-detected CHANGE (a new board condition appears) so a real DOM
+// rebuild fires over the live SSE connection, without a page reload. This
+// is the "survives a DOM rebuild" half of the #69 rendering-check; a
+// SEPARATE `page.reload()` proves the "survives a page refresh" half.
+export function addRecordToStore(storeDir, subject, kind, at, extra = {}) {
+  const dir = join(storeDir, subject);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(
+    join(dir, `${kind}-${at.replace(/[:.]/g, '')}.json`),
+    JSON.stringify(
+      {
+        schema: 'starcar-artifact/1',
+        kind,
+        subject,
+        session_id: 'view-69-71-probe-session',
+        at,
+        normalisation: [],
+        integrity: 'sha256:0000000000000000000000000000000000000000000000000000000000000000',
+        ...extra
+      },
+      null,
+      2
+    ),
+    'utf8'
+  );
 }
 
 function goBinary() {

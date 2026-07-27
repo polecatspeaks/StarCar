@@ -10,6 +10,7 @@ import assert from 'node:assert/strict';
 import { createMiniDocument } from './minidom.js';
 import { renderBoard } from '../js/dom-writer.js';
 import { buildBoardViewModel } from '../js/render.js';
+import { defaultOpenState, withGroupOpen, withStripOpen } from '../js/condition-open-state.js';
 
 const positionDefs = [
   { id: 'live', label: 'Live', register: 'nominal' },
@@ -165,6 +166,133 @@ test('#30 SEVERITY PER CLASS: a FLAG-tier group renders needs-attention, a NOTE-
   const noteGroup = groups.find((g) => g.textContent.includes('discovery'));
   assert.ok(noteGroup);
   assert.ok(noteGroup.className.includes('register-nominal'));
+});
+
+// --- #69: open-state persistence (owner: "closes back up every page refresh") ---
+
+test('#69: with no openState argument, the strip and every group stay collapsed - unchanged prior behaviour', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([{ id: 'dispatches', title: 'Dispatches', position: 'live', freshness: { kind: 'never-polled' }, data: { dispatches: [] } }]);
+  snapshot.board = [{ code: 'discovery', detail: 'outcome: completed', register: 'nominal' }];
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true }); // no 5th argument
+
+  assert.equal(root.querySelectorAll('.board-conditions-strip')[0].attributes.open, undefined);
+  assert.equal(root.querySelectorAll('.board-condition-group-details')[0]?.attributes.open, undefined);
+});
+
+test('#69: a persisted OPEN strip state renders with the open attribute set', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([{ id: 'dispatches', title: 'Dispatches', position: 'live', freshness: { kind: 'never-polled' }, data: { dispatches: [] } }]);
+  snapshot.board = [{ code: 'discovery', detail: 'outcome: completed', register: 'nominal' }];
+  const openState = withStripOpen(defaultOpenState(), true);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true }, openState);
+
+  assert.equal(root.querySelectorAll('.board-conditions-strip')[0].attributes.open, '');
+});
+
+test('#69: a persisted OPEN group renders with the open attribute set on that group\'s own <details>, per-group (not the whole strip)', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([{ id: 'dispatches', title: 'Dispatches', position: 'live', freshness: { kind: 'never-polled' }, data: { dispatches: [] } }]);
+  snapshot.board = [
+    { code: 'discovery', detail: 'outcome: completed', register: 'nominal' },
+    { code: 'record-unrecognised-fields', detail: 'x', register: 'needs-attention' }
+  ];
+  const openState = withGroupOpen(defaultOpenState(), 'discovery', true);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true }, openState);
+
+  // the OUTER strip must stay collapsed - opening one group is not the same
+  // as opening the strip, and this ticket does not couple the two.
+  assert.equal(root.querySelectorAll('.board-conditions-strip')[0].attributes.open, undefined);
+
+  const groupDetails = root.querySelectorAll('.board-condition-group-details');
+  const discoveryDetails = groupDetails.find((d) => d.attributes['data-condition-code'] === 'discovery');
+  const unrecognisedDetails = groupDetails.find((d) => d.attributes['data-condition-code'] === 'record-unrecognised-fields');
+  assert.equal(discoveryDetails.attributes.open, '', 'the previously-opened discovery group must render open');
+  assert.equal(unrecognisedDetails.attributes.open, undefined, 'a DIFFERENT group must stay collapsed - per-group state, not one global flag');
+});
+
+test('#69 NEW-CONDITION-DEFAULTS-COLLAPSED: a condition code with NO entry in openState.groups renders collapsed, even when the strip itself is open', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([{ id: 'dispatches', title: 'Dispatches', position: 'live', freshness: { kind: 'never-polled' }, data: { dispatches: [] } }]);
+  // 'discovery' has never been toggled this session - openState.groups has no entry for it.
+  snapshot.board = [{ code: 'discovery', detail: 'outcome: completed', register: 'nominal' }];
+  const openState = withStripOpen(defaultOpenState(), true);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true }, openState);
+
+  const groupDetails = root.querySelectorAll('.board-condition-group-details')[0];
+  assert.equal(groupDetails.attributes.open, undefined, 'a never-toggled condition class must still default collapsed (#30)');
+});
+
+// --- #69/#71: board-condition entries become provenance links ---
+
+test('#69/#71: a record-scoped condition instance (recordDir present, github config present) renders as a link to its record directory', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot(
+    [{ id: 'dispatches', title: 'Dispatches', position: 'live', freshness: { kind: 'never-polled' }, data: { dispatches: [] } }],
+    githubCfg
+  );
+  snapshot.board = [{ code: 'manifest-record-not-found', detail: 'x', register: 'needs-attention', recordDir: 'train-x' }];
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const instances = root.querySelectorAll('.board-condition-instance');
+  assert.equal(instances.length, 1);
+  assert.equal(instances[0].tagName, 'a', 'expected the condition instance to render as an anchor');
+  assert.equal(instances[0].attributes.href, 'https://github.com/polecatspeaks/StarCar/tree/dev/artifacts/train-x');
+  assert.equal(instances[0].textContent, 'x', 'the detail text must still render VERBATIM once linked');
+});
+
+test('#69/#71: a discovery condition instance links to its VOCAB FILE, never a record directory', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot(
+    [{ id: 'dispatches', title: 'Dispatches', position: 'live', freshness: { kind: 'never-polled' }, data: { dispatches: [] } }],
+    githubCfg
+  );
+  // a discovery NEVER carries recordDir on the wire (it names no subject) -
+  // this also proves the link choice is driven by the group's CODE, not by
+  // recordDir's mere presence/absence.
+  snapshot.board = [{ code: 'discovery', detail: 'kind: some-unrecognised-kind', register: 'nominal' }];
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const instances = root.querySelectorAll('.board-condition-instance');
+  assert.equal(instances.length, 1);
+  assert.equal(instances[0].tagName, 'a', 'expected the discovery instance to render as an anchor');
+  assert.equal(instances[0].attributes.href, 'https://github.com/polecatspeaks/StarCar/blob/dev/schema/vocab/kinds.json');
+});
+
+test('#69/#71: a condition instance with no resolvable target (no recordDir, not a discovery) renders as plain text - no fake link', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot(
+    [{ id: 'dispatches', title: 'Dispatches', position: 'live', freshness: { kind: 'never-polled' }, data: { dispatches: [] } }],
+    githubCfg
+  );
+  snapshot.board = [{ code: 'board-defs-unreadable', detail: 'y', register: 'needs-attention' }]; // no recordDir - an aggregate/config-level fault
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const instances = root.querySelectorAll('.board-condition-instance');
+  assert.equal(instances.length, 1);
+  assert.notEqual(instances[0].tagName, 'a', 'expected plain text, never a broken/guessed link');
+  assert.equal(instances[0].attributes.href, undefined);
+  assert.equal(instances[0].textContent, 'y');
+});
+
+test('#69/#71: a record-scoped condition with NO github config renders as plain text, identical layout either way', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([{ id: 'dispatches', title: 'Dispatches', position: 'live', freshness: { kind: 'never-polled' }, data: { dispatches: [] } }]); // no githubCfg
+  snapshot.board = [{ code: 'manifest-record-not-found', detail: 'x', register: 'needs-attention', recordDir: 'train-x' }];
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const instances = root.querySelectorAll('.board-condition-instance');
+  assert.equal(instances.length, 1);
+  assert.notEqual(instances[0].tagName, 'a');
+  assert.equal(instances[0].textContent, 'x');
 });
 
 // --- #62: shared visual language (owner ruling: no single keeper) ---
@@ -442,6 +570,139 @@ test('#28: a solari (dispatch) subject renders as a link when recordDir is prese
   assert.equal(subjects[0].tagName, 'a');
   assert.equal(subjects[0].attributes.href, 'https://github.com/polecatspeaks/StarCar/tree/dev/artifacts/orphan-1');
   assert.equal(subjects[0].attributes.title, 'orphan-1', 'the full-subject title tooltip must survive becoming a link');
+});
+
+// --- #71: superseded entries link to the row's OWN recordDir (same subject, same directory) ---
+
+test('#71: a train car with superseded entries renders each one as a link to the CAR\'S OWN recordDir, VERBATIM kind + at', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot(
+    [
+      {
+        id: 'trains',
+        title: 'Trains',
+        position: 'live',
+        freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+        data: {
+          trains: [
+            {
+              id: 'train:board-v0',
+              title: 'T',
+              tickets: [],
+              cars: [
+                {
+                  subject: 'carA',
+                  role: 'car',
+                  state: 'returned',
+                  at: '2026-07-23T18:00:00Z',
+                  recordDir: 'carA',
+                  superseded: [{ kind: 'dispatched', at: '2026-07-23T17:00:00Z' }]
+                }
+              ],
+              declaredNotObserved: []
+            }
+          ]
+        }
+      }
+    ],
+    githubCfg
+  );
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const entries = root.querySelectorAll('.car-superseded-entry');
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0].tagName, 'a', 'expected the superseded entry to render as a link');
+  assert.equal(entries[0].attributes.href, 'https://github.com/polecatspeaks/StarCar/tree/dev/artifacts/carA', 'must link to the SAME recordDir as the car itself - same subject, same directory');
+  assert.equal(entries[0].textContent, 'dispatched 2026-07-23T17:00:00Z');
+});
+
+test('#71: a car with no superseded entries renders no superseded list at all (honest-absence, never an empty one)', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([
+    {
+      id: 'trains',
+      title: 'Trains',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+      data: {
+        trains: [
+          { id: 'train:board-v0', title: 'T', tickets: [], cars: [{ subject: 'carA', role: 'car', state: 'returned', at: '2026-07-23T18:00:00Z', recordDir: 'carA' }], declaredNotObserved: [] }
+        ]
+      }
+    }
+  ]);
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  assert.equal(root.querySelectorAll('.car-superseded').length, 0);
+  assert.equal(root.querySelectorAll('.car-superseded-entry').length, 0);
+});
+
+test('#71: a dispatch with superseded entries renders each one as a link to the DISPATCH\'S OWN recordDir', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot(
+    [
+      {
+        id: 'dispatches',
+        title: 'Dispatches',
+        position: 'live',
+        freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+        data: {
+          dispatches: [
+            {
+              subject: 'orphan-1',
+              state: 'returned',
+              at: '2026-07-23T18:00:00Z',
+              assigned: false,
+              recordDir: 'orphan-1',
+              superseded: [{ kind: 'dispatched', at: '2026-07-23T17:00:00Z' }]
+            }
+          ]
+        }
+      }
+    ],
+    githubCfg
+  );
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const entries = root.querySelectorAll('.solari-superseded-entry');
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0].tagName, 'a');
+  assert.equal(entries[0].attributes.href, 'https://github.com/polecatspeaks/StarCar/tree/dev/artifacts/orphan-1');
+  assert.equal(entries[0].textContent, 'dispatched 2026-07-23T17:00:00Z');
+});
+
+test('#71: superseded entries with no github config render as plain text, identical layout either way', () => {
+  const doc = createMiniDocument();
+  const root = doc.createElement('main');
+  const snapshot = makeSnapshot([
+    {
+      id: 'dispatches',
+      title: 'Dispatches',
+      position: 'live',
+      freshness: { kind: 'fresh', asOf: '2026-07-23T18:00:00Z' },
+      data: {
+        dispatches: [
+          {
+            subject: 'orphan-1',
+            state: 'returned',
+            at: '2026-07-23T18:00:00Z',
+            assigned: false,
+            recordDir: 'orphan-1',
+            superseded: [{ kind: 'dispatched', at: '2026-07-23T17:00:00Z' }]
+          }
+        ]
+      }
+    }
+  ]); // no githubCfg
+  renderBoard(doc, root, buildBoardViewModel(snapshot), { connected: true });
+
+  const entries = root.querySelectorAll('.solari-superseded-entry');
+  assert.equal(entries.length, 1);
+  assert.notEqual(entries[0].tagName, 'a');
+  assert.equal(entries[0].textContent, 'dispatched 2026-07-23T17:00:00Z');
 });
 
 // --- #12: car health bar ----------------------------------------------------

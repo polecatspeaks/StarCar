@@ -47,6 +47,12 @@ type BoardCondition struct {
 	Code     string
 	Detail   string
 	Register string // "nominal" | "in-progress" | "needs-attention"
+	// RecordDir (#69/#71: clickable provenance, extending #28 to the
+	// board-conditions surface) is the store-root-relative directory of a
+	// record naming this condition's own subject, when one is resolvable -
+	// empty when the condition names no single subject/record (Law 1: no
+	// link is rendered rather than a guessed one).
+	RecordDir string
 }
 
 // ScanResult is everything one Scan call produced: survivors, quarantine,
@@ -198,9 +204,10 @@ func (a *Adapter) Scan(storeRoot string, now time.Time) (ScanResult, error) {
 		if quarantineReason != "" {
 			result.Quarantined = append(result.Quarantined, QuarantinedRecord{Path: rel, Reason: quarantineReason})
 			result.Conditions = append(result.Conditions, BoardCondition{
-				Code:     "record-quarantined",
-				Detail:   fmt.Sprintf("%s: %s", rel, quarantineReason),
-				Register: RegisterForCode("record-quarantined"),
+				Code:      "record-quarantined",
+				Detail:    fmt.Sprintf("%s: %s", rel, quarantineReason),
+				Register:  RegisterForCode("record-quarantined"),
+				RecordDir: recordDirFromRelPath(rel),
 			})
 			continue
 		}
@@ -309,11 +316,29 @@ func (a *Adapter) readOne(path, rel string, now time.Time) (Record, *BoardCondit
 	if len(unknown) > 0 {
 		sort.Strings(unknown)
 		cond := BoardCondition{
-			Code:     "record-unrecognised-fields",
-			Detail:   fmt.Sprintf("%s: record carries %d unrecognised field(s): %s", rel, len(unknown), strings.Join(unknown, ", ")),
-			Register: RegisterForCode("record-unrecognised-fields"),
+			Code:      "record-unrecognised-fields",
+			Detail:    fmt.Sprintf("%s: record carries %d unrecognised field(s): %s", rel, len(unknown), strings.Join(unknown, ", ")),
+			Register:  RegisterForCode("record-unrecognised-fields"),
+			RecordDir: recordDirFromRelPath(rel),
 		}
 		return rec, &cond, ""
 	}
 	return rec, nil, ""
+}
+
+// recordDirFromRelPath (#69/#71) derives a record's store-root-relative
+// DIRECTORY from its own already-known rel path - the identical rule
+// board/assemble's recordDirBySubject applies (filepath.Dir, "." means no
+// directory component, no link rather than a wrong one), inlined here
+// because these two conditions (record-quarantined, record-unrecognised-
+// fields) fire at SCAN TIME, before Assemble ever sees the record, so
+// recordDirBySubject's map (built from the full Records slice downstream)
+// is not yet available - Law 6: same rule, single reason, two call sites
+// because of a real ordering constraint, not a duplicated decision.
+func recordDirFromRelPath(rel string) string {
+	dir := filepath.ToSlash(filepath.Dir(rel))
+	if dir == "." || dir == "" {
+		return ""
+	}
+	return dir
 }

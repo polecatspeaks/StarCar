@@ -193,6 +193,41 @@ func TestAssembleManifestMembershipCollision(t *testing.T) {
 	}
 }
 
+// TestAssembleManifestMembershipCollisionCarriesRecordDir (#69/#71:
+// clickable provenance) - the collision condition names the claimed
+// dispatch's own record directory (recAt gives it a real store path, unlike
+// TestAssembleManifestMembershipCollision above's simplified dispatched()
+// helper).
+func TestAssembleManifestMembershipCollisionCarriesRecordDir(t *testing.T) {
+	records := []store.Record{
+		manifestIntent("train:alpha", "2026-07-23T09:00:00Z", "Alpha", []map[string]any{
+			{"subject": "shared-dispatch", "role": "car"},
+		}),
+		manifestIntent("train:bravo", "2026-07-23T09:00:00Z", "Bravo", []map[string]any{
+			{"subject": "shared-dispatch", "role": "car"},
+		}),
+		recAt("shared-dispatch/dispatched-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "dispatched", "subject": "shared-dispatch",
+			"session_id": "s1", "at": "2026-07-23T09:05:00Z", "normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+
+	var found bool
+	for _, cond := range result.Conditions {
+		if cond.Code == "manifest-membership-collision" {
+			found = true
+			if cond.RecordDir != "shared-dispatch" {
+				t.Errorf("RecordDir = %q, want %q", cond.RecordDir, "shared-dispatch")
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected a manifest-membership-collision board condition, got %v", result.Conditions)
+	}
+}
+
 // TestAssembleSubjectNamespaceCollision is DR3-3's defensive detector: a
 // subject appearing in BOTH fold.dispatches and fold.intents (a producer bug
 // reusing one subject across kinds, defeating the train: partition
@@ -219,6 +254,41 @@ func TestAssembleSubjectNamespaceCollision(t *testing.T) {
 			found = true
 			if !strings.Contains(cond.Detail, "collide-1") {
 				t.Errorf("detail must name the colliding subject, got %q", cond.Detail)
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected a subject-namespace-collision board condition, got %v", result.Conditions)
+	}
+}
+
+// TestAssembleSubjectNamespaceCollisionCarriesRecordDir (#69/#71: clickable
+// provenance) - the collision condition names the colliding subject's own
+// record directory, derived (single-sourced, Law 6) from a REAL store path,
+// unlike TestAssembleSubjectNamespaceCollision above which uses the
+// simplified rec() helper (Path=subject, no directory component, so
+// recordDirBySubject correctly resolves nothing there - this test uses
+// recAt to prove the POSITIVE case).
+func TestAssembleSubjectNamespaceCollisionCarriesRecordDir(t *testing.T) {
+	records := []store.Record{
+		recAt("collide-1/dispatched-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "dispatched", "subject": "collide-1",
+			"session_id": "s1", "at": "2026-07-23T09:00:00Z", "normalisation": []any{}, "integrity": "sha256:0",
+		}),
+		recAt("collide-1/intent-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "intent", "subject": "collide-1",
+			"session_id": "s1", "at": "2026-07-23T09:05:00Z", "normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+
+	var found bool
+	for _, cond := range result.Conditions {
+		if cond.Code == "subject-namespace-collision" {
+			found = true
+			if cond.RecordDir != "collide-1" {
+				t.Errorf("RecordDir = %q, want %q", cond.RecordDir, "collide-1")
 			}
 		}
 	}
@@ -437,6 +507,106 @@ func TestAssembleRecordDirSingleSourcedFromStorePath(t *testing.T) {
 	}
 	if orphanDir != "orphan-1" {
 		t.Errorf("orphan-1 recordDir = %q, want orphan-1", orphanDir)
+	}
+}
+
+// TestAssembleManifestRecordNotFoundCarriesRecordDir (#69/#71: clickable
+// provenance) - the fold names a winning manifest at an "at" no raw intent
+// record matches, but ANOTHER record for the SAME subject IS in the store
+// (a stray dispatched record, standing in for "some record proves this
+// subject's own directory"), so the condition still resolves a RecordDir
+// even though the SPECIFIC manifest record it complains about was never
+// found - honest best-effort, never a guess about a directory that does not
+// exist.
+func TestAssembleManifestRecordNotFoundCarriesRecordDir(t *testing.T) {
+	records := []store.Record{
+		recAt("train:missing-intent/dispatched-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "dispatched", "subject": "train:missing-intent",
+			"session_id": "s1", "at": "2026-07-27T09:00:00Z", "normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	handBuiltOut := fold.Output{
+		Intents: []fold.IntentEntry{{Subject: "train:missing-intent", At: "2026-07-27T08:00:00Z"}},
+	}
+	result := Assemble(Input{Records: records, Fold: handBuiltOut})
+
+	var found bool
+	for _, cond := range result.Conditions {
+		if cond.Code == "manifest-record-not-found" {
+			found = true
+			if cond.RecordDir != "train:missing-intent" {
+				t.Errorf("RecordDir = %q, want %q", cond.RecordDir, "train:missing-intent")
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected a manifest-record-not-found board condition, got %v", result.Conditions)
+	}
+}
+
+// TestAssembleManifestPayloadUnreadableCarriesRecordDir (#69/#71: clickable
+// provenance) - the intent record itself IS found, but its "manifest" key is
+// absent (manifestPayload returns ok=false); the condition still names that
+// same record's own directory.
+func TestAssembleManifestPayloadUnreadableCarriesRecordDir(t *testing.T) {
+	records := []store.Record{
+		recAt("train:bad-payload/intent-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "intent", "subject": "train:bad-payload",
+			"session_id": "s1", "at": "2026-07-27T09:00:00Z", "normalisation": []any{}, "integrity": "sha256:0",
+			// no "manifest" key - manifestPayload must return ok=false
+		}),
+	}
+	out := fold.Fold(foldRecords(records), testVocab, now)
+	result := Assemble(Input{Records: records, Fold: out})
+
+	var found bool
+	for _, cond := range result.Conditions {
+		if cond.Code == "manifest-payload-unreadable" {
+			found = true
+			if cond.RecordDir != "train:bad-payload" {
+				t.Errorf("RecordDir = %q, want %q", cond.RecordDir, "train:bad-payload")
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected a manifest-payload-unreadable board condition, got %v", result.Conditions)
+	}
+}
+
+// TestAssembleGateFindingsRecordNotFoundCarriesRecordDir (#69/#71: clickable
+// provenance) - companion to TestAssembleGateFindingsRecordNotFoundDisclosed
+// above, asserting the RecordDir this ticket adds to that same condition.
+func TestAssembleGateFindingsRecordNotFoundCarriesRecordDir(t *testing.T) {
+	records := []store.Record{
+		manifestIntent("train:board-v0", "2026-07-26T09:00:00Z", "T", []map[string]any{
+			{"subject": "gate-1", "role": "gate", "gate": "design review round 1"},
+		}),
+		recAt("gate-1/returned-1.json", map[string]any{
+			"schema": "starcar-artifact/1", "kind": "returned", "subject": "gate-1",
+			"session_id": "s1", "at": "2026-07-26T10:00:00Z", "outcome": "REJECT",
+			"findings": "3 Major, 1 Minor", "abstract": "a",
+			"normalisation": []any{}, "integrity": "sha256:0",
+		}),
+	}
+	handBuiltOut := fold.Output{
+		Intents: []fold.IntentEntry{{Subject: "train:board-v0", At: "2026-07-26T09:00:00Z"}},
+		Dispatches: []fold.DispatchEntry{
+			{Subject: "gate-1", State: "returned", At: "2026-07-26T11:00:00Z", Outcome: "APPROVE"},
+		},
+	}
+	result := Assemble(Input{Records: records, Fold: handBuiltOut})
+
+	var found bool
+	for _, cond := range result.Conditions {
+		if cond.Code == "gate-findings-record-not-found" {
+			found = true
+			if cond.RecordDir != "gate-1" {
+				t.Errorf("RecordDir = %q, want %q", cond.RecordDir, "gate-1")
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected a gate-findings-record-not-found board condition, got %v", result.Conditions)
 	}
 }
 

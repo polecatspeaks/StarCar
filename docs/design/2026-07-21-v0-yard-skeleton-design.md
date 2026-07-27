@@ -733,6 +733,66 @@ re-verified hot again.
 **`docs/contracts/gating-matrix.md` gains a new truth-surface row (same commit) for
 the health-trend badge** - see its own inline addition.
 
+**#69/#71 (view train, 2026-07-27): board-condition/superseded provenance links, and
+conditions-strip open-state persistence.** Extends #28's clickable-provenance scheme to
+the two surfaces its own car report disclosed as out of scope, plus the owner's #69
+fast-follow (the live board's "flags drop-down" not being clickable and re-collapsing on
+every refresh).
+
+*Board-condition entries (#69 half 1, #71's condition case).* `schema/yard-snapshot.
+schema.json`'s `$defs.boardCondition` gains one new OPTIONAL field, `recordDir` (mirrors
+`trainsPayload.cars.recordDir`'s own convention exactly) - present when the condition's
+own subject resolves a directory (`board/assemble`'s existing `recordDirBySubject` map,
+already computed for cars/gates/dispatches, now also read for EVERY condition
+`Assemble` constructs; `board/store/store.go`'s two scan-time conditions, which fire
+before `Assemble` ever runs, derive the identical value inline from their own already-
+known file path via a `filepath.Dir` helper - same rule, two call sites, because of a
+real construction-order constraint, not a duplicated decision), absent otherwise (a
+config-load fault, an aggregate count). A `"discovery"` condition (NOTE-tier, names an
+undeclared VALUE, never a subject) is the one exception: it NEVER carries `recordDir` and
+instead links, client-side only, to the `schema/vocab/kinds.json` or `outcomes.json`
+file its own `"kind: "`/`"outcome: "`-prefixed detail text names (`board/web/js/links.js`'s
+`buildVocabLink`/`vocabFilenameForDiscoveryDetail` - a producer-contract-pinned prefix
+check, never a loose guess). Every other condition class links to its `recordDir` when
+present; a condition with neither renders plain text, unchanged layout (#28's own "no
+link, never a broken one" rule, extended rather than re-invented).
+
+*Superseded entries (#71's remaining surface).* A `superseded` entry names a PRIOR record
+for the SAME subject that lost to the row's own winner (`board/fold`'s precedence-then-
+latest-at rule) - it lives in the identical store directory as the row's own `recordDir`
+(the one-directory-per-subject convention #28's `recordDir` already relies on), so THIS
+surface needed NO new wire field: `board/web/js/dom-writer.js`'s `renderSupersededList`
+links every superseded item through the row's own already-carried `recordDir`. Landed for
+BOTH the trains lane (cars) and the dispatches lane (the latter never carried `superseded`
+into its view model at all before this ticket, despite the wire field already existing on
+every dispatch entry - a gap, not a wire change). Honest-absence (no list rendered) when
+a row has nothing superseding it, matching every other absence convention in this file.
+
+*Open-state persistence (#69 half 2).* The conditions strip's own `<details>` open/closed
+state, and each condition GROUP's own `<details>` (per-group, never one flag governing
+all groups), are read from `window.sessionStorage` fresh on every `repaint()` and written
+by one capturing-phase `'toggle'` listener on `root` (`board/web/js/app.js`) - `docs/
+contracts/state-ledger.md`'s Question 3 gains its sixth browser-side field, the first one
+that is not purely in-memory, in the same commit. DEVIATION FROM THE BRIEF'S SUGGESTED
+MECHANISM, disclosed: the brief suggested "capture state from the outgoing DOM before
+clearing it, reapply after" for the rebuild case; this design instead makes
+`sessionStorage` the SINGLE source of truth for both a DOM rebuild and a page refresh
+identically (a native `'toggle'` event fires synchronously on the SAME task as the user's
+click, before any repaint can intervene, so there is no window in which a DOM-scrape
+would observe a value sessionStorage does not already have) - simpler, and avoids ever
+reading a half-torn-down tree. #30's NEW-CONDITION-DEFAULTS-COLLAPSED rule is preserved
+structurally, not by a special case: a condition CODE with no entry in the persisted
+`groups` map reads as closed (`isGroupOpen`'s own default), so a condition class this
+session has never opened - including a genuinely new one - renders collapsed exactly as
+#30 always specified. `sessionStorage`'s own per-tab/per-session lifecycle (survives a
+refresh, cleared on a new tab) is what satisfies the owner's "never hide a NEW hot
+condition across sessions" constraint, without any session-detection code of this
+repo's own.
+
+Real-browser, non-vacuous proof: `docs/screenshots/2026-07-26-view-69-71-candidates/`
+(this car's report cites the exact fault-injections and observed `getComputedStyle`
+values).
+
 ## §13 - Revision history
 
 - **Rev 1** (2026-07-21): REJECT, 9 Major. **Rev 2** (2026-07-22): REJECT, 8 Major -

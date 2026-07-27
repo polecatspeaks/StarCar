@@ -126,12 +126,26 @@ tab), not a row inside `board/server`'s own 9-field count above - the header ari
 the top of this file is unchanged by this addition, and is stated here as its own
 question per the template's Q1/Q2 shape rather than folded into Q1's count.
 
+**Amended (2026-07-27, view train #69/#71 car, issue #69): a SIXTH browser-side field,
+and the first one in this section that is NOT purely in-memory.** The conditions strip's
+open/collapsed state (`board/web/js/condition-open-state.js`'s `{strip, groups}` shape) is
+read fresh from `window.sessionStorage` on every `repaint()` call and written by a single
+capturing-phase `'toggle'` listener on `root` (`app.js`'s `handleConditionToggle`) - this
+is deliberately NOT one more `let` beside `connected`/`ingestState`, because the whole
+point of #69 (owner: "closes back up every page refresh") is that this field survive a
+page reload the other five never do. `sessionStorage` gives exactly that lifecycle for
+free: it outlives a DOM rebuild AND a page refresh within the same tab, and is cleared by
+the browser itself on a new tab/session - so "do not persist across sessions in a way that
+could hide a new hot condition" (issue #69's own constraint) is satisfied by the storage
+API's own boundary, never by code in this repo re-implementing session detection.
+
 | Field (owner) | Page load | Tab reconnect (network drop then restored) | Server restart mid-connection | Verdict | Evidence |
 |---|---|---|---|---|---|
 | `ingestState.snapshot` (`app.js`) | starts `null`; set on the FIRST payload that both parses and validates (`firstPaint`) | UNCHANGED across a transient drop - the last validated snapshot stays rendered, marked disconnected (never blanked) | UNCHANGED until a new valid, higher-seq snapshot arrives from the restarted server | SAFE | `board/web/test/ingest.test.js` (discard-keeps-last-render, seq ordering); `dom-writer.test.js`'s disconnected-still-shows-the-lane test |
 | `ingestState.lastAppliedSeq` (`app.js`) | starts `-1` (`initialIngestState`) | UNCHANGED by a drop itself; the server's OWN `seq` resets to 0 on its restart (this file's Q1 row above), so the client's stored value can be numerically ahead of a freshly restarted server's `seq` until that server's count climbs back past it - a deliberate consequence of seq being a per-process monotonic counter, not a global one; the wire's `asOf`/lane data are what a reconnecting client actually judges freshness by, never a raw seq comparison across a server restart | resets to `-1` only on a full PAGE reload, never on a mere stream reconnect | SAFE | `board/web/test/ingest.test.js`'s three seq-ordering tests (lower/equal seq is a no-op; higher seq applies) |
 | `ingestState.markedStale` / `clientConditions` (`app.js`) | starts `false` / `[]` | set by a validation failure (task 5.2), cleared by the next VALID payload | same | SAFE | `board/web/test/ingest.test.js` |
 | `connected` (`app.js`, driven by `sse-protocol.js`'s watchdog) | starts `false` until the stream's first frame | flips `false` after two missed heartbeat intervals (`10000ms` default), flips back `true` on the next observed frame | flips `false` when the fetch/read loop throws or stalls past the watchdog | SAFE | `board/web/test/sse-protocol.test.js`'s disconnect-watchdog tests |
+| conditions-strip open state (`window.sessionStorage`, keyed `starcar-board-conditions-open`, read/written via `condition-open-state.js`) | starts collapsed (`{strip:false, groups:{}}`) on a genuinely NEW tab/session (sessionStorage is per-tab); on a same-tab PAGE RELOAD it is NOT reset - `sessionStorage` (unlike every `let` above) survives navigation within the tab, which is the entire point of #69 | UNCHANGED - a network drop/reconnect never touches storage, only `connected` and the rendered picture do | UNCHANGED - a server restart changes what is IN the board, never the reader's own open/closed preference for a given condition CODE; a condition code the restarted server no longer emits simply has no group to apply the flag to | SAFE | `board/web/test/condition-open-state.test.js` (pure state-shape: load/save round-trip, corrupt-JSON degrade, per-group independence); `board/web/test/dom-writer.test.js`'s `#69` block (an `openState` argument is correctly reflected in the rendered `open` attribute, per-strip and per-group, and a never-toggled code still defaults collapsed) |
 
 No lifecycle event here can produce a stale-looking "fine" - a dropped connection always
 renders `disconnected - showing last known` (never silently frozen with no chrome change),

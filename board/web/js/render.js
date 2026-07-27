@@ -66,7 +66,7 @@ export function checkLaneCompleteness(snapshot) {
  * from code to tier, so in practice every instance of a given code already
  * shares one register.
  *
- * @param {Array<{code:string, detail:string, register:string}>} boardConditions
+ * @param {Array<{code:string, detail:string, register:string, recordDir?:string}>} boardConditions
  */
 export function groupBoardConditions(boardConditions) {
   const order = [];
@@ -78,7 +78,11 @@ export function groupBoardConditions(boardConditions) {
     }
     const group = byCode.get(bc.code);
     group.register = mostSevereRegister(group.register, bc.register);
-    group.instances.push({ detail: bc.detail, register: bc.register });
+    // #69/#71: recordDir carried through, never re-derived (Law 6) - the
+    // wire's own store.BoardCondition.RecordDir when present, null when the
+    // condition names no single subject/record (a config fault, an
+    // aggregate count) or is a client-raised condition that never had one.
+    group.instances.push({ detail: bc.detail, register: bc.register, recordDir: bc.recordDir ?? null });
   }
   return order.map((code) => {
     const group = byCode.get(code);
@@ -362,7 +366,8 @@ function buildLaneBody(lane, vocab, hasRenderer) {
         budgetSeconds: typeof d.budget_seconds === 'number' ? d.budget_seconds : null,
         budgetSource: d.budget_source ?? null,
         assigned: Boolean(d.assigned),
-        recordDir: d.recordDir ?? null // #28
+        recordDir: d.recordDir ?? null, // #28
+        superseded: d.superseded || [] // #71: same subject, same directory as recordDir above
       }));
       // #67 (owner finding after #62 live-board feedback): every non-
       // terminal / needs-attention dispatch (dispatched, overdue, presumed-
