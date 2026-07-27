@@ -1,0 +1,42 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "3ba6fe655e94",
+  "session_id": "f695ab87-6bdf-45e6-94c8-14c19a1af4b5",
+  "strategy": "manual-commit",
+  "created_at": "2026-07-27T20:53:00.1145732Z",
+  "branch": "dev",
+  "checkpoints_count": 5,
+  "files_touched": [],
+  "agent": "Copilot CLI",
+  "model": "claude-fable-5",
+  "turn_id": "8ae9041662cc",
+  "checkpoint_transcript_start": 889,
+  "transcript_lines_at_start": 889,
+  "compact_transcript_start": 103,
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 2735,
+    "api_call_count": 2
+  },
+  "session_metrics": {
+    "turn_count": 10
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 62,
+      "user_lines_removed": 1,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".claude/settings.local.json": 28,
+        "docs/friction-log.md": 34
+      },
+      "user_removed_per_file": {
+        "docs/friction-log.md": 1
+      }
+    }
+  ]
+}
