@@ -373,6 +373,24 @@ locator phrase so a second party can re-derive it from that file.
   first; and a third-party error names ITS view of the symptom, not your cause - check
   what you actually sent before believing what the server says it means.
 
+- 2026-07-27 ~09:25 (CAR-CAUGHT, conductor's defect): THE #75 BRIEF NAMED A PRECEDENT THAT
+  DOES NOT EXIST. The brief told the car to add `TaskID` to `board/fold/fold.go`'s
+  `DispatchEntry` "following the recordDir precedent" - but recordDir is NOT on that struct
+  or anywhere in `board/fold`; it lives in `board/assemble`. Worse, `board/fold` is the
+  CROSS-LANGUAGE CONFORMANCE KERNEL (`schema/vectors/README.md`: the landed pwsh detector
+  and the Go port both conform to the fold vectors under the D18 cross-verifier), so
+  following the brief would have put a Go-only field into a two-implementation contract.
+  The car honest-stopped, cited its greps, and implemented at the correct layer. Cost: nil -
+  the gate caught it. Aggravating: the conductor HAD grepped `DispatchEntry` and seen its
+  full field list (no recordDir in it) minutes before writing the brief, then wrote the
+  precedent claim anyway - reading and then asserting the opposite is worse than not
+  looking. Class: A BRIEF'S "FOLLOW THE PRECEDENT AT X" IS A STRUCTURAL CLAIM AND MUST BE
+  RESOLVED BY OPENING X, never by memory of a related file; same family as the 07-23 row
+  where a brief asserted a defect that did not exist. What made it cheap: the brief put
+  honest stops on the SUCCESS branch, so the car reported the contradiction instead of
+  improvising - the gradient-shaping doctrine paying for itself a second time (cf. the
+  07-26 owner-observed calibration row).
+
 - 2026-07-27, structural fact FOUND BY THE MINE (not friction, recorded so nobody
   re-digs): the per-dispatch "Entire-Checkpoint" blobs on the checkpoint branch are
   periodic snapshots of the SINGLE conductor session, not separate car/reviewer
